@@ -93,7 +93,7 @@ jobs:
 
       - name: Build & push
         if: steps.dockerfile.outputs.path != ''
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: ${{ steps.dockerfile.outputs.path }}
