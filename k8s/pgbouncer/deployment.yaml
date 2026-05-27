@@ -1,0 +1,74 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pgbouncer
+  namespace: sparx-prod
+  labels:
+    app: pgbouncer
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: pgbouncer
+  template:
+    metadata:
+      labels:
+        app: pgbouncer
+    spec:
+      serviceAccountName: pgbouncer
+      containers:
+        - name: pgbouncer
+          image: edoburu/pgbouncer:1.23.0
+          ports:
+            - name: pgbouncer
+              containerPort: 5432
+          env:
+            # edoburu/pgbouncer generates pgbouncer.ini from these env vars at startup.
+            - name: DB_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: pgbouncer-secrets
+                  key: POSTGRES_HOST
+            - name: DB_PORT
+              value: "5432"
+            - name: DB_NAME
+              value: sparx
+            - name: DB_USER
+              value: sparx_app
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: pgbouncer-secrets
+                  key: POSTGRES_PASSWORD
+            # Transaction mode is REQUIRED for RLS `SET LOCAL`. See docs/03 §8.
+            - name: POOL_MODE
+              value: transaction
+            - name: AUTH_TYPE
+              value: scram-sha-256
+            - name: MAX_CLIENT_CONN
+              value: "500"
+            - name: DEFAULT_POOL_SIZE
+              value: "25"
+            - name: RESERVE_POOL_SIZE
+              value: "5"
+            - name: SERVER_TLS_SSLMODE
+              value: require
+            - name: IGNORE_STARTUP_PARAMETERS
+              value: extra_float_digits,search_path
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "256Mi"
+          livenessProbe:
+            tcpSocket:
+              port: 5432
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          readinessProbe:
+            tcpSocket:
+              port: 5432
+            initialDelaySeconds: 5
+            periodSeconds: 10

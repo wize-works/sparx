@@ -1,0 +1,73 @@
+# Reference template for a Sparx worker Deployment. Copy + adapt for
+# worker-domain, worker-dropship, worker-billing, worker-webhook.
+# Workers are Pub/Sub consumers; no public Service, no HPA in Phase 1.
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: worker-email
+  namespace: sparx-prod
+  labels:
+    app: worker-email
+    tier: worker
+spec:
+  replicas: 1
+  revisionHistoryLimit: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: worker-email
+  template:
+    metadata:
+      labels:
+        app: worker-email
+        tier: worker
+    spec:
+      serviceAccountName: sparx-app
+      terminationGracePeriodSeconds: 60   # give in-flight Pub/Sub acks time to land
+      containers:
+        - name: worker-email
+          image: us-central1-docker.pkg.dev/REPLACE_PROJECT_ID/sparx/worker-email:latest
+          imagePullPolicy: IfNotPresent
+          envFrom:
+            - configMapRef:
+                name: sparx-app-env
+            - secretRef:
+                name: sparx-app-secrets
+          env:
+            - name: NODE_ENV
+              value: production
+            - name: SERVICE_NAME
+              value: worker-email
+            - name: PUBSUB_SUBSCRIPTION
+              value: email.send.worker-email
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "256Mi"
+          livenessProbe:
+            # Workers expose /health on a side port for liveness only.
+            httpGet:
+              path: /health
+              port: 9000
+            initialDelaySeconds: 30
+            periodSeconds: 60
+            failureThreshold: 3
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: worker-email
+  namespace: sparx-prod
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      app: worker-email

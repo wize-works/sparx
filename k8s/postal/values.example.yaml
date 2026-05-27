@@ -1,0 +1,61 @@
+# Helm values for postal/postal — Phase 1, single-replica.
+# Reference: https://github.com/postalserver/helm-charts/blob/main/charts/postal/values.yaml
+
+postal:
+  webHostname: postal.sparx.works
+  smtpHostname: mail.sparx.email
+  signingKey:
+    # Generate once: openssl genrsa 2048 → base64 → paste here OR mount via Secret.
+    # For prod, use existingSecret instead.
+    existingSecret: postal-signing-key
+    existingSecretKey: signing.key
+
+mariadb:
+  enabled: true
+  auth:
+    rootPassword: REPLACE_ME
+    database: postal
+    username: postal
+    password: REPLACE_ME
+  primary:
+    persistence:
+      enabled: true
+      size: 10Gi
+      storageClass: standard-rwo
+
+rabbitmq:
+  enabled: true
+  auth:
+    username: postal
+    password: REPLACE_ME
+  persistence:
+    enabled: true
+    size: 5Gi
+    storageClass: standard-rwo
+
+web:
+  replicas: 1
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      memory: 1Gi
+
+smtp:
+  replicas: 1
+  service:
+    type: LoadBalancer
+    # Reserve a separate static IP for SMTP in Terraform when this goes live.
+    # loadBalancerIP: <postal-smtp-ip>
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+
+worker:
+  replicas: 1
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi

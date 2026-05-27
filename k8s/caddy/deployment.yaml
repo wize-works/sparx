@@ -1,0 +1,65 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: caddy
+  namespace: sparx-prod
+  labels:
+    app: caddy
+spec:
+  replicas: 1
+  # RWO PVC for cert storage — Recreate avoids two pods holding the volume.
+  # Multi-replica Caddy needs distributed cert storage (caddy-storage-redis). Phase 2.
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: caddy
+  template:
+    metadata:
+      labels:
+        app: caddy
+    spec:
+      serviceAccountName: caddy
+      containers:
+        - name: caddy
+          image: caddy:2.8-alpine
+          ports:
+            - name: http
+              containerPort: 80
+            - name: https
+              containerPort: 443
+          volumeMounts:
+            - name: config
+              mountPath: /etc/caddy
+              readOnly: true
+            - name: data
+              mountPath: /data
+            - name: caddy-config-dir
+              mountPath: /config
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          readinessProbe:
+            tcpSocket:
+              port: 443
+            initialDelaySeconds: 5
+            periodSeconds: 10
+      volumes:
+        - name: config
+          configMap:
+            name: caddy-config
+        - name: caddy-config-dir
+          emptyDir: {}
+        - name: data
+          persistentVolumeClaim:
+            claimName: caddy-data

@@ -1,0 +1,2 @@
+Button, Badge, Input, Textarea, Select, Checkbox, RadioGroup, Switch, Slider, Avatar, Spinner, Skeleton.
+See docs/23-frontend-component-architecture.md §9 (Primitives table).

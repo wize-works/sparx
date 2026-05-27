@@ -1,0 +1,2 @@
+Modal, Drawer, Popover, Tooltip, Toast, AlertDialog, DropdownMenu, ContextMenu, CommandPalette.
+See docs/23-frontend-component-architecture.md §9 (Overlay table).

@@ -1,0 +1,123 @@
+name: Deploy to production
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      sha:
+        description: "Image tag/sha to deploy (default: current commit)"
+        required: false
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  REGION: us-central1
+  CLUSTER: sparx-prod-autopilot
+  NAMESPACE: sparx-prod
+  AR_REPO: sparx
+
+jobs:
+  migrate:
+    name: Run Prisma migrations
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_DEPLOYER_SA_EMAIL }}
+
+      - uses: google-github-actions/get-gke-credentials@v2
+        with:
+          cluster_name: ${{ env.CLUSTER }}
+          location: ${{ env.REGION }}
+
+      - name: Resolve image tag
+        id: tag
+        run: |
+          TAG="${{ inputs.sha || github.sha }}"
+          if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
+            TAG="${GITHUB_REF#refs/tags/}"
+          fi
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+
+      - name: Apply migration Job
+        run: |
+          # Render the Job template with the current image tag and apply it.
+          # The Job runs `prisma migrate deploy` against pgbouncer (which forwards
+          # to Cloud SQL on the private IP) — safe because GKE pods are inside
+          # the same VPC as Cloud SQL.
+          sed \
+            -e "s|IMAGE_TAG|${{ steps.tag.outputs.tag }}|g" \
+            -e "s|PROJECT_ID|${{ secrets.GCP_PROJECT_ID }}|g" \
+            -e "s|JOB_SUFFIX|$(echo ${{ github.run_id }} | tail -c 9)|g" \
+            k8s/jobs/migrate.yaml | kubectl apply -f -
+
+      - name: Wait for migrations to complete
+        run: |
+          JOB="sparx-migrate-$(echo ${{ github.run_id }} | tail -c 9)"
+          kubectl wait --for=condition=complete --timeout=15m job/$JOB -n $NAMESPACE
+          kubectl logs -n $NAMESPACE job/$JOB --tail=200
+
+  deploy:
+    name: Rollout
+    needs: migrate
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_DEPLOYER_SA_EMAIL }}
+
+      - uses: google-github-actions/get-gke-credentials@v2
+        with:
+          cluster_name: ${{ env.CLUSTER }}
+          location: ${{ env.REGION }}
+
+      - name: Resolve image tag
+        id: tag
+        run: |
+          TAG="${{ inputs.sha || github.sha }}"
+          if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
+            TAG="${GITHUB_REF#refs/tags/}"
+          fi
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+
+      - name: Rollout image to each app & worker
+        run: |
+          IMAGE_BASE="$REGION-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/$AR_REPO"
+          # Update only the Deployments that currently exist. Skipping unknown
+          # services keeps the workflow green during phased rollouts.
+          for svc in web api-rest api-graphql api-mcp dashboard storefront \
+                     worker-email worker-domain worker-dropship worker-billing worker-webhook; do
+            if kubectl get deployment "$svc" -n $NAMESPACE >/dev/null 2>&1; then
+              echo "::group::Rolling out $svc"
+              kubectl set image deployment/$svc \
+                $svc=$IMAGE_BASE/$svc:${{ steps.tag.outputs.tag }} \
+                -n $NAMESPACE
+              kubectl rollout status deployment/$svc -n $NAMESPACE --timeout=5m
+              echo "::endgroup::"
+            else
+              echo "::notice::Skipping $svc — Deployment not present in cluster yet."
+            fi
+          done
+
+      - name: Smoke test
+        run: |
+          # Hit /health on the public endpoints. Will only succeed once Cloudflare
+          # is live and DNS resolves.
+          for host in api.sparx.works app.sparx.works mcp.sparx.works; do
+            if curl -fsSL --max-time 10 "https://$host/health" >/dev/null; then
+              echo "OK: $host"
+            else
+              echo "::warning::smoke check failed for $host (expected during pre-DNS phase)"
+            fi
+          done

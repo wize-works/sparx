@@ -1,0 +1,48 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: tuesday
+    open-pull-requests-limit: 10
+    groups:
+      typescript-tooling:
+        patterns:
+          - "typescript"
+          - "typescript-eslint"
+          - "@types/*"
+          - "eslint*"
+          - "prettier*"
+      react:
+        patterns:
+          - "react"
+          - "react-dom"
+          - "@types/react*"
+      next:
+        patterns:
+          - "next"
+          - "@next/*"
+      tailwind:
+        patterns:
+          - "tailwind*"
+          - "@tailwindcss/*"
+      radix:
+        patterns:
+          - "@radix-ui/*"
+
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: tuesday
+
+  - package-ecosystem: terraform
+    directory: "/terraform"
+    schedule:
+      interval: monthly
+
+  - package-ecosystem: docker
+    directory: "/k8s"
+    schedule:
+      interval: monthly

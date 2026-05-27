@@ -1,0 +1,41 @@
+{
+  "name": "sparx",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Sparx — WizeWorks' modular commerce operating system.",
+  "packageManager": "pnpm@9.15.0",
+  "engines": {
+    "node": ">=24.0.0",
+    "pnpm": ">=9.0.0"
+  },
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "test": "turbo run test",
+    "typecheck": "turbo run typecheck",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md,css}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md,css}\"",
+    "db:up": "pnpm --filter @sparx/db db:up",
+    "db:down": "pnpm --filter @sparx/db db:down",
+    "db:migrate": "pnpm --filter @sparx/db db:migrate",
+    "db:seed": "pnpm --filter @sparx/db db:seed",
+    "db:studio": "pnpm --filter @sparx/db db:studio",
+    "clean": "turbo run clean && rm -rf node_modules"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.18.0",
+    "@types/node": "^22.10.0",
+    "eslint": "^9.18.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-jsx-a11y": "^6.10.2",
+    "eslint-plugin-react": "^7.37.4",
+    "eslint-plugin-react-hooks": "^5.1.0",
+    "prettier": "^3.4.0",
+    "prettier-plugin-tailwindcss": "^0.6.9",
+    "turbo": "^2.3.0",
+    "typescript": "^5.7.0",
+    "typescript-eslint": "^8.20.0"
+  }
+}

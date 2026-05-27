@@ -1,0 +1,101 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: caddy-config
+  namespace: sparx-prod
+data:
+  Caddyfile: |
+    {
+      email ops@sparx.works
+      admin off
+
+      # On-demand TLS — issues Let's Encrypt certs for tenant subdomains
+      # (slug.sparx.zone) and custom domains (shop.merchant.com) on first
+      # HTTPS request. Validated against the API before issuance to prevent
+      # unauthorized cert minting.
+      on_demand_tls {
+        ask http://api-rest.sparx-prod.svc.cluster.local:3000/internal/domain-check
+        interval 2m
+        burst 5
+      }
+    }
+
+    # ----- HTTP → HTTPS -----
+    :80 {
+      redir https://{host}{uri} permanent
+    }
+
+    # ----- Platform hostnames (Cloudflare-proxied; cert from on-demand) -----
+    api.sparx.works {
+      tls { on_demand }
+      reverse_proxy api-rest.sparx-prod.svc.cluster.local:3000
+    }
+
+    graphql.sparx.works {
+      tls { on_demand }
+      reverse_proxy api-graphql.sparx-prod.svc.cluster.local:3000
+    }
+
+    mcp.sparx.works {
+      tls { on_demand }
+      reverse_proxy api-mcp.sparx-prod.svc.cluster.local:3000
+    }
+
+    app.sparx.works {
+      tls { on_demand }
+      reverse_proxy dashboard.sparx-prod.svc.cluster.local:3000
+    }
+
+    sparx.works, www.sparx.works {
+      tls { on_demand }
+      reverse_proxy web.sparx-prod.svc.cluster.local:3000
+    }
+
+    # ----- Module marketing sites -----
+    # Each domain serves its own marketing/landing site (single Next.js app
+    # reads the Host header and renders the right module page).
+    sparxcms.com, www.sparxcms.com,
+    sparxcrm.com, www.sparxcrm.com,
+    sparxemail.com, www.sparxemail.com,
+    sparxb2b.com, www.sparxb2b.com,
+    sparx.email, www.sparx.email {
+      tls { on_demand }
+      reverse_proxy web.sparx-prod.svc.cluster.local:3000
+    }
+
+    # ----- Placeholder domains (301 to corresponding sparx.works path) -----
+    # Replace with real reverse_proxy targets when each product matures.
+    sparx.host, www.sparx.host {
+      tls { on_demand }
+      redir https://sparx.works/hosting{uri} permanent
+    }
+
+    sparx.software, www.sparx.software {
+      tls { on_demand }
+      redir https://sparx.works/docs{uri} permanent
+    }
+
+    sparx.market, www.sparx.market {
+      tls { on_demand }
+      redir https://sparx.works/market{uri} permanent
+    }
+
+    sparx.exchange, www.sparx.exchange {
+      tls { on_demand }
+      redir https://sparx.works{uri} permanent
+    }
+
+    # sparx.zone apex — redirect to platform home.
+    sparx.zone, www.sparx.zone {
+      tls { on_demand }
+      redir https://sparx.works{uri} permanent
+    }
+
+    # ----- Catch-all: tenant storefronts -----
+    # Matches slug.sparx.zone (wildcard DNS) and any custom domain pointing
+    # to customers.sparx.zone. The /internal/domain-check API decides if a
+    # cert is issued.
+    :443 {
+      tls { on_demand }
+      reverse_proxy storefront.sparx-prod.svc.cluster.local:3000
+    }

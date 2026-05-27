@@ -1,0 +1,41 @@
+{
+  "name": "@sparx/dashboard",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev --turbopack --port 3001",
+    "build": "next build",
+    "start": "next start --port 3001",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "e2e": "playwright test",
+    "e2e:headed": "playwright test --headed",
+    "e2e:ui": "playwright test --ui",
+    "clean": "rm -rf .turbo .next playwright-report test-results *.tsbuildinfo"
+  },
+  "dependencies": {
+    "@hookform/resolvers": "^5.4.0",
+    "@sparx/auth": "workspace:*",
+    "@sparx/db": "workspace:*",
+    "@sparx/ui": "workspace:*",
+    "@tanstack/react-table": "^8.21.3",
+    "better-auth": "^1.6.11",
+    "lucide-react": "^0.469.0",
+    "next": "^16.2.6",
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6",
+    "react-hook-form": "^7.76.1",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.60.0",
+    "@tailwindcss/postcss": "^4.3.0",
+    "@types/node": "^22.10.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^4.3.0",
+    "typescript": "^5.7.0"
+  }
+}

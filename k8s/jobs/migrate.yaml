@@ -1,0 +1,43 @@
+# Prisma migration Job — applied by .github/workflows/deploy-prod.yml.
+#
+# Tokens replaced by the workflow before apply:
+#   IMAGE_TAG   — image tag to run migrations from (commit sha or version)
+#   PROJECT_ID  — GCP project ID
+#   JOB_SUFFIX  — short unique suffix to avoid collisions across runs
+#
+# The Job reuses the api-rest image because that's where prisma + the migrations
+# directory live. If migrations are extracted to a dedicated container later,
+# swap the image reference.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: sparx-migrate-JOB_SUFFIX
+  namespace: sparx-prod
+  labels:
+    app: sparx-migrate
+spec:
+  backoffLimit: 1
+  ttlSecondsAfterFinished: 86400  # auto-cleanup after 24h
+  template:
+    metadata:
+      labels:
+        app: sparx-migrate
+    spec:
+      serviceAccountName: sparx-app
+      restartPolicy: Never
+      containers:
+        - name: migrate
+          image: us-central1-docker.pkg.dev/PROJECT_ID/sparx/api-rest:IMAGE_TAG
+          command: ["pnpm", "prisma", "migrate", "deploy"]
+          envFrom:
+            - configMapRef:
+                name: sparx-app-env
+            - secretRef:
+                name: sparx-app-secrets
+          resources:
+            requests:
+              cpu: "200m"
+              memory: "256Mi"
+            limits:
+              cpu: "1000m"
+              memory: "1Gi"

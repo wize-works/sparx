@@ -1,0 +1,12 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: sparx-prod
+resources:
+  - web.yaml
+# Add per-app manifests here as they ship to Artifact Registry.
+# Templates available:
+#   - api-rest.example.yaml
+#   - api-graphql (copy from api-rest.example.yaml)
+#   - api-mcp     (copy from api-rest.example.yaml)
+#   - dashboard   (copy from api-rest.example.yaml)
+#   - storefront  (copy from api-rest.example.yaml)

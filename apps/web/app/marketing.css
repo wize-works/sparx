@@ -1,0 +1,204 @@
+/* ──────────────────────────────────────────────────────────────
+   Marketing layout primitives.
+
+   Named, semantic classes for layout patterns that need structural
+   change across breakpoints — things `clamp()` in tokens can't solve.
+   Apply via `className` from feature components. The §1 rule bans raw
+   *Tailwind utilities* in feature code; named layout primitives are fine.
+
+   Breakpoints (see docs/23 §13):
+     mobile   ≤ 640px
+     tablet   641 – 1024px
+     desktop  > 1024px
+   ────────────────────────────────────────────────────────────── */
+
+/* ── GRIDS: column counts collapse with viewport ─────────────── */
+
+.mkt-grid-4-2-1 {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+}
+@media (max-width: 1024px) {
+  .mkt-grid-4-2-1 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (max-width: 640px) {
+  .mkt-grid-4-2-1 {
+    grid-template-columns: 1fr;
+  }
+}
+
+.mkt-grid-3-2-1 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+@media (max-width: 1024px) {
+  .mkt-grid-3-2-1 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (max-width: 640px) {
+  .mkt-grid-3-2-1 {
+    grid-template-columns: 1fr;
+  }
+}
+
+.mkt-grid-2-1 {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 24px;
+}
+@media (max-width: 768px) {
+  .mkt-grid-2-1 {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* 5-step horizontal strip → wraps gracefully on smaller viewports. */
+.mkt-grid-5-wrap {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 1px;
+  background-color: var(--color-border-default);
+  border-top: 1px solid var(--color-border-default);
+  border-bottom: 1px solid var(--color-border-default);
+}
+@media (max-width: 1024px) {
+  .mkt-grid-5-wrap {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (max-width: 640px) {
+  .mkt-grid-5-wrap {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── STACKS: side-by-side desktop → vertical on smaller ──────── */
+
+.mkt-stack-on-tablet {
+  display: flex;
+  gap: 32px;
+}
+@media (max-width: 1024px) {
+  .mkt-stack-on-tablet {
+    flex-direction: column;
+  }
+}
+
+.mkt-stack-on-mobile {
+  display: flex;
+  gap: 24px;
+}
+@media (max-width: 640px) {
+  .mkt-stack-on-mobile {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+/* Flex row that wraps to column when items can no longer fit nicely. */
+.mkt-cluster {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: center;
+}
+
+/* ── VISIBILITY ──────────────────────────────────────────────── */
+
+.mkt-hide-on-mobile {
+  display: initial;
+}
+@media (max-width: 640px) {
+  .mkt-hide-on-mobile {
+    display: none !important;
+  }
+}
+
+.mkt-hide-on-tablet {
+  display: initial;
+}
+@media (max-width: 1024px) {
+  .mkt-hide-on-tablet {
+    display: none !important;
+  }
+}
+
+.mkt-mobile-only {
+  display: none;
+}
+@media (max-width: 640px) {
+  .mkt-mobile-only {
+    display: initial !important;
+  }
+}
+
+.mkt-tablet-down-only {
+  display: none;
+}
+@media (max-width: 1024px) {
+  .mkt-tablet-down-only {
+    display: initial !important;
+  }
+}
+
+/* Variant of mkt-tablet-down-only that uses display: flex when shown. */
+.mkt-tablet-down-only-flex {
+  display: none !important;
+}
+@media (max-width: 1024px) {
+  .mkt-tablet-down-only-flex {
+    display: flex !important;
+  }
+}
+
+/* ── TEXT ALIGNMENT ──────────────────────────────────────────── */
+
+/* Some sections justify CTAs/aside to the right on desktop, but on mobile
+   that becomes awkward — collapse them to the start. */
+.mkt-align-end-on-desktop {
+  align-items: flex-end;
+}
+@media (max-width: 1024px) {
+  .mkt-align-end-on-desktop {
+    align-items: flex-start;
+  }
+}
+
+/* Connector arrow between two side-by-side panels — points right on desktop,
+   rotates to point down when the panels stack vertically. */
+.mkt-arrow-connector {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 80px;
+  flex-shrink: 0;
+}
+@media (max-width: 1024px) {
+  .mkt-arrow-connector {
+    width: 100%;
+    height: 40px;
+  }
+  .mkt-arrow-connector svg {
+    transform: rotate(90deg);
+  }
+}
+
+/* ── NAV ─────────────────────────────────────────────────────── */
+
+/* The mobile drawer pops out from the top, full-width, when open. */
+.mkt-mobile-drawer {
+  position: fixed;
+  inset: 64px 0 0 0;
+  background-color: var(--color-bg-page);
+  border-top: 1px solid var(--color-border-default);
+  padding: 24px var(--gutter-page);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 49;
+}

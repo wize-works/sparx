@@ -1,0 +1,8 @@
+project_id = "REPLACE_WITH_GCP_PROJECT_ID"
+region     = "us-central1"
+ops_email  = "ops@sparx.works"
+
+# Cloudflare — leave disabled until domain transfers from GoDaddy complete.
+# Token goes in terraform.tfvars (gitignored), NOT this .example file.
+cloudflare_enabled    = false
+cloudflare_api_token  = ""

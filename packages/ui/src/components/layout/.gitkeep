@@ -1,0 +1,2 @@
+Card (+ Header/Content/Footer), Stack, Grid, Divider, Container, ScrollArea.
+See docs/23-frontend-component-architecture.md §9 (Layout table).

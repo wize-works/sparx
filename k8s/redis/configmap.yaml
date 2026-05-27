@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: redis-config
+  namespace: sparx-prod
+data:
+  redis.conf: |
+    # Phase 1 Redis — see docs/03-infrastructure-deployment.md §4a.
+    # Single replica, AOF for durability, capped memory with LRU eviction.
+    maxmemory 256mb
+    maxmemory-policy allkeys-lru
+    appendonly yes
+    appendfsync everysec
+    save ""
+    protected-mode no
+    bind 0.0.0.0

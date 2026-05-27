@@ -1,0 +1,180 @@
+// Sparx data layer — core schema.
+//
+// Scope of this initial migration: the foundational tables every other module
+// depends on (tenants, staff users, sessions, OAuth/credential accounts,
+// verifications, audit log). Module-specific tables (products, orders,
+// customers, etc. from docs/05-data-model.md §3) land in subsequent
+// migrations as those modules are implemented.
+//
+// Auth conventions: the `User`, `Session`, `Account`, and `Verification` table
+// shapes are intentionally Better Auth-compatible so they slot into the Better
+// Auth Prisma adapter (docs/16-auth-security.md §1). We additionally carry
+// Sparx-specific columns on `User` (tenantId, role, lastLoginAt) — Better Auth
+// supports user table extensions via its `user.additionalFields` config.
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider          = "postgresql"
+  url               = env("DATABASE_URL")
+  directUrl         = env("MIGRATION_DATABASE_URL")
+  extensions        = [pgcrypto]
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+// Tenants
+// ───────────────────────────────────────────────────────────────────────────
+// A tenant is a single merchant account. Better Auth's `organization` plugin
+// maps 1:1 onto this row (docs/16 §2 Layer 1) — the organization id will be
+// stored alongside this tenant when Better Auth is wired in.
+
+model Tenant {
+  id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  slug             String    @unique @db.VarChar(63)
+  name             String    @db.VarChar(255)
+  email            String    @db.VarChar(255)
+  plan             String    @default("starter") @db.VarChar(50)
+  status           String    @default("active") @db.VarChar(20)
+  settings         Json      @default("{}")
+  stripeCustomerId String?   @map("stripe_customer_id") @db.VarChar(255)
+  trialEndsAt      DateTime? @map("trial_ends_at") @db.Timestamptz
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt        DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  users     User[]
+  auditLogs AuditLog[]
+
+  @@map("tenants")
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+// Staff users (Layer 1 — merchant staff)
+// ───────────────────────────────────────────────────────────────────────────
+// Better Auth-compatible base columns + Sparx tenant/role extensions.
+// Customer-facing accounts (Layer 2) live in a separate `customers` table that
+// will be added with the e-commerce module — they share zero rows with `users`
+// per docs/16 §2.
+
+model User {
+  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email         String    @db.VarChar(255)
+  emailVerified Boolean   @default(false) @map("email_verified")
+  name          String?   @db.VarChar(255)
+  image         String?   @db.Text
+
+  // Sparx-specific extensions
+  tenantId    String    @map("tenant_id") @db.Uuid
+  role        String    @default("editor") @db.VarChar(50) // owner | admin | editor | viewer | api
+  lastLoginAt DateTime? @map("last_login_at") @db.Timestamptz
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  tenant   Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  sessions Session[]
+  accounts Account[]
+
+  @@unique([tenantId, email])
+  @@index([tenantId])
+  @@map("users")
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+// Sessions
+// ───────────────────────────────────────────────────────────────────────────
+// Refresh-token rows used by Better Auth (docs/16 §3). The access JWT is
+// stateless; this table backs the rotating refresh token + device tracking.
+
+model Session {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  token     String   @unique @db.VarChar(255) // SHA-256 of refresh token
+  expiresAt DateTime @map("expires_at") @db.Timestamptz
+  ipAddress String?  @map("ip_address") @db.Inet
+  userAgent String?  @map("user_agent") @db.Text
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("sessions")
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+// Accounts (Better Auth — OAuth provider links + password credential)
+// ───────────────────────────────────────────────────────────────────────────
+// One row per (provider, userId). For email/password the providerId is
+// "credential" and `password` carries the Argon2 hash; for OAuth providers
+// it's "google" / "github" / etc. with access/refresh tokens.
+
+model Account {
+  id                    String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId                String    @map("user_id") @db.Uuid
+  providerId            String    @map("provider_id") @db.VarChar(50)
+  accountId             String    @map("account_id") @db.VarChar(255)
+  password              String?   @db.Text
+  accessToken           String?   @map("access_token") @db.Text
+  refreshToken          String?   @map("refresh_token") @db.Text
+  accessTokenExpiresAt  DateTime? @map("access_token_expires_at") @db.Timestamptz
+  refreshTokenExpiresAt DateTime? @map("refresh_token_expires_at") @db.Timestamptz
+  scope                 String?   @db.Text
+  idToken               String?   @map("id_token") @db.Text
+  createdAt             DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt             DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([providerId, accountId])
+  @@index([userId])
+  @@map("accounts")
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+// Verifications (Better Auth — magic links, email verification, password reset)
+// ───────────────────────────────────────────────────────────────────────────
+// Short-lived single-use tokens. `identifier` is typically the email; `value`
+// is the hashed token; `expiresAt` is enforced by the auth service.
+
+model Verification {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  identifier String   @db.VarChar(255)
+  value      String   @db.VarChar(255)
+  expiresAt  DateTime @map("expires_at") @db.Timestamptz
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt  DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@index([identifier])
+  @@index([expiresAt])
+  @@map("verifications")
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+// Audit log (docs/05 §5, docs/16 §7)
+// ───────────────────────────────────────────────────────────────────────────
+// Append-only. Will be partitioned by month and archived to GCS after 2 years
+// in a follow-up migration — for now a single table is sufficient.
+
+model AuditLog {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId   String   @map("tenant_id") @db.Uuid
+  actorId    String?  @map("actor_id") @db.Uuid
+  actorType  String?  @map("actor_type") @db.VarChar(20) // user | system | api | mcp | customer
+  action     String   @db.VarChar(100)
+  entityType String?  @map("entity_type") @db.VarChar(100)
+  entityId   String?  @map("entity_id") @db.Uuid
+  diff       Json?
+  ipAddress  String?  @map("ip_address") @db.Inet
+  userAgent  String?  @map("user_agent") @db.Text
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, createdAt(sort: Desc)])
+  @@index([tenantId, entityType, entityId])
+  @@map("audit_logs")
+}

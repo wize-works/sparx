@@ -1,0 +1,46 @@
+@import 'tailwindcss';
+@import '@sparx/ui/tokens.css';
+
+/* Tailwind v4 needs to see @sparx/ui sources so utility classes used inside the
+   library are emitted in this app's CSS bundle. */
+@source "../../../packages/ui/src/**/*.{ts,tsx}";
+
+@theme {
+  --color-primary: var(--sparx-primary);
+  --color-success: var(--color-success);
+  --color-warning: var(--color-warning);
+  --color-danger: var(--color-danger);
+  --color-foreground: var(--color-text-primary);
+  --color-foreground-muted: var(--color-text-secondary);
+  --color-page: var(--color-bg-page);
+  --color-surface: var(--color-bg-surface);
+  --color-subtle: var(--color-bg-subtle);
+  --color-border: var(--color-border-default);
+
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+  --radius-xl: var(--radius-xl);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+html,
+body {
+  background-color: var(--color-bg-page);
+  color: var(--color-text-primary);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}

@@ -1,0 +1,166 @@
+/* ──────────────────────────────────────────────────────────────
+   Sparx Design Tokens — single source of truth.
+   Imported once per app in the root layout. All @sparx/ui components
+   reference these variables. Never hardcode colors in components.
+   See docs/23-frontend-component-architecture.md §4.
+   ────────────────────────────────────────────────────────────── */
+
+/* tw-animate-css provides the animate-in/animate-out, fade-*, zoom-*,
+   slide-* utility classes that our Radix-driven overlays use to react
+   to data-[state=open|closed] changes. Tailwind v4 compatible. */
+@import 'tw-animate-css';
+
+/* ── SPARX BRAND ──────────────────────────────────────────── */
+:root {
+  --sparx-primary: #6366f1;
+  --sparx-primary-hover: #4f46e5;
+  --sparx-primary-subtle: #818cf8;
+  --sparx-primary-tint: #eef2ff;
+
+  /* ── MODULE COLORS ─────────────────────────────────────── */
+  --module-storefront: #6366f1;
+  --module-commerce: #f97316;
+  --module-cms: #14b8a6;
+  --module-crm: #06b6d4;
+  --module-email: #0ea5e9;
+  --module-b2b: #475569;
+  --module-ai: #ec4899;
+  --module-dropship: #10b981;
+
+  /* Active module — set by ModuleProvider, read by components */
+  --module-active: var(--sparx-primary);
+  --module-active-tint: var(--sparx-primary-tint);
+  --module-active-text: #4338ca;
+
+  /* ── NEUTRALS — LIGHT MODE ─────────────────────────────── */
+  --color-bg-page: #fafafa;
+  --color-bg-surface: #ffffff;
+  --color-bg-elevated: #ffffff;
+  --color-bg-subtle: #f4f4f5;
+  --color-bg-muted: #e4e4e7;
+
+  --color-border-default: #e5e5e5;
+  --color-border-strong: #d4d4d8;
+  --color-border-focus: #6366f1;
+
+  --color-text-primary: #0a0a0a;
+  --color-text-secondary: #52525b;
+  --color-text-tertiary: #a1a1aa;
+  --color-text-muted: #71717a;
+  --color-text-disabled: #d4d4d8;
+  --color-text-inverse: #ffffff;
+
+  /* ── SEMANTIC ───────────────────────────────────────────── */
+  --color-success: #10b981;
+  --color-success-tint: #ecfdf5;
+  --color-success-text: #065f46;
+
+  --color-warning: #f59e0b;
+  --color-warning-tint: #fffbeb;
+  --color-warning-text: #92400e;
+
+  --color-danger: #ef4444;
+  --color-danger-tint: #fef2f2;
+  --color-danger-text: #991b1b;
+
+  /* ── TYPOGRAPHY ─────────────────────────────────────────── */
+  --font-sans: 'Geist', 'Inter', system-ui, sans-serif;
+  --font-mono: 'Geist Mono', 'JetBrains Mono', monospace;
+
+  --text-xs: 0.6875rem; /* 11px */
+  --text-sm: 0.8125rem; /* 13px */
+  --text-base: 0.9375rem; /* 15px */
+  --text-lg: 1.0625rem; /* 17px */
+  --text-xl: 1.25rem; /* 20px */
+  --text-2xl: 1.5rem; /* 24px */
+  --text-3xl: 1.875rem; /* 30px */
+  --text-4xl: 2.25rem; /* 36px */
+
+  --weight-regular: 400;
+  --weight-medium: 500;
+
+  --leading-tight: 1.2;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.625;
+
+  --tracking-tight: -0.025em;
+  --tracking-wide: 0.05em;
+  --tracking-wider: 0.08em;
+
+  /* ── SPACING ─────────────────────────────────────────────── */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+
+  /* ── RADIUS ──────────────────────────────────────────────── */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+  --radius-full: 9999px;
+
+  /* ── SHADOWS ─────────────────────────────────────────────── */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 2px 8px 0 rgb(0 0 0 / 0.08);
+  --shadow-lg: 0 10px 24px -6px rgb(0 0 0 / 0.12);
+  --shadow-focus: 0 0 0 3px rgb(99 102 241 / 0.25);
+
+  /* ── TRANSITIONS ─────────────────────────────────────────── */
+  --transition-fast: 100ms ease;
+  --transition-base: 175ms ease;
+  --transition-slow: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* ── RESPONSIVE — FLUID SCALING ──────────────────────────────
+     clamp(min, preferred, max). Components reference these tokens;
+     they don't see the breakpoint math. See docs/23 §13.
+     Breakpoints (referenced in marketing.css / app.css for
+     structural changes): mobile ≤640, tablet 641–1024, desktop >1024.
+     ────────────────────────────────────────────────────────────── */
+  --gutter-page: clamp(20px, 5vw, 80px);
+  --container-max: 1280px;
+
+  /* Section vertical rhythm */
+  --section-py-md: clamp(56px, 9vw, 96px);
+  --section-py-lg: clamp(72px, 11vw, 140px);
+  --section-py-xl: clamp(80px, 12vw, 160px);
+
+  /* Marketing display type — scales fluidly from phone to desktop */
+  --display-hero: clamp(48px, 10vw, 120px); /* Hero headline */
+  --display-xl: clamp(40px, 7vw, 88px);     /* Final CTA, big editorial */
+  --display-lg: clamp(36px, 6vw, 72px);     /* Section headlines */
+  --display-md: clamp(30px, 5vw, 56px);     /* Default Display */
+  --display-sm: clamp(26px, 4.2vw, 46px);   /* Testimonial blockquote */
+  --display-xs: clamp(22px, 3.4vw, 32px);   /* Small section headlines */
+
+  /* Hero line-height should track the size, not 120px forever */
+  --display-hero-leading: clamp(48px, 10vw, 104px);
+}
+
+/* ── DARK MODE ───────────────────────────────────────────── */
+[data-theme='dark'] {
+  --color-bg-page: #0f0f0f;
+  --color-bg-surface: #1a1a1a;
+  --color-bg-elevated: #222222;
+  --color-bg-subtle: #1f1f1f;
+  --color-bg-muted: #2a2a2a;
+
+  --color-border-default: #2a2a2a;
+  --color-border-strong: #3f3f46;
+  --color-border-focus: #818cf8;
+
+  --color-text-primary: #f0f0f0;
+  --color-text-secondary: #a1a1aa;
+  --color-text-tertiary: #52525b;
+  --color-text-muted: #8a8a93;
+  --color-text-disabled: #3f3f46;
+  --color-text-inverse: #0a0a0a;
+
+  --sparx-primary-tint: #1e1b4b;
+}
