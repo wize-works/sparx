@@ -20,10 +20,13 @@ import navigationRoutes from './routes/v1/navigation/menus.js';
 import redirectRoutes from './routes/v1/redirects/index.js';
 import webhookRoutes from './routes/v1/webhooks/subscriptions.js';
 import sitemapRoutes from './routes/v1/sitemap.js';
+import rssRoutes from './routes/v1/rss.js';
+import graphqlRoutes from './routes/v1/graphql.js';
 import publicContentRoutes from './routes/v1/public/content.js';
 import publicMediaRoutes from './routes/v1/public/media.js';
 import uploadRoutes from './routes/v1/media/uploads.js';
 import mediaAssetRoutes from './routes/v1/media/assets.js';
+import crmRoutes from './routes/v1/crm/index.js';
 
 function loggerOptions(): FastifyServerOptions['logger'] {
   if (env.NODE_ENV === 'test') return false;
@@ -101,10 +104,13 @@ export async function createApp(): Promise<FastifyInstance> {
   await app.register(redirectRoutes);
   await app.register(webhookRoutes);
   await app.register(sitemapRoutes);
+  await app.register(rssRoutes);
+  await app.register(graphqlRoutes);
   await app.register(publicContentRoutes);
   await app.register(publicMediaRoutes);
   await app.register(uploadRoutes);
   await app.register(mediaAssetRoutes);
+  await app.register(crmRoutes);
 
   return app;
 }
