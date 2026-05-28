@@ -15,8 +15,14 @@ permissions:
   id-token: write   # required for Workload Identity Federation
 
 env:
+  PROJECT_ID: sparxworks
   REGION: us-central1
   AR_REPO: sparx
+  # OIDC federation — same values used by db-migrate.yml. These are public
+  # identifiers (no credential value); WIF binds the wize-works/sparx repo
+  # to the sparx-deployer SA via the github-pool provider.
+  WIF_PROVIDER: projects/631794111842/locations/global/workloadIdentityPools/github-pool/providers/github-provider
+  DEPLOYER_SA: sparx-deployer@sparxworks.iam.gserviceaccount.com
 
 jobs:
   build:
@@ -66,8 +72,8 @@ jobs:
       - uses: google-github-actions/auth@v2
         if: steps.dockerfile.outputs.path != ''
         with:
-          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
-          service_account: ${{ secrets.GCP_DEPLOYER_SA_EMAIL }}
+          workload_identity_provider: ${{ env.WIF_PROVIDER }}
+          service_account: ${{ env.DEPLOYER_SA }}
 
       - uses: google-github-actions/setup-gcloud@v2
         if: steps.dockerfile.outputs.path != ''
@@ -80,7 +86,7 @@ jobs:
         if: steps.dockerfile.outputs.path != ''
         id: tags
         run: |
-          IMAGE="$REGION-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/$AR_REPO/${{ matrix.service }}"
+          IMAGE="$REGION-docker.pkg.dev/$PROJECT_ID/$AR_REPO/${{ matrix.service }}"
           echo "sha_tag=$IMAGE:${{ github.sha }}" >> $GITHUB_OUTPUT
           if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
             VERSION="${GITHUB_REF#refs/tags/}"

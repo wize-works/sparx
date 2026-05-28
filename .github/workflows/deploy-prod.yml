@@ -14,10 +14,13 @@ permissions:
   id-token: write
 
 env:
+  PROJECT_ID: sparxworks
   REGION: us-central1
   CLUSTER: sparx-prod-autopilot
   NAMESPACE: sparx-prod
   AR_REPO: sparx
+  WIF_PROVIDER: projects/631794111842/locations/global/workloadIdentityPools/github-pool/providers/github-provider
+  DEPLOYER_SA: sparx-deployer@sparxworks.iam.gserviceaccount.com
 
 jobs:
   migrate:
@@ -29,8 +32,8 @@ jobs:
 
       - uses: google-github-actions/auth@v2
         with:
-          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
-          service_account: ${{ secrets.GCP_DEPLOYER_SA_EMAIL }}
+          workload_identity_provider: ${{ env.WIF_PROVIDER }}
+          service_account: ${{ env.DEPLOYER_SA }}
 
       - uses: google-github-actions/get-gke-credentials@v2
         with:
@@ -54,7 +57,7 @@ jobs:
           # the same VPC as Cloud SQL.
           sed \
             -e "s|IMAGE_TAG|${{ steps.tag.outputs.tag }}|g" \
-            -e "s|PROJECT_ID|${{ secrets.GCP_PROJECT_ID }}|g" \
+            -e "s|PROJECT_ID|${{ env.PROJECT_ID }}|g" \
             -e "s|JOB_SUFFIX|$(echo ${{ github.run_id }} | tail -c 9)|g" \
             k8s/jobs/migrate.yaml | kubectl apply -f -
 
@@ -74,8 +77,8 @@ jobs:
 
       - uses: google-github-actions/auth@v2
         with:
-          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
-          service_account: ${{ secrets.GCP_DEPLOYER_SA_EMAIL }}
+          workload_identity_provider: ${{ env.WIF_PROVIDER }}
+          service_account: ${{ env.DEPLOYER_SA }}
 
       - uses: google-github-actions/get-gke-credentials@v2
         with:
@@ -93,7 +96,7 @@ jobs:
 
       - name: Rollout image to each app & worker
         run: |
-          IMAGE_BASE="$REGION-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/$AR_REPO"
+          IMAGE_BASE="$REGION-docker.pkg.dev/${{ env.PROJECT_ID }}/$AR_REPO"
           # Update only the Deployments that currently exist. Skipping unknown
           # services keeps the workflow green during phased rollouts.
           for svc in web api-rest api-graphql api-mcp dashboard storefront \

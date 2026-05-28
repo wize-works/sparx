@@ -20,12 +20,17 @@ const PROJECT_ID = process.env.GCP_PROJECT_ID ?? 'sparxworks';
 const PROXY_HOST = process.env.PROXY_HOST ?? '127.0.0.1';
 const PROXY_PORT = process.env.PROXY_PORT ?? '5432';
 const DB_NAME = process.env.DB_NAME ?? 'sparx';
-const MIGRATION = process.env.RESOLVE_MIGRATION;
 
-if (!MIGRATION) {
-  console.error('[resolve] RESOLVE_MIGRATION env var is required.');
-  process.exit(2);
+function requireMigration(): string {
+  const value = process.env.RESOLVE_MIGRATION;
+  if (!value) {
+    console.error('[resolve] RESOLVE_MIGRATION env var is required.');
+    process.exit(2);
+  }
+  return value;
 }
+
+const MIGRATION = requireMigration();
 
 const sm = new SecretManagerServiceClient();
 
