@@ -1,31 +1,25 @@
 # Background Workers
 
-Pub/Sub consumers — one Deployment per logical worker, one Pub/Sub subscription per topic-to-consumer pair.
+Pub/Sub consumers — one Deployment per logical worker, one Pub/Sub subscription per topic-to-consumer pair. Naming convention: `<function>-worker` (matches `media-worker`, `email-worker`).
 
 | Worker            | Subscribes to                         | Purpose                                          |
 | ----------------- | ------------------------------------- | ------------------------------------------------ |
-| `worker-email`    | `email.send`                          | Render React Email + send via Postal             |
-| `worker-domain`   | `domain.purchased`, `domain.verified` | CNAME validation + post-purchase DNS config      |
-| `worker-dropship` | (cron + `dropship.sync`)              | Pull supplier catalog updates                    |
-| `worker-billing`  | Stripe webhook fan-out topic          | Process invoice paid / subscription updated      |
-| `worker-webhook`  | `*` (subset)                          | Dispatch outbound webhooks to merchant endpoints |
+| `media-worker`    | `media.uploaded`                      | sharp variants + blurhash + dominant color       |
+| `email-worker`    | `email.send`                          | Render MJML + Handlebars, relay through Postal   |
+| `domain-worker`   | `domain.purchased`, `domain.verified` | CNAME validation + post-purchase DNS config      |
+| `dropship-worker` | (cron + `dropship.sync`)              | Pull supplier catalog updates                    |
+| `billing-worker`  | `stripe.webhook`                      | Process invoice paid / subscription updated      |
+| `webhook-worker`  | `*` (subset)                          | Dispatch outbound webhooks to merchant endpoints |
 
 ## Pub/Sub subscriptions
 
-The topics are created in Terraform; subscriptions are created here (one per worker, with the worker name in the subscription name for traceability). Add them with `gcloud` or via a small Terraform follow-up:
-
-```powershell
-gcloud pubsub subscriptions create email.send.worker-email `
-  --topic=email.send `
-  --ack-deadline=60 `
-  --message-retention-duration=7d
-```
+Subscriptions are declared in Terraform alongside topics — see `terraform/envs/prod/main.tf` (`topics` map under the `pubsub` module). Adding a consumer is a one-line change there; the module generates `<topic>.<consumer>` subscriptions via `for_each`.
 
 ## Adding a worker
 
-Same pattern as apps:
-
-1. Copy `worker-email.example.yaml` to `<name>.yaml`
-2. Replace `worker-email` and `email.send` references
-3. Add to `kustomization.yaml`
-4. Create the Pub/Sub subscription
+1. Copy `worker.example.yaml` to `<name>-worker.yaml`, replace every `REPLACE_NAME` and `REPLACE_TOPIC` placeholder.
+2. Add the consumer to the relevant topic in `terraform/envs/prod/main.tf` and `terraform apply`.
+3. Add `<name>-worker.yaml` to `kustomization.yaml`.
+4. Add `<name>-worker` to the build-images matrix in `.github/workflows/build-images.yml`.
+5. Add `<name>-worker` to the deploy-prod rollout loop in `.github/workflows/deploy-prod.yml`.
+6. Push to `main` → image builds → bootstrap apps/workers → deploy-prod rolls.

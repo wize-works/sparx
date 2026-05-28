@@ -1,8 +1,8 @@
 # Sparx Platform — Monorepo Structure
 
-**Version:** 1.0  
+**Version:** 1.1  
 **Author:** Brandon Korous  
-**Last Updated:** 2026-05-27
+**Last Updated:** 2026-05-28
 
 ---
 
@@ -45,10 +45,10 @@ sparx/
 │   └── types/                # @sparx/types — shared TypeScript types
 │
 ├── workers/
-│   ├── email/                # @sparx/worker-email — Pub/Sub → Postal
-│   ├── domain/               # @sparx/worker-domain — CNAME validation + SSL
-│   ├── dropship/             # @sparx/worker-dropship — supplier catalog sync
-│   ├── billing/              # @sparx/worker-billing — Stripe webhooks + renewals
+│   ├── email/                # @sparx/email-worker — Pub/Sub → Postal
+│   ├── domain/               # @sparx/domain-worker — CNAME validation + SSL
+│   ├── dropship/             # @sparx/dropship-worker — supplier catalog sync
+│   ├── billing/              # @sparx/billing-worker — Stripe webhooks + renewals
 │   └── search/               # @sparx/worker-search — Typesense sync
 │
 ├── k8s/

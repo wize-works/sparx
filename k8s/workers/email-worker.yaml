@@ -1,0 +1,92 @@
+# Email worker — pulls email.send events from Pub/Sub, renders MJML +
+# Handlebars, and either logs (POSTAL_API_KEY unset → ConsoleTransport)
+# or POSTs to self-hosted Postal.
+#
+# Authoring conventions follow services/media-worker. CPU + memory are
+# light because rendering is pure JS and Postal handles the SMTP heavy
+# lifting elsewhere.
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: email-worker
+  namespace: sparx-prod
+  labels:
+    app: email-worker
+    tier: worker
+spec:
+  replicas: 1
+  revisionHistoryLimit: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: email-worker
+  template:
+    metadata:
+      labels:
+        app: email-worker
+        tier: worker
+    spec:
+      serviceAccountName: sparx-app
+      terminationGracePeriodSeconds: 60 # give in-flight Postal POSTs time to ack/nack
+      containers:
+        - name: email-worker
+          image: us-central1-docker.pkg.dev/sparxworks/sparx/email-worker:latest
+          imagePullPolicy: IfNotPresent
+          envFrom:
+            - configMapRef:
+                name: sparx-app-env
+            - secretRef:
+                name: sparx-app-secrets
+          env:
+            - name: NODE_ENV
+              value: production
+            - name: SERVICE_NAME
+              value: email-worker
+            - name: PUBSUB_SUBSCRIPTION
+              value: email.send.email-worker
+            - name: MAX_CONCURRENT
+              value: '8'
+            # Postal in-cluster URL. Empty / absent until Postal is deployed —
+            # ConsoleTransport takes over and the worker logs each rendered
+            # email instead of relaying.
+            - name: POSTAL_API_BASE
+              valueFrom:
+                configMapKeyRef:
+                  name: sparx-app-env
+                  key: POSTAL_API_BASE
+                  optional: true
+            # POSTAL_API_KEY arrives via sparx-app-secrets (envFrom above)
+            # once Postal is up and the key is added to Secret Manager +
+            # synced. No code change needed — restart the pods.
+          resources:
+            requests:
+              cpu: '100m'
+              memory: '256Mi'
+            limits:
+              cpu: '500m'
+              memory: '512Mi'
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            runAsGroup: 1000
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ['ALL']
+            seccompProfile:
+              type: RuntimeDefault
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: email-worker
+  namespace: sparx-prod
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      app: email-worker

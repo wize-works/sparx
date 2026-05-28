@@ -1,0 +1,36 @@
+{
+  "name": "@sparx/email-worker",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Sparx email worker. Pulls email.send events from Pub/Sub, renders MJML templates with Handlebars, and POSTs to self-hosted Postal. Falls back to a console transport when POSTAL_API_KEY is unset so the worker is usable end-to-end before Postal is deployed.",
+  "type": "module",
+  "main": "src/index.ts",
+  "scripts": {
+    "dev": "tsx watch --clear-screen=false src/index.ts",
+    "start": "node --import tsx/esm src/index.ts",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --passWithNoTests",
+    "test:watch": "vitest",
+    "clean": "rm -rf .turbo dist *.tsbuildinfo"
+  },
+  "dependencies": {
+    "@google-cloud/pubsub": "^4.10.0",
+    "@prisma/client": "^6.19.3",
+    "@sparx/db": "workspace:*",
+    "handlebars": "^4.7.8",
+    "html-to-text": "^9.0.5",
+    "mjml": "^4.15.3",
+    "pino": "^9.5.0",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/html-to-text": "^9.0.4",
+    "@types/mjml": "^4.7.4",
+    "@types/node": "^22.10.0",
+    "dotenv": "^16.4.7",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.0",
+    "vitest": "^4.1.7"
+  }
+}

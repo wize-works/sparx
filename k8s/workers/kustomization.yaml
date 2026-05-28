@@ -3,9 +3,9 @@ kind: Kustomization
 namespace: sparx-prod
 resources:
   - media-worker.yaml
+  - email-worker.yaml
 # Example once images exist:
-#   - worker-email.yaml
-#   - worker-domain.yaml
-#   - worker-dropship.yaml
-#   - worker-billing.yaml
-#   - worker-webhook.yaml
+#   - domain-worker.yaml
+#   - dropship-worker.yaml
+#   - billing-worker.yaml
+#   - webhook-worker.yaml

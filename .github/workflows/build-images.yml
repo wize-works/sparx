@@ -43,11 +43,11 @@ jobs:
           - dashboard
           - storefront
           - media-worker
-          - worker-email
-          - worker-domain
-          - worker-dropship
-          - worker-billing
-          - worker-webhook
+          - email-worker
+          - domain-worker
+          - dropship-worker
+          - billing-worker
+          - webhook-worker
     steps:
       - uses: actions/checkout@v4
 

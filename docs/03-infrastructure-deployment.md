@@ -1,8 +1,8 @@
 # Sparx Platform — Infrastructure & Deployment
 
-**Version:** 3.0
+**Version:** 3.1
 **Author:** Brandon Korous
-**Last Updated:** 2026-05-27
+**Last Updated:** 2026-05-28
 
 ---
 
@@ -218,11 +218,11 @@ storefront        # Next.js multi-tenant storefronts
 caddy             # Reverse proxy + on-demand TLS
 redis             # Cache + BullMQ (Phase 1: pod, Phase 2: Memorystore)
 postal            # Self-hosted email delivery
-worker-email      # Pub/Sub consumer → Postal
-worker-domain     # CNAME validation + SSL provisioning
-worker-dropship   # Supplier catalog sync
-worker-billing    # Stripe webhook processing
-worker-webhook    # Outbound webhook dispatch
+email-worker      # Pub/Sub consumer → Postal
+domain-worker     # CNAME validation + SSL provisioning
+dropship-worker   # Supplier catalog sync
+billing-worker    # Stripe webhook processing
+webhook-worker    # Outbound webhook dispatch
 ```
 
 ### Resource Sizing (Phase 1)

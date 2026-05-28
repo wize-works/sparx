@@ -1,14 +1,19 @@
-# Reference template for a Sparx worker Deployment. Copy + adapt for
-# worker-domain, worker-dropship, worker-billing, worker-webhook.
+# Reference template for a Sparx worker Deployment. The real
+# media-worker.yaml + email-worker.yaml in this directory follow this
+# shape; copy + adapt for the remaining unbuilt workers (domain-worker,
+# dropship-worker, billing-worker, webhook-worker — note the
+# <function>-worker naming convention).
+#
 # Workers are Pub/Sub consumers; no public Service, no HPA in Phase 1.
+# Replace every REPLACE_* placeholder before applying.
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: worker-email
+  name: REPLACE_NAME-worker
   namespace: sparx-prod
   labels:
-    app: worker-email
+    app: REPLACE_NAME-worker
     tier: worker
 spec:
   replicas: 1
@@ -20,18 +25,18 @@ spec:
       maxUnavailable: 0
   selector:
     matchLabels:
-      app: worker-email
+      app: REPLACE_NAME-worker
   template:
     metadata:
       labels:
-        app: worker-email
+        app: REPLACE_NAME-worker
         tier: worker
     spec:
       serviceAccountName: sparx-app
       terminationGracePeriodSeconds: 60 # give in-flight Pub/Sub acks time to land
       containers:
-        - name: worker-email
-          image: us-central1-docker.pkg.dev/REPLACE_PROJECT_ID/sparx/worker-email:latest
+        - name: REPLACE_NAME-worker
+          image: us-central1-docker.pkg.dev/sparxworks/sparx/REPLACE_NAME-worker:latest
           imagePullPolicy: IfNotPresent
           envFrom:
             - configMapRef:
@@ -42,9 +47,9 @@ spec:
             - name: NODE_ENV
               value: production
             - name: SERVICE_NAME
-              value: worker-email
+              value: REPLACE_NAME-worker
             - name: PUBSUB_SUBSCRIPTION
-              value: email.send.worker-email
+              value: REPLACE_TOPIC.REPLACE_NAME-worker
           resources:
             requests:
               cpu: '100m'
@@ -52,22 +57,23 @@ spec:
             limits:
               cpu: '500m'
               memory: '256Mi'
-          livenessProbe:
-            # Workers expose /health on a side port for liveness only.
-            httpGet:
-              path: /health
-              port: 9000
-            initialDelaySeconds: 30
-            periodSeconds: 60
-            failureThreshold: 3
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            runAsGroup: 1000
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ['ALL']
+            seccompProfile:
+              type: RuntimeDefault
 ---
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
-  name: worker-email
+  name: REPLACE_NAME-worker
   namespace: sparx-prod
 spec:
   maxUnavailable: 1
   selector:
     matchLabels:
-      app: worker-email
+      app: REPLACE_NAME-worker

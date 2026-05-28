@@ -85,7 +85,7 @@ module "pubsub" {
     "domain.purchased" = ["worker-domain"]
 
     # Email
-    "email.send"            = ["worker-email"]
+    "email.send"            = ["email-worker"]
     "email.domain.verified" = []
 
     # Module lifecycle

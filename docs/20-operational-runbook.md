@@ -1,8 +1,8 @@
 # WizeWorks Platform — Operational Runbook
 
-**Version:** 1.0  
+**Version:** 1.1  
 **Author:** Brandon Korous  
-**Last Updated:** 2026-05-27
+**Last Updated:** 2026-05-28
 
 ---
 
@@ -117,13 +117,13 @@ kubectl -n wizeworks-prod rollout history deployment/api-rest
 
 ### Email Delivery Failure
 
-**Symptoms:** `worker-email` error rate spike, merchants report emails not sending
+**Symptoms:** `email-worker` error rate spike, merchants report emails not sending
 
 **Investigation:**
 
 ```bash
 # Check worker logs
-kubectl -n wizeworks-prod logs -l app=worker-email --tail=100
+kubectl -n wizeworks-prod logs -l app=email-worker --tail=100
 
 # Check BullMQ queue health
 redis-cli -u $REDIS_URL LLEN bull:email:failed
@@ -144,7 +144,7 @@ redis-cli -u $REDIS_URL LLEN bull:email:waiting
 
 ```bash
 # Retry failed jobs
-kubectl exec -n wizeworks-prod deploy/worker-email -- node scripts/retry-failed-jobs.js
+kubectl exec -n wizeworks-prod deploy/email-worker -- node scripts/retry-failed-jobs.js
 
 # Or via BullMQ dashboard (if enabled)
 ```
@@ -163,7 +163,7 @@ psql $DATABASE_URL -c "SELECT domain, status, failure_reason, created_at FROM do
 dig CNAME their-domain.com
 
 # Check worker logs
-kubectl -n wizeworks-prod logs -l app=worker-domain --tail=100
+kubectl -n wizeworks-prod logs -l app=domain-worker --tail=100
 ```
 
 **Common causes:**
@@ -341,7 +341,7 @@ jsonPayload.duration > 1000
 
 # Failed email sends
 resource.type="k8s_container"
-labels.app="worker-email"
+labels.app="email-worker"
 jsonPayload.status="failed"
 ```
 

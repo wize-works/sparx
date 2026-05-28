@@ -6,7 +6,7 @@
 # Example:
 #
 #   topics = {
-#     "order.created"  = ["worker-webhook", "worker-email"]
+#     "order.created"  = ["webhook-worker", "email-worker"]
 #     "media.uploaded" = ["media-worker"]
 #     "domain.deleted" = []   # publishable but no consumer yet
 #   }

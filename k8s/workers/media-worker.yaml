@@ -2,7 +2,7 @@
 # generates AVIF/WebP/JPEG variants with sharp, and persists them under
 # the per-tenant /variants/ prefix in the media bucket.
 #
-# Authoring conventions follow worker-email.example.yaml. CPU + memory
+# Authoring conventions follow worker.example.yaml. CPU + memory
 # limits are higher because sharp/libvips needs headroom for 2000px AVIF
 # encodes; lifecycle is otherwise identical to the other Pub/Sub workers.
 ---

@@ -30,6 +30,11 @@ export type EventType =
   | 'media.uploaded'
   | 'media.processed'
   | 'media.deleted'
+  // Email — published by api-rest (Better Auth verification + welcome)
+  // and consumed by email-worker. 'email.domain.verified' is emitted by
+  // worker-domain once DKIM/SPF checks pass; no subscribers yet.
+  | 'email.send'
+  | 'email.domain.verified'
   // Webhooks / redirects (Phase 4)
   | 'redirect.added'
   | 'redirect.removed';
