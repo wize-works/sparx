@@ -43,9 +43,11 @@ export default function NewSegmentPage() {
   const [pending, startTransition] = React.useTransition();
   const [error, setError] = React.useState<string | null>(null);
   const [rule, setRule] = React.useState<string>(EXAMPLE_RULE);
-  const [preview, setPreview] = React.useState<
-    { matches: number; sampled: number; total: number } | null
-  >(null);
+  const [preview, setPreview] = React.useState<{
+    matches: number;
+    sampled: number;
+    total: number;
+  } | null>(null);
   const [previewing, setPreviewing] = React.useState(false);
 
   function runPreview() {

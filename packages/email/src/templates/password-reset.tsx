@@ -26,8 +26,8 @@ export function PasswordResetEmail({
           {greeting}
         </Text>
         <Text style={{ color: textPrimary, fontSize: 14, lineHeight: '22px', margin: '0 0 24px' }}>
-          We received a request to reset the password on your Sparx account. Click the button
-          below to choose a new one. The link expires in {expiresInMinutes} minutes.
+          We received a request to reset the password on your Sparx account. Click the button below
+          to choose a new one. The link expires in {expiresInMinutes} minutes.
         </Text>
         <Button
           href={resetUrl}
@@ -59,7 +59,8 @@ export function PasswordResetEmail({
           {resetUrl}
         </Text>
         <Text style={{ color: textMuted, fontSize: 12, lineHeight: '18px', margin: '24px 0 0' }}>
-          If you didn&apos;t request this, you can safely ignore this email — no changes will be made.
+          If you didn&apos;t request this, you can safely ignore this email — no changes will be
+          made.
         </Text>
       </Section>
     </EmailLayout>

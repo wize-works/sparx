@@ -11,11 +11,7 @@ export interface WelcomeMerchantEmailProps {
   dashboardUrl: string;
 }
 
-export function WelcomeMerchantEmail({
-  name,
-  storeName,
-  dashboardUrl,
-}: WelcomeMerchantEmailProps) {
+export function WelcomeMerchantEmail({ name, storeName, dashboardUrl }: WelcomeMerchantEmailProps) {
   return (
     <EmailLayout preview={`Welcome to Sparx, ${storeName}`}>
       <Section>
@@ -26,9 +22,9 @@ export function WelcomeMerchantEmail({
           Hi {name ?? 'there'},
         </Text>
         <Text style={{ color: textPrimary, fontSize: 14, lineHeight: '22px', margin: '0 0 16px' }}>
-          {storeName} is live on Sparx. A short checklist is waiting in your dashboard —
-          confirm your store details, add your first page, and pick a theme when the Sitebuilder
-          module ships. You can finish it now or come back anytime.
+          {storeName} is live on Sparx. A short checklist is waiting in your dashboard — confirm
+          your store details, add your first page, and pick a theme when the Sitebuilder module
+          ships. You can finish it now or come back anytime.
         </Text>
         <Button
           href={dashboardUrl}

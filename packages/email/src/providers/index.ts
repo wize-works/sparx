@@ -10,7 +10,13 @@ import { createPostalProvider } from './postal';
 // In dev + CI we stay on the console provider so tests can read the last send
 // out of memory without standing up Postal.
 
-export { consoleProvider, lastConsoleSend, resetConsoleProvider, createPostalProvider };
+export {
+  consoleProvider,
+  lastConsoleSend,
+  resetConsoleProvider,
+  type ConsoleSend,
+} from './console';
+export { createPostalProvider, type PostalConfig } from './postal';
 
 let cached: EmailProvider | null = null;
 
