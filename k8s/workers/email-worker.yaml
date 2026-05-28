@@ -1,10 +1,9 @@
-# Email worker — pulls email.send events from Pub/Sub, renders MJML +
-# Handlebars, and either logs (POSTAL_API_KEY unset → ConsoleTransport)
-# or POSTs to self-hosted Postal.
+# Email worker — pulls email.send events from Pub/Sub, renders React Email
+# templates via @sparx/email, and hands the rendered SendableEmail to the
+# package's provider (console in dev, Postal in prod).
 #
-# Authoring conventions follow services/media-worker. CPU + memory are
-# light because rendering is pure JS and Postal handles the SMTP heavy
-# lifting elsewhere.
+# Authoring conventions follow worker.example.yaml. CPU + memory are light
+# because rendering is pure JS and Postal handles SMTP elsewhere.
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -51,18 +50,11 @@ spec:
               value: email.send.email-worker
             - name: MAX_CONCURRENT
               value: '8'
-            # Postal in-cluster URL. Empty / absent until Postal is deployed —
-            # ConsoleTransport takes over and the worker logs each rendered
-            # email instead of relaying.
-            - name: POSTAL_API_BASE
-              valueFrom:
-                configMapKeyRef:
-                  name: sparx-app-env
-                  key: POSTAL_API_BASE
-                  optional: true
-            # POSTAL_API_KEY arrives via sparx-app-secrets (envFrom above)
-            # once Postal is up and the key is added to Secret Manager +
-            # synced. No code change needed — restart the pods.
+            # Provider selection: leave SPARX_EMAIL_PROVIDER absent (or
+            # set to "console") until Postal is deployed — the worker
+            # logs each rendered email instead of relaying. Switch to
+            # "postal" once SPARX_POSTAL_URL + SPARX_POSTAL_API_KEY are
+            # populated in sparx-app-env / sparx-app-secrets.
           resources:
             requests:
               cpu: '100m'

@@ -1,21 +1,21 @@
 // Entry point. Boots a Pub/Sub pull subscription against
-// `email.send.email-worker` and dispatches each message to handle().
+// `email.send.email-worker` and dispatches each message to handle(), which
+// in turn renders + sends via @sparx/email.
 //
-// Concurrency: env.MAX_CONCURRENT controls how many messages we keep in
-// flight. Email rendering is cheap (MJML compiled at boot, Handlebars
-// + html-to-text per send) so the default (8) is well within Pub/Sub
-// client limits.
+// Provider selection (console vs Postal), default From, and Postal
+// credentials are owned by @sparx/email's getEmailProvider() — set
+// SPARX_EMAIL_PROVIDER / SPARX_POSTAL_URL / SPARX_POSTAL_API_KEY in the
+// worker's env. Until Postal is deployed, leave SPARX_EMAIL_PROVIDER
+// unset; the console provider logs each rendered email.
 //
-// Graceful shutdown: on SIGTERM, the subscription stops pulling new
-// messages and the process waits for in-flight ones to ack/nack before
-// exiting.
+// Graceful shutdown: SIGTERM stops pulling new messages and the process
+// waits for in-flight ones to ack/nack before exiting.
 
 import { PubSub, type Message, type Subscription } from '@google-cloud/pubsub';
 import pino from 'pino';
+import { getEmailProvider } from '@sparx/email';
 import { env } from './env.js';
 import { handle, parseEvent } from './handler.js';
-import { loadTemplates } from './templates.js';
-import { getTransport } from './transport.js';
 
 const logger = pino({
   level: env.LOG_LEVEL,
@@ -26,16 +26,12 @@ const logger = pino({
   },
 });
 
-async function main(): Promise<void> {
-  // Pre-compile all MJML templates so the first message doesn't pay the
-  // compilation cost (50–100ms per template). A render failure here is a
-  // boot-time error — better to crashloop than ship an unrenderable
-  // template into prod.
-  const templateIds = await loadTemplates();
-  logger.info({ templates: templateIds }, 'email templates compiled');
-
-  const transport = getTransport();
-  logger.info({ transport: transport.mode }, 'email transport selected');
+function main(): void {
+  // Touch the provider at boot so a misconfig (e.g. SPARX_EMAIL_PROVIDER=
+  // postal but no API key) crashes the pod immediately instead of failing
+  // the first message at 3am.
+  const provider = getEmailProvider();
+  logger.info({ provider: provider.name }, 'email provider selected');
 
   const client = new PubSub({ projectId: env.GCP_PROJECT_ID });
   const subscription: Subscription = client.subscription(env.PUBSUB_SUBSCRIPTION, {
@@ -70,16 +66,16 @@ async function main(): Promise<void> {
             messageId: message.id,
             template: event.data.template,
             outcome: outcome.status,
-            postalMessageId: outcome.messageId,
+            providerMessageId: outcome.messageId,
           },
           'message processed'
         );
         message.ack();
       })
       .catch((err: unknown) => {
-        // Transient failure — nack so Pub/Sub redelivers. After
-        // max_delivery_attempts (5 by default for this topic) it lands
-        // in the dead-letter topic for manual inspection.
+        // Transient — nack so Pub/Sub redelivers. After
+        // max_delivery_attempts the message lands in the dead-letter
+        // topic for manual inspection.
         logger.error({ err, messageId: message.id }, 'transient send failure — nacking');
         message.nack();
       });
@@ -112,7 +108,9 @@ async function main(): Promise<void> {
   process.on('SIGINT', shutdown);
 }
 
-void main().catch((err: unknown) => {
+try {
+  main();
+} catch (err) {
   logger.fatal({ err }, 'email-worker failed to start');
   process.exit(1);
-});
+}

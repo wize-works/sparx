@@ -1,0 +1,98 @@
+# Postal Web — HTTP API + admin UI. This is what email-worker POSTs to
+# (in-cluster: postal-web.postal.svc.cluster.local:5000) and what the
+# admin signs into via postal.sparx.email (Caddy → here).
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postal-web
+  namespace: postal
+  labels:
+    app: postal-web
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 5000
+      targetPort: 5000
+  selector:
+    app: postal-web
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postal-web
+  namespace: postal
+  labels:
+    app: postal-web
+    tier: postal
+spec:
+  replicas: 1
+  revisionHistoryLimit: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: postal-web
+  template:
+    metadata:
+      labels:
+        app: postal-web
+        tier: postal
+    spec:
+      serviceAccountName: postal
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: postal-web
+          image: ghcr.io/postalserver/postal:3.3.4
+          imagePullPolicy: IfNotPresent
+          command: ['postal', 'web-server']
+          ports:
+            - name: http
+              containerPort: 5000
+          envFrom:
+            - secretRef:
+                name: postal-secrets
+          volumeMounts:
+            - name: config
+              mountPath: /config
+              readOnly: true
+          resources:
+            requests:
+              cpu: '200m'
+              memory: '512Mi'
+            limits:
+              cpu: '1000m'
+              memory: '1Gi'
+          livenessProbe:
+            httpGet:
+              path: /login
+              port: 5000
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /login
+              port: 5000
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            failureThreshold: 3
+      volumes:
+        - name: config
+          configMap:
+            name: postal-config
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: postal-web
+  namespace: postal
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: postal-web

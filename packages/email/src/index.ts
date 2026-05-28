@@ -1,17 +1,44 @@
+// @sparx/email — typed templates, render path, and provider.
+//
+// Two ways callers reach Postal:
+//
+//   1. (Default) Publish 'email.send' to Pub/Sub. email-worker pulls the
+//      event, calls renderTemplate(), and hands the result to the provider.
+//
+//   2. (Escape hatch) Call sendTemplate() directly. Only for OTP / 2FA
+//      and other synchronous-required flows — see CLAUDE.md.
+
 export type { SendableEmail, DeliveryResult, EmailProvider } from './types';
+
 export {
   consoleProvider,
   lastConsoleSend,
   resetConsoleProvider,
   createPostalProvider,
+  PostalParameterError,
   getEmailProvider,
   _setEmailProvider,
   type ConsoleSend,
 } from './providers';
-export { sendEmail, sendTemplate, _renderTemplateForTest, type TemplateSend } from './send';
+
+export {
+  renderTemplate,
+  sendEmail,
+  sendTemplate,
+  _renderTemplateForTest,
+  type TemplateId,
+  type TemplateSend,
+} from './send';
+
 export {
   PasswordResetEmail,
   WelcomeMerchantEmail,
+  EmailLayout,
   type PasswordResetEmailProps,
   type WelcomeMerchantEmailProps,
 } from './templates';
+
+// Component primitives + tokens — consumed by templates inside this package;
+// also exported so apps building one-off email content (e.g. a CRM export
+// summary screen embedded in a notification) can re-use the brand chrome.
+export * from './components';

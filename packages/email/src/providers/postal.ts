@@ -12,6 +12,21 @@ export interface PostalConfig {
   apiKey: string;
 }
 
+/**
+ * Postal rejected the request based on the message itself — invalid
+ * recipient, missing required header, suppressed address, etc. The
+ * caller should NOT retry; the same payload will fail again.
+ *
+ * email-worker treats this as a permanent send failure (acks the Pub/Sub
+ * message instead of nacking). The console provider never throws this.
+ */
+export class PostalParameterError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'PostalParameterError';
+  }
+}
+
 interface PostalSendResponse {
   status: 'success' | 'error' | 'parameter-error';
   data?: {
@@ -48,10 +63,18 @@ export function createPostalProvider(config: PostalConfig): EmailProvider {
       });
 
       if (!res.ok) {
+        // Network / 5xx / auth — transient from the worker's POV. Plain
+        // Error → email-worker nacks → Pub/Sub redelivers.
         throw new Error(`Postal rejected send (${res.status} ${res.statusText})`);
       }
 
       const body = (await res.json()) as PostalSendResponse;
+      if (body.status === 'parameter-error') {
+        // The message itself is the problem (bad recipient, suppressed
+        // address, missing required header). Retrying won't help; surface
+        // as a typed error so email-worker can ack instead of redelivering.
+        throw new PostalParameterError(body.message ?? 'Postal rejected message parameters');
+      }
       if (body.status !== 'success') {
         throw new Error(`Postal error: ${body.message ?? 'unknown'}`);
       }

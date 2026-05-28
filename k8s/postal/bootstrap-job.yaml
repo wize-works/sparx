@@ -1,0 +1,59 @@
+# One-shot Job: runs `postal initialize` to create the Postal database
+# schema. Idempotent — re-running on an already-initialised DB is a
+# no-op per Postal docs.
+#
+# This must complete BEFORE the Postal Web / Worker / SMTP / Cron
+# Deployments start handling traffic. Run order:
+#
+#   1. Apply mariadb + rabbitmq (StatefulSets — wait for Ready)
+#   2. Apply this Job → wait Complete
+#   3. Apply postal-web / -worker / -smtp / -cron
+#
+# bootstrap.yml enforces this ordering when components=postal.
+#
+# Re-running schema migrations after a Postal version bump:
+#   kubectl -n postal delete job postal-initialize
+#   gh workflow run bootstrap.yml -f components=postal
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: postal-initialize
+  namespace: postal
+  labels:
+    app: postal
+    component: bootstrap
+spec:
+  backoffLimit: 3
+  activeDeadlineSeconds: 600
+  template:
+    metadata:
+      labels:
+        app: postal
+        component: bootstrap
+    spec:
+      serviceAccountName: postal
+      restartPolicy: OnFailure
+      containers:
+        - name: postal-initialize
+          image: ghcr.io/postalserver/postal:3.3.4
+          imagePullPolicy: IfNotPresent
+          command: ['postal', 'initialize']
+          envFrom:
+            - secretRef:
+                name: postal-secrets
+          volumeMounts:
+            - name: config
+              mountPath: /config
+              readOnly: true
+          resources:
+            requests:
+              cpu: '200m'
+              memory: '512Mi'
+            limits:
+              cpu: '1000m'
+              memory: '1Gi'
+      volumes:
+        - name: config
+          configMap:
+            name: postal-config

@@ -16,7 +16,7 @@ export {
   resetConsoleProvider,
   type ConsoleSend,
 } from './console';
-export { createPostalProvider, type PostalConfig } from './postal';
+export { createPostalProvider, PostalParameterError, type PostalConfig } from './postal';
 
 let cached: EmailProvider | null = null;
 

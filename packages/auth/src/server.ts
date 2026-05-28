@@ -2,6 +2,7 @@ import { betterAuth } from 'better-auth';
 import { prismaAdapter } from 'better-auth/adapters/prisma';
 import { nextCookies } from 'better-auth/next-js';
 import { authPrisma } from './prisma';
+import { publishAuthEmail } from './email-events';
 
 // Sparx Better Auth server instance. One per process — same caching strategy
 // as @sparx/db's prisma client so dev HMR does not leak adapters.
@@ -31,11 +32,18 @@ function createAuth() {
       minPasswordLength: 8,
       autoSignIn: true,
       sendResetPassword: async ({ user, url }) => {
-        // Better Auth synthesizes the URL with its own token; we just hand it
-        // off to the @sparx/email pipeline. In dev the console provider logs
-        // to stdout — in prod SPARX_EMAIL_PROVIDER=postal swaps the transport.
-        const { sendTemplate } = await import('@sparx/email');
-        await sendTemplate({
+        // Publish an `email.send` Pub/Sub event — email-worker pulls it,
+        // renders via @sparx/email, and relays through the active provider.
+        // No direct send here so signin/reset latency is decoupled from
+        // Postal availability. See CLAUDE.md → "Outbound email".
+        //
+        // tenantId is added at runtime via `additionalFields` above but
+        // Better Auth's User typing doesn't surface custom fields in the
+        // callback signature; cast through unknown to read it.
+        const extras = user as unknown as { tenantId?: string };
+        await publishAuthEmail({
+          tenantId: extras.tenantId ?? '',
+          actorId: user.id,
           template: 'password-reset',
           to: user.email,
           props: {

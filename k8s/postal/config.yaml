@@ -1,0 +1,89 @@
+# Postal application config. Mounted into every Postal pod at
+# /config/postal.yml. Schema reference:
+#   https://docs.postalserver.io/getting-started/configuration
+#
+# Secrets (DB passwords, RabbitMQ password, app secret_key, signing key)
+# are loaded from `postal-secrets` Secret as env vars below — Postal
+# supports ${ENV_VAR} interpolation in its YAML.
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postal-config
+  namespace: postal
+  labels:
+    app: postal
+data:
+  postal.yml: |
+    general:
+      use_ip_pools: false
+      maximum_delivery_attempts: 18
+      maximum_hold_expiry_days: 7
+      suppression_list_automatic_removal_days: 30
+
+    web:
+      host: postal.sparx.email
+      protocol: https
+
+    smtp_server:
+      port: 25
+      tls_enabled: true
+      proxy_protocol: false
+      log_connect: false
+
+    # Postal Worker dispatches to this internal SMTP relay, which then
+    # handles the actual outbound delivery to recipient MX hosts. In k8s
+    # the loopback default doesn't work cross-pod, so point at the
+    # postal-smtp Service.
+    smtp_relays:
+      - host: postal-smtp.postal.svc.cluster.local
+        port: 25
+
+    main_db:
+      host: mariadb.postal.svc.cluster.local
+      port: 3306
+      username: postal
+      password: ${POSTAL_DB_PASSWORD}
+      database: postal
+
+    message_db:
+      host: mariadb.postal.svc.cluster.local
+      port: 3306
+      username: postal
+      password: ${POSTAL_DB_PASSWORD}
+      prefix: postal
+
+    rabbitmq:
+      host: rabbitmq.postal.svc.cluster.local
+      port: 5672
+      username: postal
+      password: ${POSTAL_RABBITMQ_PASSWORD}
+      vhost: /postal
+
+    dns:
+      mx_records:
+        - mail.sparx.email
+      smtp_server_hostname: mail.sparx.email
+      spf_include: spf.sparx.email
+      return_path: rp.sparx.email
+      route_domain: routes.sparx.email
+      track_domain: track.sparx.email
+      helo_hostname: mail.sparx.email
+
+    smtp:
+      # Where Postal sends its own outbound notifications (admin alerts,
+      # bounce reports). Points at the postal-smtp Service rather than
+      # loopback — see smtp_relays comment above.
+      host: postal-smtp.postal.svc.cluster.local
+      port: 25
+      from_address: postal@sparx.email
+
+    rails:
+      environment: production
+      secret_key: ${POSTAL_RAILS_SECRET_KEY}
+
+    fast_server:
+      enabled: false # we don't terminate inbound HTTP at Postal; Caddy handles TLS
+
+    workers:
+      threads: 4

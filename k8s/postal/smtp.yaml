@@ -1,0 +1,101 @@
+# Postal SMTP — Postal's own SMTP server. Two distinct uses:
+#
+#   1. Loopback target for Postal Web/Worker when they need to send a
+#      message internally (admin notifications, bounce reports). Both
+#      use postal.yml's smtp.host=127.0.0.1.
+#   2. Inbound relay endpoint IF we ever expose Postal to outside
+#      services that want to send via SMTP (not our case — email-worker
+#      uses Postal's HTTP API).
+#
+# No Service is created for this Deployment — there's no in-cluster
+# consumer outside the pod itself, and we don't expose Postal SMTP
+# externally. The smtp_relays config in postal.yml points pod-local
+# (127.0.0.1) — works because the smtp process binds to all interfaces
+# inside the pod's loopback.
+#
+# Wait — re-reading: 127.0.0.1 inside a Deployment pod means the pod's
+# loopback, NOT the smtp pod's loopback. We need to make the smtp
+# server reachable to web/worker pods. Option A: run smtp as a sidecar
+# in web/worker pods. Option B: give smtp a ClusterIP Service and point
+# the relay config at it.
+#
+# Going with B — a Service named postal-smtp + reconfiguring postal.yml
+# smtp.host to postal-smtp.postal.svc.cluster.local. The 127.0.0.1
+# default in config.yaml is for single-host Docker installs; on k8s
+# we always cross pods.
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postal-smtp
+  namespace: postal
+  labels:
+    app: postal-smtp
+spec:
+  type: ClusterIP
+  ports:
+    - name: smtp
+      port: 25
+      targetPort: 25
+  selector:
+    app: postal-smtp
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postal-smtp
+  namespace: postal
+  labels:
+    app: postal-smtp
+    tier: postal
+spec:
+  replicas: 1
+  revisionHistoryLimit: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: postal-smtp
+  template:
+    metadata:
+      labels:
+        app: postal-smtp
+        tier: postal
+    spec:
+      serviceAccountName: postal
+      terminationGracePeriodSeconds: 60
+      containers:
+        - name: postal-smtp
+          image: ghcr.io/postalserver/postal:3.3.4
+          imagePullPolicy: IfNotPresent
+          command: ['postal', 'smtp-server']
+          ports:
+            - name: smtp
+              containerPort: 25
+          envFrom:
+            - secretRef:
+                name: postal-secrets
+          volumeMounts:
+            - name: config
+              mountPath: /config
+              readOnly: true
+          resources:
+            requests:
+              cpu: '100m'
+              memory: '384Mi'
+            limits:
+              cpu: '500m'
+              memory: '768Mi'
+          livenessProbe:
+            tcpSocket:
+              port: 25
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          readinessProbe:
+            tcpSocket:
+              port: 25
+            initialDelaySeconds: 10
+            periodSeconds: 10

@@ -1,0 +1,24 @@
+# Dedicated namespace for Postal + its MariaDB and RabbitMQ.
+# Kept separate from sparx-prod so:
+#   - Postal can be re-deployed / wiped without affecting Sparx app pods
+#   - Network policies can isolate it
+#   - Future ops teams can own Postal independently
+#
+# email-worker (in sparx-prod) reaches Postal via the cross-namespace DNS
+# name `postal-web.postal.svc.cluster.local:5000` — no network policy
+# blocks that today; if NetworkPolicies are added later, allow that path.
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: postal
+  labels:
+    app.kubernetes.io/managed-by: sparx-bootstrap
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: postal
+  namespace: postal
+  labels:
+    app: postal

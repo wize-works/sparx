@@ -1,0 +1,126 @@
+# MariaDB — Postal's primary data store. Single replica is fine: Postal
+# treats DB unavailability as a transient (workers retry), and we run a
+# nightly logical backup via the cronjob-backup pattern in
+# k8s/sparx-prod/cronjobs/ (TODO: postal-backup CronJob — not in this PR).
+#
+# Why MariaDB and not Postgres: Postal upstream targets MariaDB / MySQL
+# only. Their schema migrations don't run on Postgres without major
+# patches. Don't fight it.
+#
+# Why standard-rwo (pd-balanced) and not premium-rwo (pd-ssd):
+# pd-balanced IOPS are sufficient for Postal's modest write rate, AND
+# the project SSD quota is already at 210/250GB. pd-balanced counts
+# under DISKS_TOTAL_GB which has ~2TB headroom.
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: mariadb-credentials
+  namespace: postal
+  annotations:
+    # Real values are synced from Secret Manager by bootstrap.yml. The
+    # `stringData` here is a TEMPLATE — DO NOT commit real secrets. The
+    # bootstrap workflow recreates this Secret with values pulled from
+    # postal-mariadb-root-password / postal-mariadb-password in GCP Secret
+    # Manager.
+    sparx.works/sync-from-secret-manager: "true"
+type: Opaque
+stringData:
+  MARIADB_ROOT_PASSWORD: REPLACE_AT_BOOTSTRAP
+  MARIADB_DATABASE: postal
+  MARIADB_USER: postal
+  MARIADB_PASSWORD: REPLACE_AT_BOOTSTRAP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mariadb
+  namespace: postal
+  labels:
+    app: mariadb
+spec:
+  clusterIP: None # headless — Postal connects by pod DNS name
+  ports:
+    - name: mysql
+      port: 3306
+      targetPort: 3306
+  selector:
+    app: mariadb
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mariadb
+  namespace: postal
+  labels:
+    app: mariadb
+spec:
+  serviceName: mariadb
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mariadb
+  template:
+    metadata:
+      labels:
+        app: mariadb
+    spec:
+      serviceAccountName: postal
+      terminationGracePeriodSeconds: 60
+      containers:
+        - name: mariadb
+          image: mariadb:11.4
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: mysql
+              containerPort: 3306
+          envFrom:
+            - secretRef:
+                name: mariadb-credentials
+          env:
+            # Disable the binlog — we don't replicate, and binlog disk
+            # growth has bitten people running single-node MariaDB in k8s.
+            - name: MARIADB_AUTO_UPGRADE
+              value: '1'
+          args:
+            - --max-connections=200
+            - --innodb-buffer-pool-size=512M
+            - --character-set-server=utf8mb4
+            - --collation-server=utf8mb4_unicode_ci
+          resources:
+            requests:
+              cpu: '200m'
+              memory: '768Mi'
+            limits:
+              cpu: '1000m'
+              memory: '1536Mi'
+          livenessProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - 'mariadb-admin ping -h localhost -uroot -p"$MARIADB_ROOT_PASSWORD"'
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 5
+          readinessProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - 'mariadb-admin ping -h localhost -uroot -p"$MARIADB_ROOT_PASSWORD"'
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 5
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/mysql
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ['ReadWriteOnce']
+        storageClassName: standard-rwo # pd-balanced — see header comment
+        resources:
+          requests:
+            storage: 20Gi

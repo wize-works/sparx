@@ -1,0 +1,60 @@
+# Postal Worker — background queue consumer. Pulls jobs from RabbitMQ
+# and drives the actual SMTP outbound delivery (DNS lookup of recipient
+# MX, TLS handshake, send, retry on transient failure).
+#
+# Single replica in Phase 1. Postal can scale horizontally on workers,
+# but at our send volume one worker keeps up easily. HPA can be added
+# later off RabbitMQ queue depth via custom metrics.
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postal-worker
+  namespace: postal
+  labels:
+    app: postal-worker
+    tier: postal
+spec:
+  replicas: 1
+  revisionHistoryLimit: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
+  selector:
+    matchLabels:
+      app: postal-worker
+  template:
+    metadata:
+      labels:
+        app: postal-worker
+        tier: postal
+    spec:
+      serviceAccountName: postal
+      # SMTP sends can run long on slow MX hosts — give them a window
+      # to finish before SIGKILL.
+      terminationGracePeriodSeconds: 90
+      containers:
+        - name: postal-worker
+          image: ghcr.io/postalserver/postal:3.3.4
+          imagePullPolicy: IfNotPresent
+          command: ['postal', 'worker']
+          envFrom:
+            - secretRef:
+                name: postal-secrets
+          volumeMounts:
+            - name: config
+              mountPath: /config
+              readOnly: true
+          resources:
+            requests:
+              cpu: '200m'
+              memory: '512Mi'
+            limits:
+              cpu: '1000m'
+              memory: '1Gi'
+      volumes:
+        - name: config
+          configMap:
+            name: postal-config

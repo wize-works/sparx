@@ -91,13 +91,17 @@ export async function signUpMerchant(input: SignUpMerchantInput): Promise<SignUp
       return { userId: user.id, tenantId: tenant.id };
     });
 
-    // Welcome email is fire-and-forget — a transient provider failure must
-    // never roll back an otherwise successful sign-up. We log + swallow.
+    // Welcome email is fire-and-forget via Pub/Sub — email-worker pulls
+    // the event and handles the Postal POST. Publishing is ~10–50ms
+    // (single Google API call); a Pub/Sub outage must never roll back
+    // an otherwise successful sign-up, so we log + swallow.
     try {
-      const { sendTemplate } = await import('@sparx/email');
       const dashboardUrl =
         (process.env.BETTER_AUTH_URL ?? 'http://localhost:3001').replace(/\/$/, '') + '/welcome';
-      await sendTemplate({
+      const { publishAuthEmail } = await import('./email-events');
+      await publishAuthEmail({
+        tenantId,
+        actorId: userId,
         template: 'welcome-merchant',
         to: email,
         props: {
@@ -114,7 +118,7 @@ export async function signUpMerchant(input: SignUpMerchantInput): Promise<SignUp
         JSON.stringify({
           severity: 'ERROR',
           source: 'auth.sign-up',
-          message: 'welcome email failed',
+          message: 'welcome email publish failed',
           tenantId,
           userId,
           err: err instanceof Error ? { name: err.name, message: err.message } : String(err),

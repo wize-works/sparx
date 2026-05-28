@@ -2,49 +2,62 @@
 // without spinning up a Pub/Sub subscription.
 //
 // Flow:
-//   1. Validate the parsed event shape with zod.
-//   2. Render the named template (subject + html + text).
-//   3. Send via the configured transport (Postal or Console).
-//   4. Return an outcome the caller persists to the audit table.
+//   1. Validate the parsed event shape with zod against TemplateSend.
+//   2. renderTemplate(input) from @sparx/email — returns html + plaintext.
+//   3. getEmailProvider().send(rendered) — console or Postal depending on
+//      SPARX_EMAIL_PROVIDER + POSTAL_API_KEY (selection happens inside
+//      @sparx/email's providers/index.ts).
 //
 // Failure model — three categories:
-//   - PermanentSendError / UnknownTemplateError / render mismatch
+//   - Unknown template id / zod parse failure
 //       → outcome.status = 'rejected', ack the message, no retry.
-//   - Unknown / network / 5xx
-//       → throw, caller nacks the message and Pub/Sub retries (up to
-//         the subscription's max_delivery_attempts before DLQ).
+//   - Provider rejects (4xx / suppressed / parameter error)
+//       → outcome.status = 'rejected', ack, no retry.
+//   - Provider transient (5xx / network / Postal down)
+//       → throw, caller nacks and Pub/Sub redelivers.
 
 import type { Logger } from 'pino';
 import { z } from 'zod';
-import { render, UnknownTemplateError } from './templates.js';
-import { getTransport, PermanentSendError } from './transport.js';
-import { env } from './env.js';
+import { getEmailProvider, PostalParameterError, renderTemplate } from '@sparx/email';
 
-const StringOrArray = z.union([z.string(), z.array(z.string()).min(1)]);
-
-const EmailSendPayload = z.object({
-  to: StringOrArray,
-  cc: StringOrArray.optional(),
-  bcc: StringOrArray.optional(),
-  template: z.string().min(1),
-  vars: z.record(z.string(), z.union([z.string(), z.number(), z.boolean(), z.null()])),
-  from: z.string().optional(),
-  replyTo: z.string().optional(),
-  headers: z.record(z.string(), z.string()).optional(),
-});
+const TemplateSendSchema = z.discriminatedUnion('template', [
+  z.object({
+    template: z.literal('password-reset'),
+    to: z.string().email(),
+    from: z.string().optional(),
+    replyTo: z.string().optional(),
+    props: z.object({
+      name: z.string().optional(),
+      resetUrl: z.string().url(),
+      expiresInMinutes: z.number().int().positive().optional(),
+    }),
+  }),
+  z.object({
+    template: z.literal('welcome-merchant'),
+    to: z.string().email(),
+    from: z.string().optional(),
+    replyTo: z.string().optional(),
+    props: z.object({
+      name: z.string().optional(),
+      storeName: z.string().min(1),
+      dashboardUrl: z.string().url(),
+    }),
+  }),
+]);
 
 const EmailSendEvent = z.object({
   type: z.literal('email.send'),
   tenantId: z.string().min(1),
   actorId: z.string().nullable(),
   occurredAt: z.string(),
-  data: EmailSendPayload,
+  data: TemplateSendSchema,
 });
 
 export type EmailSendEvent = z.infer<typeof EmailSendEvent>;
 
 export interface HandleOutcome {
   status: 'sent' | 'rejected';
+  /** Provider's external id (Postal message id, or `con_*` in dev). */
   messageId: string;
   recipient: string;
   errorMessage?: string;
@@ -61,31 +74,13 @@ export async function handle(event: EmailSendEvent, logger: Logger): Promise<Han
     template: event.data.template,
   });
 
-  // Normalise to arrays so transports don't have to handle both shapes.
-  const to = toArray(event.data.to);
-  const cc = event.data.cc ? toArray(event.data.cc) : undefined;
-  const bcc = event.data.bcc ? toArray(event.data.bcc) : undefined;
-
   try {
-    const rendered = render(event.data.template, event.data.vars);
-    const result = await getTransport().send(
-      {
-        from: event.data.from ?? env.EMAIL_FROM,
-        to,
-        cc,
-        bcc,
-        replyTo: event.data.replyTo,
-        subject: rendered.subject,
-        html: rendered.html,
-        text: rendered.text,
-        headers: event.data.headers,
-      },
-      childLog
-    );
+    const rendered = await renderTemplate(event.data);
+    const result = await getEmailProvider().send(rendered);
     return {
       status: 'sent',
-      messageId: result.messageId,
-      recipient: result.recipient || (to[0] ?? ''),
+      messageId: result.id,
+      recipient: event.data.to,
     };
   } catch (err) {
     if (isPermanent(err)) {
@@ -93,26 +88,19 @@ export async function handle(event: EmailSendEvent, logger: Logger): Promise<Han
       return {
         status: 'rejected',
         messageId: '',
-        recipient: to[0] ?? '',
+        recipient: event.data.to,
         errorMessage: err instanceof Error ? err.message : String(err),
       };
     }
-    // Transient — re-throw so the caller nacks the Pub/Sub message and
-    // it gets redelivered.
+    // Transient — re-throw so the caller nacks and Pub/Sub redelivers.
     throw err;
   }
 }
 
-function toArray(input: string | string[]): string[] {
-  return Array.isArray(input) ? input : [input];
-}
-
 function isPermanent(err: unknown): boolean {
-  return (
-    err instanceof PermanentSendError ||
-    err instanceof UnknownTemplateError ||
-    // Handlebars throws when a `{{var}}` references a missing key under
-    // strict mode. Detect by class name to avoid a Handlebars import here.
-    (err instanceof Error && err.name === 'Handlebars: Lookup of property')
-  );
+  // Postal's typed parameter-error class — retrying won't help. Console
+  // provider can't fail with anything that isn't a code bug (which we
+  // WANT to surface, not silently ack), so only Postal's explicit
+  // rejection counts as permanent here.
+  return err instanceof PostalParameterError;
 }

@@ -1,0 +1,116 @@
+# RabbitMQ — Postal's internal queue for outbound SMTP delivery.
+# Postal Worker reads from these queues and dispatches messages to
+# recipient MX hosts.
+#
+# Single replica: matches MariaDB's posture, and RabbitMQ clustering
+# inside k8s is non-trivial to operate. Postal handles broker
+# unavailability with retries.
+#
+# Storage: standard-rwo (pd-balanced) — same SSD-quota reasoning as
+# mariadb.yaml. RabbitMQ's persistent state is small (queue durability
+# + Mnesia metadata); 5GB has plenty of headroom.
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: rabbitmq-credentials
+  namespace: postal
+  annotations:
+    sparx.works/sync-from-secret-manager: "true"
+type: Opaque
+stringData:
+  # bootstrap.yml replaces these from postal-rabbitmq-password in GCP
+  # Secret Manager. Keep keys aligned with the RabbitMQ image's expected
+  # env var names.
+  RABBITMQ_DEFAULT_USER: postal
+  RABBITMQ_DEFAULT_PASS: REPLACE_AT_BOOTSTRAP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: rabbitmq
+  namespace: postal
+  labels:
+    app: rabbitmq
+spec:
+  clusterIP: None # headless — Postal connects by pod DNS name
+  ports:
+    - name: amqp
+      port: 5672
+      targetPort: 5672
+    - name: management
+      port: 15672
+      targetPort: 15672
+  selector:
+    app: rabbitmq
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: rabbitmq
+  namespace: postal
+  labels:
+    app: rabbitmq
+spec:
+  serviceName: rabbitmq
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rabbitmq
+  template:
+    metadata:
+      labels:
+        app: rabbitmq
+    spec:
+      serviceAccountName: postal
+      terminationGracePeriodSeconds: 60
+      containers:
+        - name: rabbitmq
+          image: rabbitmq:3.13-management
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: amqp
+              containerPort: 5672
+            - name: management
+              containerPort: 15672
+          envFrom:
+            - secretRef:
+                name: rabbitmq-credentials
+          env:
+            # Postal expects a vhost named `/postal` — declare it at boot
+            # so Postal's connection string doesn't have to lazily create.
+            - name: RABBITMQ_DEFAULT_VHOST
+              value: '/postal'
+            - name: RABBITMQ_ERLANG_COOKIE
+              value: 'sparx-postal-cookie' # single-node — cookie is just for management
+          resources:
+            requests:
+              cpu: '100m'
+              memory: '384Mi'
+            limits:
+              cpu: '500m'
+              memory: '768Mi'
+          livenessProbe:
+            exec:
+              command: ['rabbitmq-diagnostics', '-q', 'ping']
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            timeoutSeconds: 10
+          readinessProbe:
+            exec:
+              command: ['rabbitmq-diagnostics', '-q', 'check_running']
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 10
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/rabbitmq
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ['ReadWriteOnce']
+        storageClassName: standard-rwo
+        resources:
+          requests:
+            storage: 5Gi

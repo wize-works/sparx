@@ -1,0 +1,18 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: postal
+# Order matters at first apply: namespace → secrets → stateful backends →
+# config → bootstrap Job → app pods. Kustomize doesn't apply in declared
+# order, so bootstrap.yml drives the sequencing explicitly (see the
+# `postal` component there).
+resources:
+  - namespace.yaml
+  - mariadb.yaml
+  - rabbitmq.yaml
+  - secrets.yaml
+  - config.yaml
+  - bootstrap-job.yaml
+  - smtp.yaml
+  - web.yaml
+  - worker.yaml
+  - cron.yaml

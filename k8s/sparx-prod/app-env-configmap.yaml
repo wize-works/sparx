@@ -38,4 +38,13 @@ data:
   GCS_MEDIA_BUCKET: sparxworks-sparx-prod-media
   GCS_MEDIA_PUBLIC_BUCKET: sparxworks-sparx-prod-media-public
   MEDIA_PUBLIC_URL: https://api.sparx.works
+  # Outbound email — email-worker reads SPARX_EMAIL_PROVIDER and either
+  # logs (console) or POSTs to Postal (postal). Flip to "postal" once
+  # the postal-api-key secret in sparx-app-secrets is populated.
+  #
+  # SPARX_POSTAL_URL points at the in-cluster Postal Web service —
+  # avoids going out through Caddy + Cloudflare for a hop the worker
+  # makes constantly.
+  SPARX_EMAIL_PROVIDER: console
+  SPARX_POSTAL_URL: http://postal-web.postal.svc.cluster.local:5000
   LOG_LEVEL: info

@@ -1,0 +1,53 @@
+# Postal Cron — scheduled tasks (suppression list cleanup, bounce
+# report aggregation, message retention). Single replica; running two
+# instances would duplicate cron firings.
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postal-cron
+  namespace: postal
+  labels:
+    app: postal-cron
+    tier: postal
+spec:
+  replicas: 1
+  revisionHistoryLimit: 3
+  strategy:
+    # Recreate to avoid running two cron schedulers in parallel during a
+    # rollout window.
+    type: Recreate
+  selector:
+    matchLabels:
+      app: postal-cron
+  template:
+    metadata:
+      labels:
+        app: postal-cron
+        tier: postal
+    spec:
+      serviceAccountName: postal
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: postal-cron
+          image: ghcr.io/postalserver/postal:3.3.4
+          imagePullPolicy: IfNotPresent
+          command: ['postal', 'cron']
+          envFrom:
+            - secretRef:
+                name: postal-secrets
+          volumeMounts:
+            - name: config
+              mountPath: /config
+              readOnly: true
+          resources:
+            requests:
+              cpu: '50m'
+              memory: '256Mi'
+            limits:
+              cpu: '200m'
+              memory: '384Mi'
+      volumes:
+        - name: config
+          configMap:
+            name: postal-config

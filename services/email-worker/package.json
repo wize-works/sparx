@@ -2,7 +2,7 @@
   "name": "@sparx/email-worker",
   "version": "0.0.0",
   "private": true,
-  "description": "Sparx email worker. Pulls email.send events from Pub/Sub, renders MJML templates with Handlebars, and POSTs to self-hosted Postal. Falls back to a console transport when POSTAL_API_KEY is unset so the worker is usable end-to-end before Postal is deployed.",
+  "description": "Sparx email worker. Pulls email.send events from Pub/Sub, renders React Email templates from @sparx/email, and hands the rendered payload to that package's provider (console in dev, Postal in prod). Falls back to console transport when POSTAL_API_KEY is unset so the worker is usable end-to-end before Postal is deployed.",
   "type": "module",
   "main": "src/index.ts",
   "scripts": {
@@ -18,15 +18,11 @@
     "@google-cloud/pubsub": "^4.10.0",
     "@prisma/client": "^6.19.3",
     "@sparx/db": "workspace:*",
-    "handlebars": "^4.7.8",
-    "html-to-text": "^9.0.5",
-    "mjml": "^4.15.3",
+    "@sparx/email": "workspace:*",
     "pino": "^9.5.0",
     "zod": "^4.4.3"
   },
   "devDependencies": {
-    "@types/html-to-text": "^9.0.4",
-    "@types/mjml": "^4.7.4",
     "@types/node": "^22.10.0",
     "dotenv": "^16.4.7",
     "tsx": "^4.19.2",

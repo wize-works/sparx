@@ -172,12 +172,105 @@ resource "cloudflare_record" "sparx_email_root" {
   comment         = "Marketing landing for Sparx email infrastructure"
 }
 
-# TODO when Postal lands:
-#   resource "cloudflare_record" "sparx_email_mail_a" { ... mail.sparx.email A → postal SMTP IP, proxied=false }
-#   resource "cloudflare_record" "sparx_email_mx"     { ... @ MX → mail.sparx.email priority 10 }
-#   resource "cloudflare_record" "sparx_email_spf"    { ... @ TXT → "v=spf1 ip4:<postal-ip> ~all" }
-#   resource "cloudflare_record" "sparx_email_dkim"   { ... dkim._domainkey TXT → "v=DKIM1; k=rsa; p=<public>" }
-#   resource "cloudflare_record" "sparx_email_dmarc"  { ... _dmarc TXT → "v=DMARC1; p=quarantine; rua=mailto:dmarc@sparx.email" }
+# postal.sparx.email — Postal admin UI. Caddy host-routes to the
+# postal-web Service inside the postal namespace.
+resource "cloudflare_record" "sparx_email_postal_admin" {
+  count           = var.cloudflare_enabled ? 1 : 0
+  zone_id         = data.cloudflare_zone.sparx_email[0].id
+  name            = "postal"
+  type            = "A"
+  content         = google_compute_address.ingress.address
+  ttl             = 1
+  proxied         = true
+  allow_overwrite = true
+  comment         = "Postal admin UI"
+}
+
+# mail.sparx.email — the SMTP banner hostname Postal advertises in its
+# SMTP HELO greeting. Points at the ingress IP because outbound MTA
+# delivery doesn't traverse a separate LB (worker pods make egress
+# directly), but the A record needs to exist for reverse-DNS / SPF
+# alignment. proxied=false because mail clients reach this directly
+# during SMTP auth/connect for inbound bounce delivery — Cloudflare
+# can't proxy SMTP traffic anyway.
+resource "cloudflare_record" "sparx_email_mail_a" {
+  count           = var.cloudflare_enabled ? 1 : 0
+  zone_id         = data.cloudflare_zone.sparx_email[0].id
+  name            = "mail"
+  type            = "A"
+  content         = google_compute_address.ingress.address
+  ttl             = 1
+  proxied         = false
+  allow_overwrite = true
+  comment         = "Postal SMTP banner hostname"
+}
+
+# MX → mail.sparx.email priority 10. Receives bounce-back / probe mail
+# even though Sparx is outbound-only — receiving these is what lets
+# Postal track bounces and feed our suppression list.
+resource "cloudflare_record" "sparx_email_mx" {
+  count           = var.cloudflare_enabled ? 1 : 0
+  zone_id         = data.cloudflare_zone.sparx_email[0].id
+  name            = "@"
+  type            = "MX"
+  content         = "mail.sparx.email"
+  priority        = 10
+  ttl             = 1
+  proxied         = false
+  allow_overwrite = true
+}
+
+# SPF — declare that mail.sparx.email is the only authorised sender.
+# Using +a/mx lets any A/MX record on the apex pass; ~all is soft-fail
+# (recommended over -all until reputation is established).
+resource "cloudflare_record" "sparx_email_spf" {
+  count           = var.cloudflare_enabled ? 1 : 0
+  zone_id         = data.cloudflare_zone.sparx_email[0].id
+  name            = "@"
+  type            = "TXT"
+  content         = "v=spf1 a mx ~all"
+  ttl             = 1
+  proxied         = false
+  allow_overwrite = true
+  comment         = "SPF — sparx.email apex"
+}
+
+# DKIM placeholder — Postal generates the signing key at first
+# `postal initialize`. After bootstrap, pull the public key out of the
+# Postal admin UI (Organization → Server → DNS Setup) and fill it in
+# below, then `terraform apply` again. Until populated, this resource
+# is intentionally a placeholder string so the apply succeeds.
+#
+# After Postal generates the key:
+#   1. In Postal Admin → DNS → copy the TXT value (full v=DKIM1; ... string)
+#   2. Replace the `content` below with that exact string
+#   3. terraform apply
+resource "cloudflare_record" "sparx_email_dkim" {
+  count           = var.cloudflare_enabled ? 1 : 0
+  zone_id         = data.cloudflare_zone.sparx_email[0].id
+  name            = "postal._domainkey"
+  type            = "TXT"
+  content         = var.sparx_email_dkim_value
+  ttl             = 1
+  proxied         = false
+  allow_overwrite = true
+  comment         = "DKIM — placeholder until Postal generates the signing key"
+}
+
+# DMARC — start in `none` mode for first 2 weeks of sending so we can
+# see reports without rejecting legitimate mail; bump to quarantine
+# (then reject) once aggregate reports look clean.
+resource "cloudflare_record" "sparx_email_dmarc" {
+  count           = var.cloudflare_enabled ? 1 : 0
+  zone_id         = data.cloudflare_zone.sparx_email[0].id
+  name            = "_dmarc"
+  type            = "TXT"
+  content         = "v=DMARC1; p=none; rua=mailto:dmarc-reports@sparx.email; ruf=mailto:dmarc-reports@sparx.email; fo=1; aspf=r; adkim=r"
+  ttl             = 1
+  proxied         = false
+  allow_overwrite = true
+  comment         = "DMARC — start at p=none, escalate after 2 weeks of clean reports"
+}
 
 # =========================================================================
 # Module marketing zones — apex + www → ingress (Cloudflare-proxied)

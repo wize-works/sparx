@@ -10,6 +10,9 @@ export { cva, type VariantProps } from './utils/cva';
 // ── Providers / context ───────────────────────────────────
 export { ModuleProvider, useModule, type SparxModule } from './providers/module-provider';
 
+// ── Brand ────────────────────────────────────────────────
+export { Wordmark, type WordmarkProps } from './components/brand/wordmark';
+
 // ── Primitives ────────────────────────────────────────────
 export { Spinner, type SpinnerProps } from './components/primitives/spinner';
 export { Button, buttonVariants, type ButtonProps } from './components/primitives/button';

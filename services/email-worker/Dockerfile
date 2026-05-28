@@ -1,7 +1,6 @@
 # email-worker runtime image. Same shape as services/media-worker/Dockerfile.
 #
-# No native deps required — MJML is pure JS, Handlebars is pure JS,
-# html-to-text is pure JS. node:24-alpine is plenty.
+# No native deps required — React Email renders pure JS strings.
 
 FROM node:24-alpine
 
@@ -11,10 +10,12 @@ RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
 
 WORKDIR /app
 
-# Workspace context — minimum needed to install email-worker + @sparx/db.
+# Workspace context — minimum needed to install email-worker + its workspace
+# deps (@sparx/db for runtime + @sparx/email for templates/render/provider).
 COPY pnpm-workspace.yaml pnpm-lock.yaml package.json ./
 COPY tsconfig.base.json ./
 COPY packages/db ./packages/db
+COPY packages/email ./packages/email
 COPY services/email-worker ./services/email-worker
 
 # Filtered install pulls only @sparx/email-worker + transitive workspace

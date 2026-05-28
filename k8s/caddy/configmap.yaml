@@ -75,6 +75,17 @@ data:
       reverse_proxy web.sparx-prod.svc.cluster.local:3000
     }
 
+    # ----- Postal admin UI -----
+    # Lives in its own namespace (postal/), separate from sparx-prod.
+    # email-worker reaches Postal in-cluster via the postal-web Service
+    # DNS name — this hostname is for the human admin UI only.
+    postal.sparx.email {
+      tls {
+        on_demand
+      }
+      reverse_proxy postal-web.postal.svc.cluster.local:5000
+    }
+
     # ----- Placeholder domains (301 to corresponding sparx.works path) -----
     # Replace with real reverse_proxy targets when each product matures.
     sparx.host, www.sparx.host {
