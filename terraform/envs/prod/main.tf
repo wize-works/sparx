@@ -57,88 +57,75 @@ module "artifact_registry" {
 module "pubsub" {
   source = "../../modules/pubsub"
 
-  # One topic per event type. Topic name == event type — api-rest's
-  # CloudPubSubPublisher (services/api-rest/src/lib/pubsub.ts) resolves a
-  # topic by `event.type`, so adding a new EventType requires:
+  # Topic -> subscribers. One google_pubsub_topic per key; each subscriber
+  # in the list gets a subscription named "<topic>.<subscriber>".
+  #
+  # Topic name == EventType in services/api-rest/src/lib/pubsub.ts. To add
+  # a new event type:
   #   1. Add the literal to the EventType union in pubsub.ts
-  #   2. Add the same string here
-  #   3. (Optionally) add a subscription below for the consumer(s)
-  topics = [
+  #   2. Add the same string here with [] (no consumers yet) or a list
+  #   3. New consumer worker? Add its name to the list and ship the worker
+  #
+  # Empty list = topic exists (publishable) but no subscriber yet — Phase 1
+  # cost optimisation, since idle subscriptions still cost retention.
+  topics = {
     # Commerce / orders
-    "order.created",
-    "order.updated",
-    # CRM customers
-    "customer.created",
-    "customer.updated",
-    # Cart
-    "cart.abandoned",
-    # Domains
-    "domain.verified",
-    "domain.purchased",
-    # Email
-    "email.send",
-    "email.domain.verified",
-    # Module lifecycle
-    "module.activated",
-    "module.deactivated",
-    # Stripe webhooks
-    "stripe.webhook",
-    # CMS content lifecycle (published by api-rest content routes)
-    "content.entry.created",
-    "content.entry.updated",
-    "content.entry.published",
-    "content.entry.scheduled",
-    "content.entry.unpublished",
-    "content.entry.deleted",
-    "content.revision.created",
-    "content_type.upserted",
-    # Media pipeline (published by api-rest media routes, consumed by media-worker)
-    "media.uploaded",
-    "media.processed",
-    "media.deleted",
-    # Redirects (consumed by edge/cache invalidation workers, Phase 4)
-    "redirect.added",
-    "redirect.removed",
-  ]
+    "order.created" = ["worker-webhook"]
+    "order.updated" = ["worker-webhook"]
 
-  # Subscription naming convention: <topic>.<consumer>
-  # Only add a subscription once the consumer worker is being deployed —
-  # idle subscriptions still cost retention storage.
-  subscriptions = {
-    "email.send.worker-email" = {
-      topic                = "email.send"
-      ack_deadline_seconds = 60
-    }
-    "domain.verified.worker-domain" = {
-      topic                = "domain.verified"
-      ack_deadline_seconds = 60
-    }
-    "domain.purchased.worker-domain" = {
-      topic                = "domain.purchased"
-      ack_deadline_seconds = 60
-    }
+    # CRM customers
+    "customer.created" = ["worker-webhook"]
+    "customer.updated" = ["worker-webhook"]
+
+    # Cart
+    "cart.abandoned" = []
+
+    # Domains
+    "domain.verified"  = ["worker-domain"]
+    "domain.purchased" = ["worker-domain"]
+
+    # Email
+    "email.send"            = ["worker-email"]
+    "email.domain.verified" = []
+
+    # Module lifecycle
+    "module.activated"   = []
+    "module.deactivated" = []
+
+    # Stripe webhooks
+    "stripe.webhook" = ["worker-billing"]
+
+    # CMS content lifecycle (published by api-rest content routes)
+    "content.entry.created"     = []
+    "content.entry.updated"     = []
+    "content.entry.published"   = []
+    "content.entry.scheduled"   = []
+    "content.entry.unpublished" = []
+    "content.entry.deleted"     = []
+    "content.revision.created"  = []
+    "content_type.upserted"     = []
+
+    # Media pipeline (api-rest publishes; media-worker consumes)
+    "media.uploaded"  = ["media-worker"]
+    "media.processed" = []
+    "media.deleted"   = []
+
+    # Redirects (Phase 4 — edge cache invalidation workers)
+    "redirect.added"   = []
+    "redirect.removed" = []
+  }
+
+  # Per-subscription tuning. Anything not listed here uses the module
+  # defaults (60s ack, 7d retention, DLQ after 5 attempts).
+  subscription_overrides = {
+    # Stripe webhooks can fan out to slow downstream calls.
     "stripe.webhook.worker-billing" = {
-      topic                 = "stripe.webhook"
-      ack_deadline_seconds  = 120 # Stripe events can fan out to slow downstream calls
+      ack_deadline_seconds  = 120
       max_delivery_attempts = 10
     }
-    "order.created.worker-webhook" = {
-      topic = "order.created"
-    }
-    "order.updated.worker-webhook" = {
-      topic = "order.updated"
-    }
-    "customer.created.worker-webhook" = {
-      topic = "customer.created"
-    }
-    "customer.updated.worker-webhook" = {
-      topic = "customer.updated"
-    }
-    # media-worker: pulls media.uploaded events, generates AVIF/WebP/JPEG
-    # variants, persists under /variants/ in the media bucket.
+    # sharp/libvips AVIF encodes on large originals can run ~60s.
     "media.uploaded.media-worker" = {
-      topic                = "media.uploaded"
-      ack_deadline_seconds = 120 # sharp encodes for large AVIFs can run ~60s
+      ack_deadline_seconds = 120
     }
   }
 }

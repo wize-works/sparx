@@ -12,7 +12,9 @@
 import type { Topic } from '@google-cloud/pubsub';
 import { PubSub } from '@google-cloud/pubsub';
 import type { FastifyBaseLogger } from 'fastify';
+import { withTenant } from '@sparx/db';
 import { env } from '../env.js';
+import { enqueueWebhookDeliveries } from './webhook-delivery.js';
 
 export type EventType =
   // Content
@@ -101,7 +103,7 @@ export function getPublisher(logger: FastifyBaseLogger): Publisher {
   return publisher;
 }
 
-export async function publish<T>(
+export async function publish<T extends Record<string, unknown>>(
   logger: FastifyBaseLogger,
   type: EventType,
   tenantId: string,
@@ -115,12 +117,24 @@ export async function publish<T>(
     occurredAt: new Date().toISOString(),
     data,
   };
+
+  // 1. Internal webhook fan-out: enqueue a row per matching subscription
+  //    so the webhook-delivery tick (lib/webhook-delivery.ts) picks them
+  //    up. Best-effort — failure here doesn't roll back the caller's
+  //    mutation, since the originating tx has already committed.
+  try {
+    await withTenant({ tenantId }, async (tx) => {
+      await enqueueWebhookDeliveries(tx, tenantId, type, data);
+    });
+  } catch (err) {
+    logger.error({ err, event }, 'pubsub: webhook enqueue failed');
+  }
+
+  // 2. External Pub/Sub fan-out: one topic per EventType.
   try {
     await getPublisher(logger).publish(event);
   } catch (err) {
     // Never fail a mutation because Pub/Sub is down — log and continue.
-    // Webhook deliveries are reconstructed from `content_entries.updatedAt`
-    // anyway, so dropped events recover on the next scheduled sync.
     logger.error({ err, event }, 'pubsub: publish failed');
   }
 }

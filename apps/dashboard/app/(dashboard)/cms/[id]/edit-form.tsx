@@ -18,7 +18,8 @@ import {
   Textarea,
 } from '@sparx/ui';
 import { ContentBlockEditor, EMPTY_DOC, type CmsDoc } from '@sparx/cms-editor';
-import { Trash2 } from 'lucide-react';
+import Link from 'next/link';
+import { History, Trash2 } from 'lucide-react';
 import { deletePage, setPageStatus, updatePage } from '../actions';
 
 // EditableTenantPage holds the dashboard's view of a page entry, with
@@ -106,14 +107,24 @@ export function EditPageForm({ page }: { page: EditableTenantPage }) {
                 {page.status}
               </Badge>
             </Stack>
-            <Button
-              variant={page.status === 'published' ? 'secondary' : 'module'}
-              size="sm"
-              onClick={onTogglePublish}
-              disabled={pending}
-            >
-              {page.status === 'published' ? 'Unpublish' : 'Publish'}
-            </Button>
+            <Stack direction="row" align="center" gap={2}>
+              <Button
+                variant="ghost"
+                size="sm"
+                asChild
+                leftIcon={<History className="h-3.5 w-3.5" />}
+              >
+                <Link href={`/cms/${page.id}/revisions`}>Revisions</Link>
+              </Button>
+              <Button
+                variant={page.status === 'published' ? 'secondary' : 'module'}
+                size="sm"
+                onClick={onTogglePublish}
+                disabled={pending}
+              >
+                {page.status === 'published' ? 'Unpublish' : 'Publish'}
+              </Button>
+            </Stack>
           </Stack>
         </CardHeader>
         {page.publishedAt && (

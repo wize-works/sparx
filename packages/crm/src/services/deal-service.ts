@@ -331,7 +331,14 @@ export async function moveStage(
 // Forecast lives in deal-forecast-service.ts for the same reason.
 // ─────────────────────────────────────────────────────────────────────────
 
-export { attachOrder, detachOrder, attachQuote, detachQuote } from './deal-attach-service';
+export {
+  attachOrder,
+  detachOrder,
+  attachQuote,
+  detachQuote,
+  listAttachedOrders,
+  listAttachedQuotes,
+} from './deal-attach-service';
 export {
   forecast,
   type ForecastArgs,

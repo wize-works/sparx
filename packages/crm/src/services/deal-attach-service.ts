@@ -10,12 +10,36 @@
 // before writing the join row.
 
 import { withTenant } from '@sparx/db';
-import type { DealOrder, DealQuote } from '@sparx/db';
+import type { DealOrder, DealQuote, Order, Quote } from '@sparx/db';
 
 import { writeAuditLog } from '../audit';
 import { publishCrmEvent } from '../events';
 import type { ServiceContext } from '../errors';
 import { CrmConflictError, CrmNotFoundError } from '../errors';
+
+/** List orders attached to a deal via the deal_orders join table. */
+export async function listAttachedOrders(ctx: ServiceContext, dealId: string): Promise<Order[]> {
+  return withTenant(ctx, async (tx) => {
+    const links = await tx.dealOrder.findMany({
+      where: { dealId },
+      include: { order: true },
+      orderBy: { createdAt: 'desc' },
+    });
+    return links.map((link) => link.order);
+  });
+}
+
+/** List quotes attached to a deal via the deal_quotes join table. */
+export async function listAttachedQuotes(ctx: ServiceContext, dealId: string): Promise<Quote[]> {
+  return withTenant(ctx, async (tx) => {
+    const links = await tx.dealQuote.findMany({
+      where: { dealId },
+      include: { quote: true },
+      orderBy: { createdAt: 'desc' },
+    });
+    return links.map((link) => link.quote);
+  });
+}
 
 export async function attachOrder(
   ctx: ServiceContext,

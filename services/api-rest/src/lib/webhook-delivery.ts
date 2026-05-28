@@ -170,10 +170,7 @@ async function attempt(row: PendingDelivery, logger: FastifyBaseLogger): Promise
     return { kind: 'retry', status: res.status, body: text };
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    logger.warn(
-      { deliveryId: row.delivery_id, err: message },
-      'webhook-delivery: network error'
-    );
+    logger.warn({ deliveryId: row.delivery_id, err: message }, 'webhook-delivery: network error');
     const nextAttempt = row.attempt_count + 1;
     if (nextAttempt >= MAX_ATTEMPTS) {
       return { kind: 'failed', status: null, body: '', error: message };
@@ -184,11 +181,7 @@ async function attempt(row: PendingDelivery, logger: FastifyBaseLogger): Promise
   }
 }
 
-async function persistOutcome(
-  tx: TxClient,
-  row: PendingDelivery,
-  outcome: Outcome
-): Promise<void> {
+async function persistOutcome(tx: TxClient, row: PendingDelivery, outcome: Outcome): Promise<void> {
   const nextAttempt = row.attempt_count + 1;
   if (outcome.kind === 'delivered') {
     await tx.webhookDelivery.update({

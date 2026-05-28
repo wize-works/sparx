@@ -189,3 +189,21 @@ export async function deletePage(id: string): Promise<ActionResult> {
   revalidatePath('/cms');
   return { ok: true };
 }
+
+// Restore a previous revision onto the current entry. api-rest creates a
+// new revision rather than overwriting history (see
+// services/api-rest/src/routes/v1/content/revisions.ts).
+export async function restoreRevision(
+  id: string,
+  revisionNumber: number
+): Promise<ActionResult> {
+  try {
+    await api.post(`/v1/content/entries/${id}/revisions/${revisionNumber}/restore`);
+  } catch (err) {
+    return { ok: false, error: friendly(err) };
+  }
+  revalidatePath('/cms');
+  revalidatePath(`/cms/${id}`);
+  revalidatePath(`/cms/${id}/revisions`);
+  return { ok: true };
+}

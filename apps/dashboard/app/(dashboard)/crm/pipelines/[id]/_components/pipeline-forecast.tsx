@@ -43,10 +43,7 @@ export async function PipelineForecast({ pipelineId }: PipelineForecastProps) {
         </Card>
         <Card className="min-w-[200px]">
           <CardContent className="py-4">
-            <Stat
-              label="Window"
-              value={`${result.startMonth} → ${result.endMonth}`}
-            />
+            <Stat label="Window" value={`${result.startMonth} → ${result.endMonth}`} />
           </CardContent>
         </Card>
         <Card className="min-w-[200px]">

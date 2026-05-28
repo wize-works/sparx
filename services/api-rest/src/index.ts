@@ -4,6 +4,7 @@
 import { createApp } from './app.js';
 import { env } from './env.js';
 import { startScheduledPublishLoop } from './lib/scheduled-publish.js';
+import { startWebhookDeliveryLoop } from './lib/webhook-delivery.js';
 
 async function main(): Promise<void> {
   const app = await createApp();
@@ -13,9 +14,15 @@ async function main(): Promise<void> {
   // pods via Postgres advisory lock — see lib/scheduled-publish.ts.
   const stopScheduledPublish = startScheduledPublishLoop(app.log);
 
+  // Background tick that POSTs pending webhook deliveries to their
+  // subscriber URLs with HMAC-SHA256 signatures. Singleton across pods
+  // via a separate advisory lock — see lib/webhook-delivery.ts.
+  const stopWebhookDelivery = startWebhookDeliveryLoop(app.log);
+
   const shutdown = (signal: NodeJS.Signals): void => {
     app.log.info({ signal }, 'shutdown received');
     stopScheduledPublish();
+    stopWebhookDelivery();
     void app
       .close()
       .then(() => {
