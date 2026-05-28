@@ -1,8 +1,9 @@
 'use client';
 
-// New-segment page. The rule editor is a JSON textarea — the visual
-// rule builder is a follow-up. previewCount runs server-side on debounce
-// so you can see "X of Y match" before saving.
+// New-segment page. The rule editor is now a visual AND/OR/NOT tree
+// builder over the SegmentRule shape — see ../_components/rule-builder.
+// previewCount runs against the live rule object so "X of Y match" reads
+// against whatever the user has constructed in the tree.
 
 import * as React from 'react';
 import Link from 'next/link';
@@ -22,27 +23,16 @@ import {
   Label,
   Stack,
   Text,
-  Textarea,
 } from '@sparx/ui';
 
 import { createSegmentAction, previewSegmentCountAction } from '../../segment-actions';
-
-const EXAMPLE_RULE = JSON.stringify(
-  {
-    kind: 'predicate',
-    field: 'customer.totalSpent',
-    op: 'gte',
-    value: 5000,
-  },
-  null,
-  2
-);
+import { type Rule, RuleBuilder, defaultRule } from '../_components/rule-builder';
 
 export default function NewSegmentPage() {
   const router = useRouter();
   const [pending, startTransition] = React.useTransition();
   const [error, setError] = React.useState<string | null>(null);
-  const [rule, setRule] = React.useState<string>(EXAMPLE_RULE);
+  const [rule, setRule] = React.useState<Rule>(defaultRule);
   const [preview, setPreview] = React.useState<{
     matches: number;
     sampled: number;
@@ -52,16 +42,9 @@ export default function NewSegmentPage() {
 
   function runPreview() {
     setError(null);
-    let parsed: unknown;
-    try {
-      parsed = JSON.parse(rule);
-    } catch {
-      setError('Rule is not valid JSON');
-      return;
-    }
     setPreviewing(true);
     startTransition(async () => {
-      const result = await previewSegmentCountAction(parsed);
+      const result = await previewSegmentCountAction(rule);
       setPreviewing(false);
       if (!result.ok) {
         setError(result.error.message);
@@ -75,22 +58,14 @@ export default function NewSegmentPage() {
   function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
-    let parsedRule: unknown;
-    try {
-      parsedRule = JSON.parse(rule);
-    } catch {
-      setError('Rule is not valid JSON');
-      return;
-    }
     const form = new FormData(e.currentTarget);
     const input = {
       name: nonEmpty(form.get('name')),
       slug: nonEmpty(form.get('slug')),
       description: nonEmpty(form.get('description')),
       color: nonEmpty(form.get('color')),
-      rules: parsedRule,
+      rules: rule,
     };
-
     startTransition(async () => {
       const result = await createSegmentAction(input);
       if (result.ok) {
@@ -169,19 +144,7 @@ export default function NewSegmentPage() {
               </CardHeader>
               <CardContent>
                 <Stack gap={3}>
-                  <Textarea
-                    value={rule}
-                    onChange={(e) => setRule(e.target.value)}
-                    rows={14}
-                    className="font-mono text-xs"
-                    spellCheck={false}
-                  />
-                  <Text size="xs" variant="muted">
-                    Predicate leaves: <code>{'{ kind, field, op, value }'}</code>. Compose with{' '}
-                    <code>{'{ kind: "and"|"or", children: [...] }'}</code> or{' '}
-                    <code>{'{ kind: "not", child: {...} }'}</code>. See the docs for the field +
-                    operator whitelist.
-                  </Text>
+                  <RuleBuilder value={rule} onChange={setRule} />
                   {preview && (
                     <Stack
                       direction="row"

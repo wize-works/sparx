@@ -6,12 +6,12 @@
 // `value` editor switches type based on the field's `kind` so the UI never
 // asks a user to type a number into a boolean predicate.
 
-import * as React from 'react';
 import { Trash2 } from 'lucide-react';
 import type { SegmentField, SegmentOperator } from '@sparx/crm-schemas';
-import { Button, Input, Stack, Text } from '@sparx/ui';
+import { Button, Input, Stack } from '@sparx/ui';
 
 import {
+  type FieldKind,
   FIELDS,
   FIELD_INDEX,
   OPERATOR_LABELS,
@@ -23,7 +23,7 @@ interface Props {
   field: SegmentField;
   op: SegmentOperator;
   value: unknown;
-  onChange(next: { field: SegmentField; op: SegmentOperator; value: unknown }): void;
+  onChange: (next: { field: SegmentField; op: SegmentOperator; value: unknown }) => void;
   onRemove?: () => void;
 }
 
@@ -33,7 +33,11 @@ export function PredicateRow({ field, op, value, onChange, onRemove }: Props) {
 
   function changeField(nextField: SegmentField) {
     const nextOp = defaultOperatorFor(nextField);
-    onChange({ field: nextField, op: nextOp, value: defaultValueFor(FIELD_INDEX[nextField].kind, nextOp) });
+    onChange({
+      field: nextField,
+      op: nextOp,
+      value: defaultValueFor(FIELD_INDEX[nextField].kind, nextOp),
+    });
   }
 
   function changeOp(nextOp: SegmentOperator) {
@@ -81,7 +85,13 @@ export function PredicateRow({ field, op, value, onChange, onRemove }: Props) {
       )}
 
       {onRemove && (
-        <Button type="button" variant="ghost" size="sm" onClick={onRemove} aria-label="Remove predicate">
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={onRemove}
+          aria-label="Remove predicate"
+        >
           <Trash2 className="h-3.5 w-3.5" />
         </Button>
       )}
@@ -90,11 +100,11 @@ export function PredicateRow({ field, op, value, onChange, onRemove }: Props) {
 }
 
 function ValueInput(props: {
-  kind: ReturnType<typeof FIELD_INDEX[SegmentField]['kind' & never] & string> | string;
+  kind: FieldKind;
   enumValues?: readonly string[];
   isArray: boolean;
   value: unknown;
-  onChange(v: unknown): void;
+  onChange: (v: unknown) => void;
 }) {
   const { kind, enumValues, isArray, value, onChange } = props;
   if (isArray) {
@@ -163,7 +173,7 @@ function ValueInput(props: {
   );
 }
 
-function defaultValueFor(kind: string, op: SegmentOperator): unknown {
+function defaultValueFor(kind: FieldKind, op: SegmentOperator): unknown {
   if (op === 'is_null' || op === 'is_not_null') return undefined;
   if (opTakesArray(op)) return [];
   switch (kind) {
@@ -178,7 +188,7 @@ function defaultValueFor(kind: string, op: SegmentOperator): unknown {
   }
 }
 
-function parseList(input: string, kind: string): unknown[] {
+function parseList(input: string, kind: FieldKind): unknown[] {
   const items = input
     .split(',')
     .map((s) => s.trim())
@@ -196,15 +206,5 @@ function groupBy<T, K>(items: readonly T[], key: (t: T) => K): Map<K, T[]> {
     if (list) list.push(item);
     else out.set(k, [item]);
   }
-  for (const item of out.values()) {
-    // Reveal that we keep stable input order within each group.
-    void item;
-  }
   return out;
 }
-
-// Render-only re-export used by group-node.tsx to know how tall a row sits.
-function _unused(): void {
-  return void <Text>{''}</Text>;
-}
-void _unused;

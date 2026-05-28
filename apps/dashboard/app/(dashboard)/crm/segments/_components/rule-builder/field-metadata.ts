@@ -18,7 +18,13 @@ export interface FieldDef {
 }
 
 export const FIELDS: readonly FieldDef[] = [
-  { field: 'customer.type', label: 'Type', group: 'Customer', kind: 'enum', enumValues: ['prospect', 'retail', 'b2b'] },
+  {
+    field: 'customer.type',
+    label: 'Type',
+    group: 'Customer',
+    kind: 'enum',
+    enumValues: ['prospect', 'retail', 'b2b'],
+  },
   { field: 'customer.email', label: 'Email', group: 'Customer', kind: 'string' },
   { field: 'customer.tags', label: 'Tags', group: 'Customer', kind: 'array' },
   { field: 'customer.company', label: 'Company', group: 'Customer', kind: 'string' },
@@ -27,18 +33,54 @@ export const FIELDS: readonly FieldDef[] = [
   { field: 'customer.orderCount', label: 'Order count', group: 'Customer', kind: 'number' },
   { field: 'customer.firstOrderAt', label: 'First order at', group: 'Customer', kind: 'datetime' },
   { field: 'customer.lastOrderAt', label: 'Last order at', group: 'Customer', kind: 'datetime' },
-  { field: 'customer.daysSinceLastOrder', label: 'Days since last order', group: 'Customer', kind: 'number' },
+  {
+    field: 'customer.daysSinceLastOrder',
+    label: 'Days since last order',
+    group: 'Customer',
+    kind: 'number',
+  },
   { field: 'customer.assignedRepId', label: 'Assigned rep', group: 'Customer', kind: 'uuid' },
   { field: 'customer.doNotContact', label: 'Do-not-contact', group: 'Customer', kind: 'boolean' },
   { field: 'customer.b2bAccountId', label: 'B2B account', group: 'Customer', kind: 'uuid' },
   { field: 'b2bAccount.pricingTier', label: 'Pricing tier', group: 'B2B account', kind: 'string' },
-  { field: 'b2bAccount.creditUtilization', label: 'Credit utilization', group: 'B2B account', kind: 'number' },
+  {
+    field: 'b2bAccount.creditUtilization',
+    label: 'Credit utilization',
+    group: 'B2B account',
+    kind: 'number',
+  },
   { field: 'b2bAccount.fleetSize', label: 'Fleet size', group: 'B2B account', kind: 'number' },
-  { field: 'b2bAccount.status', label: 'Status', group: 'B2B account', kind: 'enum', enumValues: ['active', 'credit_hold', 'suspended', 'inactive'] },
-  { field: 'b2bAccount.paymentTerms', label: 'Payment terms', group: 'B2B account', kind: 'string' },
-  { field: 'email.openedLast30d', label: 'Opens (last 30d)', group: 'Email engagement', kind: 'number' },
-  { field: 'email.clickedLast30d', label: 'Clicks (last 30d)', group: 'Email engagement', kind: 'number' },
-  { field: 'email.unsubscribed', label: 'Unsubscribed', group: 'Email engagement', kind: 'boolean' },
+  {
+    field: 'b2bAccount.status',
+    label: 'Status',
+    group: 'B2B account',
+    kind: 'enum',
+    enumValues: ['active', 'credit_hold', 'suspended', 'inactive'],
+  },
+  {
+    field: 'b2bAccount.paymentTerms',
+    label: 'Payment terms',
+    group: 'B2B account',
+    kind: 'string',
+  },
+  {
+    field: 'email.openedLast30d',
+    label: 'Opens (last 30d)',
+    group: 'Email engagement',
+    kind: 'number',
+  },
+  {
+    field: 'email.clickedLast30d',
+    label: 'Clicks (last 30d)',
+    group: 'Email engagement',
+    kind: 'number',
+  },
+  {
+    field: 'email.unsubscribed',
+    label: 'Unsubscribed',
+    group: 'Email engagement',
+    kind: 'boolean',
+  },
 ] as const;
 
 export const FIELD_INDEX: Record<SegmentField, FieldDef> = FIELDS.reduce(
@@ -57,7 +99,19 @@ export function operatorsFor(kind: FieldKind): SegmentOperator[] {
     case 'boolean':
       return ['eq', 'neq', 'is_null', 'is_not_null'];
     case 'number':
-      return ['eq', 'neq', 'gt', 'gte', 'lt', 'lte', 'between', 'in', 'not_in', 'is_null', 'is_not_null'];
+      return [
+        'eq',
+        'neq',
+        'gt',
+        'gte',
+        'lt',
+        'lte',
+        'between',
+        'in',
+        'not_in',
+        'is_null',
+        'is_not_null',
+      ];
     case 'datetime':
       return ['gt', 'gte', 'lt', 'lte', 'between', 'is_null', 'is_not_null'];
     case 'array':
