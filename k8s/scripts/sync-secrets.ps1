@@ -19,6 +19,7 @@ $ErrorActionPreference = "Stop"
 
 $secretKeys = @(
     "database-url",
+    "auth-database-url",
     "redis-url",
     "better-auth-secret",
     "sparx-internal-jwt-secret",

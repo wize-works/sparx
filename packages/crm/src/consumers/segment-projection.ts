@@ -24,7 +24,7 @@ export async function buildSegmentRuleProjection(
         b2bAccount: true,
       },
     });
-    if (!customer || customer.deletedAt !== null) {
+    if (customer?.deletedAt != null || !customer) {
       throw new CrmNotFoundError('Customer', customerId);
     }
 

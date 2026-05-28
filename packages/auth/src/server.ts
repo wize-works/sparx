@@ -30,6 +30,21 @@ function createAuth() {
       requireEmailVerification: false,
       minPasswordLength: 8,
       autoSignIn: true,
+      sendResetPassword: async ({ user, url }) => {
+        // Better Auth synthesizes the URL with its own token; we just hand it
+        // off to the @sparx/email pipeline. In dev the console provider logs
+        // to stdout — in prod SPARX_EMAIL_PROVIDER=postal swaps the transport.
+        const { sendTemplate } = await import('@sparx/email');
+        await sendTemplate({
+          template: 'password-reset',
+          to: user.email,
+          props: {
+            name: user.name ?? undefined,
+            resetUrl: url,
+            expiresInMinutes: 60,
+          },
+        });
+      },
     },
 
     session: {

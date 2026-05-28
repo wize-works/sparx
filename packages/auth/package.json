@@ -30,6 +30,7 @@
   "dependencies": {
     "@prisma/client": "^6.19.3",
     "@sparx/db": "workspace:*",
+    "@sparx/email": "workspace:*",
     "better-auth": "^1.6.11"
   },
   "peerDependencies": {

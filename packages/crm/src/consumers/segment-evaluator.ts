@@ -64,7 +64,7 @@ async function resolveCustomerId(event: PlatformEvent<EventPayload>): Promise<st
   if (event.payload?.orderId) {
     return withTenant({ tenantId: event.tenantId, userId: undefined }, async (tx) => {
       const order = await tx.order.findUnique({
-        where: { id: event.payload!.orderId },
+        where: { id: event.payload.orderId },
         select: { customerId: true },
       });
       return order?.customerId ?? null;
