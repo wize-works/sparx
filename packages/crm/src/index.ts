@@ -8,5 +8,6 @@
 export * from './services/index';
 export * from './events';
 export * from './consumers/index';
+export * as crmMcp from './mcp';
 export type { ServiceContext, NotFoundError, ValidationError } from './errors';
 export { CrmNotFoundError, CrmValidationError, CrmConflictError } from './errors';
