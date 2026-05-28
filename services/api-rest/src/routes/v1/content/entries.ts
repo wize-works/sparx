@@ -12,6 +12,12 @@
 
 import type { FastifyPluginAsync } from 'fastify';
 import type { Prisma } from '@sparx/db';
+
+// Prisma's `Json` columns want InputJsonValue, which the runtime accepts
+// any plain object for but the TypeScript type doesn't widen from
+// `Record<string, unknown>`. Validated body/seo come out of `validateAnd
+// NormalizeBody` so we know they're JSON-safe; cast at the assign site.
+type Json = Prisma.InputJsonValue;
 import { z } from 'zod';
 import { withRequestTenant } from '../../../lib/db.js';
 import { ok, paged } from '../../../lib/envelope.js';
@@ -187,8 +193,8 @@ const entryRoutes: FastifyPluginAsync = async (app) => {
           typeKey: type.key,
           slug,
           status: input.status ?? 'draft',
-          body,
-          seoJson: seo,
+          body: body as Json,
+          seoJson: seo as Json,
           authorId: input.author_id ?? null,
           localeCode: input.locale_code ?? null,
         },
@@ -270,8 +276,8 @@ const entryRoutes: FastifyPluginAsync = async (app) => {
         where: { id },
         data: {
           slug: nextSlug,
-          body: nextBody,
-          seoJson: nextSeo,
+          body: nextBody as Json,
+          seoJson: nextSeo as Json,
           authorId: input.author_id === undefined ? existing.authorId : input.author_id,
           localeCode:
             input.locale_code === undefined ? existing.localeCode : input.locale_code,

@@ -7,5 +7,6 @@
 
 export * from './services/index.js';
 export * from './events.js';
+export * from './consumers/index.js';
 export type { ServiceContext, NotFoundError, ValidationError } from './errors.js';
 export { CrmNotFoundError, CrmValidationError, CrmConflictError } from './errors.js';

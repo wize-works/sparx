@@ -21,19 +21,6 @@ interface ApiEntry {
   updated_at: string;
 }
 
-function readPlainBody(body: Record<string, unknown>): string {
-  const doc = body.body as
-    | { content?: Array<{ content?: Array<{ text?: string }> }> }
-    | undefined;
-  if (!doc) return '';
-  return (
-    doc.content
-      ?.flatMap((block) => block.content ?? [])
-      .map((node) => node.text ?? '')
-      .join('\n') ?? ''
-  );
-}
-
 export default async function EditCmsPage({ params }: PageParams) {
   const { id } = await params;
   let entry: ApiEntry;
@@ -45,12 +32,17 @@ export default async function EditCmsPage({ params }: PageParams) {
     throw err;
   }
 
+  const docBody =
+    entry.body.body && typeof entry.body.body === 'object'
+      ? (entry.body.body as Record<string, unknown>)
+      : { type: 'doc', content: [] };
+
   const editable: EditableTenantPage = {
     id: entry.id,
     slug: entry.slug ?? '',
     title: typeof entry.body.title === 'string' ? entry.body.title : '',
     status: entry.status,
-    content: readPlainBody(entry.body),
+    body: docBody,
     seoTitle: typeof entry.seo.title === 'string' ? entry.seo.title : null,
     metaDescription:
       typeof entry.seo.description === 'string' ? entry.seo.description : null,

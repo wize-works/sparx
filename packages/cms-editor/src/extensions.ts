@@ -41,5 +41,14 @@ export function cmsEditorExtensions(opts: CmsEditorExtensionsOptions = {}) {
   ];
 }
 
-// The canonical empty doc — useful as a default value for forms.
-export const EMPTY_DOC = { type: 'doc', content: [] } as const;
+// The canonical empty doc — useful as a default value for forms. Returned
+// by a function (not exported `as const`) so each caller gets a fresh
+// mutable copy TipTap can ingest without TypeScript flagging readonly
+// arrays.
+export function emptyDoc(): { type: 'doc'; content: unknown[] } {
+  return { type: 'doc', content: [] };
+}
+
+// Legacy constant kept for ergonomic imports — note it returns a new object
+// each access so TipTap's internal mutation doesn't leak across editors.
+export const EMPTY_DOC = emptyDoc();

@@ -9,6 +9,7 @@
 
 import { PrismaClient } from '@prisma/client';
 import { hash } from '@node-rs/argon2';
+import { seedMarketingContent } from './seeds/marketing.js';
 
 // `Algorithm.Argon2id` from @node-rs/argon2 is a const enum, which
 // verbatimModuleSyntax disallows. Inline the numeric value instead.
@@ -107,6 +108,10 @@ async function main(): Promise<void> {
 
     console.log(`Seeded tenant "${tenant.name}" (${tenant.id}) with staff user ${owner.email}`);
   });
+
+  // Seed the Sparx Marketing tenant + its module/feature content entries.
+  // Idempotent; safe to re-run.
+  await seedMarketingContent(prisma);
 }
 
 main()

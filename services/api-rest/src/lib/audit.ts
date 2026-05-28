@@ -10,6 +10,7 @@
 // (entityType / entityId / action / diff / ipAddress / userAgent).
 
 import type { TxClient } from '@sparx/db';
+import { Prisma } from '@prisma/client';
 import type { FastifyRequest } from 'fastify';
 import type { AuthContext } from '../plugins/auth.js';
 
@@ -40,7 +41,13 @@ export async function writeAudit(
       action: entry.action,
       entityType: entry.entityType,
       entityId: entry.entityId,
-      diff: diff as object | null,
+      // Prisma's JSON field accepts `JsonNullValueInput` or
+      // `InputJsonValue` — passing JS `null` is a runtime error, so we
+      // explicitly use `Prisma.JsonNull` for the "no diff" case.
+      diff:
+        diff === null
+          ? Prisma.JsonNull
+          : (diff as unknown as Prisma.InputJsonValue),
       ipAddress: request.ip || null,
       userAgent: request.headers['user-agent'] ?? null,
     },

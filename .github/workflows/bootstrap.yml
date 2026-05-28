@@ -1,0 +1,116 @@
+name: Bootstrap cluster
+
+# One-time / occasional platform bring-up for sparx-prod. Owns the resources
+# that don't roll on every commit:
+#   - Namespaces + service accounts (with the Workload Identity annotation)
+#   - Caddy ingress (Deployment + Service + LoadBalancer IP patch)
+#   - Redis (cache + BullMQ broker)
+#   - PgBouncer (transaction-mode pool — required for RLS SET LOCAL)
+#
+# Why this exists separately from deploy-prod.yml: deploy-prod only rolls
+# app container images into existing Deployments. Adding a new platform pod
+# is a separate operation with different blast radius and review needs.
+#
+# Trigger: workflow_dispatch only — human-gated by design. Pick `components`
+# to apply just one slice (e.g. re-apply caddy after a Caddyfile change).
+
+on:
+  workflow_dispatch:
+    inputs:
+      components:
+        description: 'What to apply'
+        required: true
+        default: 'all-platform'
+        type: choice
+        options:
+          - all-platform
+          - namespaces-only
+          - caddy
+          - redis
+          - pgbouncer
+
+permissions:
+  contents: read
+  id-token: write   # required for Workload Identity Federation
+
+env:
+  PROJECT_ID: sparxworks
+  REGION: us-central1
+  CLUSTER: sparx-prod-autopilot
+  NAMESPACE: sparx-prod
+  INGRESS_IP: 35.254.145.54   # google_compute_address.ingress
+  WIF_PROVIDER: projects/631794111842/locations/global/workloadIdentityPools/github-pool/providers/github-provider
+  DEPLOYER_SA: sparx-deployer@sparxworks.iam.gserviceaccount.com
+  APP_GSA: sparx-app@sparxworks.iam.gserviceaccount.com
+
+jobs:
+  bootstrap:
+    name: Apply ${{ inputs.components }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ env.WIF_PROVIDER }}
+          service_account: ${{ env.DEPLOYER_SA }}
+
+      - uses: google-github-actions/setup-gcloud@v2
+        with:
+          install_components: gke-gcloud-auth-plugin
+
+      # Same auth path as db-migrate.yml — Connect Gateway through Google's
+      # proxy. Works against the cluster's locked-down master without needing
+      # the runner's IP in the authorized networks list.
+      - name: Get GKE credentials via Connect Gateway
+        run: gcloud container fleet memberships get-credentials "$CLUSTER" --location "$REGION"
+
+      - name: Apply namespaces + service accounts
+        if: ${{ inputs.components == 'all-platform' || inputs.components == 'namespaces-only' }}
+        run: |
+          set -euo pipefail
+          kubectl apply -f k8s/00-namespaces.yaml
+          kubectl apply -f k8s/01-service-accounts.yaml
+          # Bind the sparx-app KSA to the GCP service account for Workload Identity.
+          # The annotation isn't in the YAML (kept generic so it doesn't pin a project).
+          kubectl annotate serviceaccount sparx-app -n "$NAMESPACE" \
+            iam.gke.io/gcp-service-account="$APP_GSA" --overwrite
+
+      - name: Apply Caddy ingress
+        if: ${{ inputs.components == 'all-platform' || inputs.components == 'caddy' }}
+        run: |
+          set -euo pipefail
+          kubectl apply -k k8s/caddy/
+          # Bind the LoadBalancer to the reserved static IP from Terraform.
+          # idempotent: if already bound, this is a no-op patch.
+          kubectl patch service caddy -n "$NAMESPACE" \
+            -p "{\"spec\":{\"loadBalancerIP\":\"$INGRESS_IP\"}}"
+          kubectl rollout status deployment/caddy -n "$NAMESPACE" --timeout=5m
+
+      - name: Apply Redis
+        if: ${{ inputs.components == 'all-platform' || inputs.components == 'redis' }}
+        run: |
+          set -euo pipefail
+          kubectl apply -k k8s/redis/
+          kubectl rollout status statefulset/redis -n "$NAMESPACE" --timeout=5m
+
+      - name: Apply PgBouncer
+        if: ${{ inputs.components == 'all-platform' || inputs.components == 'pgbouncer' }}
+        run: |
+          set -euo pipefail
+          kubectl apply -k k8s/pgbouncer/
+          kubectl rollout status deployment/pgbouncer -n "$NAMESPACE" --timeout=5m
+
+      - name: Show cluster state
+        if: always()
+        run: |
+          echo "::group::Pods"
+          kubectl get pod -n "$NAMESPACE" -o wide || true
+          echo "::endgroup::"
+          echo "::group::Services"
+          kubectl get svc -n "$NAMESPACE" || true
+          echo "::endgroup::"
+          echo "::group::Deployments + StatefulSets"
+          kubectl get deploy,sts -n "$NAMESPACE" || true
+          echo "::endgroup::"

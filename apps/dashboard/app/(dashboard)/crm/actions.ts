@@ -161,6 +161,22 @@ export async function deleteCustomerAction(
   });
 }
 
+export async function mergeCustomersAction(
+  input: unknown,
+): Promise<ActionResult<{ primaryId: string; mergedIds: string[] }>> {
+  return runAction(async () => {
+    const ctx = await sessionContext();
+    const result = await customerService.merge(ctx, input);
+    revalidatePath('/crm');
+    revalidatePath('/crm/customers');
+    revalidatePath(`/crm/customers/${result.primary.id}`);
+    return {
+      primaryId: result.primary.id,
+      mergedIds: result.merged.map((d) => d.id),
+    };
+  });
+}
+
 // ─────────────────────────────────────────────────────────────────────────
 // Deal actions
 // ─────────────────────────────────────────────────────────────────────────

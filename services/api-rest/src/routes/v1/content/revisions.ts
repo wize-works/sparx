@@ -9,7 +9,10 @@
 // revision history reads chronologically.
 
 import type { FastifyPluginAsync } from 'fastify';
+import type { Prisma } from '@sparx/db';
 import { z } from 'zod';
+
+type Json = Prisma.InputJsonValue;
 import { withRequestTenant } from '../../../lib/db.js';
 import { ok } from '../../../lib/envelope.js';
 import { requireRole } from '../../../plugins/auth.js';
@@ -90,7 +93,7 @@ const revisionRoutes: FastifyPluginAsync = async (app) => {
 
       const after = await tx.contentEntry.update({
         where: { id },
-        data: { body, seoJson, updatedAt: new Date() },
+        data: { body: body as Json, seoJson: seoJson as Json, updatedAt: new Date() },
       });
       await syncReferences(tx, auth.tenantId, after.id, schema, body);
       await recordRevision(tx, {

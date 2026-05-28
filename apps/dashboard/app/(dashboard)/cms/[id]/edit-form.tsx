@@ -17,19 +17,20 @@ import {
   Text,
   Textarea,
 } from '@sparx/ui';
+import { ContentBlockEditor, EMPTY_DOC, type CmsDoc } from '@sparx/cms-editor';
 import { Trash2 } from 'lucide-react';
 import { deletePage, setPageStatus, updatePage } from '../actions';
 
-// EditableTenantPage holds the dashboard's plain-text view of a page entry.
-// The server component in [id]/page.tsx unwraps the rich-text doc into the
-// `content` string field for now (until the block editor lands in Phase 2).
+// EditableTenantPage holds the dashboard's view of a page entry, with
+// `body` as a TipTap doc (JSON) so the block editor can round-trip it
+// without losing formatting on save.
 
 export interface EditableTenantPage {
   id: string;
   slug: string;
   title: string;
   status: string;
-  content: string;
+  body: CmsDoc;
   seoTitle: string | null;
   metaDescription: string | null;
   publishedAt: Date | null;
@@ -41,12 +42,15 @@ export function EditPageForm({ page }: { page: EditableTenantPage }) {
   const [error, setError] = React.useState<string | null>(null);
   const [message, setMessage] = React.useState<string | null>(null);
   const [pending, startTransition] = React.useTransition();
+  const [doc, setDoc] = React.useState<CmsDoc>(page.body ?? EMPTY_DOC);
 
   function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
     setMessage(null);
     const formData = new FormData(e.currentTarget);
+    // Stringify the doc into the form field the action expects.
+    formData.set('content', JSON.stringify(doc));
 
     startTransition(async () => {
       const result = await updatePage(page.id, formData);
@@ -125,7 +129,7 @@ export function EditPageForm({ page }: { page: EditableTenantPage }) {
         <Card>
           <CardHeader>
             <Heading level={3}>Content</Heading>
-            <CardDescription>Plain text for now — the rich editor lands in Phase 2.</CardDescription>
+            <CardDescription>Block editor — autosave + revisions land in the next pass.</CardDescription>
           </CardHeader>
           <CardContent>
             <Stack gap={4}>
@@ -142,11 +146,11 @@ export function EditPageForm({ page }: { page: EditableTenantPage }) {
               </Stack>
               <Stack gap={2}>
                 <Label htmlFor="content">Body</Label>
-                <Textarea
-                  id="content"
-                  name="content"
-                  rows={8}
-                  defaultValue={page.content}
+                <ContentBlockEditor
+                  value={doc}
+                  onChange={setDoc}
+                  placeholder="Write the page body. Use the toolbar for formatting."
+                  ariaLabel="Page body editor"
                 />
               </Stack>
               <Stack gap={2}>

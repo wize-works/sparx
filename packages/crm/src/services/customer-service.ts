@@ -23,6 +23,9 @@ import { publishCrmEvent } from '../events.js';
 import type { ServiceContext } from '../errors.js';
 import { CrmNotFoundError } from '../errors.js';
 
+export { merge, findLikelyDuplicates } from './merge-service.js';
+export type { MergeResult, DuplicateGroup } from './merge-service.js';
+
 // ─────────────────────────────────────────────────────────────────────────
 // Reads
 // ─────────────────────────────────────────────────────────────────────────

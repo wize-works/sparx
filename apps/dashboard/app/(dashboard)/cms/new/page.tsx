@@ -16,8 +16,8 @@ import {
   Label,
   Stack,
   Text,
-  Textarea,
 } from '@sparx/ui';
+import { ContentBlockEditor, EMPTY_DOC, type CmsDoc } from '@sparx/cms-editor';
 import { ArrowLeft } from 'lucide-react';
 import { createPage } from '../actions';
 
@@ -25,11 +25,13 @@ export default function NewPage() {
   const router = useRouter();
   const [error, setError] = React.useState<string | null>(null);
   const [pending, startTransition] = React.useTransition();
+  const [doc, setDoc] = React.useState<CmsDoc>(EMPTY_DOC);
 
   function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
     const formData = new FormData(e.currentTarget);
+    formData.set('content', JSON.stringify(doc));
 
     startTransition(async () => {
       const result = await createPage(formData);
@@ -75,8 +77,13 @@ export default function NewPage() {
                   </Text>
                 </Stack>
                 <Stack gap={2}>
-                  <Label htmlFor="content">Content (optional)</Label>
-                  <Textarea id="content" name="content" rows={6} />
+                  <Label>Content (optional)</Label>
+                  <ContentBlockEditor
+                    value={doc}
+                    onChange={setDoc}
+                    placeholder="Write the initial body. You can always edit after creation."
+                    ariaLabel="Page body editor"
+                  />
                 </Stack>
 
                 {error && (

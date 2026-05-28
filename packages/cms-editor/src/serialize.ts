@@ -14,24 +14,23 @@
 
 const ALLOWED_LINK_PROTOCOLS = new Set(['http:', 'https:', 'mailto:', 'tel:']);
 
-interface TextNode {
-  type: 'text';
-  text?: string;
-  marks?: Mark[];
-}
-
 interface Mark {
   type: string;
   attrs?: Record<string, unknown>;
 }
 
-interface ElementNode {
+// A single node shape carries both text + element fields as optionals; the
+// renderer dispatches on `type` and reads only the fields that apply.
+// Splitting into a discriminated union would be more correct, but the
+// runtime data is JSONB straight from Postgres and is never proven to fit a
+// discriminated shape at the type level. Pragmatic loose shape wins here.
+interface Node {
   type: string;
+  text?: string;
+  marks?: Mark[];
   attrs?: Record<string, unknown>;
   content?: Node[];
 }
-
-type Node = TextNode | ElementNode;
 
 interface DocNode {
   type: 'doc';

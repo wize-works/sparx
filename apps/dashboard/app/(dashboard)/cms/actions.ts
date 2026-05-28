@@ -69,20 +69,22 @@ function readField(formData: FormData, key: string): string {
   return typeof value === 'string' ? value : '';
 }
 
-// Wrap plain-text form input as a minimal TipTap doc so it passes the
-// `rich_text` validator on api-rest. The Phase 2 block editor produces a
-// real doc and this helper drops away.
-function wrapPlainText(body: string | undefined): Record<string, unknown> {
-  if (!body) return { type: 'doc', content: [] };
-  return {
-    type: 'doc',
-    content: [
-      {
-        type: 'paragraph',
-        content: [{ type: 'text', text: body }],
-      },
-    ],
-  };
+// The block editor stringifies a TipTap doc into the form's `content`
+// field. We parse it back here and pass it through to api-rest as-is. If
+// the JSON doesn't shape-check (no `type: 'doc'`) we substitute an empty
+// doc rather than 422 — the form validator should have caught any user
+// error already, and silent recovery beats a confusing dashboard 500.
+function parseDoc(raw: string | undefined): Record<string, unknown> {
+  if (!raw) return { type: 'doc', content: [] };
+  try {
+    const parsed = JSON.parse(raw) as { type?: unknown } & Record<string, unknown>;
+    if (parsed && typeof parsed === 'object' && parsed.type === 'doc') {
+      return parsed;
+    }
+  } catch {
+    /* fall through */
+  }
+  return { type: 'doc', content: [] };
 }
 
 function friendly(err: unknown): string {
@@ -116,7 +118,7 @@ export async function createPage(formData: FormData): Promise<ActionResult<{ id:
       slug,
       body: {
         title: parsed.data.title,
-        body: wrapPlainText(parsed.data.content),
+        body: parseDoc(parsed.data.content),
       },
     });
     revalidatePath('/cms');
@@ -143,7 +145,7 @@ export async function updatePage(id: string, formData: FormData): Promise<Action
       slug: parsed.data.slug,
       body: {
         title: parsed.data.title,
-        body: wrapPlainText(parsed.data.content),
+        body: parseDoc(parsed.data.content),
       },
       seo: {
         ...(parsed.data.seoTitle ? { title: parsed.data.seoTitle } : {}),

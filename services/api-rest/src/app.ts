@@ -10,6 +10,7 @@ import authPlugin from './plugins/auth.js';
 import openapiPlugin from './plugins/openapi.js';
 import rateLimitPlugin from './plugins/rate-limit.js';
 import healthRoutes from './routes/health.js';
+import domainCheckRoutes from './routes/internal/domain-check.js';
 import contentTypeRoutes from './routes/v1/content/types.js';
 import entryRoutes from './routes/v1/content/entries.js';
 import publishRoutes from './routes/v1/content/publish.js';
@@ -19,6 +20,7 @@ import navigationRoutes from './routes/v1/navigation/menus.js';
 import redirectRoutes from './routes/v1/redirects/index.js';
 import webhookRoutes from './routes/v1/webhooks/subscriptions.js';
 import sitemapRoutes from './routes/v1/sitemap.js';
+import publicContentRoutes from './routes/v1/public/content.js';
 
 function loggerOptions(): FastifyServerOptions['logger'] {
   if (env.NODE_ENV === 'test') return false;
@@ -69,6 +71,7 @@ export async function createApp(): Promise<FastifyInstance> {
   });
 
   await app.register(healthRoutes);
+  await app.register(domainCheckRoutes);
 
   // v1 surface. Each route file owns its own URL prefix so this central
   // map is easy to skim. Adding a new route group is a one-line registration.
@@ -81,6 +84,7 @@ export async function createApp(): Promise<FastifyInstance> {
   await app.register(redirectRoutes);
   await app.register(webhookRoutes);
   await app.register(sitemapRoutes);
+  await app.register(publicContentRoutes);
 
   return app;
 }

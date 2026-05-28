@@ -58,6 +58,18 @@ const authPlugin: FastifyPluginAsync = async (app) => {
   app.decorateRequest('auth', null);
 
   app.addHook('preHandler', async (request) => {
+    // Public paths skip auth entirely. They handle their own authorisation
+    // (read-only, status=published only, tenant by slug). Anything outside
+    // this allowlist falls through to the Bearer-token check below.
+    if (
+      request.url === '/health' ||
+      request.url.startsWith('/v1/openapi.json') ||
+      request.url.startsWith('/v1/sitemap.xml') ||
+      request.url.startsWith('/v1/public/')
+    ) {
+      return;
+    }
+
     const header = request.headers.authorization;
     if (!header) return;
     if (!header.startsWith('Bearer ')) return;

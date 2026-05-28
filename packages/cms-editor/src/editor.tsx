@@ -25,7 +25,8 @@ import {
   Undo2,
 } from 'lucide-react';
 import { cn } from '@sparx/ui';
-import { cmsEditorExtensions, EMPTY_DOC } from './extensions.js';
+import { cmsEditorExtensions, emptyDoc } from './extensions.js';
+import type { JSONContent } from '@tiptap/react';
 
 export type CmsDoc = Record<string, unknown>;
 
@@ -83,7 +84,7 @@ export function ContentBlockEditor({
 }: ContentBlockEditorProps) {
   const editor = useEditor({
     extensions: cmsEditorExtensions({ placeholder }),
-    content: value ?? EMPTY_DOC,
+    content: (value ?? emptyDoc()) as JSONContent,
     editable: !disabled,
     immediatelyRender: false,
     onUpdate: ({ editor: e }) => {
@@ -111,7 +112,7 @@ export function ContentBlockEditor({
     if (!editor || !value) return;
     const current = editor.getJSON();
     if (JSON.stringify(current) !== JSON.stringify(value)) {
-      editor.commands.setContent(value, { emitUpdate: false });
+      editor.commands.setContent(value as JSONContent, { emitUpdate: false });
     }
   }, [editor, value]);
 

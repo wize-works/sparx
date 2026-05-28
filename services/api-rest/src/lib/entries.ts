@@ -6,9 +6,11 @@
 // rebuilds references in the same transaction every save — this is the
 // only place autosave / publish / restore should touch a content entry.
 
-import type { ContentEntry, ContentRevision, TxClient } from '@sparx/db';
+import type { ContentEntry, ContentRevision, Prisma, TxClient } from '@sparx/db';
 import type { ContentTypeSchema } from '@sparx/cms-schemas';
 import { rebuildReferences } from './references.js';
+
+type Json = Prisma.InputJsonValue;
 
 export interface WireEntry {
   id: string;
@@ -110,8 +112,8 @@ export async function recordRevision(
       entryId: args.entryId,
       revisionNumber: next,
       kind: args.kind,
-      body: args.body,
-      seoJson: args.seoJson,
+      body: args.body as Json,
+      seoJson: args.seoJson as Json,
       status: args.status,
       authorId: args.authorId,
       summary: args.summary ?? null,
