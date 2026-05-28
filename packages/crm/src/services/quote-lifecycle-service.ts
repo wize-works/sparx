@@ -161,7 +161,7 @@ export async function convertToOrder(
         discountTotal: quote.discountTotal,
         total: quote.total,
         placedAt,
-        metadata: { convertedFromQuoteId: quote.id } as Prisma.InputJsonValue,
+        metadata: { convertedFromQuoteId: quote.id },
         items: {
           create: quote.items.map((qi) => ({
             tenantId: ctx.tenantId,

@@ -1,9 +1,9 @@
 // Typed event publisher.
 //
-// In prod (`GCP_PROJECT_ID` set) publishes to a single Pub/Sub topic
-// (`sparx.events` by default). Subscribers fan out by `event.type`:
-// content.entry.published is consumed by webhook-delivery + search-index
-// workers; media.uploaded triggers transcode; etc.
+// One Pub/Sub topic per `EventType`. Topic name == event type
+// (`order.created`, `media.uploaded`, ...) so subscribers only receive the
+// events they care about — no fan-out filtering inside worker code, no
+// wasted message deliveries, and per-topic IAM + DLQs are possible.
 //
 // In dev (`GCP_PROJECT_ID` unset) the publisher logs the event to the
 // Fastify logger and otherwise no-ops — useful for quick iteration without
@@ -45,17 +45,30 @@ interface Publisher {
 }
 
 class CloudPubSubPublisher implements Publisher {
-  private readonly topic: Topic;
-  constructor(client: PubSub, topicName: string) {
-    this.topic = client.topic(topicName, {
-      batching: { maxMessages: 100, maxMilliseconds: 50 },
-    });
+  private readonly client: PubSub;
+  private readonly topicCache = new Map<EventType, Topic>();
+
+  constructor(client: PubSub) {
+    this.client = client;
+  }
+
+  private topicFor(type: EventType): Topic {
+    let topic = this.topicCache.get(type);
+    if (!topic) {
+      topic = this.client.topic(type, {
+        batching: { maxMessages: 100, maxMilliseconds: 50 },
+      });
+      this.topicCache.set(type, topic);
+    }
+    return topic;
   }
 
   async publish<T>(event: SparxEvent<T>): Promise<void> {
     const data = Buffer.from(JSON.stringify(event));
-    await this.topic.publishMessage({
+    await this.topicFor(event.type).publishMessage({
       data,
+      // `type` attribute kept for parity with logs/dead-letter inspection
+      // even though each subscriber only sees its own topic.
       attributes: { type: event.type, tenantId: event.tenantId },
     });
   }
@@ -76,10 +89,10 @@ export function getPublisher(logger: FastifyBaseLogger): Publisher {
 
   if (env.GCP_PROJECT_ID) {
     const client = new PubSub({ projectId: env.GCP_PROJECT_ID });
-    publisher = new CloudPubSubPublisher(client, env.PUBSUB_TOPIC);
+    publisher = new CloudPubSubPublisher(client);
     logger.info(
-      { topic: env.PUBSUB_TOPIC, project: env.GCP_PROJECT_ID },
-      'pubsub: Google Cloud publisher initialised'
+      { project: env.GCP_PROJECT_ID },
+      'pubsub: Google Cloud publisher initialised (per-topic, one topic per EventType)'
     );
   } else {
     publisher = new LoggingPublisher(logger);

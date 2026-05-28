@@ -21,9 +21,10 @@ const EnvSchema = z.object({
   // session's {tenantId, userId, role} from the dashboard to api-rest.
   SPARX_INTERNAL_JWT_SECRET: z.string().min(32),
   // Optional: when set, the Pub/Sub publisher uses Google Cloud Pub/Sub;
-  // otherwise it logs to stdout and is a no-op (dev default).
+  // otherwise it logs to stdout and is a no-op (dev default). The publisher
+  // resolves a topic per `EventType` (topic name == event type) — there is
+  // no shared/fan-out topic to configure.
   GCP_PROJECT_ID: z.string().optional(),
-  PUBSUB_TOPIC: z.string().default('sparx.events'),
   // Media storage. When GCS_MEDIA_BUCKET is set we use Cloud Storage with
   // presigned PUT URLs; otherwise we fall back to a local-disk backend at
   // MEDIA_LOCAL_DIR (the dashboard PUTs through api-rest in that mode).

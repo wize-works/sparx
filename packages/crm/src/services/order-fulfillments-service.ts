@@ -81,7 +81,7 @@ export async function createFulfillment(
           ...(input.carrier === 'other' && input.carrierOther
             ? { carrierOther: input.carrierOther }
             : {}),
-        } as Prisma.InputJsonValue,
+        },
         items: {
           create: input.lines.map((line) => ({
             tenantId: ctx.tenantId,

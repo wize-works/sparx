@@ -63,7 +63,7 @@ export async function recordRefund(ctx: ServiceContext, rawInput: unknown): Prom
       const payment = await tx.orderPayment.findUnique({
         where: { id: input.paymentId },
       });
-      if (!payment || payment.orderId !== input.orderId) {
+      if (payment?.orderId !== input.orderId) {
         throw new CrmValidationError('Payment does not belong to this order');
       }
     }

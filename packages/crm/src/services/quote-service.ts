@@ -2,15 +2,12 @@
 // quote. Lifecycle transitions (submit / accept / decline / expire /
 // convertToOrder) live in quote-lifecycle-service.ts.
 
-import crypto from 'node:crypto';
-
 import {
   AddQuoteItemInput,
   CreateQuoteInput,
   ListQuotesInput,
   RemoveQuoteItemInput,
   UpdateQuoteInput,
-  UpdateQuoteItemInput,
 } from '@sparx/crm-schemas';
 import { withTenant } from '@sparx/db';
 import type { Prisma, Quote, QuoteItem } from '@sparx/db';
@@ -46,7 +43,7 @@ export async function list(
     const [items, total] = await Promise.all([
       tx.quote.findMany({
         where,
-        orderBy: { [filter.sortBy]: 'desc' } as Prisma.QuoteOrderByWithRelationInput,
+        orderBy: { [filter.sortBy]: 'desc' },
         take: filter.take,
         skip: filter.skip,
       }),
@@ -229,7 +226,7 @@ export async function removeItem(ctx: ServiceContext, rawInput: unknown): Promis
     const item = await tx.quoteItem.findUnique({ where: { id: input.itemId } });
     if (!item) throw new CrmNotFoundError('QuoteItem', input.itemId);
     const quote = await tx.quote.findUnique({ where: { id: item.quoteId } });
-    if (!quote || quote.status !== 'draft') {
+    if (quote?.status !== 'draft') {
       throw new CrmValidationError('Cannot remove items from a non-draft quote');
     }
     await tx.quoteItem.delete({ where: { id: input.itemId } });

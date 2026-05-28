@@ -63,7 +63,7 @@ export async function list(
     const [items, total] = await Promise.all([
       tx.order.findMany({
         where,
-        orderBy: { [filter.sortBy]: 'desc' } as Prisma.OrderOrderByWithRelationInput,
+        orderBy: { [filter.sortBy]: 'desc' },
         take: filter.take,
         skip: filter.skip,
       }),
@@ -94,7 +94,7 @@ export async function create(ctx: ServiceContext, rawInput: unknown): Promise<Or
     // Customer must exist + belong to this tenant (RLS enforces; explicit
     // check yields a clean NOT_FOUND instead of an FK violation).
     const customer = await tx.customer.findUnique({ where: { id: input.customerId } });
-    if (!customer || customer.deletedAt !== null) {
+    if (customer?.deletedAt !== null) {
       throw new CrmNotFoundError('Customer', input.customerId);
     }
 

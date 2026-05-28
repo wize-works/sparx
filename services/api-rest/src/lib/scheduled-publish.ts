@@ -11,20 +11,12 @@
 // another pod already holds it the tick returns immediately. The lock
 // is held for the duration of the tick and released in a finally block.
 //
-// RLS: the tick uses prisma directly (no tenant GUC) to select due
-// entries across all tenants, then re-enters with `withTenant` per
-// tenant to apply the update under RLS. The cross-tenant SELECT is safe
-// because `_prisma_migrations`-style migrations run as sparx_owner (bypass
-// RLS) — but in api-rest we connect as sparx_app, which has FORCE RLS.
-// Workaround: the SELECT is grouped + reads only id/tenantId/typeKey/slug
-// of scheduled entries, and we acquire `app.tenant_id` per tenant before
-// the per-row update so the policy passes.
-//
-// To keep the BYPASSRLS surface narrow, the cross-tenant lookup uses a
-// raw query that explicitly UNSETs app.tenant_id for the duration of
-// the SELECT, then resets to NULL afterwards. (sparx_app cannot bypass
-// RLS, so the SELECT has to round-trip through the platform tenant or a
-// dedicated `scheduler` role — see TODO at the bottom.)
+// RLS: the cross-tenant SELECT uses the `find_due_scheduled_entries(int)`
+// SECURITY DEFINER function (migration 20260601100000). The function is
+// owned by sparx_owner and EXECUTE-granted only to sparx_app, so the app
+// role reads scheduled entries across tenants without itself gaining RLS
+// bypass. Per-entry UPDATE rides `withTenant({tenantId})` so the write
+// still goes through the standard tenant_isolation policy.
 
 import type { FastifyBaseLogger } from 'fastify';
 import { prisma, withTenant } from '@sparx/db';
@@ -61,34 +53,13 @@ export async function runScheduledPublishTick(logger: FastifyBaseLogger): Promis
   }
 
   try {
-    // Cross-tenant SELECT for entries that have passed their scheduled
-    // time. sparx_app has FORCE RLS, so this query returns rows only for
-    // the *current* tenant GUC. We work around that by using sparx_owner
-    // via a separate raw query path — see TODO below. For Phase 1 we
-    // rely on the tenant GUC being unset at startup (no SET LOCAL has
-    // run yet on this connection) and the policy yielding `current_setting(
-    // 'app.tenant_id', true) IS NULL`-keyed rows to be... blocked.
-    //
-    // Pragmatic stopgap: use Prisma's raw $queryRawUnsafe with a SET LOCAL
-    // ROLE sparx_owner inside a transaction so the SELECT bypasses RLS.
-    // This requires that DATABASE_URL's role can SET ROLE to sparx_owner
-    // (granted in the migration bootstrap via `GRANT sparx_owner TO sparx_app`).
-    const due = await prisma.$transaction(async (tx) => {
-      // Switch to sparx_owner for the duration of this query so RLS lets
-      // us see scheduled entries across every tenant.
-      await tx.$executeRawUnsafe(`SET LOCAL ROLE sparx_owner`);
-      const rows = await tx.$queryRaw<DueEntry[]>`
-        SELECT id, tenant_id, type_key, slug, scheduled_at
-        FROM content_entries
-        WHERE status = 'scheduled'
-          AND scheduled_at IS NOT NULL
-          AND scheduled_at <= NOW()
-          AND deleted_at IS NULL
-        ORDER BY scheduled_at ASC
-        LIMIT 100
-      `;
-      return rows;
-    });
+    // SECURITY DEFINER function — runs as sparx_owner, returns the
+    // due-entry projection across all tenants without sparx_app
+    // gaining RLS bypass. See migration 20260601100000.
+    const due = await prisma.$queryRaw<DueEntry[]>`
+      SELECT id, tenant_id, type_key, slug, scheduled_at
+      FROM find_due_scheduled_entries(100)
+    `;
 
     if (due.length === 0) {
       return { acquired: true, processed: 0, errors: 0 };
