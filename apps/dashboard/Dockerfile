@@ -26,7 +26,11 @@ COPY packages/crm/package.json packages/crm/
 COPY packages/crm-schemas/package.json packages/crm-schemas/
 COPY packages/cms-editor/package.json packages/cms-editor/
 COPY packages/cms-schemas/package.json packages/cms-schemas/
+# Root postinstall runs `pnpm --filter @sparx/db db:generate`, which needs
+# both the schema source AND the prisma config file (the new multi-file
+# schema lives in prisma/schema/, declared in prisma.config.ts).
 COPY packages/db/prisma packages/db/prisma
+COPY packages/db/prisma.config.ts packages/db/prisma.config.ts
 
 # Install only the @sparx/dashboard subgraph (its deps + transitive workspace deps).
 RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \
