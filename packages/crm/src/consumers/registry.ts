@@ -21,6 +21,7 @@ import { registerOrderEventConsumers } from './order-events';
 import { registerEmailEventConsumers } from './email-events';
 import { registerQuoteEventConsumers } from './quote-events';
 import { registerAuthEventConsumers } from './auth-events';
+import { registerSegmentEvaluatorConsumers } from './segment-evaluator';
 
 export interface RegisterOptions {
   /** Override the active bus — tests pass a fresh in-memory bus. */
@@ -44,6 +45,7 @@ export function registerCrmConsumers(opts: RegisterOptions = {}): ConsumerRegist
   teardowns.push(...registerEmailEventConsumers(ctx));
   teardowns.push(...registerQuoteEventConsumers(ctx));
   teardowns.push(...registerAuthEventConsumers(ctx));
+  teardowns.push(...registerSegmentEvaluatorConsumers(ctx));
 
   // Cache invalidation — when a tenant activates/deactivates CRM at runtime,
   // we drop the module-gate cache so the next event reflects the new state.

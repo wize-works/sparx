@@ -28,6 +28,9 @@ export type { CustomerProjection } from './projection';
 
 export { resolveCustomerByEmail } from './resolve';
 
+export { registerSegmentEvaluatorConsumers, evaluateCustomerForTenant } from './segment-evaluator';
+export { buildSegmentRuleProjection } from './segment-projection';
+
 export { ORDER_CONSUMER_TOPICS, type OrderCreatedEventPayload } from './order-events';
 export { EMAIL_CONSUMER_TOPICS } from './email-events';
 export { QUOTE_CONSUMER_TOPICS } from './quote-events';

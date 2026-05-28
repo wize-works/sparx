@@ -166,8 +166,12 @@ export async function members(
   );
 }
 
-/** Count of members. Phase 4 will also add previewCount() which evaluates
- *  the rule tree against a sample without materializing. */
+/** Count of members. */
 export async function memberCount(ctx: ServiceContext, segmentId: string): Promise<number> {
   return withTenant(ctx, (tx) => tx.segmentMember.count({ where: { segmentId } }));
 }
+
+// previewCount + recomputeFull are non-trivial enough to live in their own
+// file (see ./segment-evaluation.ts for the math). Re-exported here so the
+// segmentService namespace looks complete to callers.
+export { previewCount, recomputeFull } from './segment-evaluation';

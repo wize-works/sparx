@@ -14,6 +14,7 @@ export * from './activities';
 export * from './tasks';
 export * from './segments';
 export * from './segment-rule';
+export * from './evaluate-segment-rule';
 export * from './orders';
 export * from './order-payments';
 export * from './order-fulfillments';
