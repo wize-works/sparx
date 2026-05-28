@@ -23,6 +23,7 @@ COPY packages/ui/package.json packages/ui/
 COPY packages/auth/package.json packages/auth/
 COPY packages/db/package.json packages/db/
 COPY packages/email/package.json packages/email/
+COPY packages/events/package.json packages/events/
 COPY packages/crm/package.json packages/crm/
 COPY packages/crm-schemas/package.json packages/crm-schemas/
 COPY packages/cms-editor/package.json packages/cms-editor/
@@ -42,6 +43,7 @@ COPY packages/ui packages/ui
 COPY packages/auth packages/auth
 COPY packages/db packages/db
 COPY packages/email packages/email
+COPY packages/events packages/events
 COPY packages/crm packages/crm
 COPY packages/crm-schemas packages/crm-schemas
 COPY packages/cms-editor packages/cms-editor
