@@ -30,7 +30,7 @@ spec:
                   name: pgbouncer-secrets
                   key: POSTGRES_HOST
             - name: DB_PORT
-              value: "5432"
+              value: '5432'
             - name: DB_NAME
               value: sparx
             - name: DB_USER
@@ -46,22 +46,22 @@ spec:
             - name: AUTH_TYPE
               value: scram-sha-256
             - name: MAX_CLIENT_CONN
-              value: "500"
+              value: '500'
             - name: DEFAULT_POOL_SIZE
-              value: "25"
+              value: '25'
             - name: RESERVE_POOL_SIZE
-              value: "5"
+              value: '5'
             - name: SERVER_TLS_SSLMODE
               value: require
             - name: IGNORE_STARTUP_PARAMETERS
               value: extra_float_digits,search_path
           resources:
             requests:
-              cpu: "100m"
-              memory: "128Mi"
+              cpu: '100m'
+              memory: '128Mi'
             limits:
-              cpu: "500m"
-              memory: "256Mi"
+              cpu: '500m'
+              memory: '256Mi'
           livenessProbe:
             tcpSocket:
               port: 5432

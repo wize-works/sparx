@@ -7,12 +7,12 @@ on:
   workflow_dispatch:
     inputs:
       service:
-        description: "Single service to rebuild (leave blank for all)"
+        description: 'Single service to rebuild (leave blank for all)'
         required: false
 
 permissions:
   contents: read
-  id-token: write   # required for Workload Identity Federation
+  id-token: write # required for Workload Identity Federation
 
 env:
   PROJECT_ID: sparxworks
@@ -36,7 +36,7 @@ jobs:
         # or services/<name>/Dockerfile. Until then these jobs will fail fast on the
         # "Dockerfile missing" check.
         service:
-          - web              # @sparx/web — marketing site
+          - web # @sparx/web — marketing site
           - api-rest
           - api-graphql
           - api-mcp
@@ -124,4 +124,4 @@ jobs:
           image-ref: ${{ steps.tags.outputs.sha_tag }}
           format: table
           severity: CRITICAL,HIGH
-          exit-code: '0'   # report only — flip to '1' once base images are stable
+          exit-code: '0' # report only — flip to '1' once base images are stable

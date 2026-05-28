@@ -17,7 +17,7 @@ metadata:
     app: sparx-migrate
 spec:
   backoffLimit: 1
-  ttlSecondsAfterFinished: 86400  # auto-cleanup after 24h
+  ttlSecondsAfterFinished: 86400 # auto-cleanup after 24h
   template:
     metadata:
       labels:
@@ -28,7 +28,7 @@ spec:
       containers:
         - name: migrate
           image: us-central1-docker.pkg.dev/PROJECT_ID/sparx/api-rest:IMAGE_TAG
-          command: ["pnpm", "prisma", "migrate", "deploy"]
+          command: ['pnpm', 'prisma', 'migrate', 'deploy']
           envFrom:
             - configMapRef:
                 name: sparx-app-env
@@ -36,8 +36,8 @@ spec:
                 name: sparx-app-secrets
           resources:
             requests:
-              cpu: "200m"
-              memory: "256Mi"
+              cpu: '200m'
+              memory: '256Mi'
             limits:
-              cpu: "1000m"
-              memory: "1Gi"
+              cpu: '1000m'
+              memory: '1Gi'

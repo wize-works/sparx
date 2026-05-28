@@ -183,10 +183,17 @@ resource "google_project_iam_member" "app_roles" {
   member  = "serviceAccount:${google_service_account.app.email}"
 }
 
-# Storage access scoped to the media bucket only — NOT project-wide.
+# Storage access scoped to the media buckets only — NOT project-wide.
 # (Project-wide objectAdmin would let the app SA write to the Terraform state bucket.)
+# Both buckets get objectAdmin: api-rest writes originals to the private one,
+# media-worker writes variants to the public one, and either may need to
+# delete-and-replace on either bucket during reprocessing.
 resource "google_storage_bucket_iam_member" "app_media" {
-  bucket = module.storage.media_bucket_name
+  for_each = toset([
+    module.storage.media_bucket_name,
+    module.storage.media_public_bucket_name,
+  ])
+  bucket = each.key
   role   = "roles/storage.objectAdmin"
   member = "serviceAccount:${google_service_account.app.email}"
 }

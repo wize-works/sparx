@@ -28,7 +28,7 @@ spec:
         tier: worker
     spec:
       serviceAccountName: sparx-app
-      terminationGracePeriodSeconds: 60   # give in-flight Pub/Sub acks time to land
+      terminationGracePeriodSeconds: 60 # give in-flight Pub/Sub acks time to land
       containers:
         - name: worker-email
           image: us-central1-docker.pkg.dev/REPLACE_PROJECT_ID/sparx/worker-email:latest
@@ -47,11 +47,11 @@ spec:
               value: email.send.worker-email
           resources:
             requests:
-              cpu: "100m"
-              memory: "128Mi"
+              cpu: '100m'
+              memory: '128Mi'
             limits:
-              cpu: "500m"
-              memory: "256Mi"
+              cpu: '500m'
+              memory: '256Mi'
           livenessProbe:
             # Workers expose /health on a side port for liveness only.
             httpGet:

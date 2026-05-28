@@ -15,3 +15,4 @@ export * from './order-actions';
 export * from './order-payments-actions';
 export * from './order-fulfillment-actions';
 export * from './quote-actions';
+export * from './pipeline-actions';

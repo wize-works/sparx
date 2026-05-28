@@ -1,7 +1,7 @@
 version: 2
 updates:
   - package-ecosystem: npm
-    directory: "/"
+    directory: '/'
     schedule:
       interval: weekly
       day: tuesday
@@ -9,40 +9,40 @@ updates:
     groups:
       typescript-tooling:
         patterns:
-          - "typescript"
-          - "typescript-eslint"
-          - "@types/*"
-          - "eslint*"
-          - "prettier*"
+          - 'typescript'
+          - 'typescript-eslint'
+          - '@types/*'
+          - 'eslint*'
+          - 'prettier*'
       react:
         patterns:
-          - "react"
-          - "react-dom"
-          - "@types/react*"
+          - 'react'
+          - 'react-dom'
+          - '@types/react*'
       next:
         patterns:
-          - "next"
-          - "@next/*"
+          - 'next'
+          - '@next/*'
       tailwind:
         patterns:
-          - "tailwind*"
-          - "@tailwindcss/*"
+          - 'tailwind*'
+          - '@tailwindcss/*'
       radix:
         patterns:
-          - "@radix-ui/*"
+          - '@radix-ui/*'
 
   - package-ecosystem: github-actions
-    directory: "/"
+    directory: '/'
     schedule:
       interval: weekly
       day: tuesday
 
   - package-ecosystem: terraform
-    directory: "/terraform"
+    directory: '/terraform'
     schedule:
       interval: monthly
 
   - package-ecosystem: docker
-    directory: "/k8s"
+    directory: '/k8s'
     schedule:
       interval: monthly

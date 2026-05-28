@@ -42,55 +42,55 @@ spec:
       initContainers:
         - name: cloud-sql-proxy
           image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.21.3
-          restartPolicy: Always  # native sidecar (k8s 1.29+)
+          restartPolicy: Always # native sidecar (k8s 1.29+)
           args:
-            - "--private-ip"
-            - "--port=5432"
-            - "sparxworks:us-central1:sparx-prod-pg-6b5d7d"
+            - '--private-ip'
+            - '--port=5432'
+            - 'sparxworks:us-central1:sparx-prod-pg-6b5d7d'
           securityContext:
             runAsNonRoot: true
             allowPrivilegeEscalation: false
             capabilities:
-              drop: ["ALL"]
+              drop: ['ALL']
             seccompProfile:
               type: RuntimeDefault
           resources:
             requests:
-              cpu: "100m"
-              memory: "128Mi"
+              cpu: '100m'
+              memory: '128Mi'
             limits:
-              cpu: "500m"
-              memory: "256Mi"
+              cpu: '500m'
+              memory: '256Mi'
       containers:
         - name: resolve
           image: ${IMAGE}
           imagePullPolicy: IfNotPresent
           # Override the image's default ENTRYPOINT (run-migrations.ts).
-          command: ["pnpm", "exec", "tsx", "scripts/resolve-migration.ts"]
+          command: ['pnpm', 'exec', 'tsx', 'scripts/resolve-migration.ts']
           env:
             - name: GCP_PROJECT_ID
-              value: "sparxworks"
+              value: 'sparxworks'
             - name: PROXY_HOST
-              value: "127.0.0.1"
+              value: '127.0.0.1'
             - name: PROXY_PORT
-              value: "5432"
+              value: '5432'
             - name: DB_NAME
-              value: "sparx"
+              value: 'sparx'
             - name: RESOLVE_MIGRATION
-              value: "${RESOLVE_MIGRATION}"
+              value: '${RESOLVE_MIGRATION}'
           securityContext:
             runAsNonRoot: true
             runAsUser: 1000
             runAsGroup: 1000
             allowPrivilegeEscalation: false
             capabilities:
-              drop: ["ALL"]
+              drop: ['ALL']
             seccompProfile:
               type: RuntimeDefault
           resources:
             requests:
-              cpu: "100m"
-              memory: "256Mi"
+              cpu: '100m'
+              memory: '256Mi'
             limits:
-              cpu: "500m"
-              memory: "512Mi"
+              cpu: '500m'
+              memory: '512Mi'

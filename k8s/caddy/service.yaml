@@ -6,10 +6,10 @@ metadata:
   annotations:
     # Use the regional static IP reserved in Terraform (output: ingress_ip).
     # Patch loadBalancerIP after first apply — see k8s/README.md.
-    cloud.google.com/l4-rbs: "enabled"
+    cloud.google.com/l4-rbs: 'enabled'
 spec:
   type: LoadBalancer
-  externalTrafficPolicy: Local  # preserve client IP for on-demand TLS validation
+  externalTrafficPolicy: Local # preserve client IP for on-demand TLS validation
   # loadBalancerIP: <patch in from terraform output ingress_ip>
   ports:
     - name: http

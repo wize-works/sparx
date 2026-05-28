@@ -40,7 +40,7 @@ on:
 
 permissions:
   contents: read
-  id-token: write   # required for Workload Identity Federation OIDC token
+  id-token: write # required for Workload Identity Federation OIDC token
 
 env:
   PROJECT_ID: sparxworks

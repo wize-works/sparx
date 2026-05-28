@@ -8,7 +8,9 @@ import {
   activityService,
   customerService,
   dealService,
+  orderService,
   pipelineService,
+  quoteService,
 } from '@sparx/crm';
 import {
   Badge,
@@ -31,6 +33,8 @@ import {
 } from '@sparx/ui';
 
 import { stageColor } from '../../pipelines/[id]/_components/kanban-types';
+import { AttachOrderPopover, DetachOrderButton } from './_components/attach-order-popover';
+import { AttachQuotePopover, DetachQuoteButton } from './_components/attach-quote-popover';
 
 export const dynamic = 'force-dynamic';
 
@@ -51,12 +55,33 @@ export default async function DealDetailPage({ params }: PageProps) {
     throw err;
   }
 
-  const [pipeline, attachedOrders, attachedQuotes, activities, customer] = await Promise.all([
+  const [
+    pipeline,
+    attachedOrders,
+    attachedQuotes,
+    activities,
+    customer,
+    candidateOrders,
+    candidateQuotes,
+  ] = await Promise.all([
     pipelineService.get(ctx, deal.pipelineId),
     dealService.listAttachedOrders(ctx, deal.id),
     dealService.listAttachedQuotes(ctx, deal.id),
     activityService.list(ctx, { dealId: deal.id, take: 20 }),
     deal.customerId ? customerService.get(ctx, deal.customerId).catch(() => null) : null,
+    // Pull a slice of recent orders + quotes (optionally filtered to this
+    // deal's customer) to populate the attach popovers without an extra
+    // round-trip on click.
+    orderService.list(ctx, {
+      take: 100,
+      sortBy: 'placedAt',
+      ...(deal.customerId ? { customerId: deal.customerId } : {}),
+    }),
+    quoteService.list(ctx, {
+      take: 100,
+      sortBy: 'createdAt',
+      ...(deal.customerId ? { customerId: deal.customerId } : {}),
+    }),
   ]);
   const stage = pipeline.stages.find((s) => s.id === deal.stageId);
 
@@ -125,13 +150,24 @@ export default async function DealDetailPage({ params }: PageProps) {
                       <Badge variant="outline">{attachedOrders.length}</Badge>
                     </Stack>
                   </CardTitle>
+                  <AttachOrderPopover
+                    dealId={deal.id}
+                    attachedIds={attachedOrders.map((o) => o.id)}
+                    candidates={candidateOrders.items.map((o) => ({
+                      id: o.id,
+                      orderNumber: o.orderNumber,
+                      status: o.status,
+                      total: o.total.toString(),
+                      currency: o.currency,
+                    }))}
+                  />
                 </Stack>
               </CardHeader>
               <CardContent>
                 {attachedOrders.length === 0 ? (
                   <EmptyState
                     title="No attached orders"
-                    description="Orders attached to this deal show up here. Attach an existing order from its detail page."
+                    description="Orders attached to this deal show up here. Use the Attach order button above."
                   />
                 ) : (
                   <Table>
@@ -141,6 +177,7 @@ export default async function DealDetailPage({ params }: PageProps) {
                         <TableHead>Status</TableHead>
                         <TableHead className="text-right">Total</TableHead>
                         <TableHead>Placed</TableHead>
+                        <TableHead></TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -167,6 +204,9 @@ export default async function DealDetailPage({ params }: PageProps) {
                               {o.placedAt?.toLocaleDateString() ?? '—'}
                             </Text>
                           </TableCell>
+                          <TableCell className="text-right">
+                            <DetachOrderButton dealId={deal.id} orderId={o.id} />
+                          </TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
@@ -177,18 +217,31 @@ export default async function DealDetailPage({ params }: PageProps) {
 
             <Card>
               <CardHeader>
-                <CardTitle>
-                  <Stack direction="row" align="center" gap={2}>
-                    <FileText className="h-4 w-4" /> Attached quotes
-                    <Badge variant="outline">{attachedQuotes.length}</Badge>
-                  </Stack>
-                </CardTitle>
+                <Stack direction="row" align="center" justify="between">
+                  <CardTitle>
+                    <Stack direction="row" align="center" gap={2}>
+                      <FileText className="h-4 w-4" /> Attached quotes
+                      <Badge variant="outline">{attachedQuotes.length}</Badge>
+                    </Stack>
+                  </CardTitle>
+                  <AttachQuotePopover
+                    dealId={deal.id}
+                    attachedIds={attachedQuotes.map((q) => q.id)}
+                    candidates={candidateQuotes.items.map((q) => ({
+                      id: q.id,
+                      quoteNumber: q.quoteNumber,
+                      status: q.status,
+                      total: q.total.toString(),
+                      currency: q.currency,
+                    }))}
+                  />
+                </Stack>
               </CardHeader>
               <CardContent>
                 {attachedQuotes.length === 0 ? (
                   <EmptyState
                     title="No attached quotes"
-                    description="Quotes attached to this deal show up here."
+                    description="Quotes attached to this deal show up here. Use the Attach quote button above."
                   />
                 ) : (
                   <Table>
@@ -198,6 +251,7 @@ export default async function DealDetailPage({ params }: PageProps) {
                         <TableHead>Status</TableHead>
                         <TableHead className="text-right">Total</TableHead>
                         <TableHead>Valid until</TableHead>
+                        <TableHead></TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -223,6 +277,9 @@ export default async function DealDetailPage({ params }: PageProps) {
                             <Text size="sm" variant="muted">
                               {q.validUntil?.toLocaleDateString() ?? '—'}
                             </Text>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <DetachQuoteButton dealId={deal.id} quoteId={q.id} />
                           </TableCell>
                         </TableRow>
                       ))}

@@ -35,14 +35,14 @@ on:
 
 permissions:
   contents: read
-  id-token: write   # required for Workload Identity Federation
+  id-token: write # required for Workload Identity Federation
 
 env:
   PROJECT_ID: sparxworks
   REGION: us-central1
   CLUSTER: sparx-prod-autopilot
   NAMESPACE: sparx-prod
-  INGRESS_IP: 35.254.145.54   # google_compute_address.ingress
+  INGRESS_IP: 35.254.145.54 # google_compute_address.ingress
   WIF_PROVIDER: projects/631794111842/locations/global/workloadIdentityPools/github-pool/providers/github-provider
   DEPLOYER_SA: sparx-deployer@sparxworks.iam.gserviceaccount.com
   APP_GSA: sparx-app@sparxworks.iam.gserviceaccount.com

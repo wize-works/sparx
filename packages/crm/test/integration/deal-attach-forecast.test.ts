@@ -184,7 +184,7 @@ describe('deal attach + forecast', () => {
       title: 'Future weighted',
       value: 5_000,
       probability: 40,
-      expectedCloseDate: nextMonth.toISOString(),
+      expectedCloseDate: nextMonth.toISOString().slice(0, 10),
     });
     expect(futureOpen.id).toBeTruthy();
 

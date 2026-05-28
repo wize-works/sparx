@@ -40,11 +40,11 @@ spec:
       initContainers:
         - name: cloud-sql-proxy
           image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.21.3
-          restartPolicy: Always  # native sidecar (k8s 1.29+)
+          restartPolicy: Always # native sidecar (k8s 1.29+)
           args:
-            - "--private-ip"
-            - "--port=5432"
-            - "sparxworks:us-central1:sparx-prod-pg-6b5d7d"
+            - '--private-ip'
+            - '--port=5432'
+            - 'sparxworks:us-central1:sparx-prod-pg-6b5d7d'
           # No startupProbe / readinessProbe: the proxy's --health-check
           # endpoint binds to localhost by default (and --http-address=0.0.0.0
           # is the workaround), but the migrate container already polls
@@ -59,44 +59,44 @@ spec:
             # GKE Autopilot policy without needing a specific uid here.
             allowPrivilegeEscalation: false
             capabilities:
-              drop: ["ALL"]
+              drop: ['ALL']
             seccompProfile:
               type: RuntimeDefault
           resources:
             requests:
-              cpu: "100m"
-              memory: "128Mi"
+              cpu: '100m'
+              memory: '128Mi'
             limits:
-              cpu: "500m"
-              memory: "256Mi"
+              cpu: '500m'
+              memory: '256Mi'
       containers:
         - name: migrate
           image: ${IMAGE}
           imagePullPolicy: IfNotPresent
           env:
             - name: GCP_PROJECT_ID
-              value: "sparxworks"
+              value: 'sparxworks'
             - name: PROXY_HOST
-              value: "127.0.0.1"
+              value: '127.0.0.1'
             - name: PROXY_PORT
-              value: "5432"
+              value: '5432'
             - name: DB_NAME
-              value: "sparx"
+              value: 'sparx'
             - name: RUN_SEED
-              value: "${RUN_SEED}"
+              value: '${RUN_SEED}'
           securityContext:
             runAsNonRoot: true
             runAsUser: 1000
             runAsGroup: 1000
             allowPrivilegeEscalation: false
             capabilities:
-              drop: ["ALL"]
+              drop: ['ALL']
             seccompProfile:
               type: RuntimeDefault
           resources:
             requests:
-              cpu: "200m"
-              memory: "512Mi"
+              cpu: '200m'
+              memory: '512Mi'
             limits:
-              cpu: "1000m"
-              memory: "1Gi"
+              cpu: '1000m'
+              memory: '1Gi'
