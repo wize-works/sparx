@@ -12,6 +12,7 @@
 // dispatches both CMS and CRM deliveries equivalently.
 
 import { prisma, withTenant } from '@sparx/db';
+import type { Prisma } from '@sparx/db';
 
 import type { CrmEvent, Publisher } from './events';
 
@@ -45,7 +46,7 @@ export class WebhookFanoutPublisher implements Publisher {
               tenantId: event.tenantId,
               occurredAt: (event.occurredAt ?? new Date()).toISOString(),
               data: event.payload,
-            },
+            } as Prisma.InputJsonValue,
             status: 'pending',
             attemptCount: 0,
             nextAttemptAt: new Date(),
