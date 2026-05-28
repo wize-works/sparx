@@ -1,0 +1,115 @@
+// CMS — Content types + entries + revisions + references.
+//
+// Polymorphic content model (docs/12 §3, plan Phase 1.1). Each ContentType
+// defines the field schema for a class of entries; built-in types live
+// under the sentinel "Sparx Platform" tenant and the RLS policy exposes
+// them read-visible to every tenant.
+
+model ContentType {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId    String   @map("tenant_id") @db.Uuid
+  key         String   @db.VarChar(63)
+  name        String   @db.VarChar(120)
+  pluralName  String   @map("plural_name") @db.VarChar(120)
+  description String?  @db.Text
+  schemaJson  Json     @map("schema_json")
+  urlPattern  String?  @map("url_pattern") @db.VarChar(255)
+  icon        String?  @db.VarChar(64)
+  isSingleton Boolean  @default(false) @map("is_singleton")
+  isBuiltIn   Boolean  @default(false) @map("is_built_in")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, key])
+  @@index([tenantId])
+  @@map("content_types")
+}
+
+// One row per editable record. `body` JSONB validated against the resolved
+// ContentType.schemaJson at write time.
+
+model ContentEntry {
+  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId      String    @map("tenant_id") @db.Uuid
+  typeKey       String    @map("type_key") @db.VarChar(63)
+  slug          String?   @db.VarChar(255)
+  status        String    @default("draft") @db.VarChar(20)
+  body          Json      @default("{}")
+  seoJson       Json      @default("{}") @map("seo_json")
+  publishedAt   DateTime? @map("published_at") @db.Timestamptz
+  scheduledAt   DateTime? @map("scheduled_at") @db.Timestamptz
+  archivedAt    DateTime? @map("archived_at") @db.Timestamptz
+  authorId      String?   @map("author_id") @db.Uuid
+  localeCode    String?   @map("locale_code") @db.VarChar(10)
+  parentEntryId String?   @map("parent_entry_id") @db.Uuid
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt     DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt     DateTime? @map("deleted_at") @db.Timestamptz
+
+  tenant          Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  author          Author?             @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  parent          ContentEntry?       @relation("EntryLocalization", fields: [parentEntryId], references: [id], onDelete: SetNull)
+  localeVariants  ContentEntry[]      @relation("EntryLocalization")
+  revisions       ContentRevision[]
+  refsFrom        ContentReference[]  @relation("ContentReferenceFrom")
+  refsTo          ContentReference[]  @relation("ContentReferenceTo")
+  terms           EntryTaxonomyTerm[]
+  previewTokens   PreviewToken[]
+  navigationItems NavigationItem[]
+
+  @@unique([tenantId, typeKey, slug])
+  @@index([tenantId, typeKey, status])
+  @@index([tenantId, status, publishedAt(sort: Desc)])
+  @@index([tenantId, updatedAt(sort: Desc)])
+  @@index([tenantId, scheduledAt])
+  @@map("content_entries")
+}
+
+// Every PATCH creates a revision tagged `autosave`; explicit Save/Publish
+// creates `manual`. Retain ~25 per entry; older `autosave` rows GC monthly.
+
+model ContentRevision {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId       String   @map("tenant_id") @db.Uuid
+  entryId        String   @map("entry_id") @db.Uuid
+  revisionNumber Int      @map("revision_number")
+  kind           String   @db.VarChar(20)
+  body           Json
+  seoJson        Json     @map("seo_json")
+  status         String   @db.VarChar(20)
+  authorId       String?  @map("author_id") @db.Uuid
+  summary        String?  @db.VarChar(500)
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  tenant Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  entry  ContentEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
+
+  @@unique([entryId, revisionNumber])
+  @@index([tenantId, entryId, createdAt(sort: Desc)])
+  @@map("content_revisions")
+}
+
+// Maintained on entry save: every reference / asset field in `body` produces
+// one row. Powers usage-tracking, broken-link detection, and orphan-asset GC.
+
+model ContentReference {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId    String   @map("tenant_id") @db.Uuid
+  fromEntryId String   @map("from_entry_id") @db.Uuid
+  toEntryId   String?  @map("to_entry_id") @db.Uuid
+  toAssetId   String?  @map("to_asset_id") @db.Uuid
+  field       String   @db.VarChar(255)
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  tenant    Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  fromEntry ContentEntry  @relation("ContentReferenceFrom", fields: [fromEntryId], references: [id], onDelete: Cascade)
+  toEntry   ContentEntry? @relation("ContentReferenceTo", fields: [toEntryId], references: [id], onDelete: Cascade)
+  toAsset   MediaAsset?   @relation(fields: [toAssetId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, fromEntryId])
+  @@index([tenantId, toEntryId])
+  @@index([tenantId, toAssetId])
+  @@map("content_references")
+}

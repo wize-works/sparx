@@ -1,0 +1,47 @@
+// CRM — Activities (locked decision #3 — append-only event log).
+//
+// Append-only. Never UPDATE. Editing a note inserts a `note` row with
+// `correctsActivityId` pointing at the original; the original stays for
+// audit. Native Postgres RANGE partition by month on `occurredAt` lands in
+// Phase 5 with a partition-rollover scheduler — until then, a single table
+// is sufficient and the append-only contract is enforced at the service
+// layer (activityService never issues UPDATE).
+//
+// `linkedEntityType` / `linkedEntityId` carries the soft reference to the
+// originating record (order, email, quote, …) without a hard FK because
+// those tables span modules and lifecycles.
+
+model CrmActivity {
+  id           String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId     String  @map("tenant_id") @db.Uuid
+  customerId   String? @map("customer_id") @db.Uuid
+  dealId       String? @map("deal_id") @db.Uuid
+  b2bAccountId String? @map("b2b_account_id") @db.Uuid
+
+  type        String  @db.VarChar(63)
+  description String? @db.Text
+
+  actorId   String? @map("actor_id") @db.Uuid
+  actorType String  @map("actor_type") @db.VarChar(20) // staff | customer | system | api | mcp
+
+  occurredAt       DateTime @map("occurred_at") @db.Timestamptz
+  linkedEntityType String?  @map("linked_entity_type") @db.VarChar(63)
+  linkedEntityId   String?  @map("linked_entity_id") @db.Uuid
+
+  metadata           Json    @default("{}")
+  correctsActivityId String? @map("corrects_activity_id") @db.Uuid
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  tenant     Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  customer   Customer?   @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  deal       Deal?       @relation(fields: [dealId], references: [id], onDelete: SetNull)
+  b2bAccount B2BAccount? @relation(fields: [b2bAccountId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, customerId, occurredAt(sort: Desc)])
+  @@index([tenantId, dealId, occurredAt(sort: Desc)])
+  @@index([tenantId, b2bAccountId, occurredAt(sort: Desc)])
+  @@index([tenantId, type, occurredAt(sort: Desc)])
+  @@index([tenantId, occurredAt(sort: Desc)])
+  @@map("crm_activities")
+}

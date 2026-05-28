@@ -1,0 +1,30 @@
+// Sparx data layer — generator + datasource configuration.
+//
+// Multi-file schema: every .prisma file in this directory contributes to a
+// single Prisma schema. One file (this one) owns the generator and
+// datasource blocks; the rest add models. Splitting by domain keeps every
+// file under the 200-line limit and stops the monolith from turning into a
+// 1500-line scroll-wall on every CRM/Commerce/B2B addition.
+//
+// Conventions every model file follows:
+//   • Tenant-scoped tables FK back to Tenant with onDelete: Cascade.
+//   • Multi-tenant rows get @map'd snake_case + the standard FORCE RLS
+//     policy in their migration (see packages/db/prisma/migrations/).
+//   • updatedAt uses @updatedAt; the migration ALTER TABLE ... DROP DEFAULT
+//     so Prisma owns the timestamp end-to-end.
+//
+// Better Auth conventions: User, Session, Account, Verification shapes are
+// Better Auth-compatible (docs/16-auth-security.md §1) with Sparx-specific
+// extensions on User.
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  directUrl  = env("MIGRATION_DATABASE_URL")
+  extensions = [pgcrypto]
+}

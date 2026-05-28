@@ -1,0 +1,58 @@
+// CMS — Taxonomies (categories, tags, custom vocabularies).
+//
+// Taxonomies are tenant-defined; terms can be hierarchical (parent_term_id)
+// or flat. Entries link to terms via the EntryTaxonomyTerm join table.
+
+model Taxonomy {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId     String   @map("tenant_id") @db.Uuid
+  key          String   @db.VarChar(63) // e.g. "blog_category", "blog_tag"
+  name         String   @db.VarChar(120)
+  pluralName   String   @map("plural_name") @db.VarChar(120)
+  hierarchical Boolean  @default(false)
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  tenant Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  terms  TaxonomyTerm[]
+
+  @@unique([tenantId, key])
+  @@map("taxonomies")
+}
+
+model TaxonomyTerm {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId     String   @map("tenant_id") @db.Uuid
+  taxonomyId   String   @map("taxonomy_id") @db.Uuid
+  parentTermId String?  @map("parent_term_id") @db.Uuid
+  slug         String   @db.VarChar(255)
+  name         String   @db.VarChar(255)
+  description  String?  @db.Text
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  tenant   Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  taxonomy Taxonomy            @relation(fields: [taxonomyId], references: [id], onDelete: Cascade)
+  parent   TaxonomyTerm?       @relation("TaxonomyTermTree", fields: [parentTermId], references: [id], onDelete: SetNull)
+  children TaxonomyTerm[]      @relation("TaxonomyTermTree")
+  entries  EntryTaxonomyTerm[]
+
+  @@unique([taxonomyId, slug])
+  @@index([tenantId, taxonomyId])
+  @@map("taxonomy_terms")
+}
+
+model EntryTaxonomyTerm {
+  entryId   String   @map("entry_id") @db.Uuid
+  termId    String   @map("term_id") @db.Uuid
+  tenantId  String   @map("tenant_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  tenant Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  entry  ContentEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  term   TaxonomyTerm @relation(fields: [termId], references: [id], onDelete: Cascade)
+
+  @@id([entryId, termId])
+  @@index([tenantId, termId])
+  @@map("entry_taxonomy_terms")
+}

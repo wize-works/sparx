@@ -24,6 +24,15 @@ const EnvSchema = z.object({
   // otherwise it logs to stdout and is a no-op (dev default).
   GCP_PROJECT_ID: z.string().optional(),
   PUBSUB_TOPIC: z.string().default('sparx.events'),
+  // Media storage. When GCS_MEDIA_BUCKET is set we use Cloud Storage with
+  // presigned PUT URLs; otherwise we fall back to a local-disk backend at
+  // MEDIA_LOCAL_DIR (the dashboard PUTs through api-rest in that mode).
+  GCS_MEDIA_BUCKET: z.string().optional(),
+  MEDIA_LOCAL_DIR: z.string().default('.media-tmp'),
+  // Public base URL for serving processed variants. In prod this is the
+  // Cloudflare-fronted CDN domain; in dev it's the api-rest origin so the
+  // dashboard can hit /v1/public/media/variants/<key>.
+  MEDIA_PUBLIC_URL: z.string().default(''),
 });
 
 export type Env = z.infer<typeof EnvSchema>;

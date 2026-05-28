@@ -8,7 +8,12 @@
 export { registerCrmConsumers, gateHandler } from './registry';
 export type { RegisterOptions, ConsumerRegistration, ConsumerContext } from './registry';
 
-export { getPlatformBus, setPlatformBus, resetPlatformBusForTesting } from './platform-bus';
+export {
+  getPlatformBus,
+  setPlatformBus,
+  resetPlatformBusForTesting,
+  publishPlatformEvent,
+} from './platform-bus';
 export type { PlatformEvent, PlatformEventBus, PlatformEventHandler } from './platform-bus';
 
 export { getDedupeStore, setDedupeStore, resetDedupeForTesting } from './dedupe';

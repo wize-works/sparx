@@ -1,0 +1,102 @@
+// CRM — Customers + addresses.
+//
+// The customer-intelligence spine introduced by the CRM module. Commerce
+// and B2B FK into this row rather than defining a parallel customer table.
+//
+// Locked architectural commitments (memory/feedback_crm_architecture.md):
+//   • One table, three types — `type` ∈ {prospect, retail, b2b}. Promotion
+//     is a column update, not a row migration.
+//   • `authUserId` is NOT a FK to staff `users` (which is staff-only per
+//     docs/16 §2 Layer 1). It will FK to a customer-auth-layer table when
+//     that module lands. Stored as plain UUID for now.
+//   • `totalSpent` / `orderCount` are denormalized fast-read columns
+//     updated by the order-event consumer. Never written inline.
+//   • `mergedIntoCustomerId` carries the dedup audit trail — soft-deleted
+//     duplicates retain a pointer to the surviving primary.
+
+model Customer {
+  id            String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId      String  @map("tenant_id") @db.Uuid
+  type          String  @default("prospect") @db.VarChar(20) // prospect | retail | b2b
+  authUserId    String? @map("auth_user_id") @db.Uuid
+  b2bAccountId  String? @map("b2b_account_id") @db.Uuid
+  assignedRepId String? @map("assigned_rep_id") @db.Uuid
+
+  email                  String?  @db.VarChar(255)
+  phone                  String?  @db.VarChar(50)
+  firstName              String?  @map("first_name") @db.VarChar(255)
+  lastName               String?  @map("last_name") @db.VarChar(255)
+  company                String?  @db.VarChar(255)
+  jobTitle               String?  @map("job_title") @db.VarChar(255)
+  preferredContactMethod String?  @map("preferred_contact_method") @db.VarChar(20) // email | phone | sms
+  doNotContact           Boolean  @default(false) @map("do_not_contact")
+  gdprConsent            Json     @default("{}") @map("gdpr_consent")
+  tags                   String[] @default([]) @db.VarChar(63)
+  metadata               Json     @default("{}")
+
+  totalSpent   Decimal   @default(0) @map("total_spent") @db.Decimal(12, 2)
+  orderCount   Int       @default(0) @map("order_count")
+  firstOrderAt DateTime? @map("first_order_at") @db.Timestamptz
+  lastOrderAt  DateTime? @map("last_order_at") @db.Timestamptz
+
+  mergedIntoCustomerId String? @map("merged_into_customer_id") @db.Uuid
+
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz
+
+  tenant      Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  b2bAccount  B2BAccount? @relation(fields: [b2bAccountId], references: [id], onDelete: SetNull)
+  assignedRep User?       @relation("CustomerAssignedRep", fields: [assignedRepId], references: [id], onDelete: SetNull)
+  mergedInto  Customer?   @relation("CustomerMerge", fields: [mergedIntoCustomerId], references: [id], onDelete: SetNull)
+  mergedFrom  Customer[]  @relation("CustomerMerge")
+
+  addresses      CustomerAddress[]
+  deals          Deal[]
+  activities     CrmActivity[]
+  tasks          Task[]
+  segmentMembers SegmentMember[]
+  orders         Order[]
+  quotes         Quote[]
+
+  @@unique([tenantId, email], map: "customers_tenant_email_unique")
+  @@index([tenantId, type])
+  @@index([tenantId, assignedRepId])
+  @@index([tenantId, b2bAccountId])
+  @@index([tenantId, lastOrderAt(sort: Desc)])
+  @@index([tenantId, totalSpent(sort: Desc)])
+  @@index([tenantId, updatedAt(sort: Desc)])
+  @@index([authUserId])
+  @@map("customers")
+}
+
+// Multiple addresses per customer; one flagged default per type. Used by
+// Commerce / B2B for shipping/billing.
+
+model CustomerAddress {
+  id         String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId   String  @map("tenant_id") @db.Uuid
+  customerId String  @map("customer_id") @db.Uuid
+  type       String  @db.VarChar(20) // shipping | billing | both
+  label      String? @db.VarChar(120) // "HQ", "Warehouse 2"
+  isDefault  Boolean @default(false) @map("is_default")
+
+  recipientName String? @map("recipient_name") @db.VarChar(255)
+  company       String? @db.VarChar(255)
+  line1         String  @db.VarChar(255)
+  line2         String? @db.VarChar(255)
+  city          String  @db.VarChar(120)
+  region        String? @db.VarChar(120)
+  postalCode    String? @map("postal_code") @db.VarChar(32)
+  country       String  @db.VarChar(2)
+  phone         String? @db.VarChar(50)
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  tenant   Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, customerId])
+  @@map("customer_addresses")
+}

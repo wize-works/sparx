@@ -19,4 +19,13 @@ data:
   NEXT_PUBLIC_MARKETING_URL: https://sparx.works
   # Dashboard → api-rest in-cluster URL. Avoids going out through Caddy.
   SPARX_API_REST_URL: http://api-rest.sparx-prod.svc.cluster.local:3000
+  # Media storage. The bucket name comes from terraform/modules/storage —
+  # mirror the `${project}-${env}-media` pattern. MEDIA_PUBLIC_URL is left
+  # empty so api-rest's storage backend falls back to the GCS canonical
+  # URL (`https://storage.googleapis.com/<bucket>/<key>`); Google's edge
+  # cache already absorbs cold reads. A future Cloudflare Worker can map
+  # `media.sparx.works/*` → that bucket and we'd set MEDIA_PUBLIC_URL
+  # here to flip the CDN over without changing any object keys.
+  GCS_MEDIA_BUCKET: sparxworks-prod-media
+  MEDIA_PUBLIC_URL: ""
   LOG_LEVEL: info

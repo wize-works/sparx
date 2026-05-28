@@ -9,3 +9,12 @@ export * as dealService from './deal-service';
 export * as activityService from './activity-service';
 export * as taskService from './task-service';
 export * as segmentService from './segment-service';
+
+// CRM — orders / quotes spine (Phase 3). Each service file stays under
+// the 200-line target by splitting subresources into their own files.
+export * as orderService from './order-service';
+export * as orderPaymentsService from './order-payments-service';
+export * as orderRefundsService from './order-refunds-service';
+export * as orderFulfillmentsService from './order-fulfillments-service';
+export * as quoteService from './quote-service';
+export * as quoteLifecycleService from './quote-lifecycle-service';

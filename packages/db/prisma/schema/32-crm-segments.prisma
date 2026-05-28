@@ -1,0 +1,45 @@
+// CRM — Segments (locked decision #4 — materialized, incremental).
+//
+// `rules` JSONB is validated against SegmentRuleSchema in @sparx/crm-schemas
+// at write time. Membership is materialized into segment_members by the
+// segment-evaluator consumer — never re-evaluated at email send or filter
+// time.
+
+model Segment {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId    String    @map("tenant_id") @db.Uuid
+  name        String    @db.VarChar(120)
+  slug        String    @db.VarChar(63)
+  description String?   @db.Text
+  rules       Json
+  color       String?   @db.VarChar(9)
+  isSystem    Boolean   @default(false) @map("is_system")
+  isBuiltIn   Boolean   @default(false) @map("is_built_in")
+  archivedAt  DateTime? @map("archived_at") @db.Timestamptz
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  tenant  Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  members SegmentMember[]
+
+  @@unique([tenantId, slug])
+  @@index([tenantId, archivedAt])
+  @@map("segments")
+}
+
+model SegmentMember {
+  segmentId  String   @map("segment_id") @db.Uuid
+  customerId String   @map("customer_id") @db.Uuid
+  tenantId   String   @map("tenant_id") @db.Uuid
+  enteredAt  DateTime @default(now()) @map("entered_at") @db.Timestamptz
+  score      Decimal? @db.Decimal(10, 4)
+
+  tenant   Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  segment  Segment  @relation(fields: [segmentId], references: [id], onDelete: Cascade)
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@id([segmentId, customerId])
+  @@index([tenantId, segmentId, enteredAt(sort: Desc)])
+  @@index([tenantId, customerId])
+  @@map("segment_members")
+}

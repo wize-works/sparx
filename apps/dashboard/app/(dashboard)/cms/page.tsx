@@ -17,6 +17,7 @@ import {
 } from '@sparx/ui';
 import { FileText, Plus } from 'lucide-react';
 import { api } from '@/lib/api-rest-client';
+import { CmsTabs } from './_components/cms-tabs';
 
 export const dynamic = 'force-dynamic';
 
@@ -33,7 +34,8 @@ export default async function CmsPage() {
 
   return (
     <Container size="xl">
-      <Stack gap={8} className="py-10">
+      <Stack gap={6} className="py-10">
+        <CmsTabs current="pages" />
         <Stack direction="row" align="end" justify="between">
           <Stack gap={2}>
             <Stack direction="row" align="center" gap={2}>

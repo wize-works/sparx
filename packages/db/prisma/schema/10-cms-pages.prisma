@@ -1,0 +1,27 @@
+// CMS — Pages
+//
+// Static pages (About / Contact / landing pages / policy pages) per docs/12
+// §3. Content is stored as TipTap-compatible JSON. Tenant-scoped + FORCE
+// RLS so a callsite that forgets `withTenant()` returns nothing rather than
+// leaking cross-tenant content.
+
+model Page {
+  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId        String    @map("tenant_id") @db.Uuid
+  slug            String    @db.VarChar(255)
+  title           String    @db.VarChar(255)
+  status          String    @default("draft") @db.VarChar(20) // draft | published
+  content         Json      @default("{}")
+  seoTitle        String?   @map("seo_title") @db.VarChar(255)
+  metaDescription String?   @map("meta_description") @db.Text
+  publishedAt     DateTime? @map("published_at") @db.Timestamptz
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt       DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, slug])
+  @@index([tenantId, status])
+  @@index([tenantId, updatedAt(sort: Desc)])
+  @@map("pages")
+}

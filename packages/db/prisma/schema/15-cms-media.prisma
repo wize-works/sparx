@@ -1,0 +1,57 @@
+// CMS — Media assets + transcoded variants.
+//
+// Defined now so ContentReference can carry asset edges and Author can link
+// an avatar. Transcode worker, signed-URL routes, and focal-point UI all
+// land in Phase 3 of the CMS workstream.
+
+model MediaAsset {
+  id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId         String    @map("tenant_id") @db.Uuid
+  key              String    @db.VarChar(1024)
+  originalFilename String    @map("original_filename") @db.VarChar(512)
+  mimeType         String    @map("mime_type") @db.VarChar(127)
+  byteSize         BigInt    @map("byte_size")
+  width            Int?
+  height           Int?
+  durationSec      Float?    @map("duration_sec")
+  dominantColor    String?   @map("dominant_color") @db.VarChar(9)
+  blurhash         String?   @db.VarChar(128)
+  focalPointX      Float     @default(0.5) @map("focal_point_x")
+  focalPointY      Float     @default(0.5) @map("focal_point_y")
+  altText          String?   @map("alt_text") @db.VarChar(500)
+  caption          String?   @db.Text
+  status           String    @default("uploading") @db.VarChar(20)
+  processingError  String?   @map("processing_error") @db.Text
+  usageCount       Int       @default(0) @map("usage_count")
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt        DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt        DateTime? @map("deleted_at") @db.Timestamptz
+
+  tenant        Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  variants      MediaVariant[]
+  refsTo        ContentReference[]
+  authorAvatars Author[]
+
+  @@index([tenantId, status])
+  @@index([tenantId, updatedAt(sort: Desc)])
+  @@map("media_assets")
+}
+
+model MediaVariant {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId  String   @map("tenant_id") @db.Uuid
+  assetId   String   @map("asset_id") @db.Uuid
+  format    String   @db.VarChar(20)
+  width     Int
+  height    Int
+  byteSize  BigInt   @map("byte_size")
+  key       String   @db.VarChar(1024)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  tenant Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  asset  MediaAsset @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  @@unique([assetId, format, width])
+  @@index([tenantId, assetId])
+  @@map("media_variants")
+}

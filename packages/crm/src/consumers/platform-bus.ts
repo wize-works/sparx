@@ -1,9 +1,17 @@
-// Inbox for platform events the CRM consumes.
+// Platform event bus — the in-process backbone for upstream events the CRM
+// consumer subscribes to.
 //
-// Commerce (order.*), Email (email.*), B2B (quote.*, invoice.*), and Better
-// Auth (user.login, user.password_reset) all publish to this bus. The CRM
-// subscribes; it does not publish here — CRM's outgoing events go through
-// the publisher in ./events.ts.
+// Now that orders / quotes are part of the CRM spine (locked decision #1),
+// the CRM also PUBLISHES to this bus: orderService emits `order.created`
+// when it writes an order; the order-event consumer (which subscribes to
+// the same topic) picks it up and writes the matching CrmActivity row +
+// bumps the customer's denormalized stats. One bus, both directions —
+// keeps the test path identical to production.
+//
+// External modules (Email, B2B) will publish their topics here too once
+// they land. Replacing the in-memory implementation with a Google Pub/Sub
+// backing only swaps the transport — the publisher/subscriber API is the
+// same.
 //
 // Phase 2 ships an in-process implementation so tests and dev can exercise
 // the full pipeline before Commerce/Email actually land. The same interface
@@ -95,4 +103,12 @@ export function setPlatformBus(bus: PlatformEventBus): void {
 export function resetPlatformBusForTesting(): PlatformEventBus {
   activeBus = new InMemoryPlatformBus();
   return activeBus;
+}
+
+/** Publish a platform event through the active bus. Services call this
+ *  after their DB transaction commits — never before, so a rolled-back
+ *  write never emits a phantom event. The consumer's at-least-once
+ *  dedupe (./dedupe.ts) covers the duplicate-on-retry case. */
+export async function publishPlatformEvent(event: PlatformEvent): Promise<void> {
+  await activeBus.publish(event);
 }

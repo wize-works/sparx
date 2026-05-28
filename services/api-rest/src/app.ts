@@ -21,6 +21,8 @@ import redirectRoutes from './routes/v1/redirects/index.js';
 import webhookRoutes from './routes/v1/webhooks/subscriptions.js';
 import sitemapRoutes from './routes/v1/sitemap.js';
 import publicContentRoutes from './routes/v1/public/content.js';
+import uploadRoutes from './routes/v1/media/uploads.js';
+import mediaAssetRoutes from './routes/v1/media/assets.js';
 
 function loggerOptions(): FastifyServerOptions['logger'] {
   if (env.NODE_ENV === 'test') return false;
@@ -55,6 +57,20 @@ export async function createApp(): Promise<FastifyInstance> {
     bodyLimit: 5 * 1024 * 1024, // 5 MiB — rich-text bodies, not media (those upload direct-to-GCS).
   });
 
+  // Raw-bytes parser for local-mode media uploads. In prod (GCS) the
+  // browser PUTs directly to a signed Cloud Storage URL and the bytes
+  // never touch api-rest; this parser only fires in dev / test where the
+  // local storage backend serves the "presigned" URL itself. Routes that
+  // want a Buffer just declare a per-route `bodyLimit` and inspect
+  // `request.body`.
+  app.addContentTypeParser(
+    /^(application\/octet-stream|application\/pdf|image\/.+|video\/.+|audio\/.+)$/,
+    { parseAs: 'buffer', bodyLimit: 200 * 1024 * 1024 },
+    (_req, body, done) => {
+      done(null, body);
+    }
+  );
+
   // Order matters: errors → openapi → rate-limit → auth → routes. Error
   // handler must be registered first so it catches anything that throws
   // from the others. OpenAPI must be initialised before routes register so
@@ -85,6 +101,8 @@ export async function createApp(): Promise<FastifyInstance> {
   await app.register(webhookRoutes);
   await app.register(sitemapRoutes);
   await app.register(publicContentRoutes);
+  await app.register(uploadRoutes);
+  await app.register(mediaAssetRoutes);
 
   return app;
 }

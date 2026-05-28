@@ -10,15 +10,9 @@
 //        moveStage() would skip the event — moveStage is the only
 //        sanctioned stage-change path.
 
-import {
-  AttachDealOrderInput,
-  AttachDealQuoteInput,
-  CreateDealInput,
-  MoveDealStageInput,
-  UpdateDealInput,
-} from '@sparx/crm-schemas';
+import { CreateDealInput, MoveDealStageInput, UpdateDealInput } from '@sparx/crm-schemas';
 import { withTenant } from '@sparx/db';
-import type { Deal, DealOrder, DealQuote, Prisma } from '@sparx/db';
+import type { Deal, Prisma } from '@sparx/db';
 
 import { writeAuditLog } from '../audit';
 import { publishCrmEvent } from '../events';
@@ -332,114 +326,15 @@ export async function moveStage(
 }
 
 // ─────────────────────────────────────────────────────────────────────────
-// Join-table operations (locked decision #5)
+// Join-table operations (locked decision #5) — implementations live in
+// deal-attach-service.ts so this file stays under the 200-line target.
+// Forecast lives in deal-forecast-service.ts for the same reason.
 // ─────────────────────────────────────────────────────────────────────────
 
-export async function attachOrder(ctx: ServiceContext, rawInput: unknown): Promise<DealOrder> {
-  const input = AttachDealOrderInput.parse(rawInput);
-  return withTenant(ctx, async (tx) => {
-    const deal = await tx.deal.findUnique({ where: { id: input.dealId } });
-    if (deal?.deletedAt !== null) throw new CrmNotFoundError('Deal', input.dealId);
-    const link = await tx.dealOrder.upsert({
-      where: { dealId_orderId: { dealId: input.dealId, orderId: input.orderId } },
-      create: {
-        tenantId: ctx.tenantId,
-        dealId: input.dealId,
-        orderId: input.orderId,
-      },
-      update: {}, // join-table; nothing to update on conflict
-    });
-    await writeAuditLog({
-      tx,
-      tenantId: ctx.tenantId,
-      actorId: ctx.userId ?? null,
-      actorType: ctx.userId ? 'user' : 'system',
-      action: 'crm.deal.order_attached',
-      entityType: 'Deal',
-      entityId: input.dealId,
-      diff: { after: { orderId: input.orderId } },
-    });
-    return link;
-  });
-}
-
-export async function attachQuote(ctx: ServiceContext, rawInput: unknown): Promise<DealQuote> {
-  const input = AttachDealQuoteInput.parse(rawInput);
-  return withTenant(ctx, async (tx) => {
-    const deal = await tx.deal.findUnique({ where: { id: input.dealId } });
-    if (deal?.deletedAt !== null) throw new CrmNotFoundError('Deal', input.dealId);
-    const link = await tx.dealQuote.upsert({
-      where: { dealId_quoteId: { dealId: input.dealId, quoteId: input.quoteId } },
-      create: {
-        tenantId: ctx.tenantId,
-        dealId: input.dealId,
-        quoteId: input.quoteId,
-      },
-      update: {},
-    });
-    await writeAuditLog({
-      tx,
-      tenantId: ctx.tenantId,
-      actorId: ctx.userId ?? null,
-      actorType: ctx.userId ? 'user' : 'system',
-      action: 'crm.deal.quote_attached',
-      entityType: 'Deal',
-      entityId: input.dealId,
-      diff: { after: { quoteId: input.quoteId } },
-    });
-    return link;
-  });
-}
-
-// ─────────────────────────────────────────────────────────────────────────
-// Forecast — read-only, used by dashboard forecast view and MCP get_forecast
-// ─────────────────────────────────────────────────────────────────────────
-
-export interface ForecastBucket {
-  yearMonth: string; // "2026-06"
-  weightedValue: string; // sum(value * probability/100), stringified Decimal
-  dealCount: number;
-}
-
-export async function forecast(
-  ctx: ServiceContext,
-  args: { pipelineId?: string; horizonMonths?: number } = {}
-): Promise<ForecastBucket[]> {
-  const horizon = args.horizonMonths ?? 6;
-  const cutoff = new Date();
-  cutoff.setMonth(cutoff.getMonth() + horizon);
-
-  return withTenant(ctx, async (tx) => {
-    const deals = await tx.deal.findMany({
-      where: {
-        deletedAt: null,
-        closedAt: null,
-        ...(args.pipelineId ? { pipelineId: args.pipelineId } : {}),
-        expectedCloseDate: { gte: new Date(), lte: cutoff },
-      },
-      select: { value: true, probability: true, expectedCloseDate: true },
-    });
-
-    const buckets = new Map<string, { weightedTotal: number; count: number }>();
-    for (const d of deals) {
-      if (!d.expectedCloseDate) continue;
-      const ym = `${d.expectedCloseDate.getUTCFullYear()}-${String(
-        d.expectedCloseDate.getUTCMonth() + 1
-      ).padStart(2, '0')}`;
-      const weight = Number(d.probability) / 100;
-      const weighted = Number(d.value) * weight;
-      const existing = buckets.get(ym) ?? { weightedTotal: 0, count: 0 };
-      existing.weightedTotal += weighted;
-      existing.count += 1;
-      buckets.set(ym, existing);
-    }
-
-    return [...buckets.entries()]
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([yearMonth, agg]) => ({
-        yearMonth,
-        weightedValue: agg.weightedTotal.toFixed(2),
-        dealCount: agg.count,
-      }));
-  });
-}
+export { attachOrder, detachOrder, attachQuote, detachQuote } from './deal-attach-service';
+export {
+  forecast,
+  type ForecastArgs,
+  type ForecastBucket,
+  type ForecastResult,
+} from './deal-forecast-service';

@@ -1,0 +1,86 @@
+// CRM — Order payments + refunds.
+//
+// Multiple payment rows per order allow partial payments, split tenders,
+// and net-terms B2B with multiple installments. Refunds reference the
+// payment they reverse (or null for goodwill credits issued against the
+// order header). Per-line-item refund quantities live in OrderRefundItem
+// so partial refunds can target specific lines.
+
+model OrderPayment {
+  id            String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId      String  @map("tenant_id") @db.Uuid
+  orderId       String  @map("order_id") @db.Uuid
+  processor     String  @db.VarChar(63) // stripe | paypal | manual | check | wire | net_terms
+  processorRef  String? @map("processor_ref") @db.VarChar(255)
+  amount        Decimal @db.Decimal(12, 2)
+  currency      String  @default("USD") @db.VarChar(3)
+  status        String  @default("pending") @db.VarChar(20) // pending | authorized | captured | failed | voided | refunded
+  failureReason String? @map("failure_reason") @db.VarChar(500)
+
+  authorizedAt DateTime? @map("authorized_at") @db.Timestamptz
+  capturedAt   DateTime? @map("captured_at") @db.Timestamptz
+  voidedAt     DateTime? @map("voided_at") @db.Timestamptz
+
+  metadata Json @default("{}")
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  order  Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  refunds OrderRefund[]
+
+  // processor_ref is nullable but the unique must only fire when present.
+  // The partial-unique lives in the migration; the @@unique here is the
+  // schema-level expectation.
+  @@unique([tenantId, processor, processorRef], map: "order_payments_processor_ref_unique")
+  @@index([tenantId, orderId])
+  @@index([tenantId, status])
+  @@map("order_payments")
+}
+
+model OrderRefund {
+  id        String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId  String  @map("tenant_id") @db.Uuid
+  orderId   String  @map("order_id") @db.Uuid
+  paymentId String? @map("payment_id") @db.Uuid
+
+  amount       Decimal @db.Decimal(12, 2)
+  currency     String  @default("USD") @db.VarChar(3)
+  reason       String? @db.VarChar(500)
+  processorRef String? @map("processor_ref") @db.VarChar(255)
+  status       String  @default("pending") @db.VarChar(20) // pending | completed | failed
+
+  refundedAt DateTime? @map("refunded_at") @db.Timestamptz
+  metadata   Json      @default("{}")
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  tenant  Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  order   Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  payment OrderPayment? @relation(fields: [paymentId], references: [id], onDelete: SetNull)
+
+  refundItems OrderRefundItem[]
+
+  @@index([tenantId, orderId])
+  @@index([tenantId, status])
+  @@map("order_refunds")
+}
+
+model OrderRefundItem {
+  refundId    String  @map("refund_id") @db.Uuid
+  orderItemId String  @map("order_item_id") @db.Uuid
+  tenantId    String  @map("tenant_id") @db.Uuid
+  quantity    Int     @default(1)
+  amount      Decimal @db.Decimal(12, 2)
+
+  tenant    Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  refund    OrderRefund @relation(fields: [refundId], references: [id], onDelete: Cascade)
+  orderItem OrderItem   @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+
+  @@id([refundId, orderItemId])
+  @@index([tenantId, orderItemId])
+  @@map("order_refund_items")
+}

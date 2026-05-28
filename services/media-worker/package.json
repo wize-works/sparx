@@ -1,0 +1,34 @@
+{
+  "name": "@sparx/media-worker",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Sparx media transcoder. Pulls media.uploaded events from Pub/Sub, generates AVIF/WebP/JPEG variants with sharp, computes blurhash + dominant color, and updates MediaAsset + MediaVariant rows (docs/12 §3, plan Phase 3).",
+  "type": "module",
+  "main": "src/index.ts",
+  "scripts": {
+    "dev": "tsx watch --clear-screen=false src/index.ts",
+    "start": "node --import tsx/esm src/index.ts",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --passWithNoTests",
+    "test:watch": "vitest",
+    "clean": "rm -rf .turbo dist *.tsbuildinfo"
+  },
+  "dependencies": {
+    "@google-cloud/pubsub": "^4.10.0",
+    "@google-cloud/storage": "^7.16.0",
+    "@prisma/client": "^6.19.3",
+    "@sparx/db": "workspace:*",
+    "blurhash": "^2.0.5",
+    "pino": "^9.5.0",
+    "sharp": "^0.34.4",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "dotenv": "^16.4.7",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.0",
+    "vitest": "^4.1.7"
+  }
+}

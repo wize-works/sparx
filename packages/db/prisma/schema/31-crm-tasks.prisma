@@ -1,0 +1,38 @@
+// CRM — Tasks (docs/11 §6).
+//
+// Task assigned to a staff user, optionally scoped to a customer or deal.
+// Overdue tasks fan out via the email automation engine in Phase 5; the
+// scheduler reads `getOverdue()` from taskService.
+
+model Task {
+  id                String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId          String  @map("tenant_id") @db.Uuid
+  assignedToUserId  String  @map("assigned_to_user_id") @db.Uuid
+  createdByUserId   String  @map("created_by_user_id") @db.Uuid
+  completedByUserId String? @map("completed_by_user_id") @db.Uuid
+  customerId        String? @map("customer_id") @db.Uuid
+  dealId            String? @map("deal_id") @db.Uuid
+
+  title       String    @db.VarChar(255)
+  description String?   @db.Text
+  dueAt       DateTime? @map("due_at") @db.Timestamptz
+  priority    String    @default("medium") @db.VarChar(10) // low | medium | high | urgent
+  status      String    @default("open") @db.VarChar(20) // open | completed | cancelled
+  completedAt DateTime? @map("completed_at") @db.Timestamptz
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  tenant      Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  assignedTo  User      @relation("TaskAssignedTo", fields: [assignedToUserId], references: [id], onDelete: Cascade)
+  createdBy   User      @relation("TaskCreatedBy", fields: [createdByUserId], references: [id], onDelete: Cascade)
+  completedBy User?     @relation("TaskCompletedBy", fields: [completedByUserId], references: [id], onDelete: SetNull)
+  customer    Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  deal        Deal?     @relation(fields: [dealId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, assignedToUserId, status, dueAt])
+  @@index([tenantId, dueAt])
+  @@index([tenantId, customerId])
+  @@index([tenantId, dealId])
+  @@map("tasks")
+}

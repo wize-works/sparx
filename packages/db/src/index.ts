@@ -41,5 +41,16 @@ export type {
   Segment,
   SegmentMember,
   SavedView,
+  // CRM — orders + child tables
+  Order,
+  OrderItem,
+  OrderPayment,
+  OrderRefund,
+  OrderRefundItem,
+  OrderFulfillment,
+  OrderFulfillmentItem,
+  // CRM — quotes
+  Quote,
+  QuoteItem,
   Prisma,
 } from '@prisma/client';

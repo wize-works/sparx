@@ -1,0 +1,78 @@
+// CRM — Orders.
+//
+// The order spine the whole platform agrees on. Commerce will layer a
+// catalog (products, variants, inventory) and a checkout flow that PRODUCES
+// these rows; it never redefines "what an order is."
+//
+// State machine: placed → fulfilled → delivered, with cancelled / refunded
+// branches available from any non-terminal state. The `status` column
+// captures the high-water mark; per-fulfillment / per-payment / per-refund
+// detail lives in the child tables (see 25-crm-order-items,
+// 26-crm-order-payments, 27-crm-order-fulfillments).
+//
+// Address snapshots (`shippingAddress`, `billingAddress` JSONB) freeze the
+// values at placement time. Editing the customer's address later does NOT
+// rewrite past orders — required for audit, tax reporting, and dispute
+// resolution.
+//
+// State transitions emit upstream platform events (`order.created`,
+// `order.fulfilled`, `order.delivered`, `order.cancelled`, `order.refunded`)
+// that the CRM consumer picks up to populate the activity feed and the
+// denormalized customer stats.
+
+model Order {
+  id          String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId    String @map("tenant_id") @db.Uuid
+  customerId  String @map("customer_id") @db.Uuid
+  orderNumber String @map("order_number") @db.VarChar(63)
+
+  status        String  @default("placed") @db.VarChar(20) // placed | fulfilled | delivered | cancelled | refunded
+  paymentStatus String  @default("unpaid") @map("payment_status") @db.VarChar(20) // unpaid | partially_paid | paid | refunded
+  channel       String? @db.VarChar(63) // storefront | b2b_portal | admin | import | mcp
+  source        String? @db.VarChar(63)
+
+  subtotal      Decimal @default(0) @db.Decimal(12, 2)
+  taxTotal      Decimal @default(0) @map("tax_total") @db.Decimal(12, 2)
+  shippingTotal Decimal @default(0) @map("shipping_total") @db.Decimal(12, 2)
+  discountTotal Decimal @default(0) @map("discount_total") @db.Decimal(12, 2)
+  total         Decimal @default(0) @db.Decimal(12, 2)
+  amountPaid    Decimal @default(0) @map("amount_paid") @db.Decimal(12, 2)
+  refundTotal   Decimal @default(0) @map("refund_total") @db.Decimal(12, 2)
+  currency      String  @default("USD") @db.VarChar(3)
+
+  // Frozen at placement time. Shape mirrors CustomerAddress.
+  shippingAddress Json? @map("shipping_address")
+  billingAddress  Json? @map("billing_address")
+
+  placedAt        DateTime  @map("placed_at") @db.Timestamptz
+  paidAt          DateTime? @map("paid_at") @db.Timestamptz
+  fulfilledAt     DateTime? @map("fulfilled_at") @db.Timestamptz
+  deliveredAt     DateTime? @map("delivered_at") @db.Timestamptz
+  cancelledAt     DateTime? @map("cancelled_at") @db.Timestamptz
+  cancelledReason String?   @map("cancelled_reason") @db.VarChar(500)
+  refundedAt      DateTime? @map("refunded_at") @db.Timestamptz
+
+  customerNote String? @map("customer_note") @db.Text
+  internalNote String? @map("internal_note") @db.Text
+  metadata     Json    @default("{}")
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  tenant   Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Restrict)
+
+  items               OrderItem[]
+  payments            OrderPayment[]
+  refunds             OrderRefund[]
+  fulfillments        OrderFulfillment[]
+  dealLinks           DealOrder[]
+  convertedFromQuotes Quote[]            @relation("QuoteConvertedToOrder")
+
+  @@unique([tenantId, orderNumber], map: "orders_tenant_number_unique")
+  @@index([tenantId, customerId, placedAt(sort: Desc)])
+  @@index([tenantId, status, placedAt(sort: Desc)])
+  @@index([tenantId, paymentStatus])
+  @@index([tenantId, placedAt(sort: Desc)])
+  @@map("orders")
+}

@@ -1,0 +1,50 @@
+// CRM — Order fulfillments.
+//
+// Multiple fulfillments per order supports split shipments, digital +
+// physical mixed orders, drop-ship + own-warehouse splits. Per-line-item
+// fulfillment quantities live in OrderFulfillmentItem.
+
+model OrderFulfillment {
+  id             String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId       String  @map("tenant_id") @db.Uuid
+  orderId        String  @map("order_id") @db.Uuid
+  status         String  @default("pending") @db.VarChar(20) // pending | shipped | delivered | failed | cancelled
+  carrier        String? @db.VarChar(63) // ups | usps | fedex | dhl | digital | dropship
+  service        String? @db.VarChar(63) // ground | 2day | overnight | …
+  trackingNumber String? @map("tracking_number") @db.VarChar(127)
+  trackingUrl    String? @map("tracking_url") @db.VarChar(2048)
+
+  shippedAt   DateTime? @map("shipped_at") @db.Timestamptz
+  deliveredAt DateTime? @map("delivered_at") @db.Timestamptz
+
+  notes    String? @db.Text
+  metadata Json    @default("{}")
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  order  Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  items OrderFulfillmentItem[]
+
+  @@index([tenantId, orderId])
+  @@index([tenantId, status])
+  @@index([tenantId, trackingNumber])
+  @@map("order_fulfillments")
+}
+
+model OrderFulfillmentItem {
+  fulfillmentId String @map("fulfillment_id") @db.Uuid
+  orderItemId   String @map("order_item_id") @db.Uuid
+  tenantId      String @map("tenant_id") @db.Uuid
+  quantity      Int    @default(1)
+
+  tenant      Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  fulfillment OrderFulfillment @relation(fields: [fulfillmentId], references: [id], onDelete: Cascade)
+  orderItem   OrderItem        @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+
+  @@id([fulfillmentId, orderItemId])
+  @@index([tenantId, orderItemId])
+  @@map("order_fulfillment_items")
+}

@@ -1,0 +1,109 @@
+// CMS — Authors, redirects, navigation, preview tokens.
+//
+// Editorial primitives that ride alongside the content model. Authors are
+// distinct from User so a single user can publish under multiple pen names
+// and an author can persist after the user row is removed.
+
+model Author {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId      String   @map("tenant_id") @db.Uuid
+  userId        String?  @map("user_id") @db.Uuid
+  slug          String   @db.VarChar(255)
+  displayName   String   @map("display_name") @db.VarChar(255)
+  bio           String?  @db.Text
+  avatarAssetId String?  @map("avatar_asset_id") @db.Uuid
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  tenant      Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  avatarAsset MediaAsset?    @relation(fields: [avatarAssetId], references: [id], onDelete: SetNull)
+  entries     ContentEntry[]
+
+  @@unique([tenantId, slug])
+  @@index([tenantId])
+  @@map("authors")
+}
+
+// 301/302 manual redirects with chain/loop detection enforced at the API.
+
+model Redirect {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId   String    @map("tenant_id") @db.Uuid
+  fromPath   String    @map("from_path") @db.VarChar(2048)
+  toPath     String    @map("to_path") @db.VarChar(2048)
+  statusCode Int       @default(301) @map("status_code")
+  hitCount   BigInt    @default(0) @map("hit_count")
+  lastHitAt  DateTime? @map("last_hit_at") @db.Timestamptz
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt  DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, fromPath])
+  @@index([tenantId])
+  @@map("redirects")
+}
+
+// Header / footer / mega / custom_*. Items reference internal entries or
+// external URLs; exactly one is non-null, validated at the API layer.
+
+model NavigationMenu {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId  String   @map("tenant_id") @db.Uuid
+  location  String   @db.VarChar(63)
+  name      String   @db.VarChar(120)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  tenant Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  items  NavigationItem[]
+
+  @@unique([tenantId, location])
+  @@map("navigation_menus")
+}
+
+model NavigationItem {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId     String   @map("tenant_id") @db.Uuid
+  menuId       String   @map("menu_id") @db.Uuid
+  parentItemId String?  @map("parent_item_id") @db.Uuid
+  position     Int
+  label        String   @db.VarChar(255)
+  entryId      String?  @map("entry_id") @db.Uuid
+  externalUrl  String?  @map("external_url") @db.VarChar(2048)
+  openInNewTab Boolean  @default(false) @map("open_in_new_tab")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  tenant   Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  menu     NavigationMenu   @relation(fields: [menuId], references: [id], onDelete: Cascade)
+  parent   NavigationItem?  @relation("NavTree", fields: [parentItemId], references: [id], onDelete: Cascade)
+  children NavigationItem[] @relation("NavTree")
+  entry    ContentEntry?    @relation(fields: [entryId], references: [id], onDelete: SetNull)
+
+  @@index([menuId, position])
+  @@index([tenantId])
+  @@map("navigation_items")
+}
+
+// HS256 JWTs are stateless; this row keyed on `jti` lets us revoke
+// individual tokens (or all tokens for an entry) without rotating the
+// tenant secret.
+
+model PreviewToken {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId   String    @map("tenant_id") @db.Uuid
+  entryId    String    @map("entry_id") @db.Uuid
+  issuedById String?   @map("issued_by_id") @db.Uuid
+  jti        String    @unique @db.Uuid
+  expiresAt  DateTime  @map("expires_at") @db.Timestamptz
+  revokedAt  DateTime? @map("revoked_at") @db.Timestamptz
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  tenant Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  entry  ContentEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, entryId])
+  @@index([expiresAt])
+  @@map("preview_tokens")
+}

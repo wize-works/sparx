@@ -1,0 +1,46 @@
+// CRM — Order line items.
+//
+// Free-text sku / name today; a future Products module adds the FK on
+// `productId` / `variantId` without rewriting history.
+//
+// `quantityFulfilled` / `quantityRefunded` track partial-shipment and
+// partial-refund quantities against the original `quantity`. The
+// fulfillment and refund subresources (see 26-, 27-) link back through
+// their own per-line-item join tables.
+
+model OrderItem {
+  id        String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId  String  @map("tenant_id") @db.Uuid
+  orderId   String  @map("order_id") @db.Uuid
+  productId String? @map("product_id") @db.Uuid
+  variantId String? @map("variant_id") @db.Uuid
+
+  sku            String  @db.VarChar(127)
+  name           String  @db.VarChar(255)
+  description    String? @db.Text
+  quantity       Int     @default(1)
+  unitPrice      Decimal @default(0) @map("unit_price") @db.Decimal(12, 2)
+  lineSubtotal   Decimal @default(0) @map("line_subtotal") @db.Decimal(12, 2)
+  taxAmount      Decimal @default(0) @map("tax_amount") @db.Decimal(12, 2)
+  discountAmount Decimal @default(0) @map("discount_amount") @db.Decimal(12, 2)
+  lineTotal      Decimal @default(0) @map("line_total") @db.Decimal(12, 2)
+
+  quantityFulfilled Int @default(0) @map("quantity_fulfilled")
+  quantityRefunded  Int @default(0) @map("quantity_refunded")
+
+  metadata Json @default("{}")
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  order  Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  fulfillmentItems OrderFulfillmentItem[]
+  refundItems      OrderRefundItem[]
+
+  @@index([tenantId, orderId])
+  @@index([tenantId, sku])
+  @@index([productId])
+  @@map("order_items")
+}

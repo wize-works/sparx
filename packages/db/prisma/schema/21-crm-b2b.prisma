@@ -1,0 +1,47 @@
+// CRM — B2B accounts (docs/10 §2).
+//
+// Business entity that aggregates multiple customer contacts. Owned by the
+// CRM module; B2B module adds credit holds and approval workflows on top
+// of this base record when it lands.
+
+model B2BAccount {
+  id            String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId      String  @map("tenant_id") @db.Uuid
+  assignedRepId String? @map("assigned_rep_id") @db.Uuid
+
+  companyName String  @map("company_name") @db.VarChar(255)
+  taxId       String? @map("tax_id") @db.VarChar(64)
+  website     String? @db.VarChar(2048)
+  pricingTier String? @map("pricing_tier") @db.VarChar(63)
+
+  creditLimit     Decimal @default(0) @map("credit_limit") @db.Decimal(12, 2)
+  creditUsed      Decimal @default(0) @map("credit_used") @db.Decimal(12, 2)
+  paymentTerms    String? @map("payment_terms") @db.VarChar(20)
+  discountPercent Decimal @default(0) @map("discount_percent") @db.Decimal(5, 2)
+
+  status String @default("active") @db.VarChar(20) // active | credit_hold | suspended | inactive
+
+  // Fleet-specific (Gillett Diesel reference case)
+  fleetSize      Int? @map("fleet_size")
+  engineProfiles Json @default("[]") @map("engine_profiles")
+
+  notes String?  @db.Text
+  tags  String[] @default([]) @db.VarChar(63)
+
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz
+
+  tenant      Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  assignedRep User?  @relation("B2BAccountAssignedRep", fields: [assignedRepId], references: [id], onDelete: SetNull)
+
+  customers  Customer[]
+  deals      Deal[]
+  activities CrmActivity[]
+  quotes     Quote[]
+
+  @@index([tenantId, status])
+  @@index([tenantId, assignedRepId])
+  @@index([tenantId, updatedAt(sort: Desc)])
+  @@map("b2b_accounts")
+}

@@ -65,7 +65,11 @@ const authPlugin: FastifyPluginAsync = async (app) => {
       request.url === '/health' ||
       request.url.startsWith('/v1/openapi.json') ||
       request.url.startsWith('/v1/sitemap.xml') ||
-      request.url.startsWith('/v1/public/')
+      request.url.startsWith('/v1/public/') ||
+      // Local-mode media upload endpoints — issued by `presignPut` and
+      // self-authorising via the in-URL object key. Skipping the Bearer
+      // check here mirrors the GCS signed-URL contract.
+      request.url.startsWith('/v1/media/_local/')
     ) {
       return;
     }

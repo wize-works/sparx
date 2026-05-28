@@ -1,0 +1,95 @@
+// CRM — Sales pipelines + stages + deals.
+//
+// Tenants run multiple pipelines (e.g. "New B2B Acquisition", "Fleet
+// Contract Renewals"). Stages are tenant-editable rows on PipelineStage.
+//
+// Deals attach to either a customer or a B2B account (or both for a B2B
+// contact). Orders/quotes link via the join tables in 23-crm-deal-joins —
+// never via a deal_id column on orders/quotes (locked decision #5).
+
+model Pipeline {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId   String    @map("tenant_id") @db.Uuid
+  name       String    @db.VarChar(120)
+  slug       String    @db.VarChar(63)
+  isDefault  Boolean   @default(false) @map("is_default")
+  sortOrder  Int       @default(0) @map("sort_order")
+  archivedAt DateTime? @map("archived_at") @db.Timestamptz
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt  DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  tenant Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  stages PipelineStage[]
+  deals  Deal[]
+
+  @@unique([tenantId, slug])
+  @@index([tenantId, archivedAt])
+  @@map("pipelines")
+}
+
+model PipelineStage {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId    String   @map("tenant_id") @db.Uuid
+  pipelineId  String   @map("pipeline_id") @db.Uuid
+  name        String   @db.VarChar(120)
+  sortOrder   Int      @map("sort_order")
+  probability Decimal  @default(0) @db.Decimal(5, 2)
+  stageType   String   @default("open") @map("stage_type") @db.VarChar(20) // open | won | lost
+  color       String?  @db.VarChar(9)
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  tenant   Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  pipeline Pipeline @relation(fields: [pipelineId], references: [id], onDelete: Cascade)
+  deals    Deal[]
+
+  @@unique([pipelineId, sortOrder])
+  @@index([tenantId, pipelineId])
+  @@map("pipeline_stages")
+}
+
+model Deal {
+  id            String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId      String  @map("tenant_id") @db.Uuid
+  pipelineId    String  @map("pipeline_id") @db.Uuid
+  stageId       String  @map("stage_id") @db.Uuid
+  customerId    String? @map("customer_id") @db.Uuid
+  b2bAccountId  String? @map("b2b_account_id") @db.Uuid
+  assignedRepId String? @map("assigned_rep_id") @db.Uuid
+
+  title             String    @db.VarChar(255)
+  value             Decimal   @default(0) @db.Decimal(12, 2)
+  currency          String    @default("USD") @db.VarChar(3)
+  probability       Decimal   @default(0) @db.Decimal(5, 2)
+  expectedCloseDate DateTime? @map("expected_close_date") @db.Date
+  closedAt          DateTime? @map("closed_at") @db.Timestamptz
+  closedReason      String?   @map("closed_reason") @db.VarChar(500)
+  source            String?   @db.VarChar(63)
+  tags              String[]  @default([]) @db.VarChar(63)
+  metadata          Json      @default("{}")
+
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz
+
+  tenant      Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  pipeline    Pipeline      @relation(fields: [pipelineId], references: [id], onDelete: Cascade)
+  stage       PipelineStage @relation(fields: [stageId], references: [id])
+  customer    Customer?     @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  b2bAccount  B2BAccount?   @relation(fields: [b2bAccountId], references: [id], onDelete: SetNull)
+  assignedRep User?         @relation("DealAssignedRep", fields: [assignedRepId], references: [id], onDelete: SetNull)
+
+  activities CrmActivity[]
+  tasks      Task[]
+  orderLinks DealOrder[]
+  quoteLinks DealQuote[]
+
+  @@index([tenantId, pipelineId, stageId])
+  @@index([tenantId, assignedRepId, stageId])
+  @@index([tenantId, customerId])
+  @@index([tenantId, b2bAccountId])
+  @@index([tenantId, expectedCloseDate])
+  @@index([tenantId, closedAt])
+  @@index([tenantId, updatedAt(sort: Desc)])
+  @@map("deals")
+}

@@ -48,7 +48,18 @@ export type CrmTopic =
   | 'crm.segment.created'
   | 'crm.segment.updated'
   | 'crm.segment.entered' // emitted by Phase 4 segment evaluator
-  | 'crm.segment.exited'; // emitted by Phase 4 segment evaluator
+  | 'crm.segment.exited' // emitted by Phase 4 segment evaluator
+  // Quote lifecycle
+  | 'crm.quote.created'
+  | 'crm.quote.submitted'
+  | 'crm.quote.accepted'
+  | 'crm.quote.declined'
+  | 'crm.quote.expired'
+  // Deal attach/detach — emitted when orders or quotes are linked to a deal
+  | 'crm.deal.order_attached'
+  | 'crm.deal.order_detached'
+  | 'crm.deal.quote_attached'
+  | 'crm.deal.quote_detached';
 
 export interface Publisher {
   publish(event: CrmEvent): Promise<void>;

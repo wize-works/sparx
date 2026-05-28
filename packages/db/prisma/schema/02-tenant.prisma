@@ -1,0 +1,79 @@
+// Tenant — the dispatch row every other table FKs back to. Better Auth's
+// `organization` plugin maps 1:1 onto this row (docs/16 §2 Layer 1) — the
+// org id will be stored alongside this tenant when Better Auth is wired in.
+//
+// This file is unavoidably the "relation hub" — every module that owns
+// tenant-scoped tables declares an inverse relation here. New modules add
+// their array to the matching section below; the field count is a quick
+// way to see how much surface the platform exposes per tenant.
+
+model Tenant {
+  id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  slug             String    @unique @db.VarChar(63)
+  name             String    @db.VarChar(255)
+  email            String    @db.VarChar(255)
+  plan             String    @default("starter") @db.VarChar(50)
+  status           String    @default("active") @db.VarChar(20)
+  settings         Json      @default("{}")
+  stripeCustomerId String?   @map("stripe_customer_id") @db.VarChar(255)
+  trialEndsAt      DateTime? @map("trial_ends_at") @db.Timestamptz
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt        DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Auth + audit
+  users     User[]
+  auditLogs AuditLog[]
+
+  // CMS module
+  pages                Page[]
+  contentTypes         ContentType[]
+  contentEntries       ContentEntry[]
+  contentRevisions     ContentRevision[]
+  contentReferences    ContentReference[]
+  taxonomies           Taxonomy[]
+  taxonomyTerms        TaxonomyTerm[]
+  entryTaxonomyTerms   EntryTaxonomyTerm[]
+  authors              Author[]
+  redirects            Redirect[]
+  navigationMenus      NavigationMenu[]
+  navigationItems      NavigationItem[]
+  previewTokens        PreviewToken[]
+  webhookSubscriptions WebhookSubscription[]
+  webhookDeliveries    WebhookDelivery[]
+  mediaAssets          MediaAsset[]
+  mediaVariants        MediaVariant[]
+
+  // CRM module — customer spine
+  customers         Customer[]
+  customerAddresses CustomerAddress[]
+  b2bAccounts       B2BAccount[]
+
+  // CRM module — sales pipeline
+  pipelines      Pipeline[]
+  pipelineStages PipelineStage[]
+  deals          Deal[]
+  dealOrders     DealOrder[]
+  dealQuotes     DealQuote[]
+
+  // CRM module — orders, payments, refunds, fulfillments
+  orders                Order[]
+  orderItems            OrderItem[]
+  orderPayments         OrderPayment[]
+  orderRefunds          OrderRefund[]
+  orderRefundItems      OrderRefundItem[]
+  orderFulfillments     OrderFulfillment[]
+  orderFulfillmentItems OrderFulfillmentItem[]
+
+  // CRM module — quotes
+  quotes     Quote[]
+  quoteItems QuoteItem[]
+
+  // CRM module — activity, tasks, segments, views
+  crmActivities  CrmActivity[]
+  tasks          Task[]
+  segments       Segment[]
+  segmentMembers SegmentMember[]
+  savedViews     SavedView[]
+
+  @@map("tenants")
+}

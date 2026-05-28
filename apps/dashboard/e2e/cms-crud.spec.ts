@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '@playwright/test';
 
 // Full CMS pages CRUD round-trip against the real DB:
 //   1. List view (may start populated from previous runs — that is fine)
@@ -8,6 +8,33 @@ import { expect, test } from '@playwright/test';
 //   5. Publish, then revert to draft
 //   6. Delete the page
 //   7. Confirm the page is gone from the list
+//
+// The Body field is a TipTap block editor (contenteditable), not a plain
+// textarea — interactions go through the keyboard against the aria-labeled
+// editor surface rather than through .fill().
+
+function bodyEditor(page: Page): Locator {
+  // The editor's contenteditable has aria-label="Page body editor" — see
+  // packages/cms-editor/src/editor.tsx and the form callers under
+  // apps/dashboard/app/(dashboard)/cms/.
+  return page.getByRole('textbox', { name: 'Page body editor' });
+}
+
+async function typeIntoEditor(page: Page, text: string) {
+  const editor = bodyEditor(page);
+  await editor.click();
+  await page.keyboard.type(text);
+}
+
+async function replaceEditorText(page: Page, text: string) {
+  const editor = bodyEditor(page);
+  await editor.click();
+  // Select-all + delete clears whatever the editor currently holds (one or
+  // more block nodes, any depth) without us having to introspect its JSON.
+  await page.keyboard.press('ControlOrMeta+a');
+  await page.keyboard.press('Delete');
+  await page.keyboard.type(text);
+}
 
 test.describe('CMS pages — create, edit, publish, delete', () => {
   test('full round-trip', async ({ page }) => {
@@ -25,7 +52,7 @@ test.describe('CMS pages — create, edit, publish, delete', () => {
 
     await page.getByLabel('Title', { exact: true }).fill(title);
     await page.getByLabel('Slug (optional)').fill(slug);
-    await page.getByLabel('Content (optional)').fill('Hello from the CRUD test.');
+    await typeIntoEditor(page, 'Hello from the CRUD test.');
     await page.getByRole('button', { name: 'Create page' }).click();
 
     // 3. Lands on edit form (server action can run slow under parallel load)
@@ -33,12 +60,12 @@ test.describe('CMS pages — create, edit, publish, delete', () => {
     await expect(page.getByRole('heading', { name: 'Edit page', level: 1 })).toBeVisible();
     await expect(page.getByLabel('Title', { exact: true })).toHaveValue(title);
     await expect(page.getByLabel('Slug')).toHaveValue(slug);
-    await expect(page.getByLabel('Body')).toHaveValue('Hello from the CRUD test.');
+    await expect(bodyEditor(page)).toContainText('Hello from the CRUD test.');
 
     const editUrl = page.url();
 
     // 4. Edit body + SEO and save
-    await page.getByLabel('Body').fill('Edited body.');
+    await replaceEditorText(page, 'Edited body.');
     await page.getByLabel('SEO title (optional)').fill('SEO E2E');
     await page.getByLabel('Meta description (optional)').fill('Test meta description.');
     await page.getByRole('button', { name: 'Save changes' }).click();
@@ -47,7 +74,7 @@ test.describe('CMS pages — create, edit, publish, delete', () => {
 
     // Reload — values come back from DB
     await page.reload();
-    await expect(page.getByLabel('Body')).toHaveValue('Edited body.');
+    await expect(bodyEditor(page)).toContainText('Edited body.');
     await expect(page.getByLabel('SEO title (optional)')).toHaveValue('SEO E2E');
 
     // 5. Publish, then unpublish

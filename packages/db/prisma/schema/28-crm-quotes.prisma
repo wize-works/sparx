@@ -1,0 +1,90 @@
+// CRM — Quotes + line items.
+//
+// Full quote lifecycle: draft → submitted → (accepted | declined | expired).
+// Accepted quotes convert to an Order via `convertedToOrderId` — the
+// service stamps the pointer + status transition + activity row in a
+// single transaction.
+
+model Quote {
+  id           String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId     String  @map("tenant_id") @db.Uuid
+  customerId   String? @map("customer_id") @db.Uuid
+  b2bAccountId String? @map("b2b_account_id") @db.Uuid
+  quoteNumber  String  @map("quote_number") @db.VarChar(63)
+
+  status String @default("draft") @db.VarChar(20) // draft | submitted | accepted | declined | expired | converted
+
+  subtotal      Decimal @default(0) @db.Decimal(12, 2)
+  taxTotal      Decimal @default(0) @map("tax_total") @db.Decimal(12, 2)
+  shippingTotal Decimal @default(0) @map("shipping_total") @db.Decimal(12, 2)
+  discountTotal Decimal @default(0) @map("discount_total") @db.Decimal(12, 2)
+  total         Decimal @default(0) @db.Decimal(12, 2)
+  currency      String  @default("USD") @db.VarChar(3)
+
+  paymentTerms String?   @map("payment_terms") @db.VarChar(20)
+  validUntil   DateTime? @map("valid_until") @db.Timestamptz
+
+  submittedAt    DateTime? @map("submitted_at") @db.Timestamptz
+  viewedAt       DateTime? @map("viewed_at") @db.Timestamptz
+  acceptedAt     DateTime? @map("accepted_at") @db.Timestamptz
+  declinedAt     DateTime? @map("declined_at") @db.Timestamptz
+  declinedReason String?   @map("declined_reason") @db.VarChar(500)
+  expiredAt      DateTime? @map("expired_at") @db.Timestamptz
+
+  convertedToOrderId String?   @map("converted_to_order_id") @db.Uuid
+  convertedAt        DateTime? @map("converted_at") @db.Timestamptz
+
+  customerNote String? @map("customer_note") @db.Text
+  internalNote String? @map("internal_note") @db.Text
+  metadata     Json    @default("{}")
+
+  createdByUserId String?  @map("created_by_user_id") @db.Uuid
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt       DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  tenant           Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  customer         Customer?   @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  b2bAccount       B2BAccount? @relation(fields: [b2bAccountId], references: [id], onDelete: SetNull)
+  createdBy        User?       @relation("QuoteCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  convertedToOrder Order?      @relation("QuoteConvertedToOrder", fields: [convertedToOrderId], references: [id], onDelete: SetNull)
+
+  items     QuoteItem[]
+  dealLinks DealQuote[]
+
+  @@unique([tenantId, quoteNumber], map: "quotes_tenant_number_unique")
+  @@index([tenantId, customerId, createdAt(sort: Desc)])
+  @@index([tenantId, b2bAccountId, createdAt(sort: Desc)])
+  @@index([tenantId, status, validUntil])
+  @@index([tenantId, convertedToOrderId])
+  @@map("quotes")
+}
+
+model QuoteItem {
+  id        String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId  String  @map("tenant_id") @db.Uuid
+  quoteId   String  @map("quote_id") @db.Uuid
+  productId String? @map("product_id") @db.Uuid
+  variantId String? @map("variant_id") @db.Uuid
+
+  sku            String  @db.VarChar(127)
+  name           String  @db.VarChar(255)
+  description    String? @db.Text
+  quantity       Int     @default(1)
+  unitPrice      Decimal @default(0) @map("unit_price") @db.Decimal(12, 2)
+  lineSubtotal   Decimal @default(0) @map("line_subtotal") @db.Decimal(12, 2)
+  taxAmount      Decimal @default(0) @map("tax_amount") @db.Decimal(12, 2)
+  discountAmount Decimal @default(0) @map("discount_amount") @db.Decimal(12, 2)
+  lineTotal      Decimal @default(0) @map("line_total") @db.Decimal(12, 2)
+  metadata       Json    @default("{}")
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  quote  Quote  @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, quoteId])
+  @@index([tenantId, sku])
+  @@index([productId])
+  @@map("quote_items")
+}

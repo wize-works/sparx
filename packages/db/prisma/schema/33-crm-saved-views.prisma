@@ -1,0 +1,23 @@
+// CRM — Saved views (cosmetic per-staff filter persistence).
+//
+// Customer/deal/task list views persist their filters here so a staff
+// member can save "B2B fleet customers with overdue invoices" once and
+// open it on any device. `config` is opaque JSON the consuming component
+// interprets; `ownerUserId` null = shared with the tenant.
+
+model SavedView {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId    String   @map("tenant_id") @db.Uuid
+  ownerUserId String?  @map("owner_user_id") @db.Uuid
+  target      String   @db.VarChar(63) // customers | deals | tasks | pipeline | activities | orders | quotes
+  name        String   @db.VarChar(120)
+  config      Json     @default("{}")
+  isDefault   Boolean  @default(false) @map("is_default")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, target, ownerUserId])
+  @@map("saved_views")
+}

@@ -1,0 +1,36 @@
+// CRM — Deal/order and deal/quote join tables (locked decision #5).
+//
+// Pure join tables — no business state, no `deal_id` column on orders or
+// quotes. One deal can yield multiple orders; most orders have no deal.
+// The CRM owns the deal lifecycle; orders and quotes attach later without
+// the commerce/B2B engines ever knowing CRM exists.
+
+model DealOrder {
+  dealId    String   @map("deal_id") @db.Uuid
+  orderId   String   @map("order_id") @db.Uuid
+  tenantId  String   @map("tenant_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  deal   Deal   @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  order  Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@id([dealId, orderId])
+  @@index([tenantId, orderId])
+  @@map("deal_orders")
+}
+
+model DealQuote {
+  dealId    String   @map("deal_id") @db.Uuid
+  quoteId   String   @map("quote_id") @db.Uuid
+  tenantId  String   @map("tenant_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  deal   Deal   @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  quote  Quote  @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+
+  @@id([dealId, quoteId])
+  @@index([tenantId, quoteId])
+  @@map("deal_quotes")
+}
