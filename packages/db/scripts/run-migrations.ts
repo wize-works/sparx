@@ -25,7 +25,7 @@ import { Client as PgClient } from 'pg';
 //
 // Add an entry here whenever a migration directory is renamed in the repo
 // (e.g. to fix alphabetical ordering for Prisma's shadow-DB replay).
-const KNOWN_MIGRATION_RENAMES: ReadonlyArray<readonly [string, string]> = [
+const KNOWN_MIGRATION_RENAMES: readonly (readonly [string, string])[] = [
   ['20260528070458_cms_index_alignment', '20260528100300_cms_index_alignment'],
 ];
 
