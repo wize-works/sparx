@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Users, Plus, Building2, UserPlus, Search } from 'lucide-react';
+import { Users, Plus, Building2, UserPlus } from 'lucide-react';
 
 import { isModuleEnabled, requireSession } from '@sparx/auth';
 import { customerService } from '@sparx/crm';
@@ -11,7 +11,6 @@ import {
   Container,
   EmptyState,
   Heading,
-  Input,
   Stack,
   Table,
   TableBody,
@@ -88,7 +87,7 @@ export default async function CrmPage({ searchParams }: PageProps) {
       take: 100,
       sortBy: sort,
       ...(type === 'prospect' || type === 'retail' || type === 'b2b'
-        ? { type: type as 'prospect' | 'retail' | 'b2b' }
+        ? { type: type }
         : {}),
       ...(tag ? { tag } : {}),
       ...(q ? { q } : {}),

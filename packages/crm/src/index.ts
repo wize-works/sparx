@@ -5,8 +5,8 @@
 // transports), every external write into the CRM goes through one of the
 // services here.
 
-export * from './services/index.js';
-export * from './events.js';
-export * from './consumers/index.js';
-export type { ServiceContext, NotFoundError, ValidationError } from './errors.js';
-export { CrmNotFoundError, CrmValidationError, CrmConflictError } from './errors.js';
+export * from './services/index';
+export * from './events';
+export * from './consumers/index';
+export type { ServiceContext, NotFoundError, ValidationError } from './errors';
+export { CrmNotFoundError, CrmValidationError, CrmConflictError } from './errors';

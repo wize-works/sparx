@@ -1,4 +1,4 @@
-import type { ContentTypeDefinition } from '../types.js';
+import type { ContentTypeDefinition } from '../types';
 
 // Authored blog post (docs/12-cms-prd.md §5.2). Author, categories, and
 // tags live OUTSIDE body — on the content_entries.author_id column and via

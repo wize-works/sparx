@@ -16,7 +16,7 @@
 //     row-level FK violation).
 
 import { z } from 'zod';
-import type { ContentTypeSchema, FieldDef } from './types.js';
+import type { ContentTypeSchema, FieldDef } from './types';
 
 export function bodyValidatorFor(schema: ContentTypeSchema): z.ZodObject {
   return buildObject(schema.fields);

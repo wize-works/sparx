@@ -166,7 +166,7 @@ describe('dealService', () => {
     });
 
     await expect(
-      dealService.update(test.ctx, deal.id, { stageId: qualifiedStageId } as never)
+      dealService.update(test.ctx, deal.id, { stageId: qualifiedStageId })
     ).rejects.toMatchObject({ code: 'VALIDATION_ERROR' });
 
     // Stage didn't change.

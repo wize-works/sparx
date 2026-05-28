@@ -20,10 +20,10 @@ import {
 import { withTenant } from '@sparx/db';
 import type { Deal, DealOrder, DealQuote, Prisma } from '@sparx/db';
 
-import { writeAuditLog } from '../audit.js';
-import { publishCrmEvent } from '../events.js';
-import type { ServiceContext } from '../errors.js';
-import { CrmNotFoundError, CrmValidationError } from '../errors.js';
+import { writeAuditLog } from '../audit';
+import { publishCrmEvent } from '../events';
+import type { ServiceContext } from '../errors';
+import { CrmNotFoundError, CrmValidationError } from '../errors';
 
 export interface ListDealsFilter {
   pipelineId?: string;
@@ -70,7 +70,7 @@ export async function list(
 
 export async function get(ctx: ServiceContext, dealId: string): Promise<Deal> {
   const deal = await withTenant(ctx, (tx) => tx.deal.findUnique({ where: { id: dealId } }));
-  if (!deal || deal.deletedAt !== null) throw new CrmNotFoundError('Deal', dealId);
+  if (deal?.deletedAt !== null) throw new CrmNotFoundError('Deal', dealId);
   return deal;
 }
 
@@ -82,7 +82,7 @@ export async function create(ctx: ServiceContext, rawInput: unknown): Promise<De
     // scopes both to the tenant; this check catches stage-pipeline mismatch
     // before the FK constraint trips.
     const stage = await tx.pipelineStage.findUnique({ where: { id: input.stageId } });
-    if (!stage || stage.pipelineId !== input.pipelineId) {
+    if (stage?.pipelineId !== input.pipelineId) {
       throw new CrmValidationError('Stage does not belong to the supplied pipeline', [
         { field: 'stageId', message: 'Stage and pipeline must match' },
       ]);
@@ -169,7 +169,7 @@ export async function update(
 
   return withTenant(ctx, async (tx) => {
     const before = await tx.deal.findUnique({ where: { id: dealId } });
-    if (!before || before.deletedAt !== null) throw new CrmNotFoundError('Deal', dealId);
+    if (before?.deletedAt !== null) throw new CrmNotFoundError('Deal', dealId);
     const updated = await tx.deal.update({
       where: { id: dealId },
       data: {
@@ -221,7 +221,7 @@ export async function moveStage(
       where: { id: dealId },
       include: { stage: true },
     });
-    if (!before || before.deletedAt !== null) throw new CrmNotFoundError('Deal', dealId);
+    if (before?.deletedAt !== null) throw new CrmNotFoundError('Deal', dealId);
 
     const toStage = await tx.pipelineStage.findUnique({ where: { id: input.toStageId } });
     if (!toStage) throw new CrmNotFoundError('PipelineStage', input.toStageId);
@@ -339,7 +339,7 @@ export async function attachOrder(ctx: ServiceContext, rawInput: unknown): Promi
   const input = AttachDealOrderInput.parse(rawInput);
   return withTenant(ctx, async (tx) => {
     const deal = await tx.deal.findUnique({ where: { id: input.dealId } });
-    if (!deal || deal.deletedAt !== null) throw new CrmNotFoundError('Deal', input.dealId);
+    if (deal?.deletedAt !== null) throw new CrmNotFoundError('Deal', input.dealId);
     const link = await tx.dealOrder.upsert({
       where: { dealId_orderId: { dealId: input.dealId, orderId: input.orderId } },
       create: {
@@ -367,7 +367,7 @@ export async function attachQuote(ctx: ServiceContext, rawInput: unknown): Promi
   const input = AttachDealQuoteInput.parse(rawInput);
   return withTenant(ctx, async (tx) => {
     const deal = await tx.deal.findUnique({ where: { id: input.dealId } });
-    if (!deal || deal.deletedAt !== null) throw new CrmNotFoundError('Deal', input.dealId);
+    if (deal?.deletedAt !== null) throw new CrmNotFoundError('Deal', input.dealId);
     const link = await tx.dealQuote.upsert({
       where: { dealId_quoteId: { dealId: input.dealId, quoteId: input.quoteId } },
       create: {

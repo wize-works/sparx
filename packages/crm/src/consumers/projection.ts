@@ -15,8 +15,8 @@
 import { withTenant } from '@sparx/db';
 import type { Customer } from '@sparx/db';
 
-import type { ServiceContext } from '../errors.js';
-import { CrmNotFoundError } from '../errors.js';
+import type { ServiceContext } from '../errors';
+import { CrmNotFoundError } from '../errors';
 
 export interface CustomerProjection {
   customerId: string;
@@ -64,7 +64,7 @@ export async function buildCustomerProjection(
   const customer = await withTenant(ctx, (tx) =>
     tx.customer.findUnique({ where: { id: customerId } })
   );
-  if (!customer || customer.deletedAt !== null) {
+  if (customer?.deletedAt !== null) {
     throw new CrmNotFoundError('Customer', customerId);
   }
   return projectionFromCustomer(customer);

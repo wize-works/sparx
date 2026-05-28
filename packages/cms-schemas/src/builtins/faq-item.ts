@@ -1,4 +1,4 @@
-import type { ContentTypeDefinition } from '../types.js';
+import type { ContentTypeDefinition } from '../types';
 
 // One Q&A pair, listed by apps/web/components/marketing/faq.tsx. Non-
 // routable. `category` enables simple grouping on the FAQ index without

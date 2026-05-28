@@ -20,7 +20,7 @@ describe('response envelope', () => {
   beforeAll(async () => {
     app = await createApp();
     tenant = await createTestTenant('owner');
-    token = await signToken(app, tenant);
+    token = signToken(app, tenant);
   });
 
   afterAll(async () => {

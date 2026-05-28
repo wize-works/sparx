@@ -40,7 +40,7 @@ export type ActionResult<T = void> =
       error: {
         code: string;
         message: string;
-        details?: Array<{ field: string; message: string }>;
+        details?: { field: string; message: string }[];
         module?: string;
       };
     };
@@ -100,7 +100,7 @@ function mapErrorToResult(err: unknown): ActionResult<never> {
   // Zod ParseError surfaces a structured `issues` array — surface the first
   // issue so the form can highlight the field.
   if (err && typeof err === 'object' && 'issues' in err) {
-    const issues = (err as { issues?: Array<{ path: Array<string | number>; message: string }> })
+    const issues = (err as { issues?: { path: (string | number)[]; message: string }[] })
       .issues;
     if (issues && issues.length > 0) {
       const first = issues[0]!;
@@ -117,7 +117,7 @@ function mapErrorToResult(err: unknown): ActionResult<never> {
       };
     }
   }
-  // eslint-disable-next-line no-console
+   
   console.error('CRM action failed', err);
   return { ok: false, error: { code: 'INTERNAL_ERROR', message: 'Unexpected error' } };
 }

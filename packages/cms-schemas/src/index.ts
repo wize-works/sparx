@@ -1,5 +1,5 @@
-export * from './types.js';
-export * from './validate.js';
+export * from './types';
+export * from './validate';
 export {
   BUILT_IN_CONTENT_TYPES,
   PLATFORM_TENANT_ID,
@@ -9,4 +9,4 @@ export {
   featureType,
   faqItemType,
   editorialSectionType,
-} from './builtins/index.js';
+} from './builtins/index';

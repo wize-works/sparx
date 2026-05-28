@@ -53,7 +53,7 @@ class InMemoryPlatformBus implements PlatformEventBus {
     const work = Promise.all(
       snapshot.map((h) =>
         h(event).catch((err: unknown) => {
-          // eslint-disable-next-line no-console
+           
           console.error('[crm-consumer]', event.topic, err);
         })
       )
@@ -69,7 +69,7 @@ class InMemoryPlatformBus implements PlatformEventBus {
       this.handlers.set(topic, set);
     }
     set.add(handler);
-    return () => set!.delete(handler);
+    return () => set.delete(handler);
   }
 
   async drain(): Promise<void> {

@@ -12,10 +12,10 @@ import { CompleteTaskInput, CreateTaskInput, UpdateTaskInput } from '@sparx/crm-
 import { withTenant } from '@sparx/db';
 import type { Prisma, Task } from '@sparx/db';
 
-import { writeAuditLog } from '../audit.js';
-import { publishCrmEvent } from '../events.js';
-import type { ServiceContext } from '../errors.js';
-import { CrmNotFoundError } from '../errors.js';
+import { writeAuditLog } from '../audit';
+import { publishCrmEvent } from '../events';
+import type { ServiceContext } from '../errors';
+import { CrmNotFoundError } from '../errors';
 
 export interface ListTasksFilter {
   assignedToUserId?: string;

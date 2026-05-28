@@ -7,7 +7,7 @@
 
 import { z } from 'zod';
 
-import { ActivityType, ActorType, Uuid } from './common.js';
+import { ActivityType, ActorType, Uuid } from './common';
 
 export const CreateActivityInput = z
   .object({

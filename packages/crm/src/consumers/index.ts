@@ -5,25 +5,25 @@
 // a fresh in-memory bus via `resetPlatformBusForTesting()` so each suite
 // gets isolated dispatch.
 
-export { registerCrmConsumers, gateHandler } from './registry.js';
-export type { RegisterOptions, ConsumerRegistration, ConsumerContext } from './registry.js';
+export { registerCrmConsumers, gateHandler } from './registry';
+export type { RegisterOptions, ConsumerRegistration, ConsumerContext } from './registry';
 
-export { getPlatformBus, setPlatformBus, resetPlatformBusForTesting } from './platform-bus.js';
-export type { PlatformEvent, PlatformEventBus, PlatformEventHandler } from './platform-bus.js';
+export { getPlatformBus, setPlatformBus, resetPlatformBusForTesting } from './platform-bus';
+export type { PlatformEvent, PlatformEventBus, PlatformEventHandler } from './platform-bus';
 
-export { getDedupeStore, setDedupeStore, resetDedupeForTesting } from './dedupe.js';
-export type { DedupeStore } from './dedupe.js';
+export { getDedupeStore, setDedupeStore, resetDedupeForTesting } from './dedupe';
+export type { DedupeStore } from './dedupe';
 
 export {
   buildCustomerProjection,
   projectionFromCustomer,
   resolveCustomerByAuthUserId,
-} from './projection.js';
-export type { CustomerProjection } from './projection.js';
+} from './projection';
+export type { CustomerProjection } from './projection';
 
-export { resolveCustomerByEmail } from './resolve.js';
+export { resolveCustomerByEmail } from './resolve';
 
-export { ORDER_CONSUMER_TOPICS, type OrderCreatedEventPayload } from './order-events.js';
-export { EMAIL_CONSUMER_TOPICS } from './email-events.js';
-export { QUOTE_CONSUMER_TOPICS } from './quote-events.js';
-export { AUTH_CONSUMER_TOPICS } from './auth-events.js';
+export { ORDER_CONSUMER_TOPICS, type OrderCreatedEventPayload } from './order-events';
+export { EMAIL_CONSUMER_TOPICS } from './email-events';
+export { QUOTE_CONSUMER_TOPICS } from './quote-events';
+export { AUTH_CONSUMER_TOPICS } from './auth-events';

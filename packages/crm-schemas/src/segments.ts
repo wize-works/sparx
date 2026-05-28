@@ -5,7 +5,7 @@
 
 import { z } from 'zod';
 
-import { SegmentRuleSchema } from './segment-rule.js';
+import { SegmentRuleSchema } from './segment-rule';
 
 const Slug = z
   .string()

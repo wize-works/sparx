@@ -16,10 +16,10 @@ import { DEFAULT_PIPELINE_TEMPLATE } from '@sparx/crm-schemas/builtins';
 import { withTenant } from '@sparx/db';
 import type { Pipeline, PipelineStage } from '@sparx/db';
 
-import { writeAuditLog } from '../audit.js';
-import { publishCrmEvent } from '../events.js';
-import type { ServiceContext } from '../errors.js';
-import { CrmNotFoundError } from '../errors.js';
+import { writeAuditLog } from '../audit';
+import { publishCrmEvent } from '../events';
+import type { ServiceContext } from '../errors';
+import { CrmNotFoundError } from '../errors';
 
 // ─────────────────────────────────────────────────────────────────────────
 // Pipelines
@@ -28,7 +28,7 @@ import { CrmNotFoundError } from '../errors.js';
 export async function list(
   ctx: ServiceContext,
   args: { includeArchived?: boolean } = {}
-): Promise<Array<Pipeline & { stages: PipelineStage[] }>> {
+): Promise<(Pipeline & { stages: PipelineStage[] })[]> {
   return withTenant(ctx, (tx) =>
     tx.pipeline.findMany({
       where: args.includeArchived ? {} : { archivedAt: null },

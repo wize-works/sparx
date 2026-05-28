@@ -34,7 +34,7 @@ export function RecordActivityForm({ customerId, dealId }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
-  async function onSubmit(formData: FormData) {
+  function onSubmit(formData: FormData) {
     setError(null);
     const desc = (formData.get('description') as string | null)?.trim() ?? '';
     if (!desc) {

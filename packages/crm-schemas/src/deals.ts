@@ -7,7 +7,7 @@
 
 import { z } from 'zod';
 
-import { TagList, Uuid } from './common.js';
+import { TagList, Uuid } from './common';
 
 export const CreateDealInput = z.object({
   pipelineId: Uuid,

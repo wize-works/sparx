@@ -6,12 +6,12 @@
 // Zod schemas before touching Prisma — keeping the JSONB and column writes
 // type-safe across transports.
 
-export * from './customers.js';
-export * from './b2b-accounts.js';
-export * from './pipelines.js';
-export * from './deals.js';
-export * from './activities.js';
-export * from './tasks.js';
-export * from './segments.js';
-export * from './segment-rule.js';
-export * from './common.js';
+export * from './customers';
+export * from './b2b-accounts';
+export * from './pipelines';
+export * from './deals';
+export * from './activities';
+export * from './tasks';
+export * from './segments';
+export * from './segment-rule';
+export * from './common';

@@ -7,7 +7,7 @@
 
 import { z } from 'zod';
 
-import { StageType } from './common.js';
+import { StageType } from './common';
 
 const Slug = z
   .string()

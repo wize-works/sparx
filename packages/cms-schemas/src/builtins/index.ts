@@ -1,10 +1,10 @@
-import type { ContentTypeDefinition } from '../types.js';
-import { pageType } from './page.js';
-import { blogPostType } from './blog-post.js';
-import { moduleType } from './module.js';
-import { featureType } from './feature.js';
-import { faqItemType } from './faq-item.js';
-import { editorialSectionType } from './editorial-section.js';
+import type { ContentTypeDefinition } from '../types';
+import { pageType } from './page';
+import { blogPostType } from './blog-post';
+import { moduleType } from './module';
+import { featureType } from './feature';
+import { faqItemType } from './faq-item';
+import { editorialSectionType } from './editorial-section';
 
 export { pageType, blogPostType, moduleType, featureType, faqItemType, editorialSectionType };
 

@@ -47,7 +47,7 @@ export function MergeCandidatesGroup({ customers }: Props) {
     setDuplicateIds(next);
   }
 
-  async function onMerge() {
+  function onMerge() {
     setError(null);
     if (!primaryId || duplicateIds.size === 0) {
       setError('Pick a primary and at least one duplicate.');

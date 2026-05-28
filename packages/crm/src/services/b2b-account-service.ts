@@ -8,10 +8,10 @@ import { CreateB2BAccountInput, UpdateB2BAccountInput } from '@sparx/crm-schemas
 import { withTenant } from '@sparx/db';
 import type { B2BAccount, Prisma } from '@sparx/db';
 
-import { writeAuditLog } from '../audit.js';
-import { publishCrmEvent } from '../events.js';
-import type { ServiceContext } from '../errors.js';
-import { CrmNotFoundError } from '../errors.js';
+import { writeAuditLog } from '../audit';
+import { publishCrmEvent } from '../events';
+import type { ServiceContext } from '../errors';
+import { CrmNotFoundError } from '../errors';
 
 export interface ListB2BAccountsFilter {
   status?: 'active' | 'credit_hold' | 'suspended' | 'inactive';
@@ -51,7 +51,7 @@ export async function get(ctx: ServiceContext, accountId: string): Promise<B2BAc
   const account = await withTenant(ctx, (tx) =>
     tx.b2BAccount.findUnique({ where: { id: accountId } })
   );
-  if (!account || account.deletedAt !== null) {
+  if (account?.deletedAt !== null) {
     throw new CrmNotFoundError('B2BAccount', accountId);
   }
   return account;
@@ -74,7 +74,7 @@ export async function create(ctx: ServiceContext, rawInput: unknown): Promise<B2
         status: input.status,
         assignedRepId: input.assignedRepId ?? null,
         fleetSize: input.fleetSize ?? null,
-        engineProfiles: input.engineProfiles as Prisma.InputJsonValue,
+        engineProfiles: input.engineProfiles,
         notes: input.notes ?? null,
         tags: input.tags ?? [],
       },
@@ -113,7 +113,7 @@ export async function update(
 
   const result = await withTenant(ctx, async (tx) => {
     const before = await tx.b2BAccount.findUnique({ where: { id: accountId } });
-    if (!before || before.deletedAt !== null) {
+    if (before?.deletedAt !== null) {
       throw new CrmNotFoundError('B2BAccount', accountId);
     }
 
@@ -131,7 +131,7 @@ export async function update(
         ...(input.assignedRepId !== undefined ? { assignedRepId: input.assignedRepId } : {}),
         ...(input.fleetSize !== undefined ? { fleetSize: input.fleetSize } : {}),
         ...(input.engineProfiles !== undefined
-          ? { engineProfiles: input.engineProfiles as Prisma.InputJsonValue }
+          ? { engineProfiles: input.engineProfiles }
           : {}),
         ...(input.notes !== undefined ? { notes: input.notes } : {}),
         ...(input.tags !== undefined ? { tags: input.tags } : {}),
@@ -165,7 +165,7 @@ export async function update(
 export async function softDelete(ctx: ServiceContext, accountId: string): Promise<B2BAccount> {
   return withTenant(ctx, async (tx) => {
     const before = await tx.b2BAccount.findUnique({ where: { id: accountId } });
-    if (!before || before.deletedAt !== null) {
+    if (before?.deletedAt !== null) {
       throw new CrmNotFoundError('B2BAccount', accountId);
     }
     const updated = await tx.b2BAccount.update({

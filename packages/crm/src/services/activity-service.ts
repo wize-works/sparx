@@ -11,9 +11,9 @@ import { CreateActivityInput, ListActivitiesInput } from '@sparx/crm-schemas';
 import { withTenant } from '@sparx/db';
 import type { CrmActivity, Prisma } from '@sparx/db';
 
-import { writeAuditLog } from '../audit.js';
-import { publishCrmEvent } from '../events.js';
-import type { ServiceContext } from '../errors.js';
+import { writeAuditLog } from '../audit';
+import { publishCrmEvent } from '../events';
+import type { ServiceContext } from '../errors';
 
 export async function list(ctx: ServiceContext, rawFilter: unknown = {}): Promise<CrmActivity[]> {
   const filter = ListActivitiesInput.parse(rawFilter);

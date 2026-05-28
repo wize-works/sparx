@@ -30,8 +30,8 @@ describe('cross-tenant RLS isolation', () => {
     app = await createApp();
     alice = await createTestTenant('owner');
     bob = await createTestTenant('owner');
-    aliceToken = await signToken(app, alice);
-    bobToken = await signToken(app, bob);
+    aliceToken = signToken(app, alice);
+    bobToken = signToken(app, bob);
 
     // Each tenant creates an entry with the SAME slug ("hello-world") under
     // the same content type. Without RLS this would collide on the

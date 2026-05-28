@@ -44,7 +44,7 @@ describe('CRM consumers', () => {
     bus = resetPlatformBusForTesting();
     resetDedupeForTesting();
     const registration = registerCrmConsumers({ bus });
-    teardown = registration.unregister;
+    teardown = () => registration.unregister();
 
     alice = await createTestTenant('owner');
     aliceCtx = { tenantId: alice.tenantId, userId: alice.userId };

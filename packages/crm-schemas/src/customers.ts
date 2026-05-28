@@ -8,7 +8,7 @@
 
 import { z } from 'zod';
 
-import { CustomerType, PreferredContactMethod, TagList, Uuid } from './common.js';
+import { CustomerType, PreferredContactMethod, TagList, Uuid } from './common';
 
 // GDPR consent shape (stored in customers.gdpr_consent JSONB).
 // Captured at the moment consent was granted; never mutated retroactively.

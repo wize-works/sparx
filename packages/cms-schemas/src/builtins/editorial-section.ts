@@ -1,4 +1,4 @@
-import type { ContentTypeDefinition } from '../types.js';
+import type { ContentTypeDefinition } from '../types';
 
 // Long-form marketing section embedded into a parent page (apps/web has
 // these as hand-coded components today: mcp-spotlight, b2b-spotlight,

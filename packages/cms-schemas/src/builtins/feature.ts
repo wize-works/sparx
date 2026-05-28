@@ -1,4 +1,4 @@
-import type { ContentTypeDefinition } from '../types.js';
+import type { ContentTypeDefinition } from '../types';
 
 // One feature card — the {number, title, body} shape from
 // apps/web/lib/modules.ts (`ModuleFeature`). Non-routable: slug stays NULL.

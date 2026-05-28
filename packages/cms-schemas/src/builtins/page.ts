@@ -1,4 +1,4 @@
-import type { ContentTypeDefinition } from '../types.js';
+import type { ContentTypeDefinition } from '../types';
 
 // Generic static page (About, Contact, landing pages, policy pages).
 // Successor to the pre-cutover `pages` table; backfill maps each existing

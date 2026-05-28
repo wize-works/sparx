@@ -1,4 +1,4 @@
-import type { ContentTypeDefinition } from '../types.js';
+import type { ContentTypeDefinition } from '../types';
 
 // Marketing module page (apps/web `ModuleMeta`). One entry per Sparx
 // product module (storefront, commerce, cms, …). `slug` equals the

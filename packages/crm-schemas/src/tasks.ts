@@ -2,7 +2,7 @@
 
 import { z } from 'zod';
 
-import { TaskPriority, TaskStatus, Uuid } from './common.js';
+import { TaskPriority, TaskStatus, Uuid } from './common';
 
 export const CreateTaskInput = z.object({
   title: z.string().min(1).max(255),

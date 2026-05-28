@@ -16,14 +16,14 @@ interface Props {
   currentSort: 'updatedAt' | 'createdAt' | 'totalSpent' | 'lastOrderAt';
 }
 
-const TYPE_FILTERS: Array<{ value: string; label: string }> = [
+const TYPE_FILTERS: { value: string; label: string }[] = [
   { value: '', label: 'All' },
   { value: 'prospect', label: 'Prospects' },
   { value: 'retail', label: 'Customers' },
   { value: 'b2b', label: 'B2B' },
 ];
 
-const SORT_OPTIONS: Array<{ value: Props['currentSort']; label: string }> = [
+const SORT_OPTIONS: { value: Props['currentSort']; label: string }[] = [
   { value: 'updatedAt', label: 'Recently updated' },
   { value: 'createdAt', label: 'Recently created' },
   { value: 'lastOrderAt', label: 'Last order' },
@@ -121,7 +121,7 @@ export function CustomerFiltersBar({ currentType, currentTag, currentQuery, curr
         </select>
       </Stack>
 
-      {(currentTag || currentType || currentQuery) && (
+      {(currentTag ?? currentType ?? currentQuery) && (
         <Stack direction="row" gap={2} wrap>
           {currentType && (
             <Badge variant="outline">

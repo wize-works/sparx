@@ -14,70 +14,72 @@
 
 import { isModuleEnabled, invalidateModuleCache } from '@sparx/auth';
 
-import { getDedupeStore } from './dedupe.js';
-import { getPlatformBus, type PlatformEvent, type PlatformEventHandler } from './platform-bus.js';
+import { getDedupeStore } from './dedupe';
+import { getPlatformBus, type PlatformEvent, type PlatformEventHandler } from './platform-bus';
 
-import { registerOrderEventConsumers } from './order-events.js';
-import { registerEmailEventConsumers } from './email-events.js';
-import { registerQuoteEventConsumers } from './quote-events.js';
-import { registerAuthEventConsumers } from './auth-events.js';
+import { registerOrderEventConsumers } from './order-events';
+import { registerEmailEventConsumers } from './email-events';
+import { registerQuoteEventConsumers } from './quote-events';
+import { registerAuthEventConsumers } from './auth-events';
 
 export interface RegisterOptions {
-  /** Override the active bus — tests pass a fresh in-memory bus. */
-  bus?: ReturnType<typeof getPlatformBus>;
+    /** Override the active bus — tests pass a fresh in-memory bus. */
+    bus?: ReturnType<typeof getPlatformBus>;
 }
 
 export interface ConsumerRegistration {
-  /** Drops every subscription this bootstrap registered. */
-  unregister(): void;
+    /** Drops every subscription this bootstrap registered. */
+    unregister(): void;
 }
 
 /** Wire every CRM consumer against the platform bus. Returns an object that
  *  can tear down all subscriptions (used by tests for clean shutdown). */
 export function registerCrmConsumers(opts: RegisterOptions = {}): ConsumerRegistration {
-  const bus = opts.bus ?? getPlatformBus();
-  const teardowns: Array<() => void> = [];
+    const bus = opts.bus ?? getPlatformBus();
+    const teardowns: (() => void)[] = [];
 
-  // Each consumer registers its own subscriptions. The gate wrapper is shared.
-  const ctx = { bus, gate: gateHandler };
-  teardowns.push(...registerOrderEventConsumers(ctx));
-  teardowns.push(...registerEmailEventConsumers(ctx));
-  teardowns.push(...registerQuoteEventConsumers(ctx));
-  teardowns.push(...registerAuthEventConsumers(ctx));
+    // Each consumer registers its own subscriptions. The gate wrapper is shared.
+    const ctx = { bus, gate: gateHandler };
+    teardowns.push(...registerOrderEventConsumers(ctx));
+    teardowns.push(...registerEmailEventConsumers(ctx));
+    teardowns.push(...registerQuoteEventConsumers(ctx));
+    teardowns.push(...registerAuthEventConsumers(ctx));
 
-  // Cache invalidation — when a tenant activates/deactivates CRM at runtime,
-  // we drop the module-gate cache so the next event reflects the new state.
-  teardowns.push(
-    bus.subscribe('module.activated', async (event) => {
-      const slug = (event.payload as { module?: string } | null)?.module;
-      if (slug === 'crm') invalidateModuleCache(event.tenantId, 'crm');
-    })
-  );
-  teardowns.push(
-    bus.subscribe('module.deactivated', async (event) => {
-      const slug = (event.payload as { module?: string } | null)?.module;
-      if (slug === 'crm') invalidateModuleCache(event.tenantId, 'crm');
-    })
-  );
+    // Cache invalidation — when a tenant activates/deactivates CRM at runtime,
+    // we drop the module-gate cache so the next event reflects the new state.
+    teardowns.push(
+        bus.subscribe('module.activated', (event) => {
+            const slug = (event.payload as { module?: string } | null)?.module;
+            if (slug === 'crm') invalidateModuleCache(event.tenantId, 'crm');
+            return Promise.resolve();
+        })
+    );
+    teardowns.push(
+        bus.subscribe('module.deactivated', (event) => {
+            const slug = (event.payload as { module?: string } | null)?.module;
+            if (slug === 'crm') invalidateModuleCache(event.tenantId, 'crm');
+            return Promise.resolve();
+        })
+    );
 
-  return {
-    unregister() {
-      while (teardowns.length > 0) {
-        const fn = teardowns.shift();
-        try {
-          fn?.();
-        } catch {
-          // Best-effort teardown — don't let one subscription's cleanup
-          // block the others.
-        }
-      }
-    },
-  };
+    return {
+        unregister() {
+            while (teardowns.length > 0) {
+                const fn = teardowns.shift();
+                try {
+                    fn?.();
+                } catch {
+                    // Best-effort teardown — don't let one subscription's cleanup
+                    // block the others.
+                }
+            }
+        },
+    };
 }
 
 export interface ConsumerContext {
-  bus: ReturnType<typeof getPlatformBus>;
-  gate: typeof gateHandler;
+    bus: ReturnType<typeof getPlatformBus>;
+    gate: typeof gateHandler;
 }
 
 /** Wraps a consumer handler with module-gate + dedupe. Returns the wrapped
@@ -86,17 +88,17 @@ export interface ConsumerContext {
  *    bus.subscribe('order.created', gateHandler(async (event) => { ... }))
  */
 export function gateHandler<T = unknown>(
-  handler: PlatformEventHandler<T>
+    handler: PlatformEventHandler<T>
 ): PlatformEventHandler<T> {
-  return async (event: PlatformEvent<T>) => {
-    // Gate first — disabled tenants don't even consult dedupe.
-    const enabled = await isModuleEnabled(event.tenantId, 'crm');
-    if (!enabled) return;
+    return async (event: PlatformEvent<T>) => {
+        // Gate first — disabled tenants don't even consult dedupe.
+        const enabled = await isModuleEnabled(event.tenantId, 'crm');
+        if (!enabled) return;
 
-    const dedupe = getDedupeStore();
-    const novel = await dedupe.shouldProcess(`crm:${event.topic}:${event.id}`);
-    if (!novel) return;
+        const dedupe = getDedupeStore();
+        const novel = await dedupe.shouldProcess(`crm:${event.topic}:${event.id}`);
+        if (!novel) return;
 
-    await handler(event);
-  };
+        await handler(event);
+    };
 }

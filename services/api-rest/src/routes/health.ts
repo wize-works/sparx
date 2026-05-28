@@ -8,11 +8,12 @@
 
 import type { FastifyPluginAsync } from 'fastify';
 
-const healthRoutes: FastifyPluginAsync = async (app) => {
-  app.get('/health', { logLevel: 'silent' }, async () => ({
-    status: 'ok',
-    service: 'api-rest',
-  }));
+const healthRoutes: FastifyPluginAsync = (app) => {
+    app.get('/health', { logLevel: 'silent' }, () => ({
+        status: 'ok',
+        service: 'api-rest',
+    }));
+    return Promise.resolve();
 };
 
 export default healthRoutes;

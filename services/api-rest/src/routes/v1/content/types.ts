@@ -14,33 +14,34 @@ import { notFound } from '../../../errors.js';
 
 const ParamsSchema = z.object({ key: z.string().min(1).max(63) });
 
-const contentTypeRoutes: FastifyPluginAsync = async (app) => {
-  app.get('/v1/content/types', async (request) => {
-    requireAuth(request);
-    const rows = await withRequestTenant(request, (tx) =>
-      tx.contentType.findMany({
-        // The RLS policy on content_types makes platform-built-ins visible
-        // alongside any tenant-owned customisations. Order so customisations
-        // (is_built_in = false) sort first within the same key for the
-        // dashboard "which one is active?" hint.
-        orderBy: [{ isBuiltIn: 'asc' }, { key: 'asc' }],
-      })
-    );
-    return ok(rows);
-  });
+const contentTypeRoutes: FastifyPluginAsync = (app) => {
+    app.get('/v1/content/types', async (request) => {
+        requireAuth(request);
+        const rows = await withRequestTenant(request, (tx) =>
+            tx.contentType.findMany({
+                // The RLS policy on content_types makes platform-built-ins visible
+                // alongside any tenant-owned customisations. Order so customisations
+                // (is_built_in = false) sort first within the same key for the
+                // dashboard "which one is active?" hint.
+                orderBy: [{ isBuiltIn: 'asc' }, { key: 'asc' }],
+            })
+        );
+        return ok(rows);
+    });
 
-  app.get('/v1/content/types/:key', async (request) => {
-    requireAuth(request);
-    const { key } = ParamsSchema.parse(request.params);
-    const row = await withRequestTenant(request, (tx) =>
-      tx.contentType.findFirst({
-        where: { key },
-        orderBy: [{ isBuiltIn: 'asc' }, { updatedAt: 'desc' }],
-      })
-    );
-    if (!row) throw notFound('Content type', key);
-    return ok(row);
-  });
+    app.get('/v1/content/types/:key', async (request) => {
+        requireAuth(request);
+        const { key } = ParamsSchema.parse(request.params);
+        const row = await withRequestTenant(request, (tx) =>
+            tx.contentType.findFirst({
+                where: { key },
+                orderBy: [{ isBuiltIn: 'asc' }, { updatedAt: 'desc' }],
+            })
+        );
+        if (!row) throw notFound('Content type', key);
+        return ok(row);
+    });
+    return Promise.resolve();
 };
 
 export default contentTypeRoutes;

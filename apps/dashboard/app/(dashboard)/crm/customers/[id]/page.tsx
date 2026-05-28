@@ -79,9 +79,7 @@ export default async function CustomerDetailPage({ params }: PageProps) {
 
   const displayName =
     [customer.firstName, customer.lastName].filter(Boolean).join(' ').trim() ||
-    customer.company ||
-    customer.email ||
-    'Unnamed customer';
+    (customer.company ?? customer.email ?? 'Unnamed customer');
 
   const totalSpent = Number(customer.totalSpent);
   const aov = customer.orderCount > 0 ? totalSpent / customer.orderCount : 0;

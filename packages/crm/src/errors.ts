@@ -27,8 +27,8 @@ export class CrmNotFoundError extends Error {
 
 export class CrmValidationError extends Error {
   readonly code = 'VALIDATION_ERROR' as const;
-  readonly details: Array<{ field: string; message: string }>;
-  constructor(message: string, details: Array<{ field: string; message: string }> = []) {
+  readonly details: { field: string; message: string }[];
+  constructor(message: string, details: { field: string; message: string }[] = []) {
     super(message);
     this.details = details;
   }

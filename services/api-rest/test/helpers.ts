@@ -53,11 +53,11 @@ export async function dropTestTenant(tenantId: string): Promise<void> {
   await prisma.tenant.delete({ where: { id: tenantId } });
 }
 
-export async function signToken(
+export function signToken(
   app: FastifyInstance,
   fixture: TestTenant,
   role: StaffRole = 'owner'
-): Promise<string> {
+): string {
   return app.jwt.sign({ sub: fixture.userId, tid: fixture.tenantId, role }, { expiresIn: '5m' });
 }
 

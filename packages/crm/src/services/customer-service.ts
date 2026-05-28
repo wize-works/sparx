@@ -18,13 +18,13 @@ import {
 import { withTenant } from '@sparx/db';
 import type { Customer, Prisma } from '@sparx/db';
 
-import { writeAuditLog } from '../audit.js';
-import { publishCrmEvent } from '../events.js';
-import type { ServiceContext } from '../errors.js';
-import { CrmNotFoundError } from '../errors.js';
+import { writeAuditLog } from '../audit';
+import { publishCrmEvent } from '../events';
+import type { ServiceContext } from '../errors';
+import { CrmNotFoundError } from '../errors';
 
-export { merge, findLikelyDuplicates } from './merge-service.js';
-export type { MergeResult, DuplicateGroup } from './merge-service.js';
+export { merge, findLikelyDuplicates } from './merge-service';
+export type { MergeResult, DuplicateGroup } from './merge-service';
 
 // ─────────────────────────────────────────────────────────────────────────
 // Reads
@@ -70,7 +70,7 @@ export async function list(
     const [items, total] = await Promise.all([
       tx.customer.findMany({
         where,
-        orderBy: { [sortField]: 'desc' } as Prisma.CustomerOrderByWithRelationInput,
+        orderBy: { [sortField]: 'desc' },
         take: Math.min(filter.take ?? 50, 250),
         skip: filter.skip ?? 0,
       }),
@@ -85,7 +85,7 @@ export async function get(ctx: ServiceContext, customerId: string): Promise<Cust
   const customer = await withTenant(ctx, (tx) =>
     tx.customer.findUnique({ where: { id: customerId } })
   );
-  if (!customer || customer.deletedAt !== null) {
+  if (customer?.deletedAt !== null) {
     throw new CrmNotFoundError('Customer', customerId);
   }
   return customer;
@@ -192,7 +192,7 @@ export async function update(
 
   const result = await withTenant(ctx, async (tx) => {
     const before = await tx.customer.findUnique({ where: { id: customerId } });
-    if (!before || before.deletedAt !== null) {
+    if (before?.deletedAt !== null) {
       throw new CrmNotFoundError('Customer', customerId);
     }
 
@@ -247,7 +247,7 @@ export async function update(
 export async function softDelete(ctx: ServiceContext, customerId: string): Promise<Customer> {
   const result = await withTenant(ctx, async (tx) => {
     const before = await tx.customer.findUnique({ where: { id: customerId } });
-    if (!before || before.deletedAt !== null) {
+    if (before?.deletedAt !== null) {
       throw new CrmNotFoundError('Customer', customerId);
     }
     const updated = await tx.customer.update({

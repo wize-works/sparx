@@ -6,7 +6,7 @@
 
 import { z } from 'zod';
 
-import { B2BAccountStatus, PaymentTerms, TagList, Uuid } from './common.js';
+import { B2BAccountStatus, PaymentTerms, TagList, Uuid } from './common';
 
 // Engine profile shape stored in b2b_accounts.engine_profiles JSONB. Used
 // by the fitment-aware catalog when Commerce lands. Each profile is one

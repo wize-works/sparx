@@ -21,47 +21,47 @@ import fp from 'fastify-plugin';
 import { env } from '../env.js';
 
 const openapiPlugin: FastifyPluginAsync = async (app) => {
-  await app.register(fastifySwagger, {
-    openapi: {
-      openapi: '3.1.0',
-      info: {
-        title: 'Sparx API',
-        description:
-          'Sparx public REST API. Tenant-scoped via Better Auth-issued internal JWTs (Phase 1) and `sparx_live_*` API keys (Phase 4+). Every response uses the envelope shape `{ success, data, meta? }` or `{ success: false, error: { code, message, request_id } }`. See docs/06-api-specification.md.',
-        version: '1.0.0',
-      },
-      servers: [
-        {
-          url:
-            env.NODE_ENV === 'production'
-              ? 'https://api.sparx.works'
-              : `http://localhost:${env.PORT}`,
+    await app.register(fastifySwagger, {
+        openapi: {
+            openapi: '3.1.0',
+            info: {
+                title: 'Sparx API',
+                description:
+                    'Sparx public REST API. Tenant-scoped via Better Auth-issued internal JWTs (Phase 1) and `sparx_live_*` API keys (Phase 4+). Every response uses the envelope shape `{ success, data, meta? }` or `{ success: false, error: { code, message, request_id } }`. See docs/06-api-specification.md.',
+                version: '1.0.0',
+            },
+            servers: [
+                {
+                    url:
+                        env.NODE_ENV === 'production'
+                            ? 'https://api.sparx.works'
+                            : `http://localhost:${env.PORT}`,
+                },
+            ],
+            tags: [
+                { name: 'content', description: 'Content types, entries, revisions, publishing' },
+                { name: 'navigation', description: 'Header / footer / mega menu trees' },
+                { name: 'redirects', description: '301/302 redirect rules' },
+                { name: 'webhooks', description: 'Subscription management for content + media events' },
+                { name: 'sitemap', description: 'Public sitemap.xml' },
+                { name: 'system', description: 'Health probes, readiness' },
+            ],
+            components: {
+                securitySchemes: {
+                    bearerAuth: {
+                        type: 'http',
+                        scheme: 'bearer',
+                        bearerFormat: 'JWT',
+                        description:
+                            'Internal-trust JWT issued by the dashboard or a sparx_live_* API key (Phase 4).',
+                    },
+                },
+            },
+            security: [{ bearerAuth: [] }],
         },
-      ],
-      tags: [
-        { name: 'content', description: 'Content types, entries, revisions, publishing' },
-        { name: 'navigation', description: 'Header / footer / mega menu trees' },
-        { name: 'redirects', description: '301/302 redirect rules' },
-        { name: 'webhooks', description: 'Subscription management for content + media events' },
-        { name: 'sitemap', description: 'Public sitemap.xml' },
-        { name: 'system', description: 'Health probes, readiness' },
-      ],
-      components: {
-        securitySchemes: {
-          bearerAuth: {
-            type: 'http',
-            scheme: 'bearer',
-            bearerFormat: 'JWT',
-            description:
-              'Internal-trust JWT issued by the dashboard or a sparx_live_* API key (Phase 4).',
-          },
-        },
-      },
-      security: [{ bearerAuth: [] }],
-    },
-  });
+    });
 
-  app.get('/v1/openapi.json', { schema: { hide: true } }, async () => app.swagger());
+    app.get('/v1/openapi.json', { schema: { hide: true } }, () => app.swagger());
 };
 
 export default fp(openapiPlugin, { name: 'openapi' });
