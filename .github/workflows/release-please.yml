@@ -1,0 +1,52 @@
+name: Release Please
+
+# Watches commits to main, accumulates them into a release PR, and on merge
+# tags vX.Y.Z. The tag push then triggers build-images.yml and deploy-prod.yml,
+# which is how a real production rollout happens — no manual `git tag`.
+#
+# Versioning is driven by Conventional Commits:
+#   - feat:       → minor bump
+#   - fix:        → patch bump
+#   - feat!: / BREAKING CHANGE: → major bump
+#   - everything else (chore/docs/refactor/test/ci/build) → no bump
+#
+# See release-please-config.json for per-package settings.
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+  pull-requests: write
+  actions: write   # to dispatch build-images.yml / deploy-prod.yml on tag
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: googleapis/release-please-action@v4
+        id: release
+        with:
+          # Prefer a PAT (or GitHub App token) stored as RELEASE_PLEASE_TOKEN so
+          # the v* tag push triggers build-images.yml and deploy-prod.yml. The
+          # default GITHUB_TOKEN cannot trigger downstream workflows. If the
+          # secret is missing we still fall back to GITHUB_TOKEN — tags will be
+          # created but you'll need to manually rerun the image build & deploy.
+          token: ${{ secrets.RELEASE_PLEASE_TOKEN || secrets.GITHUB_TOKEN }}
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+
+      # Backstop: if the tag was pushed with the default GITHUB_TOKEN (no PAT
+      # configured), kick off the downstream workflows explicitly so a fresh
+      # release still produces images and a deploy without manual steps.
+      # `secrets` cannot be referenced in `if:`, so expose presence via env.
+      - name: Trigger image build & deploy on new release
+        if: steps.release.outputs.release_created == 'true' && env.HAS_PAT != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          HAS_PAT: ${{ secrets.RELEASE_PLEASE_TOKEN != '' }}
+        run: |
+          TAG="${{ steps.release.outputs.tag_name }}"
+          gh workflow run build-images.yml --ref "$TAG"
+          gh workflow run deploy-prod.yml --ref "$TAG"

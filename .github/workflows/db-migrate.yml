@@ -32,6 +32,11 @@ on:
         default: 'false'
         type: choice
         options: ['false', 'true']
+      resolve_migration:
+        description: 'Mark this migration as rolled-back before applying (used to clear P3009 failures). Migration directory name, e.g. 20260528100000_unified_content_model'
+        required: false
+        default: ''
+        type: string
 
 permissions:
   contents: read
@@ -85,6 +90,38 @@ jobs:
       - name: Get GKE credentials via Connect Gateway
         run: |
           gcloud container fleet memberships get-credentials "$CLUSTER" --location "$REGION"
+
+      # If RESOLVE_MIGRATION is set, first run the resolve Job to mark the
+      # named migration row as rolled-back in `_prisma_migrations`. The main
+      # migrate Job that follows will then retry that migration cleanly.
+      # Touches only the `_prisma_migrations` table; safe to run blind.
+      - name: Resolve failed migration (optional)
+        if: github.event.inputs.resolve_migration != ''
+        env:
+          RUN_ID: ${{ github.run_id }}-${{ github.run_attempt }}-resolve
+          RESOLVE_MIGRATION: ${{ github.event.inputs.resolve_migration }}
+        run: |
+          set -euo pipefail
+          export IMAGE RUN_ID RESOLVE_MIGRATION
+          envsubst < k8s/sparx-prod/db-migrate-resolve-job.yaml > /tmp/resolve-job.yaml
+          echo "--- Rendered resolve manifest ---"
+          cat /tmp/resolve-job.yaml
+          kubectl apply -f /tmp/resolve-job.yaml
+          RESOLVE_JOB="db-migrate-resolve-${RUN_ID}"
+          echo "Streaming logs from $RESOLVE_JOB…"
+          # Wait for pod to be tail-able, then follow logs until container exits.
+          for _ in $(seq 1 120); do
+            POD=$(kubectl -n sparx-prod get pod -l "batch.kubernetes.io/job-name=${RESOLVE_JOB}" -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || true)
+            if [ -n "$POD" ]; then
+              STATE=$(kubectl -n sparx-prod get pod "$POD" -o jsonpath='{.status.containerStatuses[?(@.name=="resolve")].state}' 2>/dev/null || true)
+              if echo "$STATE" | grep -qE 'running|terminated'; then
+                break
+              fi
+            fi
+            sleep 5
+          done
+          kubectl -n sparx-prod logs -f "$POD" -c resolve --tail=-1 --ignore-errors=true || true
+          kubectl -n sparx-prod wait --for=condition=Complete --timeout=5m "job/${RESOLVE_JOB}"
 
       - name: Render + apply migration Job
         env:
