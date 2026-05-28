@@ -21,6 +21,7 @@ import redirectRoutes from './routes/v1/redirects/index.js';
 import webhookRoutes from './routes/v1/webhooks/subscriptions.js';
 import sitemapRoutes from './routes/v1/sitemap.js';
 import publicContentRoutes from './routes/v1/public/content.js';
+import publicMediaRoutes from './routes/v1/public/media.js';
 import uploadRoutes from './routes/v1/media/uploads.js';
 import mediaAssetRoutes from './routes/v1/media/assets.js';
 
@@ -101,6 +102,7 @@ export async function createApp(): Promise<FastifyInstance> {
   await app.register(webhookRoutes);
   await app.register(sitemapRoutes);
   await app.register(publicContentRoutes);
+  await app.register(publicMediaRoutes);
   await app.register(uploadRoutes);
   await app.register(mediaAssetRoutes);
 

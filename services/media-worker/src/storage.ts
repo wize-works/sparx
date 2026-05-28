@@ -8,15 +8,20 @@ import { Readable } from 'node:stream';
 import { env } from './env.js';
 
 const client = new Storage({ projectId: env.GCP_PROJECT_ID });
-const bucket = client.bucket(env.GCS_MEDIA_BUCKET);
+// Private bucket — holds originals. Read-only from here; uploads come via
+// presigned URLs from the dashboard through api-rest.
+const originalsBucket = client.bucket(env.GCS_MEDIA_BUCKET);
+// Public bucket — world-readable variants behind Cloudflare. Falls back
+// to the originals bucket when only one bucket name is configured (dev).
+const variantsBucket = client.bucket(env.GCS_MEDIA_PUBLIC_BUCKET || env.GCS_MEDIA_BUCKET);
 
 export async function downloadObject(key: string): Promise<Buffer> {
-  const [buf] = await bucket.file(key).download();
+  const [buf] = await originalsBucket.file(key).download();
   return buf;
 }
 
 export async function uploadVariant(key: string, contentType: string, body: Buffer): Promise<void> {
-  const file = bucket.file(key);
+  const file = variantsBucket.file(key);
   await new Promise<void>((resolve, reject) => {
     const stream = file.createWriteStream({
       contentType,

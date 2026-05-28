@@ -16,7 +16,15 @@ const EnvSchema = z.object({
   // `media.uploaded.media-worker` (terraform/envs/prod/main.tf).
   PUBSUB_SUBSCRIPTION: z.string().default('media.uploaded.media-worker'),
   // Cloud Storage — must be set, the worker has no local-disk fallback.
+  // Originals are read from the private bucket; variants are written to
+  // the public bucket (world-readable behind CDN). Both names come from
+  // terraform/modules/storage. In dev you can set them to the same value.
   GCS_MEDIA_BUCKET: z.string().min(1),
+  GCS_MEDIA_PUBLIC_BUCKET: z
+    .string()
+    .min(1)
+    .optional()
+    .transform((v) => v ?? process.env.GCS_MEDIA_BUCKET ?? ''),
   // Variant widths (px). Smaller than 400 isn't worth a network round-trip;
   // larger than 2000 hits CDN cache pressure without quality gains.
   VARIANT_WIDTHS: z

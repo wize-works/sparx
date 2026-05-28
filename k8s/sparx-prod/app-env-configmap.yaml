@@ -20,12 +20,22 @@ data:
   NEXT_PUBLIC_MARKETING_URL: https://sparx.works
   # Dashboard → api-rest in-cluster URL. Avoids going out through Caddy.
   SPARX_API_REST_URL: http://api-rest.sparx-prod.svc.cluster.local:3000
-  # Media storage. Bucket name matches terraform/envs/prod/main.tf:
-  #   "${var.project_id}-${local.name_prefix}-media" → sparxworks-sparx-prod-media
-  # MEDIA_PUBLIC_URL is left empty so api-rest's storage backend falls back
-  # to the GCS canonical URL (`https://storage.googleapis.com/<bucket>/<key>`);
-  # Google's edge cache absorbs cold reads. Set to the Cloudflare-fronted
-  # CDN domain (e.g. `media.sparx.works`) once that's live.
+  # Media storage. Bucket names match terraform/modules/storage:
+  #   GCS_MEDIA_BUCKET        → private bucket — originals
+  #   GCS_MEDIA_PUBLIC_BUCKET → public bucket — variants
+  #
+  # Both buckets are private at the GCS layer (org enforces DRS / no
+  # allUsers bindings). Variant bytes are served via api-rest's
+  # `GET /v1/public/media/variants/:tenantId/:assetId/:filename` route
+  # which streams from GCS using the app SA. Cloudflare in front of
+  # api.sparx.works caches the response indefinitely (Cache-Control:
+  # public, immutable, max-age=1yr).
+  #
+  # MEDIA_PUBLIC_URL is the externally-reachable api-rest origin used to
+  # mint variant URLs (`{MEDIA_PUBLIC_URL}/v1/public/media/variants/...`).
+  # When a dedicated CDN domain like `media.sparx.works` lands, repoint
+  # MEDIA_PUBLIC_URL there — the path under it stays the same.
   GCS_MEDIA_BUCKET: sparxworks-sparx-prod-media
-  MEDIA_PUBLIC_URL: ""
+  GCS_MEDIA_PUBLIC_BUCKET: sparxworks-sparx-prod-media-public
+  MEDIA_PUBLIC_URL: https://api.sparx.works
   LOG_LEVEL: info

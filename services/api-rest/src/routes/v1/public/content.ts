@@ -102,7 +102,7 @@ const publicContentRoutes: FastifyPluginAsync = (app) => {
         where: {
           id,
           deletedAt: null,
-          ...(preview && preview.entryId === id ? {} : { status: 'published' }),
+          ...(preview?.entryId === id ? {} : { status: 'published' }),
         },
       })
     );

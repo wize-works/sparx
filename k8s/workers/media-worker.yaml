@@ -32,7 +32,7 @@ spec:
         tier: worker
     spec:
       serviceAccountName: sparx-app
-      terminationGracePeriodSeconds: 120  # libvips encodes finish in <60s; this is the SIGTERM budget
+      terminationGracePeriodSeconds: 120 # libvips encodes finish in <60s; this is the SIGTERM budget
       containers:
         - name: media-worker
           image: us-central1-docker.pkg.dev/sparxworks/sparx/media-worker:latest
@@ -55,21 +55,21 @@ spec:
                   name: sparx-app-env
                   key: GCS_MEDIA_BUCKET
             - name: MAX_CONCURRENT
-              value: "2"
+              value: '2'
           resources:
             requests:
-              cpu: "200m"
-              memory: "512Mi"
+              cpu: '200m'
+              memory: '512Mi'
             limits:
-              cpu: "1500m"   # sharp can saturate a vCPU during AVIF encodes
-              memory: "1Gi"
+              cpu: '1500m' # sharp can saturate a vCPU during AVIF encodes
+              memory: '1Gi'
           securityContext:
             runAsNonRoot: true
             runAsUser: 1000
             runAsGroup: 1000
             allowPrivilegeEscalation: false
             capabilities:
-              drop: ["ALL"]
+              drop: ['ALL']
             seccompProfile:
               type: RuntimeDefault
 ---

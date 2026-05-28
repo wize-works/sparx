@@ -1,14 +1,13 @@
+# Private bucket — originals + anything tenant-sensitive. UBLA enforced;
+# all access is via Workload-Identity-bound service accounts or signed URLs.
 resource "google_storage_bucket" "media" {
   name          = var.media_bucket_name
   location      = var.location
   force_destroy = false
 
   uniform_bucket_level_access = true
-  # "inherited" lets us grant public-read on the `/variants/` prefix below
-  # via a conditional IAM binding while keeping originals private. The
-  # alternative — full enforcement — would require routing every variant
-  # GET through a signing proxy, which defeats the point of a CDN.
-  public_access_prevention = "inherited"
+  # No public principals here — full prevention is the right setting.
+  public_access_prevention = "enforced"
 
   versioning {
     enabled = true
@@ -35,17 +34,9 @@ resource "google_storage_bucket" "media" {
     }
   }
 
-  # CORS must allow PUT from app.sparx.works so the dashboard's
-  # presigned-URL uploads land directly on GCS (no api-rest hop). GET/HEAD
-  # are wide-open so the CDN + storefronts on arbitrary tenant domains can
-  # fetch variants.
-  cors {
-    origin          = ["*"]
-    method          = ["GET", "HEAD"]
-    response_header = ["Content-Type", "Content-Length", "Cache-Control"]
-    max_age_seconds = 3600
-  }
-
+  # CORS for presigned PUTs from the dashboard. No GET/HEAD here — originals
+  # are never fetched directly by a browser; api-rest streams them when
+  # needed (e.g. variant regeneration triggered from the admin UI).
   cors {
     origin          = var.upload_origins
     method          = ["PUT", "OPTIONS"]
@@ -54,18 +45,33 @@ resource "google_storage_bucket" "media" {
   }
 }
 
-# Public-read on the `/variants/` prefix only. Originals stay private and
-# are served via signed GETs from api-rest. The IAM condition uses
-# `resource.name.startsWith` against the variant prefix — GCS evaluates
-# the condition per object at access time.
-resource "google_storage_bucket_iam_member" "media_public_variants" {
-  bucket = google_storage_bucket.media.name
-  role   = "roles/storage.objectViewer"
-  member = "allUsers"
+# Public bucket — derived variants only. Kept *private* at the GCS layer
+# because the org enforces iam.allowedPolicyMemberDomains, which forbids
+# allUsers bindings (Domain Restricted Sharing). Variants are served to
+# storefronts via api-rest's GET /v1/public/media/variants/:key route,
+# which reads here using the app SA and lets Cloudflare cache the response
+# at the edge with Cache-Control: public, immutable, max-age=1yr.
+#
+# The split bucket is still worth keeping:
+#   - lifecycle: variants are deterministic, no versioning needed; originals
+#     keep 5 prior versions
+#   - cost: variants are STANDARD-only (hot); originals tier to NEARLINE
+#   - future: if the org policy carves out an exception for this bucket,
+#     flipping to allUsers:objectViewer is a one-line change
+resource "google_storage_bucket" "media_public" {
+  name          = "${var.media_bucket_name}-public"
+  location      = var.location
+  force_destroy = false
 
-  condition {
-    title       = "variants_only"
-    description = "Anyone can read objects under .../variants/. Originals stay private."
-    expression  = "resource.name.startsWith(\"projects/_/buckets/${google_storage_bucket.media.name}/objects/\") && resource.name.matches(\"/variants/\")"
+  uniform_bucket_level_access = true
+  public_access_prevention    = "enforced"
+
+  # PUT CORS only — same upload-from-dashboard story as the private bucket.
+  # GET/HEAD not needed: browsers never hit GCS directly, they hit api-rest.
+  cors {
+    origin          = var.upload_origins
+    method          = ["PUT", "OPTIONS"]
+    response_header = ["Content-Type", "Content-Length"]
+    max_age_seconds = 3600
   }
 }

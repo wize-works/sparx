@@ -74,18 +74,37 @@ const PUT_URL_TTL_SEC = 15 * 60;
 class GcsStorage implements MediaStorage {
   readonly mode = 'gcs' as const;
   private readonly client: GcsClient;
-  private readonly bucketName: string;
+  // Private bucket — originals + any tenant-sensitive object. Reads via
+  // service-account auth or short-lived signed URLs.
+  private readonly privateBucketName: string;
+  // Public bucket — derived variants only. World-readable; storefronts
+  // <img src> against the publicBase, fronted by Cloudflare.
+  private readonly publicBucketName: string;
   private readonly publicBase: string;
 
-  constructor(bucketName: string, publicBase: string) {
+  constructor(privateBucketName: string, publicBucketName: string, publicBase: string) {
     this.client = new GcsClient(env.GCP_PROJECT_ID ? { projectId: env.GCP_PROJECT_ID } : {});
-    this.bucketName = bucketName;
-    // Default to the GCS public URL pattern if no CDN base is configured.
-    this.publicBase = publicBase || `https://storage.googleapis.com/${bucketName}`;
+    this.privateBucketName = privateBucketName;
+    this.publicBucketName = publicBucketName;
+    // Variants are served via api-rest's GET /v1/public/media/variants/:key
+    // route (see routes/v1/public/media.ts) because the org-level DRS
+    // policy forbids allUsers on GCS. `publicBase` is the externally-
+    // reachable api-rest origin (https://api.sparx.works); empty means
+    // same-origin (relative URLs — used in dev).
+    this.publicBase = publicBase;
+  }
+
+  // Variants live on the public bucket; originals + anything else go to the
+  // private one. Object keys follow the `<tenantId>/{originals,variants}/...`
+  // convention from variantKey()/originalKey() below, so a substring check
+  // is sufficient and avoids per-call argument plumbing.
+  private isPublicKey(key: string): boolean {
+    return key.includes('/variants/');
   }
 
   private file(key: string) {
-    return this.client.bucket(this.bucketName).file(key);
+    const bucketName = this.isPublicKey(key) ? this.publicBucketName : this.privateBucketName;
+    return this.client.bucket(bucketName).file(key);
   }
 
   async presignPut(key: string, contentType: string): Promise<PresignedPut> {
@@ -144,7 +163,21 @@ class GcsStorage implements MediaStorage {
   }
 
   publicUrl(key: string): string {
-    return `${this.publicBase}/${key}`;
+    // Only variants have a stable public URL. Originals are private —
+    // callers asking for one are using the wrong path; route via a signed
+    // GET instead.
+    if (!this.isPublicKey(key)) {
+      throw new Error(
+        `Refusing to mint a public URL for a private-bucket key: ${JSON.stringify(key)}`
+      );
+    }
+    // Public URL path matches routes/v1/public/media.ts:
+    //   <tenantId>/variants/<assetId>/<filename> →
+    //   <base>/v1/public/media/variants/<tenantId>/<assetId>/<filename>
+    // Splitting on `/variants/` lets us preserve the original key shape
+    // without re-encoding the segments (they're already URL-safe — the
+    // worker only emits `[a-z]+-\d+\.[a-z0-9]+` filenames).
+    return `${this.publicBase}/v1/public/media/variants/${key}`;
   }
 }
 
@@ -233,7 +266,11 @@ let cached: MediaStorage | null = null;
 export function getStorage(): MediaStorage {
   if (cached) return cached;
   if (env.GCS_MEDIA_BUCKET) {
-    cached = new GcsStorage(env.GCS_MEDIA_BUCKET, env.MEDIA_PUBLIC_URL);
+    cached = new GcsStorage(
+      env.GCS_MEDIA_BUCKET,
+      env.GCS_MEDIA_PUBLIC_BUCKET,
+      env.MEDIA_PUBLIC_URL
+    );
   } else {
     cached = new LocalStorage(env.MEDIA_LOCAL_DIR, env.MEDIA_PUBLIC_URL);
   }
