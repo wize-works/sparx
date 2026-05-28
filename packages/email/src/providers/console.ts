@@ -19,6 +19,7 @@ export interface ConsoleSend {
 
 export const consoleProvider: EmailProvider = {
   name: 'console',
+  // eslint-disable-next-line @typescript-eslint/require-await
   async send(email) {
     const id = `con_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
     const acceptedAt = new Date().toISOString();
@@ -37,15 +38,12 @@ export const consoleProvider: EmailProvider = {
     // Compact, single-line summary by default; the text body follows as a
     // separate stdout line so reading dev logs is bearable. Set
     // SPARX_EMAIL_LOG_HTML=1 if you want the full HTML dumped too.
-    // eslint-disable-next-line no-console
     console.log(
       `[email/console] ${email.templateId ?? 'unknown'} → ${email.to} :: ${email.subject}`
     );
     if (process.env.SPARX_EMAIL_LOG_HTML === '1') {
-      // eslint-disable-next-line no-console
       console.log(email.html);
     } else {
-      // eslint-disable-next-line no-console
       console.log(email.text);
     }
 

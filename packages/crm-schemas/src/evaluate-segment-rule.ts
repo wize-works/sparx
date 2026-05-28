@@ -46,10 +46,12 @@ function evaluatePredicate(leaf: PredicateLeaf, projection: RuleProjection): boo
 
 /** Walk the dotted path (e.g. `customer.totalSpent`) into the projection. */
 function readField(field: SegmentField, projection: RuleProjection): unknown {
-  const [root, key] = field.split('.') as [keyof RuleProjection, string];
-  const obj = projection[root];
+  const parts = field.split('.');
+  const root = parts[0] as keyof RuleProjection;
+  const key = parts[1] ?? '';
+  const obj = projection[root] as Record<string, unknown> | null | undefined;
   if (obj == null) return null;
-  return (obj as Record<string, unknown>)[key];
+  return obj[key];
 }
 
 function applyOperator(op: SegmentOperator, fieldValue: unknown, ruleValue: unknown): boolean {
@@ -95,7 +97,9 @@ function applyOperator(op: SegmentOperator, fieldValue: unknown, ruleValue: unkn
       return fieldValue != null;
     case 'between': {
       if (!Array.isArray(ruleValue) || ruleValue.length !== 2) return false;
-      const [min, max] = ruleValue;
+      const tuple = ruleValue as [unknown, unknown];
+      const min = tuple[0];
+      const max = tuple[1];
       return (
         cmpNumber(fieldValue, min, (a, b) => a >= b) && cmpNumber(fieldValue, max, (a, b) => a <= b)
       );

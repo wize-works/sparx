@@ -1,5 +1,5 @@
 import type { EmailProvider } from '../types';
-import { consoleProvider, lastConsoleSend, resetConsoleProvider } from './console';
+import { consoleProvider } from './console';
 import { createPostalProvider } from './postal';
 
 // Picks the active provider from SPARX_EMAIL_PROVIDER (defaults to console).
