@@ -18,3 +18,7 @@ export * as orderRefundsService from './order-refunds-service';
 export * as orderFulfillmentsService from './order-fulfillments-service';
 export * as quoteService from './quote-service';
 export * as quoteLifecycleService from './quote-lifecycle-service';
+
+// CRM reporting — read-only metrics for the dashboard reports page and
+// the MCP get_crm_metrics tool. Live queries today; nightly rollup later.
+export * as reportingService from './reporting-service';

@@ -15,6 +15,7 @@ import {
   activityService,
   orderService,
   quoteService,
+  reportingService,
 } from '../services';
 
 import type { McpToolDefinition } from './registry';
@@ -213,6 +214,48 @@ export const getQuote: McpToolDefinition = {
   run: (ctx, input) => quoteService.get(ctx, (input as { quoteId: string }).quoteId),
 };
 
+export const getCrmMetrics: McpToolDefinition = {
+  name: 'get_crm_metrics',
+  description:
+    'Tenant-wide CRM snapshot: customer + B2B counts, open deals + pipeline value, open + overdue tasks, active segments.',
+  scope: 'read:crm',
+  confirmation: false,
+  input: z.object({}),
+  run: (ctx) => reportingService.tenantSnapshot(ctx),
+};
+
+export const getPipelineFunnel: McpToolDefinition = {
+  name: 'get_pipeline_funnel',
+  description: 'Deal counts + summed value per stage for one pipeline.',
+  scope: 'read:crm',
+  confirmation: false,
+  input: z.object({ pipelineId: z.string().uuid() }),
+  run: (ctx, input) =>
+    reportingService.pipelineFunnel(ctx, (input as { pipelineId: string }).pipelineId),
+};
+
+export const getWinLossByRep: McpToolDefinition = {
+  name: 'get_win_loss_by_rep',
+  description:
+    'Won/lost/open deal counts and won revenue by assigned rep, optionally scoped to a pipeline.',
+  scope: 'read:crm',
+  confirmation: false,
+  input: z.object({
+    pipelineId: z.string().uuid().optional(),
+    sinceDays: z.number().int().min(1).max(3650).optional(),
+  }),
+  run: (ctx, input) => {
+    const { sinceDays, pipelineId } = input as {
+      sinceDays?: number;
+      pipelineId?: string;
+    };
+    return reportingService.winLossByRep(ctx, {
+      pipelineId,
+      since: sinceDays ? new Date(Date.now() - sinceDays * 86_400_000) : undefined,
+    });
+  },
+};
+
 export const readTools = [
   getCustomers,
   getCustomer,
@@ -229,4 +272,7 @@ export const readTools = [
   getActivityFeed,
   getOrder,
   getQuote,
+  getCrmMetrics,
+  getPipelineFunnel,
+  getWinLossByRep,
 ];

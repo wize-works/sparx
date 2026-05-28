@@ -91,6 +91,26 @@ export async function signUpMerchant(input: SignUpMerchantInput): Promise<SignUp
       return { userId: user.id, tenantId: tenant.id };
     });
 
+    // Welcome email is fire-and-forget — a transient provider failure must
+    // never roll back an otherwise successful sign-up. We log + swallow.
+    try {
+      const { sendTemplate } = await import('@sparx/email');
+      const dashboardUrl =
+        (process.env.BETTER_AUTH_URL ?? 'http://localhost:3001').replace(/\/$/, '') + '/welcome';
+      await sendTemplate({
+        template: 'welcome-merchant',
+        to: email,
+        props: {
+          name: input.name,
+          storeName: input.storeName,
+          dashboardUrl,
+        },
+      });
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error('[sign-up] welcome email failed:', err);
+    }
+
     return { ok: true, userId, tenantId };
   } catch (err: unknown) {
     if (
