@@ -154,12 +154,11 @@ export function NewQuoteForm({ customers, b2bAccounts, preselectedCustomerId }: 
                     className={SELECT_CLASS}
                   >
                     <option value="">(unspecified)</option>
-                    <option value="due_on_receipt">Due on receipt</option>
-                    <option value="net_15">Net 15</option>
-                    <option value="net_30">Net 30</option>
-                    <option value="net_45">Net 45</option>
-                    <option value="net_60">Net 60</option>
-                    <option value="net_90">Net 90</option>
+                    <option value="prepay">Prepay</option>
+                    <option value="net15">Net 15</option>
+                    <option value="net30">Net 30</option>
+                    <option value="net60">Net 60</option>
+                    <option value="net90">Net 90</option>
                   </select>
                 </Stack>
                 <Stack gap={2} className="flex-1">

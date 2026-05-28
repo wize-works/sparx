@@ -38,7 +38,7 @@ export async function updateB2bAccountAction(
  *  add no invariant a status change doesn't already cover. */
 export async function setB2bAccountStatusAction(
   accountId: string,
-  status: 'active' | 'on_hold' | 'closed'
+  status: 'active' | 'credit_hold' | 'suspended' | 'inactive'
 ): Promise<ActionResult<{ id: string; status: string }>> {
   return runAction(async () => {
     const ctx = await sessionContext();

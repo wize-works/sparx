@@ -41,7 +41,7 @@ export function CreditHoldToggle({ accountId, currentStatus }: CreditHoldToggleP
     });
   }
 
-  if (currentStatus === 'closed') return null;
+  if (currentStatus === 'suspended' || currentStatus === 'inactive') return null;
 
   return (
     <Button

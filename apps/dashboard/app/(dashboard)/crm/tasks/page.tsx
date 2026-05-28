@@ -34,7 +34,7 @@ export default async function TasksPage({ searchParams }: PageProps) {
   const filterForMine = scope === 'all' ? {} : { assignedToUserId: session.user.id };
   const [openTasks, overdueTasks, completedTasks] = await Promise.all([
     taskService.list(ctx, { ...filterForMine, status: 'open', take: 100 }),
-    taskService.getOverdue(ctx, scope === 'all' ? undefined : session.user.id),
+    taskService.getOverdue(ctx, scope === 'all' ? {} : { userId: session.user.id }),
     taskService.list(ctx, { ...filterForMine, status: 'completed', take: 25 }),
   ]);
 
