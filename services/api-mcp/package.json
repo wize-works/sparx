@@ -1,5 +1,5 @@
 {
-  "name": "@sparx/mcp-server",
+  "name": "@sparx/api-mcp",
   "version": "0.0.0",
   "private": true,
   "description": "Sparx MCP server — exposes per-module tool registries (today: @sparx/crm's crmMcpTools) to Claude / ChatGPT / Copilot via Streamable HTTP. JWT-authenticated for now; API-key issuance lands when the dashboard's AI Integrations settings page does.",

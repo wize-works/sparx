@@ -637,6 +637,58 @@ importers:
         specifier: ^4.1.7
         version: 4.1.7(@opentelemetry/api@1.9.1)(@types/node@22.19.19)(@vitest/coverage-v8@4.1.7)(jsdom@29.1.1(@noble/hashes@2.2.0))(vite@8.0.14(@types/node@22.19.19)(esbuild@0.28.0)(jiti@2.7.0)(tsx@4.22.3)(yaml@2.9.0))
 
+  services/api-mcp:
+    dependencies:
+      '@fastify/jwt':
+        specifier: ^9.0.4
+        version: 9.1.0
+      '@modelcontextprotocol/sdk':
+        specifier: ^1.0.4
+        version: 1.29.0(zod@4.4.3)
+      '@prisma/client':
+        specifier: ^6.19.3
+        version: 6.19.3(prisma@6.19.3(typescript@5.9.3))(typescript@5.9.3)
+      '@sparx/auth':
+        specifier: workspace:*
+        version: link:../../packages/auth
+      '@sparx/crm':
+        specifier: workspace:*
+        version: link:../../packages/crm
+      '@sparx/db':
+        specifier: workspace:*
+        version: link:../../packages/db
+      fastify:
+        specifier: ^5.6.1
+        version: 5.8.5
+      fastify-plugin:
+        specifier: ^5.0.1
+        version: 5.1.0
+      pino:
+        specifier: ^9.5.0
+        version: 9.14.0
+      zod:
+        specifier: ^4.4.3
+        version: 4.4.3
+    devDependencies:
+      '@types/node':
+        specifier: ^22.10.0
+        version: 22.19.19
+      dotenv:
+        specifier: ^16.4.7
+        version: 16.6.1
+      pino-pretty:
+        specifier: ^13.0.0
+        version: 13.1.3
+      tsx:
+        specifier: ^4.19.2
+        version: 4.22.3
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      vitest:
+        specifier: ^4.1.7
+        version: 4.1.7(@opentelemetry/api@1.9.1)(@types/node@22.19.19)(@vitest/coverage-v8@4.1.7)(jsdom@29.1.1(@noble/hashes@2.2.0))(vite@8.0.14(@types/node@22.19.19)(esbuild@0.28.0)(jiti@2.7.0)(tsx@4.22.3)(yaml@2.9.0))
+
   services/api-rest:
     dependencies:
       '@fastify/cors':
@@ -737,58 +789,6 @@ importers:
       dotenv:
         specifier: ^16.4.7
         version: 16.6.1
-      tsx:
-        specifier: ^4.19.2
-        version: 4.22.3
-      typescript:
-        specifier: ^5.7.0
-        version: 5.9.3
-      vitest:
-        specifier: ^4.1.7
-        version: 4.1.7(@opentelemetry/api@1.9.1)(@types/node@22.19.19)(@vitest/coverage-v8@4.1.7)(jsdom@29.1.1(@noble/hashes@2.2.0))(vite@8.0.14(@types/node@22.19.19)(esbuild@0.28.0)(jiti@2.7.0)(tsx@4.22.3)(yaml@2.9.0))
-
-  services/mcp-server:
-    dependencies:
-      '@fastify/jwt':
-        specifier: ^9.0.4
-        version: 9.1.0
-      '@modelcontextprotocol/sdk':
-        specifier: ^1.0.4
-        version: 1.29.0(zod@4.4.3)
-      '@prisma/client':
-        specifier: ^6.19.3
-        version: 6.19.3(prisma@6.19.3(typescript@5.9.3))(typescript@5.9.3)
-      '@sparx/auth':
-        specifier: workspace:*
-        version: link:../../packages/auth
-      '@sparx/crm':
-        specifier: workspace:*
-        version: link:../../packages/crm
-      '@sparx/db':
-        specifier: workspace:*
-        version: link:../../packages/db
-      fastify:
-        specifier: ^5.6.1
-        version: 5.8.5
-      fastify-plugin:
-        specifier: ^5.0.1
-        version: 5.1.0
-      pino:
-        specifier: ^9.5.0
-        version: 9.14.0
-      zod:
-        specifier: ^4.4.3
-        version: 4.4.3
-    devDependencies:
-      '@types/node':
-        specifier: ^22.10.0
-        version: 22.19.19
-      dotenv:
-        specifier: ^16.4.7
-        version: 16.6.1
-      pino-pretty:
-        specifier: ^13.0.0
-        version: 13.1.3
       tsx:
         specifier: ^4.19.2
         version: 4.22.3

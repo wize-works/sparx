@@ -7,7 +7,7 @@ const EnvSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']).default('info'),
   DATABASE_URL: z.string().min(1),
-  PORT: z.coerce.number().int().min(0).max(65535).default(3030),
+  PORT: z.coerce.number().int().min(0).max(65535).default(3000),
   HOST: z.string().default('0.0.0.0'),
   // Same internal JWT secret api-rest uses — the dashboard mints short-lived
   // tokens for the MCP transport so the auth model is symmetric. External
@@ -20,7 +20,7 @@ export type Env = z.infer<typeof EnvSchema>;
 function parseEnv(): Env {
   const result = EnvSchema.safeParse(process.env);
   if (!result.success) {
-    console.error('[mcp-server] invalid environment:');
+    console.error('[api-mcp] invalid environment:');
     for (const issue of result.error.issues) {
       console.error(`  - ${issue.path.join('.')}: ${issue.message}`);
     }

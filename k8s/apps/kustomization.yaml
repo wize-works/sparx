@@ -5,8 +5,8 @@ resources:
   - web.yaml
   - api-rest.yaml
   - api-graphql.yaml
+  - api-mcp.yaml
   - dashboard.yaml
 # Add per-app manifests here as they ship to Artifact Registry.
 # Templates available:
-#   - api-mcp     (copy from api-rest.example.yaml)
 #   - storefront  (copy from api-rest.example.yaml)
