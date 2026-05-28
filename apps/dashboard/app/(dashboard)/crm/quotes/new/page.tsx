@@ -45,9 +45,7 @@ export default async function NewQuotePage({ searchParams }: PageProps) {
             id: c.id,
             label:
               [c.firstName, c.lastName].filter(Boolean).join(' ') ||
-              c.company ||
-              c.email ||
-              c.id.slice(0, 8),
+              (c.company ?? c.email ?? c.id.slice(0, 8)),
           }))}
           b2bAccounts={b2bResult.items.map((a) => ({
             id: a.id,

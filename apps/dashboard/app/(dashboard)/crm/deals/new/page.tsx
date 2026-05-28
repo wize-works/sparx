@@ -59,9 +59,7 @@ export default async function NewDealPage({ searchParams }: PageProps) {
             id: c.id,
             label:
               [c.firstName, c.lastName].filter(Boolean).join(' ') ||
-              c.company ||
-              c.email ||
-              c.id.slice(0, 8),
+              (c.company ?? c.email ?? c.id.slice(0, 8)),
           }))}
           initialPipelineId={initialPipelineId}
         />

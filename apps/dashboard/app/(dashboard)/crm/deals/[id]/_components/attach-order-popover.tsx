@@ -74,7 +74,6 @@ export function AttachOrderPopover({ dealId, candidates, attachedIds }: AttachOr
             placeholder="Filter by order number…"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            autoFocus
           />
           <div className="max-h-72 overflow-y-auto">
             {filtered.length === 0 ? (

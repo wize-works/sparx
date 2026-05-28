@@ -22,7 +22,7 @@ export interface LineItem {
 interface LineItemsEditorProps {
   /** Called every time the items array changes so the parent can mirror
    *  it into a hidden field / state for submission. */
-  onChange(items: LineItem[]): void;
+  onChange: (items: LineItem[]) => void;
   initialItems?: LineItem[];
 }
 

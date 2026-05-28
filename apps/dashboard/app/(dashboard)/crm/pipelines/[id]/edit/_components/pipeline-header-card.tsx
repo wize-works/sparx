@@ -28,8 +28,8 @@ export interface PipelineHeader {
 
 interface PipelineHeaderCardProps {
   pipeline: PipelineHeader;
-  onSave(input: { name?: string; isDefault?: boolean }): void;
-  onArchive(): void;
+  onSave: (input: { name?: string; isDefault?: boolean }) => void;
+  onArchive: () => void;
   pending: boolean;
 }
 

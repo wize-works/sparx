@@ -70,7 +70,7 @@ export default function NewB2bAccountPage() {
           </Button>
           <Heading level={1}>New B2B account</Heading>
           <Text variant="muted">
-            Track a wholesale or fleet customer's pricing, credit, and engine profile so commerce
+            Track a wholesale or fleet customer&apos;s pricing, credit, and engine profile so commerce
             modules can quote, ship, and invoice them consistently.
           </Text>
         </Stack>

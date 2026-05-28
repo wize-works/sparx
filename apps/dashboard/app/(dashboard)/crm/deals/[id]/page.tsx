@@ -131,8 +131,7 @@ export default async function DealDetailPage({ params }: PageProps) {
                   className="text-sm hover:text-[var(--module-active)] hover:underline"
                 >
                   {[customer.firstName, customer.lastName].filter(Boolean).join(' ') ||
-                    customer.company ||
-                    customer.email}
+                    (customer.company ?? customer.email)}
                 </Link>
               </Stack>
             )}

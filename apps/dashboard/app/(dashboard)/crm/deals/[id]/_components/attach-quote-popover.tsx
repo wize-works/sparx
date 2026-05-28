@@ -72,7 +72,6 @@ export function AttachQuotePopover({ dealId, candidates, attachedIds }: AttachQu
             placeholder="Filter by quote number…"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            autoFocus
           />
           <div className="max-h-72 overflow-y-auto">
             {filtered.length === 0 ? (

@@ -75,8 +75,7 @@ export default async function QuoteDetailPage({ params }: PageProps) {
                   className="text-sm hover:text-[var(--module-active)] hover:underline"
                 >
                   {[customer.firstName, customer.lastName].filter(Boolean).join(' ') ||
-                    customer.company ||
-                    customer.email}
+                    (customer.company ?? customer.email)}
                 </Link>
               )}
               {quote.convertedToOrderId && (
@@ -173,7 +172,7 @@ export default async function QuoteDetailPage({ params }: PageProps) {
           </CardContent>
         </Card>
 
-        {(quote.customerNote || quote.internalNote) && (
+        {(quote.customerNote ?? quote.internalNote) && (
           <div className="grid gap-4 md:grid-cols-2">
             {quote.customerNote && (
               <Card>

@@ -59,7 +59,7 @@ export function SortableStageRow({ stage }: { stage: StageRow }) {
       direction="row"
       align="center"
       gap={3}
-      ref={setNodeRef as unknown as React.Ref<HTMLDivElement>}
+      ref={setNodeRef}
       style={style}
       className="rounded-md border border-[var(--color-border-default)] p-3"
     >
