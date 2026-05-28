@@ -21,7 +21,7 @@ function walk(
   body: Record<string, unknown> | undefined | null,
   fields: FieldDef[],
   path: string,
-  out: CollectedRef[],
+  out: CollectedRef[]
 ): void {
   if (!body) return;
   for (const def of fields) {
@@ -78,7 +78,7 @@ export async function rebuildReferences(
   tenantId: string,
   fromEntryId: string,
   schema: ContentTypeSchema,
-  body: Record<string, unknown>,
+  body: Record<string, unknown>
 ): Promise<void> {
   const refs: CollectedRef[] = [];
   walk(body, schema.fields, '', refs);

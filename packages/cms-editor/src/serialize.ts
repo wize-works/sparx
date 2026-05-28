@@ -144,9 +144,5 @@ export function renderDocToHtml(doc: unknown, opts: SerializeOptions = {}): stri
 }
 
 function isDocLike(value: unknown): value is DocNode {
-  return (
-    typeof value === 'object' &&
-    value !== null &&
-    (value as { type?: string }).type === 'doc'
-  );
+  return typeof value === 'object' && value !== null && (value as { type?: string }).type === 'doc';
 }

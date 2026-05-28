@@ -79,8 +79,8 @@ export function registerQuoteEventConsumers(ctx: ConsumerContext): Array<() => v
               },
             });
           });
-        }),
-      ),
+        })
+      )
     );
   }
 
@@ -116,8 +116,8 @@ export function registerQuoteEventConsumers(ctx: ConsumerContext): Array<() => v
               },
             });
           });
-        }),
-      ),
+        })
+      )
     );
   }
 

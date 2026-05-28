@@ -57,10 +57,16 @@ export default async function CrmPage({ searchParams }: PageProps) {
         tagline="Customers, segments, and lifecycle automation."
         description="The CRM module unifies customer profiles across storefront, B2B, and email so you can segment, score, and re-engage them. Activate it to start tracking customers."
         features={[
-          { title: 'Customer profiles', description: 'Order history, tags, notes, and engagement.' },
+          {
+            title: 'Customer profiles',
+            description: 'Order history, tags, notes, and engagement.',
+          },
           { title: 'Pipeline', description: 'Kanban deal flow for B2B and high-touch sales.' },
           { title: 'Segments', description: 'Live audiences updated incrementally by event.' },
-          { title: 'Automation', description: 'Trigger emails, tasks, and webhooks on customer events.' },
+          {
+            title: 'Automation',
+            description: 'Trigger emails, tasks, and webhooks on customer events.',
+          },
           { title: 'Activity log', description: 'Append-only timeline of every touchpoint.' },
           { title: 'MCP integration', description: 'AI-readable customer intelligence surface.' },
         ]}
@@ -86,7 +92,7 @@ export default async function CrmPage({ searchParams }: PageProps) {
         : {}),
       ...(tag ? { tag } : {}),
       ...(q ? { q } : {}),
-    },
+    }
   );
 
   return (

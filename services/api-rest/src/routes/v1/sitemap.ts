@@ -44,16 +44,17 @@ const sitemapRoutes: FastifyPluginAsync = async (app) => {
     if (!tenant.settings) throw badRequest('Tenant has no published configuration.');
 
     const settings = tenant.settings as Record<string, unknown>;
-    const baseUrl = typeof settings.primaryDomain === 'string'
-      ? `https://${settings.primaryDomain}`
-      : `https://${slug}.sparx.works`;
+    const baseUrl =
+      typeof settings.primaryDomain === 'string'
+        ? `https://${settings.primaryDomain}`
+        : `https://${slug}.sparx.works`;
 
     // Pull all published, routable entries inside this tenant's context.
     const rows = await withTenant({ tenantId: tenant.id }, (tx) =>
       tx.contentEntry.findMany({
         where: { status: 'published', deletedAt: null, slug: { not: null } },
         select: { slug: true, typeKey: true, updatedAt: true, publishedAt: true },
-      }),
+      })
     );
 
     // Look up url patterns for the relevant types in one round-trip.
@@ -62,7 +63,7 @@ const sitemapRoutes: FastifyPluginAsync = async (app) => {
       tx.contentType.findMany({
         where: { key: { in: typeKeys }, urlPattern: { not: null } },
         select: { key: true, urlPattern: true },
-      }),
+      })
     );
     const patterns = new Map(types.map((t) => [t.key, t.urlPattern as string]));
 
@@ -73,7 +74,7 @@ const sitemapRoutes: FastifyPluginAsync = async (app) => {
       const path = pattern.replace('{slug}', r.slug);
       const lastmod = (r.publishedAt ?? r.updatedAt).toISOString();
       urls.push(
-        `<url><loc>${xmlEscape(`${baseUrl}${path}`)}</loc><lastmod>${lastmod}</lastmod></url>`,
+        `<url><loc>${xmlEscape(`${baseUrl}${path}`)}</loc><lastmod>${lastmod}</lastmod></url>`
       );
     }
 

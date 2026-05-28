@@ -44,8 +44,7 @@ export default async function EditCmsPage({ params }: PageParams) {
     status: entry.status,
     body: docBody,
     seoTitle: typeof entry.seo.title === 'string' ? entry.seo.title : null,
-    metaDescription:
-      typeof entry.seo.description === 'string' ? entry.seo.description : null,
+    metaDescription: typeof entry.seo.description === 'string' ? entry.seo.description : null,
     publishedAt: entry.published_at ? new Date(entry.published_at) : null,
     updatedAt: new Date(entry.updated_at),
   };

@@ -8,18 +8,10 @@
 export { registerCrmConsumers, gateHandler } from './registry.js';
 export type { RegisterOptions, ConsumerRegistration, ConsumerContext } from './registry.js';
 
-export {
-  getPlatformBus,
-  setPlatformBus,
-  resetPlatformBusForTesting,
-} from './platform-bus.js';
+export { getPlatformBus, setPlatformBus, resetPlatformBusForTesting } from './platform-bus.js';
 export type { PlatformEvent, PlatformEventBus, PlatformEventHandler } from './platform-bus.js';
 
-export {
-  getDedupeStore,
-  setDedupeStore,
-  resetDedupeForTesting,
-} from './dedupe.js';
+export { getDedupeStore, setDedupeStore, resetDedupeForTesting } from './dedupe.js';
 export type { DedupeStore } from './dedupe.js';
 
 export {

@@ -24,7 +24,7 @@ const contentTypeRoutes: FastifyPluginAsync = async (app) => {
         // (is_built_in = false) sort first within the same key for the
         // dashboard "which one is active?" hint.
         orderBy: [{ isBuiltIn: 'asc' }, { key: 'asc' }],
-      }),
+      })
     );
     return ok(rows);
   });
@@ -36,7 +36,7 @@ const contentTypeRoutes: FastifyPluginAsync = async (app) => {
       tx.contentType.findFirst({
         where: { key },
         orderBy: [{ isBuiltIn: 'asc' }, { updatedAt: 'desc' }],
-      }),
+      })
     );
     if (!row) throw notFound('Content type', key);
     return ok(row);

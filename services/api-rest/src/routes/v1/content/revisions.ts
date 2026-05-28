@@ -17,10 +17,7 @@ import { withRequestTenant } from '../../../lib/db.js';
 import { ok } from '../../../lib/envelope.js';
 import { requireRole } from '../../../plugins/auth.js';
 import { notFound } from '../../../errors.js';
-import {
-  parseTypeSchema,
-  resolveType,
-} from '../../../lib/content-types.js';
+import { parseTypeSchema, resolveType } from '../../../lib/content-types.js';
 import {
   recordRevision,
   serializeEntry,

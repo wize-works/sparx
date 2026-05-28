@@ -49,7 +49,7 @@ function makeError(
   code: string,
   message: string,
   details?: unknown,
-  requestId?: string,
+  requestId?: string
 ): ApiRestError {
   const err = new Error(message) as ApiRestError;
   err.code = code;
@@ -79,7 +79,7 @@ async function call<T>(
   session: SparxSession,
   method: string,
   path: string,
-  body?: unknown,
+  body?: unknown
 ): Promise<T> {
   const token = await signToken(session);
   const res = await fetch(`${BASE_URL}${path}`, {
@@ -105,7 +105,7 @@ async function call<T>(
         json.error.code,
         json.error.message,
         json.error.details,
-        json.error.request_id,
+        json.error.request_id
       );
     }
     throw makeError(res.status, 'UNKNOWN', `api-rest ${res.status}`);
@@ -124,6 +124,5 @@ export const api = {
     withSession((s) => call<T>(s, 'POST', path, body)),
   patch: async <T>(path: string, body?: unknown): Promise<T> =>
     withSession((s) => call<T>(s, 'PATCH', path, body)),
-  delete: async <T>(path: string): Promise<T> =>
-    withSession((s) => call<T>(s, 'DELETE', path)),
+  delete: async <T>(path: string): Promise<T> => withSession((s) => call<T>(s, 'DELETE', path)),
 };

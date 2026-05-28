@@ -40,16 +40,14 @@ export function parseTypeSchema(row: ContentType): ContentTypeSchemaT {
     // A malformed schemaJson is a server-side bug — the API must never
     // return a 422 caused by its own data corruption. Surface as 500 so
     // ops can investigate; details go to the request logger.
-    throw new Error(
-      `Content type ${row.key} has an invalid schemaJson: ${parsed.error.message}`,
-    );
+    throw new Error(`Content type ${row.key} has an invalid schemaJson: ${parsed.error.message}`);
   }
   return parsed.data;
 }
 
 export function validateAndNormalizeBody(
   schema: ContentTypeSchemaT,
-  body: unknown,
+  body: unknown
 ): Record<string, unknown> {
   const validator = bodyValidatorFor(schema);
   const result = validator.safeParse(body ?? {});
@@ -60,7 +58,7 @@ export function validateAndNormalizeBody(
         path: i.path.join('.'),
         message: i.message,
         code: i.code,
-      })),
+      }))
     );
   }
   return result.data as Record<string, unknown>;

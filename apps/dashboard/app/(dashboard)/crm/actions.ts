@@ -126,9 +126,7 @@ function mapErrorToResult(err: unknown): ActionResult<never> {
 // Customer actions
 // ─────────────────────────────────────────────────────────────────────────
 
-export async function createCustomerAction(
-  input: unknown,
-): Promise<ActionResult<{ id: string }>> {
+export async function createCustomerAction(input: unknown): Promise<ActionResult<{ id: string }>> {
   return runAction(async () => {
     const ctx = await sessionContext();
     const customer = await customerService.create(ctx, input);
@@ -139,7 +137,7 @@ export async function createCustomerAction(
 
 export async function updateCustomerAction(
   customerId: string,
-  input: unknown,
+  input: unknown
 ): Promise<ActionResult<{ id: string }>> {
   return runAction(async () => {
     const ctx = await sessionContext();
@@ -151,7 +149,7 @@ export async function updateCustomerAction(
 }
 
 export async function deleteCustomerAction(
-  customerId: string,
+  customerId: string
 ): Promise<ActionResult<{ id: string }>> {
   return runAction(async () => {
     const ctx = await sessionContext();
@@ -162,7 +160,7 @@ export async function deleteCustomerAction(
 }
 
 export async function mergeCustomersAction(
-  input: unknown,
+  input: unknown
 ): Promise<ActionResult<{ primaryId: string; mergedIds: string[] }>> {
   return runAction(async () => {
     const ctx = await sessionContext();
@@ -181,9 +179,7 @@ export async function mergeCustomersAction(
 // Deal actions
 // ─────────────────────────────────────────────────────────────────────────
 
-export async function createDealAction(
-  input: unknown,
-): Promise<ActionResult<{ id: string }>> {
+export async function createDealAction(input: unknown): Promise<ActionResult<{ id: string }>> {
   return runAction(async () => {
     const ctx = await sessionContext();
     const deal = await dealService.create(ctx, input);
@@ -195,7 +191,7 @@ export async function createDealAction(
 
 export async function updateDealAction(
   dealId: string,
-  input: unknown,
+  input: unknown
 ): Promise<ActionResult<{ id: string }>> {
   return runAction(async () => {
     const ctx = await sessionContext();
@@ -212,7 +208,7 @@ export async function updateDealAction(
  *  Using updateDealAction with a stageId is rejected at the service layer. */
 export async function moveDealStageAction(
   dealId: string,
-  input: unknown,
+  input: unknown
 ): Promise<ActionResult<{ id: string; stageId: string }>> {
   return runAction(async () => {
     const ctx = await sessionContext();
@@ -227,9 +223,7 @@ export async function moveDealStageAction(
 // Activity + task actions
 // ─────────────────────────────────────────────────────────────────────────
 
-export async function recordActivityAction(
-  input: unknown,
-): Promise<ActionResult<{ id: string }>> {
+export async function recordActivityAction(input: unknown): Promise<ActionResult<{ id: string }>> {
   return runAction(async () => {
     const ctx = await sessionContext();
     const activity = await activityService.record(ctx, input);
@@ -239,9 +233,7 @@ export async function recordActivityAction(
   });
 }
 
-export async function createTaskAction(
-  input: unknown,
-): Promise<ActionResult<{ id: string }>> {
+export async function createTaskAction(input: unknown): Promise<ActionResult<{ id: string }>> {
   return runAction(async () => {
     const ctx = await sessionContext();
     const task = await taskService.create(ctx, input);
@@ -252,9 +244,7 @@ export async function createTaskAction(
   });
 }
 
-export async function completeTaskAction(
-  taskId: string,
-): Promise<ActionResult<{ id: string }>> {
+export async function completeTaskAction(taskId: string): Promise<ActionResult<{ id: string }>> {
   return runAction(async () => {
     const ctx = await sessionContext();
     const task = await taskService.complete(ctx, { taskId });

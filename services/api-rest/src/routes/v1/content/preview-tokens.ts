@@ -66,7 +66,7 @@ const previewTokenRoutes: FastifyPluginAsync = async (app) => {
         aud: 'preview',
         jti: issued.jti,
       },
-      { expiresIn: TTL_SECONDS },
+      { expiresIn: TTL_SECONDS }
     );
 
     return ok({

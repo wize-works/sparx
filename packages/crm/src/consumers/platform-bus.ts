@@ -55,8 +55,8 @@ class InMemoryPlatformBus implements PlatformEventBus {
         h(event).catch((err: unknown) => {
           // eslint-disable-next-line no-console
           console.error('[crm-consumer]', event.topic, err);
-        }),
-      ),
+        })
+      )
     );
     this.inflight.push(work);
     return work.then(() => undefined);

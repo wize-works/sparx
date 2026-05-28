@@ -23,18 +23,14 @@ export interface ListB2BAccountsFilter {
 
 export async function list(
   ctx: ServiceContext,
-  filter: ListB2BAccountsFilter = {},
+  filter: ListB2BAccountsFilter = {}
 ): Promise<{ items: B2BAccount[]; total: number }> {
   return withTenant(ctx, async (tx) => {
     const where: Prisma.B2BAccountWhereInput = {
       deletedAt: null,
       ...(filter.status ? { status: filter.status } : {}),
-      ...(filter.assignedRepId !== undefined
-        ? { assignedRepId: filter.assignedRepId }
-        : {}),
-      ...(filter.q
-        ? { companyName: { contains: filter.q, mode: 'insensitive' } }
-        : {}),
+      ...(filter.assignedRepId !== undefined ? { assignedRepId: filter.assignedRepId } : {}),
+      ...(filter.q ? { companyName: { contains: filter.q, mode: 'insensitive' } } : {}),
     };
 
     const [items, total] = await Promise.all([
@@ -53,7 +49,7 @@ export async function list(
 
 export async function get(ctx: ServiceContext, accountId: string): Promise<B2BAccount> {
   const account = await withTenant(ctx, (tx) =>
-    tx.b2BAccount.findUnique({ where: { id: accountId } }),
+    tx.b2BAccount.findUnique({ where: { id: accountId } })
   );
   if (!account || account.deletedAt !== null) {
     throw new CrmNotFoundError('B2BAccount', accountId);
@@ -61,10 +57,7 @@ export async function get(ctx: ServiceContext, accountId: string): Promise<B2BAc
   return account;
 }
 
-export async function create(
-  ctx: ServiceContext,
-  rawInput: unknown,
-): Promise<B2BAccount> {
+export async function create(ctx: ServiceContext, rawInput: unknown): Promise<B2BAccount> {
   const input = CreateB2BAccountInput.parse(rawInput);
 
   const account = await withTenant(ctx, async (tx) => {
@@ -114,7 +107,7 @@ export async function create(
 export async function update(
   ctx: ServiceContext,
   accountId: string,
-  rawInput: unknown,
+  rawInput: unknown
 ): Promise<B2BAccount> {
   const input = UpdateB2BAccountInput.parse(rawInput);
 
@@ -133,13 +126,9 @@ export async function update(
         ...(input.pricingTier !== undefined ? { pricingTier: input.pricingTier } : {}),
         ...(input.creditLimit !== undefined ? { creditLimit: input.creditLimit } : {}),
         ...(input.paymentTerms !== undefined ? { paymentTerms: input.paymentTerms } : {}),
-        ...(input.discountPercent !== undefined
-          ? { discountPercent: input.discountPercent }
-          : {}),
+        ...(input.discountPercent !== undefined ? { discountPercent: input.discountPercent } : {}),
         ...(input.status !== undefined ? { status: input.status } : {}),
-        ...(input.assignedRepId !== undefined
-          ? { assignedRepId: input.assignedRepId }
-          : {}),
+        ...(input.assignedRepId !== undefined ? { assignedRepId: input.assignedRepId } : {}),
         ...(input.fleetSize !== undefined ? { fleetSize: input.fleetSize } : {}),
         ...(input.engineProfiles !== undefined
           ? { engineProfiles: input.engineProfiles as Prisma.InputJsonValue }
@@ -173,10 +162,7 @@ export async function update(
   return result;
 }
 
-export async function softDelete(
-  ctx: ServiceContext,
-  accountId: string,
-): Promise<B2BAccount> {
+export async function softDelete(ctx: ServiceContext, accountId: string): Promise<B2BAccount> {
   return withTenant(ctx, async (tx) => {
     const before = await tx.b2BAccount.findUnique({ where: { id: accountId } });
     if (!before || before.deletedAt !== null) {

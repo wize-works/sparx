@@ -45,10 +45,7 @@ export interface MergeResult {
 /** Collapse `duplicateCustomerIds` into `primaryCustomerId`. All ids must
  *  belong to the caller's tenant (RLS is the backstop; service-layer asserts
  *  the relationship explicitly so we can emit a clean validation error). */
-export async function merge(
-  ctx: ServiceContext,
-  rawInput: unknown,
-): Promise<MergeResult> {
+export async function merge(ctx: ServiceContext, rawInput: unknown): Promise<MergeResult> {
   const input = MergeCustomersInput.parse(rawInput);
   if (input.duplicateCustomerIds.includes(input.primaryCustomerId)) {
     throw new CrmValidationError('Primary cannot also be in duplicates list', [
@@ -108,12 +105,9 @@ export async function merge(
     // 2. Roll up commerce stats. Sum across primary + duplicates.
     const totalSpent = liveDuplicates.reduce(
       (acc, d) => acc + Number(d.totalSpent),
-      Number(primary.totalSpent),
+      Number(primary.totalSpent)
     );
-    const orderCount = liveDuplicates.reduce(
-      (acc, d) => acc + d.orderCount,
-      primary.orderCount,
-    );
+    const orderCount = liveDuplicates.reduce((acc, d) => acc + d.orderCount, primary.orderCount);
     const allFirstOrderAts = [
       primary.firstOrderAt,
       ...liveDuplicates.map((d) => d.firstOrderAt),
@@ -135,7 +129,7 @@ export async function merge(
     // duplicate. Sort newest-first so the "first non-null wins" rule picks
     // the freshest value.
     const sortedDups = [...liveDuplicates].sort(
-      (a, b) => b.updatedAt.getTime() - a.updatedAt.getTime(),
+      (a, b) => b.updatedAt.getTime() - a.updatedAt.getTime()
     );
     const mergedTags = new Set<string>(primary.tags);
     for (const d of liveDuplicates) for (const t of d.tags) mergedTags.add(t);
@@ -259,7 +253,7 @@ export interface DuplicateGroup {
  *  page or a periodic cleanup job. */
 export async function findLikelyDuplicates(
   ctx: ServiceContext,
-  args: { limit?: number } = {},
+  args: { limit?: number } = {}
 ): Promise<DuplicateGroup[]> {
   return withTenant(ctx, async (tx) => {
     const customers = await tx.customer.findMany({
@@ -290,9 +284,7 @@ export async function findLikelyDuplicates(
     const seen = new Set<string>(); // dedupe groups already covered by email
     for (const bucket of byEmail.values()) {
       if (bucket.length < 2) continue;
-      const sorted = bucket.sort(
-        (a, b) => b.updatedAt.getTime() - a.updatedAt.getTime(),
-      );
+      const sorted = bucket.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
       groups.push({ reason: 'email', customers: sorted });
       for (const c of sorted) seen.add(c.id);
     }
@@ -300,9 +292,7 @@ export async function findLikelyDuplicates(
       if (bucket.length < 2) continue;
       // Skip if all members already appear in an email group — no new info.
       if (bucket.every((c) => seen.has(c.id))) continue;
-      const sorted = bucket.sort(
-        (a, b) => b.updatedAt.getTime() - a.updatedAt.getTime(),
-      );
+      const sorted = bucket.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
       groups.push({ reason: 'name+company', customers: sorted });
     }
 

@@ -19,7 +19,7 @@ export function slugify(input: string): string {
 
 export async function uniqueSlug(
   base: string,
-  exists: (candidate: string) => Promise<boolean>,
+  exists: (candidate: string) => Promise<boolean>
 ): Promise<string> {
   let candidate = base;
   let n = 2;

@@ -63,15 +63,21 @@ const publishRoutes: FastifyPluginAsync = async (app) => {
         status: after.status,
         kind: 'manual',
         authorId: auth.actorId,
-        summary: nextStatus === 'scheduled' ? `Scheduled for ${scheduled?.toISOString() ?? ''}` : 'Published',
+        summary:
+          nextStatus === 'scheduled'
+            ? `Scheduled for ${scheduled?.toISOString() ?? ''}`
+            : 'Published',
       });
       await writeAudit(tx, request, auth, {
-        action:
-          nextStatus === 'scheduled' ? 'content.entry.scheduled' : 'content.entry.published',
+        action: nextStatus === 'scheduled' ? 'content.entry.scheduled' : 'content.entry.published',
         entityType: 'content_entry',
         entityId: after.id,
         before: { status: existing.status },
-        after: { status: after.status, publishedAt: after.publishedAt, scheduledAt: after.scheduledAt },
+        after: {
+          status: after.status,
+          publishedAt: after.publishedAt,
+          scheduledAt: after.scheduledAt,
+        },
       });
 
       return after;
@@ -87,7 +93,7 @@ const publishRoutes: FastifyPluginAsync = async (app) => {
         typeKey: updated.typeKey,
         slug: updated.slug,
         scheduledAt: updated.scheduledAt?.toISOString() ?? null,
-      },
+      }
     );
 
     return ok(serializeEntry(updated));

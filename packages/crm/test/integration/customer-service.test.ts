@@ -10,11 +10,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 import { prisma } from '@sparx/db';
 import { customerService } from '../../src/services/index.js';
-import {
-  disposeTestContext,
-  makeTestContext,
-  type TestContext,
-} from '../helpers.js';
+import { disposeTestContext, makeTestContext, type TestContext } from '../helpers.js';
 
 describe('customerService', () => {
   let test: TestContext;
@@ -139,7 +135,7 @@ describe('customerService', () => {
     // `type: "spaceship"` isn't in the enum — Zod rejects at the service
     // boundary. No row, no event.
     await expect(
-      customerService.create(test.ctx, { type: 'spaceship' as never, email: 'bad@example.test' }),
+      customerService.create(test.ctx, { type: 'spaceship' as never, email: 'bad@example.test' })
     ).rejects.toBeDefined();
 
     expect(test.publisher.events).toHaveLength(0);
@@ -150,7 +146,7 @@ describe('customerService', () => {
 
   it('get — unknown id throws NotFound (no leak of error detail)', async () => {
     await expect(
-      customerService.get(test.ctx, '00000000-0000-0000-0000-000000000000'),
+      customerService.get(test.ctx, '00000000-0000-0000-0000-000000000000')
     ).rejects.toMatchObject({ code: 'NOT_FOUND', entityType: 'Customer' });
   });
 });

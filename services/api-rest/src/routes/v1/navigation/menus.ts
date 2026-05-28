@@ -31,8 +31,8 @@ const ItemInput: z.ZodType<MenuItemInput> = z.lazy(() =>
     })
     .refine(
       (v) => (v.entry_id ? 1 : 0) + (v.external_url ? 1 : 0) === 1,
-      'Exactly one of entry_id or external_url must be set.',
-    ),
+      'Exactly one of entry_id or external_url must be set.'
+    )
 );
 
 interface MenuItemInput {
@@ -55,7 +55,7 @@ const navigationRoutes: FastifyPluginAsync = async (app) => {
       tx.navigationMenu.findMany({
         include: { items: { orderBy: { position: 'asc' } } },
         orderBy: { location: 'asc' },
-      }),
+      })
     );
     return ok(rows);
   });
@@ -67,7 +67,7 @@ const navigationRoutes: FastifyPluginAsync = async (app) => {
       tx.navigationMenu.findFirst({
         where: { location },
         include: { items: { orderBy: { position: 'asc' } } },
-      }),
+      })
     );
     if (!row) throw notFound('Menu', location);
     return ok(row);
@@ -93,13 +93,12 @@ const navigationRoutes: FastifyPluginAsync = async (app) => {
       let position = 0;
       const insertSubtree = async (
         items: MenuItemInput[],
-        parentItemId: string | null,
+        parentItemId: string | null
       ): Promise<void> => {
         for (const item of items) {
           // The XOR constraint is enforced by Zod above + by the DB CHECK
           // — this assertion guards against a bug in either layer.
-          const xor =
-            (item.entry_id ? 1 : 0) + (item.external_url ? 1 : 0);
+          const xor = (item.entry_id ? 1 : 0) + (item.external_url ? 1 : 0);
           if (xor !== 1) {
             throw badRequest('Each item must specify exactly one of entry_id or external_url.');
           }

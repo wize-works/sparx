@@ -98,7 +98,7 @@ export async function recordRevision(
     kind: 'autosave' | 'manual';
     authorId: string | null;
     summary?: string;
-  },
+  }
 ): Promise<ContentRevision> {
   const last = await tx.contentRevision.findFirst({
     where: { entryId: args.entryId },
@@ -130,7 +130,7 @@ export async function syncReferences(
   tenantId: string,
   entryId: string,
   schema: ContentTypeSchema,
-  body: Record<string, unknown>,
+  body: Record<string, unknown>
 ): Promise<void> {
   await rebuildReferences(tx, tenantId, entryId, schema, body);
 }

@@ -51,8 +51,7 @@ export function registerEmailEventConsumers(ctx: ConsumerContext): Array<() => v
         if (!customerId) return; // engagement on a stranger — drop silently
 
         const occurredAt = payload.occurredAt ? new Date(payload.occurredAt) : event.occurredAt;
-        const description =
-          payload.subject != null ? `Email: ${payload.subject}` : null;
+        const description = payload.subject != null ? `Email: ${payload.subject}` : null;
 
         await withTenant({ tenantId: event.tenantId }, async (tx) => {
           await tx.crmActivity.create({
@@ -85,15 +84,12 @@ export function registerEmailEventConsumers(ctx: ConsumerContext): Array<() => v
             });
           }
         });
-      }),
-    ),
+      })
+    )
   );
 }
 
-async function resolveTarget(
-  tenantId: string,
-  payload: EmailEventPayload,
-): Promise<string | null> {
+async function resolveTarget(tenantId: string, payload: EmailEventPayload): Promise<string | null> {
   if (payload.customerId) return payload.customerId;
   if (payload.email) {
     const customer = await resolveCustomerByEmail(tenantId, payload.email);

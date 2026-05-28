@@ -9,7 +9,16 @@
 // added downstream.
 
 import type { CrmActivity } from '@sparx/db';
-import { Badge, Stack, Text, Timeline, TimelineDescription, TimelineItem, TimelineTime, TimelineTitle } from '@sparx/ui';
+import {
+  Badge,
+  Stack,
+  Text,
+  Timeline,
+  TimelineDescription,
+  TimelineItem,
+  TimelineTime,
+  TimelineTitle,
+} from '@sparx/ui';
 import {
   CheckCircle2,
   CircleDot,
@@ -140,9 +149,7 @@ export function ActivityTimeline({ activities }: Props) {
                 )}
                 <Badge variant="outline">{a.actorType}</Badge>
               </Stack>
-              {a.description && (
-                <TimelineDescription>{a.description}</TimelineDescription>
-              )}
+              {a.description && <TimelineDescription>{a.description}</TimelineDescription>}
               <TimelineTime dateTime={a.occurredAt.toISOString()}>
                 {a.occurredAt.toLocaleString()}
               </TimelineTime>

@@ -10,13 +10,7 @@
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 
-import {
-  Button,
-  Label,
-  Stack,
-  Text,
-  Textarea,
-} from '@sparx/ui';
+import { Button, Label, Stack, Text, Textarea } from '@sparx/ui';
 
 import { recordActivityAction } from '../../actions';
 

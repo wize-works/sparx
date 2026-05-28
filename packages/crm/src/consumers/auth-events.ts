@@ -34,7 +34,7 @@ export function registerAuthEventConsumers(ctx: ConsumerContext): Array<() => vo
         const payload = event.payload as AuthEventPayload;
         const customer = await resolveCustomerByAuthUserId(
           { tenantId: event.tenantId },
-          payload.authUserId,
+          payload.authUserId
         );
         if (!customer) return;
 
@@ -58,8 +58,8 @@ export function registerAuthEventConsumers(ctx: ConsumerContext): Array<() => vo
             },
           });
         });
-      }),
-    ),
+      })
+    )
   );
 }
 

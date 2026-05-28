@@ -20,16 +20,14 @@ import { writeAudit } from '../../../lib/audit.js';
 import { publish } from '../../../lib/pubsub.js';
 import type { TxClient } from '@sparx/db';
 
-const PathSchema = z
-  .string()
-  .min(1)
-  .max(2048)
-  .startsWith('/', 'Paths must begin with "/".');
+const PathSchema = z.string().min(1).max(2048).startsWith('/', 'Paths must begin with "/".');
 
 const CreateBody = z.object({
   from_path: PathSchema,
   to_path: PathSchema,
-  status_code: z.union([z.literal(301), z.literal(302), z.literal(307), z.literal(308)]).default(301),
+  status_code: z
+    .union([z.literal(301), z.literal(302), z.literal(307), z.literal(308)])
+    .default(301),
 });
 
 const BulkBody = z.object({
@@ -38,11 +36,7 @@ const BulkBody = z.object({
 
 const PathId = z.object({ id: z.string().uuid() });
 
-async function assertNoChain(
-  tx: TxClient,
-  fromPath: string,
-  toPath: string,
-): Promise<void> {
+async function assertNoChain(tx: TxClient, fromPath: string, toPath: string): Promise<void> {
   if (fromPath === toPath) {
     throw conflict('A redirect cannot point to itself.');
   }
@@ -62,7 +56,7 @@ const redirectRoutes: FastifyPluginAsync = async (app) => {
   app.get('/v1/redirects', async (request) => {
     requireRole(request, 'viewer');
     const rows = await withRequestTenant(request, (tx) =>
-      tx.redirect.findMany({ orderBy: { fromPath: 'asc' }, take: 1000 }),
+      tx.redirect.findMany({ orderBy: { fromPath: 'asc' }, take: 1000 })
     );
     return ok(rows);
   });

@@ -39,16 +39,14 @@ export interface ListDealsFilter {
 
 export async function list(
   ctx: ServiceContext,
-  filter: ListDealsFilter = {},
+  filter: ListDealsFilter = {}
 ): Promise<{ items: Deal[]; total: number }> {
   return withTenant(ctx, async (tx) => {
     const where: Prisma.DealWhereInput = {
       deletedAt: null,
       ...(filter.pipelineId ? { pipelineId: filter.pipelineId } : {}),
       ...(filter.stageId ? { stageId: filter.stageId } : {}),
-      ...(filter.assignedRepId !== undefined
-        ? { assignedRepId: filter.assignedRepId }
-        : {}),
+      ...(filter.assignedRepId !== undefined ? { assignedRepId: filter.assignedRepId } : {}),
       ...(filter.customerId ? { customerId: filter.customerId } : {}),
       ...(filter.b2bAccountId ? { b2bAccountId: filter.b2bAccountId } : {}),
       ...(filter.state === 'open'
@@ -76,10 +74,7 @@ export async function get(ctx: ServiceContext, dealId: string): Promise<Deal> {
   return deal;
 }
 
-export async function create(
-  ctx: ServiceContext,
-  rawInput: unknown,
-): Promise<Deal> {
+export async function create(ctx: ServiceContext, rawInput: unknown): Promise<Deal> {
   const input = CreateDealInput.parse(rawInput);
 
   const deal = await withTenant(ctx, async (tx) => {
@@ -158,7 +153,7 @@ export async function create(
 export async function update(
   ctx: ServiceContext,
   dealId: string,
-  rawInput: unknown,
+  rawInput: unknown
 ): Promise<Deal> {
   const input = UpdateDealInput.parse(rawInput);
 
@@ -168,7 +163,7 @@ export async function update(
   if (input.stageId !== undefined) {
     throw new CrmValidationError(
       'Stage changes must go through dealService.moveStage so the deal.stage_changed event fires',
-      [{ field: 'stageId', message: 'Use moveStage() to change the stage' }],
+      [{ field: 'stageId', message: 'Use moveStage() to change the stage' }]
     );
   }
 
@@ -184,16 +179,12 @@ export async function update(
         ...(input.probability !== undefined ? { probability: input.probability } : {}),
         ...(input.expectedCloseDate !== undefined
           ? {
-              expectedCloseDate: input.expectedCloseDate
-                ? new Date(input.expectedCloseDate)
-                : null,
+              expectedCloseDate: input.expectedCloseDate ? new Date(input.expectedCloseDate) : null,
             }
           : {}),
         ...(input.customerId !== undefined ? { customerId: input.customerId } : {}),
         ...(input.b2bAccountId !== undefined ? { b2bAccountId: input.b2bAccountId } : {}),
-        ...(input.assignedRepId !== undefined
-          ? { assignedRepId: input.assignedRepId }
-          : {}),
+        ...(input.assignedRepId !== undefined ? { assignedRepId: input.assignedRepId } : {}),
         ...(input.source !== undefined ? { source: input.source } : {}),
         ...(input.tags !== undefined ? { tags: input.tags } : {}),
         ...(input.metadata !== undefined
@@ -221,100 +212,96 @@ export async function update(
 export async function moveStage(
   ctx: ServiceContext,
   dealId: string,
-  rawInput: unknown,
+  rawInput: unknown
 ): Promise<Deal> {
   const input = MoveDealStageInput.parse(rawInput);
 
-  const { deal, fromStageId, fromStageType, toStageType } = await withTenant(
-    ctx,
-    async (tx) => {
-      const before = await tx.deal.findUnique({
-        where: { id: dealId },
-        include: { stage: true },
-      });
-      if (!before || before.deletedAt !== null) throw new CrmNotFoundError('Deal', dealId);
+  const { deal, fromStageId, fromStageType, toStageType } = await withTenant(ctx, async (tx) => {
+    const before = await tx.deal.findUnique({
+      where: { id: dealId },
+      include: { stage: true },
+    });
+    if (!before || before.deletedAt !== null) throw new CrmNotFoundError('Deal', dealId);
 
-      const toStage = await tx.pipelineStage.findUnique({ where: { id: input.toStageId } });
-      if (!toStage) throw new CrmNotFoundError('PipelineStage', input.toStageId);
-      if (toStage.pipelineId !== before.pipelineId) {
-        throw new CrmValidationError(
-          'Cannot move deal to a stage in a different pipeline',
-          [{ field: 'toStageId', message: 'Stage belongs to a different pipeline' }],
-        );
-      }
-      if (toStage.id === before.stageId) {
-        // No-op move — return the existing row without an event emission.
-        return {
-          deal: before,
-          fromStageId: before.stageId,
-          fromStageType: before.stage.stageType,
-          toStageType: toStage.stageType,
-        };
-      }
-
-      const isClosing = toStage.stageType === 'won' || toStage.stageType === 'lost';
-
-      const updated = await tx.deal.update({
-        where: { id: dealId },
-        data: {
-          stageId: toStage.id,
-          probability: toStage.probability,
-          ...(isClosing
-            ? { closedAt: new Date(), closedReason: input.closedReason ?? null }
-            : { closedAt: null, closedReason: null }),
-        },
-      });
-
-      // Stage-change activity.
-      await tx.crmActivity.create({
-        data: {
-          tenantId: ctx.tenantId,
-          customerId: updated.customerId,
-          dealId: updated.id,
-          b2bAccountId: updated.b2bAccountId,
-          type:
-            toStage.stageType === 'won'
-              ? 'deal.closed'
-              : toStage.stageType === 'lost'
-                ? 'deal.lost'
-                : 'deal.stage.changed',
-          description: `Stage changed: ${before.stage.name} → ${toStage.name}`,
-          actorId: ctx.userId ?? null,
-          actorType: ctx.userId ? 'staff' : 'system',
-          occurredAt: new Date(),
-          linkedEntityType: 'Deal',
-          linkedEntityId: updated.id,
-          metadata: {
-            fromStageId: before.stageId,
-            fromStageName: before.stage.name,
-            toStageId: toStage.id,
-            toStageName: toStage.name,
-          },
-        },
-      });
-
-      await writeAuditLog({
-        tx,
-        tenantId: ctx.tenantId,
-        actorId: ctx.userId ?? null,
-        actorType: ctx.userId ? 'user' : 'system',
-        action: 'crm.deal.stage_changed',
-        entityType: 'Deal',
-        entityId: updated.id,
-        diff: {
-          before: { stageId: before.stageId, stageType: before.stage.stageType },
-          after: { stageId: toStage.id, stageType: toStage.stageType },
-        },
-      });
-
+    const toStage = await tx.pipelineStage.findUnique({ where: { id: input.toStageId } });
+    if (!toStage) throw new CrmNotFoundError('PipelineStage', input.toStageId);
+    if (toStage.pipelineId !== before.pipelineId) {
+      throw new CrmValidationError('Cannot move deal to a stage in a different pipeline', [
+        { field: 'toStageId', message: 'Stage belongs to a different pipeline' },
+      ]);
+    }
+    if (toStage.id === before.stageId) {
+      // No-op move — return the existing row without an event emission.
       return {
-        deal: updated,
+        deal: before,
         fromStageId: before.stageId,
         fromStageType: before.stage.stageType,
         toStageType: toStage.stageType,
       };
-    },
-  );
+    }
+
+    const isClosing = toStage.stageType === 'won' || toStage.stageType === 'lost';
+
+    const updated = await tx.deal.update({
+      where: { id: dealId },
+      data: {
+        stageId: toStage.id,
+        probability: toStage.probability,
+        ...(isClosing
+          ? { closedAt: new Date(), closedReason: input.closedReason ?? null }
+          : { closedAt: null, closedReason: null }),
+      },
+    });
+
+    // Stage-change activity.
+    await tx.crmActivity.create({
+      data: {
+        tenantId: ctx.tenantId,
+        customerId: updated.customerId,
+        dealId: updated.id,
+        b2bAccountId: updated.b2bAccountId,
+        type:
+          toStage.stageType === 'won'
+            ? 'deal.closed'
+            : toStage.stageType === 'lost'
+              ? 'deal.lost'
+              : 'deal.stage.changed',
+        description: `Stage changed: ${before.stage.name} → ${toStage.name}`,
+        actorId: ctx.userId ?? null,
+        actorType: ctx.userId ? 'staff' : 'system',
+        occurredAt: new Date(),
+        linkedEntityType: 'Deal',
+        linkedEntityId: updated.id,
+        metadata: {
+          fromStageId: before.stageId,
+          fromStageName: before.stage.name,
+          toStageId: toStage.id,
+          toStageName: toStage.name,
+        },
+      },
+    });
+
+    await writeAuditLog({
+      tx,
+      tenantId: ctx.tenantId,
+      actorId: ctx.userId ?? null,
+      actorType: ctx.userId ? 'user' : 'system',
+      action: 'crm.deal.stage_changed',
+      entityType: 'Deal',
+      entityId: updated.id,
+      diff: {
+        before: { stageId: before.stageId, stageType: before.stage.stageType },
+        after: { stageId: toStage.id, stageType: toStage.stageType },
+      },
+    });
+
+    return {
+      deal: updated,
+      fromStageId: before.stageId,
+      fromStageType: before.stage.stageType,
+      toStageType: toStage.stageType,
+    };
+  });
 
   if (fromStageId !== deal.stageId) {
     await publishCrmEvent({
@@ -348,10 +335,7 @@ export async function moveStage(
 // Join-table operations (locked decision #5)
 // ─────────────────────────────────────────────────────────────────────────
 
-export async function attachOrder(
-  ctx: ServiceContext,
-  rawInput: unknown,
-): Promise<DealOrder> {
+export async function attachOrder(ctx: ServiceContext, rawInput: unknown): Promise<DealOrder> {
   const input = AttachDealOrderInput.parse(rawInput);
   return withTenant(ctx, async (tx) => {
     const deal = await tx.deal.findUnique({ where: { id: input.dealId } });
@@ -379,10 +363,7 @@ export async function attachOrder(
   });
 }
 
-export async function attachQuote(
-  ctx: ServiceContext,
-  rawInput: unknown,
-): Promise<DealQuote> {
+export async function attachQuote(ctx: ServiceContext, rawInput: unknown): Promise<DealQuote> {
   const input = AttachDealQuoteInput.parse(rawInput);
   return withTenant(ctx, async (tx) => {
     const deal = await tx.deal.findUnique({ where: { id: input.dealId } });
@@ -422,7 +403,7 @@ export interface ForecastBucket {
 
 export async function forecast(
   ctx: ServiceContext,
-  args: { pipelineId?: string; horizonMonths?: number } = {},
+  args: { pipelineId?: string; horizonMonths?: number } = {}
 ): Promise<ForecastBucket[]> {
   const horizon = args.horizonMonths ?? 6;
   const cutoff = new Date();
@@ -443,7 +424,7 @@ export async function forecast(
     for (const d of deals) {
       if (!d.expectedCloseDate) continue;
       const ym = `${d.expectedCloseDate.getUTCFullYear()}-${String(
-        d.expectedCloseDate.getUTCMonth() + 1,
+        d.expectedCloseDate.getUTCMonth() + 1
       ).padStart(2, '0')}`;
       const weight = Number(d.probability) / 100;
       const weighted = Number(d.value) * weight;

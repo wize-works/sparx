@@ -78,7 +78,7 @@ export function getPublisher(logger: FastifyBaseLogger): Publisher {
     publisher = new CloudPubSubPublisher(client, env.PUBSUB_TOPIC);
     logger.info(
       { topic: env.PUBSUB_TOPIC, project: env.GCP_PROJECT_ID },
-      'pubsub: Google Cloud publisher initialised',
+      'pubsub: Google Cloud publisher initialised'
     );
   } else {
     publisher = new LoggingPublisher(logger);
@@ -92,7 +92,7 @@ export async function publish<T>(
   type: EventType,
   tenantId: string,
   actorId: string | null,
-  data: T,
+  data: T
 ): Promise<void> {
   const event: SparxEvent<T> = {
     type,

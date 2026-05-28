@@ -37,7 +37,7 @@ export default async function DuplicatesPage() {
 
   const groups = await customerService.findLikelyDuplicates(
     { tenantId: session.user.tenantId, userId: session.user.id },
-    { limit: 5000 },
+    { limit: 5000 }
   );
 
   return (
@@ -57,9 +57,9 @@ export default async function DuplicatesPage() {
             </Badge>
           </Stack>
           <Text variant="muted">
-            Customers grouped by shared email, or by matching last name + company.
-            Merge folds duplicates into a chosen primary — all activities, deals, and
-            tasks reattach automatically.
+            Customers grouped by shared email, or by matching last name + company. Merge folds
+            duplicates into a chosen primary — all activities, deals, and tasks reattach
+            automatically.
           </Text>
         </Stack>
 

@@ -61,13 +61,16 @@ class LoggingPublisher implements Publisher {
     // Intentional console.log — this is the wire boundary, not application
     // code. Swap to a structured logger when one lands.
     // eslint-disable-next-line no-console
-    console.log('[crm-event]', JSON.stringify({
-      tenantId: event.tenantId,
-      topic: event.topic,
-      payload: event.payload,
-      dedupeKey: event.dedupeKey,
-      occurredAt: (event.occurredAt ?? new Date()).toISOString(),
-    }));
+    console.log(
+      '[crm-event]',
+      JSON.stringify({
+        tenantId: event.tenantId,
+        topic: event.topic,
+        payload: event.payload,
+        dedupeKey: event.dedupeKey,
+        occurredAt: (event.occurredAt ?? new Date()).toISOString(),
+      })
+    );
   }
 }
 

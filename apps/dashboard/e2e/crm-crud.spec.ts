@@ -51,7 +51,7 @@ test.describe('CRM customers — create flow', () => {
 
     // Detail page rendered with our data.
     await expect(
-      page.getByRole('heading', { name: `${firstName} ${lastName}`, level: 1 }),
+      page.getByRole('heading', { name: `${firstName} ${lastName}`, level: 1 })
     ).toBeVisible();
     await expect(page.getByText(email)).toBeVisible();
     await expect(page.getByText(company)).toBeVisible();

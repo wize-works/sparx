@@ -6,16 +6,8 @@
 
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
-import {
-  customerService,
-  dealService,
-  pipelineService,
-} from '../../src/services/index.js';
-import {
-  disposeTestContext,
-  makeTestContext,
-  type TestContext,
-} from '../helpers.js';
+import { customerService, dealService, pipelineService } from '../../src/services/index.js';
+import { disposeTestContext, makeTestContext, type TestContext } from '../helpers.js';
 
 describe('dealService', () => {
   let test: TestContext;
@@ -70,9 +62,7 @@ describe('dealService', () => {
     expect(deal.closedAt).toBeNull();
 
     // Event: crm.deal.created exactly once.
-    expect(
-      test.publisher.events.filter((e) => e.topic === 'crm.deal.created'),
-    ).toHaveLength(1);
+    expect(test.publisher.events.filter((e) => e.topic === 'crm.deal.created')).toHaveLength(1);
   });
 
   it('moveStage — fires crm.deal.stage_changed with from/to payload', async () => {
@@ -92,9 +82,7 @@ describe('dealService', () => {
     expect(moved.stageId).toBe(qualifiedStageId);
 
     // crm.deal.stage_changed fired exactly once.
-    const changes = test.publisher.events.filter(
-      (e) => e.topic === 'crm.deal.stage_changed',
-    );
+    const changes = test.publisher.events.filter((e) => e.topic === 'crm.deal.stage_changed');
     expect(changes).toHaveLength(1);
     expect(changes[0]?.payload).toMatchObject({
       dealId: deal.id,
@@ -146,9 +134,9 @@ describe('dealService', () => {
     });
 
     expect(moved.closedAt).not.toBeNull();
-    expect(
-      test.publisher.events.find((e) => e.topic === 'crm.deal.closed')?.payload,
-    ).toMatchObject({ outcome: 'lost' });
+    expect(test.publisher.events.find((e) => e.topic === 'crm.deal.closed')?.payload).toMatchObject(
+      { outcome: 'lost' }
+    );
   });
 
   it('moveStage no-op — moving to the current stage does NOT emit', async () => {
@@ -163,9 +151,9 @@ describe('dealService', () => {
 
     await dealService.moveStage(test.ctx, deal.id, { toStageId: leadStageId });
 
-    expect(
-      test.publisher.events.filter((e) => e.topic === 'crm.deal.stage_changed'),
-    ).toHaveLength(0);
+    expect(test.publisher.events.filter((e) => e.topic === 'crm.deal.stage_changed')).toHaveLength(
+      0
+    );
   });
 
   it('update — rejects stageId field (must use moveStage)', async () => {
@@ -178,7 +166,7 @@ describe('dealService', () => {
     });
 
     await expect(
-      dealService.update(test.ctx, deal.id, { stageId: qualifiedStageId } as never),
+      dealService.update(test.ctx, deal.id, { stageId: qualifiedStageId } as never)
     ).rejects.toMatchObject({ code: 'VALIDATION_ERROR' });
 
     // Stage didn't change.
@@ -210,7 +198,7 @@ describe('dealService', () => {
     });
 
     await expect(
-      dealService.moveStage(test.ctx, deal.id, { toStageId: otherStage.id }),
+      dealService.moveStage(test.ctx, deal.id, { toStageId: otherStage.id })
     ).rejects.toMatchObject({ code: 'VALIDATION_ERROR' });
   });
 });

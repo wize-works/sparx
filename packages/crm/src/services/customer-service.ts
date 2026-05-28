@@ -45,18 +45,14 @@ export interface ListCustomersFilter {
 
 export async function list(
   ctx: ServiceContext,
-  filter: ListCustomersFilter = {},
+  filter: ListCustomersFilter = {}
 ): Promise<{ items: Customer[]; total: number }> {
   return withTenant(ctx, async (tx) => {
     const where: Prisma.CustomerWhereInput = {
       ...(filter.includeDeleted ? {} : { deletedAt: null }),
       ...(filter.type ? { type: filter.type } : {}),
-      ...(filter.assignedRepId !== undefined
-        ? { assignedRepId: filter.assignedRepId }
-        : {}),
-      ...(filter.b2bAccountId !== undefined
-        ? { b2bAccountId: filter.b2bAccountId }
-        : {}),
+      ...(filter.assignedRepId !== undefined ? { assignedRepId: filter.assignedRepId } : {}),
+      ...(filter.b2bAccountId !== undefined ? { b2bAccountId: filter.b2bAccountId } : {}),
       ...(filter.tag ? { tags: { has: filter.tag } } : {}),
       ...(filter.q
         ? {
@@ -87,7 +83,7 @@ export async function list(
 
 export async function get(ctx: ServiceContext, customerId: string): Promise<Customer> {
   const customer = await withTenant(ctx, (tx) =>
-    tx.customer.findUnique({ where: { id: customerId } }),
+    tx.customer.findUnique({ where: { id: customerId } })
   );
   if (!customer || customer.deletedAt !== null) {
     throw new CrmNotFoundError('Customer', customerId);
@@ -100,7 +96,7 @@ export async function get(ctx: ServiceContext, customerId: string): Promise<Cust
  *  builder. Read-only — no event, no audit log. */
 export async function getTopBySpend(
   ctx: ServiceContext,
-  args: { limit?: number; type?: 'retail' | 'b2b' } = {},
+  args: { limit?: number; type?: 'retail' | 'b2b' } = {}
 ): Promise<Customer[]> {
   return withTenant(ctx, (tx) =>
     tx.customer.findMany({
@@ -111,7 +107,7 @@ export async function getTopBySpend(
       },
       orderBy: { totalSpent: 'desc' },
       take: Math.min(args.limit ?? 10, 100),
-    }),
+    })
   );
 }
 
@@ -119,7 +115,7 @@ export async function getTopBySpend(
  *  and the MCP get_inactive_customers tool. */
 export async function getInactive(
   ctx: ServiceContext,
-  args: { days: number; limit?: number },
+  args: { days: number; limit?: number }
 ): Promise<Customer[]> {
   const threshold = new Date(Date.now() - args.days * 24 * 60 * 60 * 1000);
   return withTenant(ctx, (tx) =>
@@ -131,7 +127,7 @@ export async function getInactive(
       },
       orderBy: { lastOrderAt: 'asc' },
       take: Math.min(args.limit ?? 50, 500),
-    }),
+    })
   );
 }
 
@@ -139,10 +135,7 @@ export async function getInactive(
 // Writes
 // ─────────────────────────────────────────────────────────────────────────
 
-export async function create(
-  ctx: ServiceContext,
-  rawInput: unknown,
-): Promise<Customer> {
+export async function create(ctx: ServiceContext, rawInput: unknown): Promise<Customer> {
   const input = CreateCustomerInput.parse(rawInput);
 
   const customer = await withTenant(ctx, async (tx) => {
@@ -193,7 +186,7 @@ export async function create(
 export async function update(
   ctx: ServiceContext,
   customerId: string,
-  rawInput: unknown,
+  rawInput: unknown
 ): Promise<Customer> {
   const input = UpdateCustomerInput.parse(rawInput);
 
@@ -214,9 +207,7 @@ export async function update(
         ...(input.company !== undefined ? { company: input.company } : {}),
         ...(input.jobTitle !== undefined ? { jobTitle: input.jobTitle } : {}),
         ...(input.b2bAccountId !== undefined ? { b2bAccountId: input.b2bAccountId } : {}),
-        ...(input.assignedRepId !== undefined
-          ? { assignedRepId: input.assignedRepId }
-          : {}),
+        ...(input.assignedRepId !== undefined ? { assignedRepId: input.assignedRepId } : {}),
         ...(input.preferredContactMethod !== undefined
           ? { preferredContactMethod: input.preferredContactMethod }
           : {}),
@@ -253,10 +244,7 @@ export async function update(
   return result;
 }
 
-export async function softDelete(
-  ctx: ServiceContext,
-  customerId: string,
-): Promise<Customer> {
+export async function softDelete(ctx: ServiceContext, customerId: string): Promise<Customer> {
   const result = await withTenant(ctx, async (tx) => {
     const before = await tx.customer.findUnique({ where: { id: customerId } });
     if (!before || before.deletedAt !== null) {
@@ -299,7 +287,7 @@ export async function softDelete(
 
 export async function bulkAssign(
   ctx: ServiceContext,
-  rawInput: unknown,
+  rawInput: unknown
 ): Promise<{ updatedCount: number }> {
   const input = BulkAssignCustomersInput.parse(rawInput);
 
@@ -337,8 +325,8 @@ export async function bulkAssign(
         topic: 'crm.customer.updated',
         payload: { customerId, change: 'assignedRepId' },
         dedupeKey: `crm.customer.updated:assigned:${customerId}:${Date.now()}`,
-      }),
-    ),
+      })
+    )
   );
 
   return result;
@@ -346,7 +334,7 @@ export async function bulkAssign(
 
 export async function bulkTag(
   ctx: ServiceContext,
-  rawInput: unknown,
+  rawInput: unknown
 ): Promise<{ updatedCount: number }> {
   const input = BulkTagCustomersInput.parse(rawInput);
   if (!input.addTags?.length && !input.removeTags?.length) {

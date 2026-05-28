@@ -56,12 +56,9 @@ export async function dropTestTenant(tenantId: string): Promise<void> {
 export async function signToken(
   app: FastifyInstance,
   fixture: TestTenant,
-  role: StaffRole = 'owner',
+  role: StaffRole = 'owner'
 ): Promise<string> {
-  return app.jwt.sign(
-    { sub: fixture.userId, tid: fixture.tenantId, role },
-    { expiresIn: '5m' },
-  );
+  return app.jwt.sign({ sub: fixture.userId, tid: fixture.tenantId, role }, { expiresIn: '5m' });
 }
 
 export function authHeader(token: string): { authorization: string } {

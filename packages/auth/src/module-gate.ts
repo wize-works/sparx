@@ -73,10 +73,7 @@ export function invalidateModuleCache(tenantId?: string, module?: ModuleSlug): v
 
 /** Check whether a module is enabled for a tenant. Reads tenant.settings
  *  with a per-process LRU + 60s TTL. */
-export async function isModuleEnabled(
-  tenantId: string,
-  module: ModuleSlug,
-): Promise<boolean> {
+export async function isModuleEnabled(tenantId: string, module: ModuleSlug): Promise<boolean> {
   const key = cacheKey(tenantId, module);
   const hit = cache.get(key);
   if (hit && hit.expiresAt > Date.now()) return hit.enabled;
@@ -110,10 +107,7 @@ function readModuleFlag(settings: unknown, module: ModuleSlug): boolean {
  *  Use from Server Actions / Fastify preHandlers — both call this directly
  *  with the resolved session, so the gate is the same function across
  *  transports (locked decision #6). */
-export async function requireModule(
-  session: SparxSession,
-  module: ModuleSlug,
-): Promise<void> {
+export async function requireModule(session: SparxSession, module: ModuleSlug): Promise<void> {
   const enabled = await isModuleEnabled(session.user.tenantId, module);
   if (!enabled) {
     throw new ModuleDisabledError(module, session.user.tenantId);

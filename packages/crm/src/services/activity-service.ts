@@ -15,10 +15,7 @@ import { writeAuditLog } from '../audit.js';
 import { publishCrmEvent } from '../events.js';
 import type { ServiceContext } from '../errors.js';
 
-export async function list(
-  ctx: ServiceContext,
-  rawFilter: unknown = {},
-): Promise<CrmActivity[]> {
+export async function list(ctx: ServiceContext, rawFilter: unknown = {}): Promise<CrmActivity[]> {
   const filter = ListActivitiesInput.parse(rawFilter);
   return withTenant(ctx, (tx) =>
     tx.crmActivity.findMany({
@@ -38,14 +35,11 @@ export async function list(
       },
       orderBy: { occurredAt: 'desc' },
       take: filter.limit,
-    }),
+    })
   );
 }
 
-export async function record(
-  ctx: ServiceContext,
-  rawInput: unknown,
-): Promise<CrmActivity> {
+export async function record(ctx: ServiceContext, rawInput: unknown): Promise<CrmActivity> {
   const input = CreateActivityInput.parse(rawInput);
   const occurredAt = input.occurredAt ? new Date(input.occurredAt) : new Date();
 

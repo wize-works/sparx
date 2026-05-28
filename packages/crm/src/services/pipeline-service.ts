@@ -27,35 +27,32 @@ import { CrmNotFoundError } from '../errors.js';
 
 export async function list(
   ctx: ServiceContext,
-  args: { includeArchived?: boolean } = {},
+  args: { includeArchived?: boolean } = {}
 ): Promise<Array<Pipeline & { stages: PipelineStage[] }>> {
   return withTenant(ctx, (tx) =>
     tx.pipeline.findMany({
       where: args.includeArchived ? {} : { archivedAt: null },
       orderBy: [{ isDefault: 'desc' }, { sortOrder: 'asc' }, { createdAt: 'asc' }],
       include: { stages: { orderBy: { sortOrder: 'asc' } } },
-    }),
+    })
   );
 }
 
 export async function get(
   ctx: ServiceContext,
-  pipelineId: string,
+  pipelineId: string
 ): Promise<Pipeline & { stages: PipelineStage[] }> {
   const pipeline = await withTenant(ctx, (tx) =>
     tx.pipeline.findUnique({
       where: { id: pipelineId },
       include: { stages: { orderBy: { sortOrder: 'asc' } } },
-    }),
+    })
   );
   if (!pipeline) throw new CrmNotFoundError('Pipeline', pipelineId);
   return pipeline;
 }
 
-export async function create(
-  ctx: ServiceContext,
-  rawInput: unknown,
-): Promise<Pipeline> {
+export async function create(ctx: ServiceContext, rawInput: unknown): Promise<Pipeline> {
   const input = CreatePipelineInput.parse(rawInput);
 
   const pipeline = await withTenant(ctx, async (tx) => {
@@ -93,7 +90,7 @@ export async function create(
 export async function update(
   ctx: ServiceContext,
   pipelineId: string,
-  rawInput: unknown,
+  rawInput: unknown
 ): Promise<Pipeline> {
   const input = UpdatePipelineInput.parse(rawInput);
   return withTenant(ctx, async (tx) => {
@@ -122,10 +119,7 @@ export async function update(
   });
 }
 
-export async function archive(
-  ctx: ServiceContext,
-  pipelineId: string,
-): Promise<Pipeline> {
+export async function archive(ctx: ServiceContext, pipelineId: string): Promise<Pipeline> {
   return withTenant(ctx, async (tx) => {
     const before = await tx.pipeline.findUnique({ where: { id: pipelineId } });
     if (!before) throw new CrmNotFoundError('Pipeline', pipelineId);
@@ -154,7 +148,7 @@ export async function archive(
 export async function createStage(
   ctx: ServiceContext,
   pipelineId: string,
-  rawInput: unknown,
+  rawInput: unknown
 ): Promise<PipelineStage> {
   const input = CreatePipelineStageInput.parse(rawInput);
   return withTenant(ctx, async (tx) => {
@@ -188,7 +182,7 @@ export async function createStage(
 export async function updateStage(
   ctx: ServiceContext,
   stageId: string,
-  rawInput: unknown,
+  rawInput: unknown
 ): Promise<PipelineStage> {
   const input = UpdatePipelineStageInput.parse(rawInput);
   return withTenant(ctx, async (tx) => {
@@ -226,7 +220,7 @@ export async function updateStage(
 export async function reorderStages(
   ctx: ServiceContext,
   pipelineId: string,
-  rawInput: unknown,
+  rawInput: unknown
 ): Promise<PipelineStage[]> {
   const input = ReorderPipelineStagesInput.parse(rawInput);
   return withTenant(ctx, async (tx) => {
@@ -282,7 +276,7 @@ export async function reorderStages(
 // ─────────────────────────────────────────────────────────────────────────
 
 export async function bootstrapDefaultPipeline(
-  ctx: ServiceContext,
+  ctx: ServiceContext
 ): Promise<Pipeline & { stages: PipelineStage[] }> {
   return withTenant(ctx, async (tx) => {
     const existing = await tx.pipeline.findUnique({

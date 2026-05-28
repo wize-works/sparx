@@ -52,13 +52,13 @@ const webhookRoutes: FastifyPluginAsync = async (app) => {
   app.get('/v1/webhooks/subscriptions', async (request) => {
     requireRole(request, 'viewer');
     const rows = await withRequestTenant(request, (tx) =>
-      tx.webhookSubscription.findMany({ orderBy: { createdAt: 'desc' } }),
+      tx.webhookSubscription.findMany({ orderBy: { createdAt: 'desc' } })
     );
     return ok(
       rows.map((r) => ({
         ...r,
         signingSecret: redact(r.signingSecret),
-      })),
+      }))
     );
   });
 

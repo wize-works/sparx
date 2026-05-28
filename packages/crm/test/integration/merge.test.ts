@@ -10,16 +10,8 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 import { withTenant } from '@sparx/db';
-import {
-  customerService,
-  dealService,
-  pipelineService,
-} from '../../src/services/index.js';
-import {
-  disposeTestContext,
-  makeTestContext,
-  type TestContext,
-} from '../helpers.js';
+import { customerService, dealService, pipelineService } from '../../src/services/index.js';
+import { disposeTestContext, makeTestContext, type TestContext } from '../helpers.js';
 
 describe('customer merge', () => {
   let test: TestContext;
@@ -75,7 +67,7 @@ describe('customer merge', () => {
           actorType: 'staff',
           occurredAt: new Date(),
         },
-      }),
+      })
     );
 
     const result = await customerService.merge(test.ctx, {
@@ -92,7 +84,7 @@ describe('customer merge', () => {
 
     // Duplicate is soft-deleted with the merge pointer set.
     const dupAfter = await withTenant(test.ctx, (tx) =>
-      tx.customer.findUnique({ where: { id: duplicate.id } }),
+      tx.customer.findUnique({ where: { id: duplicate.id } })
     );
     expect(dupAfter?.deletedAt).not.toBeNull();
     expect(dupAfter?.mergedIntoCustomerId).toBe(primary.id);
@@ -101,13 +93,13 @@ describe('customer merge', () => {
     const noteOnPrimary = await withTenant(test.ctx, (tx) =>
       tx.crmActivity.findFirst({
         where: { customerId: primary.id, description: 'Belongs to duplicate before merge' },
-      }),
+      })
     );
     expect(noteOnPrimary).not.toBeNull();
 
     // Deal moved.
     const dealAfter = await withTenant(test.ctx, (tx) =>
-      tx.deal.findUnique({ where: { id: deal.id } }),
+      tx.deal.findUnique({ where: { id: deal.id } })
     );
     expect(dealAfter?.customerId).toBe(primary.id);
 
@@ -115,7 +107,7 @@ describe('customer merge', () => {
     const mergeActivity = await withTenant(test.ctx, (tx) =>
       tx.crmActivity.findFirst({
         where: { customerId: primary.id, type: 'customer.merged' },
-      }),
+      })
     );
     expect(mergeActivity).not.toBeNull();
   });
@@ -185,7 +177,7 @@ describe('customer merge', () => {
       customerService.merge(test.ctx, {
         primaryCustomerId: primary.id,
         duplicateCustomerIds: [primary.id],
-      }),
+      })
     ).rejects.toMatchObject({ code: 'VALIDATION_ERROR' });
   });
 });

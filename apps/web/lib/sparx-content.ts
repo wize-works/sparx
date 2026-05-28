@@ -32,7 +32,10 @@ interface ErrorEnvelope {
 }
 
 async function publicGet<T>(path: string, query: Record<string, string | number>): Promise<T> {
-  const qs = new URLSearchParams({ tenant: TENANT_SLUG, ...Object.fromEntries(Object.entries(query).map(([k, v]) => [k, String(v)])) });
+  const qs = new URLSearchParams({
+    tenant: TENANT_SLUG,
+    ...Object.fromEntries(Object.entries(query).map(([k, v]) => [k, String(v)])),
+  });
   const res = await fetch(`${BASE_URL}${path}?${qs.toString()}`, {
     // Next.js automatic caching: 5-minute revalidate window. The publish
     // webhook (Phase 4 extension) will invalidate via `revalidateTag`.
@@ -118,13 +121,13 @@ export async function getModule(slug: string): Promise<FetchedModule | null> {
       try {
         const feature = await publicGet<ApiEntry<ModuleFeatureBody>>(
           `/v1/public/content/entries/${id}`,
-          {},
+          {}
         );
         return feature.body;
       } catch {
         return null;
       }
-    }),
+    })
   );
 
   return {

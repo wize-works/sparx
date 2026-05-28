@@ -20,7 +20,7 @@ export { PLATFORM_TENANT_ID };
 
 export function withRequestTenant<T>(
   request: FastifyRequest,
-  fn: (tx: TxClient) => Promise<T>,
+  fn: (tx: TxClient) => Promise<T>
 ): Promise<T> {
   const auth = requireAuth(request);
   return withTenant({ tenantId: auth.tenantId, userId: auth.actorId }, fn);

@@ -6,11 +6,11 @@ import type { Customer } from '@sparx/db';
 
 export async function resolveCustomerByEmail(
   tenantId: string,
-  email: string,
+  email: string
 ): Promise<Customer | null> {
   return withTenant({ tenantId }, (tx) =>
     tx.customer.findFirst({
       where: { email: email.toLowerCase(), deletedAt: null },
-    }),
+    })
   );
 }

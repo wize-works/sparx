@@ -19,28 +19,25 @@ import { CrmNotFoundError } from '../errors.js';
 
 export async function list(
   ctx: ServiceContext,
-  args: { includeArchived?: boolean } = {},
+  args: { includeArchived?: boolean } = {}
 ): Promise<Segment[]> {
   return withTenant(ctx, (tx) =>
     tx.segment.findMany({
       where: args.includeArchived ? {} : { archivedAt: null },
       orderBy: [{ isBuiltIn: 'desc' }, { name: 'asc' }],
-    }),
+    })
   );
 }
 
 export async function get(ctx: ServiceContext, segmentId: string): Promise<Segment> {
   const segment = await withTenant(ctx, (tx) =>
-    tx.segment.findUnique({ where: { id: segmentId } }),
+    tx.segment.findUnique({ where: { id: segmentId } })
   );
   if (!segment) throw new CrmNotFoundError('Segment', segmentId);
   return segment;
 }
 
-export async function create(
-  ctx: ServiceContext,
-  rawInput: unknown,
-): Promise<Segment> {
+export async function create(ctx: ServiceContext, rawInput: unknown): Promise<Segment> {
   const input = CreateSegmentInput.parse(rawInput);
 
   const segment = await withTenant(ctx, async (tx) => {
@@ -82,7 +79,7 @@ export async function create(
 export async function update(
   ctx: ServiceContext,
   segmentId: string,
-  rawInput: unknown,
+  rawInput: unknown
 ): Promise<Segment> {
   const input = UpdateSegmentInput.parse(rawInput);
 
@@ -127,10 +124,7 @@ export async function update(
   return result;
 }
 
-export async function archive(
-  ctx: ServiceContext,
-  segmentId: string,
-): Promise<Segment> {
+export async function archive(ctx: ServiceContext, segmentId: string): Promise<Segment> {
   return withTenant(ctx, async (tx) => {
     const before = await tx.segment.findUnique({ where: { id: segmentId } });
     if (!before) throw new CrmNotFoundError('Segment', segmentId);
@@ -159,7 +153,7 @@ export async function archive(
 export async function members(
   ctx: ServiceContext,
   segmentId: string,
-  args: { limit?: number; offset?: number } = {},
+  args: { limit?: number; offset?: number } = {}
 ): Promise<Array<SegmentMember & { customer: Customer }>> {
   return withTenant(ctx, (tx) =>
     tx.segmentMember.findMany({
@@ -168,15 +162,12 @@ export async function members(
       orderBy: { enteredAt: 'desc' },
       take: Math.min(args.limit ?? 100, 1000),
       skip: args.offset ?? 0,
-    }),
+    })
   );
 }
 
 /** Count of members. Phase 4 will also add previewCount() which evaluates
  *  the rule tree against a sample without materializing. */
-export async function memberCount(
-  ctx: ServiceContext,
-  segmentId: string,
-): Promise<number> {
+export async function memberCount(ctx: ServiceContext, segmentId: string): Promise<number> {
   return withTenant(ctx, (tx) => tx.segmentMember.count({ where: { segmentId } }));
 }

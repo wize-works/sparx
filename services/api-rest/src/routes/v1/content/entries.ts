@@ -27,11 +27,7 @@ import {
   resolveType,
   validateAndNormalizeBody,
 } from '../../../lib/content-types.js';
-import {
-  recordRevision,
-  serializeEntry,
-  syncReferences,
-} from '../../../lib/entries.js';
+import { recordRevision, serializeEntry, syncReferences } from '../../../lib/entries.js';
 import { writeAudit } from '../../../lib/audit.js';
 import { publish } from '../../../lib/pubsub.js';
 import { slugify, uniqueSlug } from '../../../lib/slug.js';
@@ -117,7 +113,7 @@ const entryRoutes: FastifyPluginAsync = async (app) => {
         orderBy: [{ updatedAt: 'desc' }, { id: 'desc' }],
         take: q.limit + 1,
         ...(q.cursor ? { cursor: { id: q.cursor }, skip: 1 } : {}),
-      }),
+      })
     );
 
     const hasMore = rows.length > q.limit;
@@ -135,7 +131,7 @@ const entryRoutes: FastifyPluginAsync = async (app) => {
     requireRole(request, 'viewer');
     const { id } = PathId.parse(request.params);
     const row = await withRequestTenant(request, (tx) =>
-      tx.contentEntry.findFirst({ where: { id, deletedAt: null } }),
+      tx.contentEntry.findFirst({ where: { id, deletedAt: null } })
     );
     if (!row) throw notFound('Entry', id);
     return ok(serializeEntry(row));
@@ -159,7 +155,9 @@ const entryRoutes: FastifyPluginAsync = async (app) => {
       // is a 409 the caller can show. A derived slug (from body.title) is
       // auto-uniquified with -2 / -3 / … so the title-only "happy path"
       // never punches the user in the face.
-      const candidateBase = input.slug ? slugify(input.slug) : slugify((body.title as string) ?? '');
+      const candidateBase = input.slug
+        ? slugify(input.slug)
+        : slugify((body.title as string) ?? '');
       let slug: string | null = null;
       if (type.urlPattern) {
         if (!candidateBase) {
@@ -171,7 +169,9 @@ const entryRoutes: FastifyPluginAsync = async (app) => {
             select: { id: true },
           });
           if (collision) {
-            throw conflict(`A ${type.name.toLowerCase()} with slug "${candidateBase}" already exists.`);
+            throw conflict(
+              `A ${type.name.toLowerCase()} with slug "${candidateBase}" already exists.`
+            );
           }
           slug = candidateBase;
         } else {
@@ -279,8 +279,7 @@ const entryRoutes: FastifyPluginAsync = async (app) => {
           body: nextBody as Json,
           seoJson: nextSeo as Json,
           authorId: input.author_id === undefined ? existing.authorId : input.author_id,
-          localeCode:
-            input.locale_code === undefined ? existing.localeCode : input.locale_code,
+          localeCode: input.locale_code === undefined ? existing.localeCode : input.locale_code,
           updatedAt: new Date(),
         },
       });

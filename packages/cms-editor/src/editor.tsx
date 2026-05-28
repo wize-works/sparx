@@ -62,7 +62,7 @@ function ToolButton({ onClick, active, disabled, label, children }: ToolButtonPr
         'disabled:pointer-events-none disabled:opacity-40',
         active
           ? 'bg-[var(--module-active-tint)] text-[var(--module-active-text)]'
-          : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-subtle)] hover:text-[var(--color-text-primary)]',
+          : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-subtle)] hover:text-[var(--color-text-primary)]'
       )}
     >
       {children}
@@ -102,7 +102,7 @@ export function ContentBlockEditor({
           '[&_ol]:my-2 [&_ol]:list-decimal [&_ol]:pl-5',
           '[&_blockquote]:my-2 [&_blockquote]:border-l-2 [&_blockquote]:border-[var(--color-border-default)] [&_blockquote]:pl-3 [&_blockquote]:text-[var(--color-text-secondary)]',
           '[&_code]:rounded [&_code]:bg-[var(--color-bg-subtle)] [&_code]:px-1 [&_code]:py-0.5 [&_code]:font-mono [&_code]:text-xs',
-          '[&_pre]:my-2 [&_pre]:rounded-md [&_pre]:bg-[var(--color-bg-subtle)] [&_pre]:p-3 [&_pre]:text-xs',
+          '[&_pre]:my-2 [&_pre]:rounded-md [&_pre]:bg-[var(--color-bg-subtle)] [&_pre]:p-3 [&_pre]:text-xs'
         ),
       },
     },
@@ -137,7 +137,7 @@ export function ContentBlockEditor({
         'focus-within:ring-2 focus-within:ring-[var(--color-border-focus)] focus-within:ring-offset-2',
         'transition-colors duration-150',
         disabled && 'cursor-not-allowed opacity-50',
-        className,
+        className
       )}
     >
       <div
@@ -145,37 +145,73 @@ export function ContentBlockEditor({
         aria-label="Formatting"
         className="flex flex-wrap items-center gap-0.5 border-b border-[var(--color-border-default)] p-1"
       >
-        <ToolButton label="Bold" active={editor.isActive('bold')} onClick={() => editor.chain().focus().toggleBold().run()}>
+        <ToolButton
+          label="Bold"
+          active={editor.isActive('bold')}
+          onClick={() => editor.chain().focus().toggleBold().run()}
+        >
           <Bold className="h-3.5 w-3.5" />
         </ToolButton>
-        <ToolButton label="Italic" active={editor.isActive('italic')} onClick={() => editor.chain().focus().toggleItalic().run()}>
+        <ToolButton
+          label="Italic"
+          active={editor.isActive('italic')}
+          onClick={() => editor.chain().focus().toggleItalic().run()}
+        >
           <Italic className="h-3.5 w-3.5" />
         </ToolButton>
-        <ToolButton label="Strikethrough" active={editor.isActive('strike')} onClick={() => editor.chain().focus().toggleStrike().run()}>
+        <ToolButton
+          label="Strikethrough"
+          active={editor.isActive('strike')}
+          onClick={() => editor.chain().focus().toggleStrike().run()}
+        >
           <Strikethrough className="h-3.5 w-3.5" />
         </ToolButton>
-        <ToolButton label="Code" active={editor.isActive('code')} onClick={() => editor.chain().focus().toggleCode().run()}>
+        <ToolButton
+          label="Code"
+          active={editor.isActive('code')}
+          onClick={() => editor.chain().focus().toggleCode().run()}
+        >
           <CodeIcon className="h-3.5 w-3.5" />
         </ToolButton>
 
         <ToolDivider />
 
-        <ToolButton label="Heading 2" active={editor.isActive('heading', { level: 2 })} onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}>
+        <ToolButton
+          label="Heading 2"
+          active={editor.isActive('heading', { level: 2 })}
+          onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
+        >
           <Heading2 className="h-3.5 w-3.5" />
         </ToolButton>
-        <ToolButton label="Heading 3" active={editor.isActive('heading', { level: 3 })} onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}>
+        <ToolButton
+          label="Heading 3"
+          active={editor.isActive('heading', { level: 3 })}
+          onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
+        >
           <Heading3 className="h-3.5 w-3.5" />
         </ToolButton>
 
         <ToolDivider />
 
-        <ToolButton label="Bullet list" active={editor.isActive('bulletList')} onClick={() => editor.chain().focus().toggleBulletList().run()}>
+        <ToolButton
+          label="Bullet list"
+          active={editor.isActive('bulletList')}
+          onClick={() => editor.chain().focus().toggleBulletList().run()}
+        >
           <List className="h-3.5 w-3.5" />
         </ToolButton>
-        <ToolButton label="Ordered list" active={editor.isActive('orderedList')} onClick={() => editor.chain().focus().toggleOrderedList().run()}>
+        <ToolButton
+          label="Ordered list"
+          active={editor.isActive('orderedList')}
+          onClick={() => editor.chain().focus().toggleOrderedList().run()}
+        >
           <ListOrdered className="h-3.5 w-3.5" />
         </ToolButton>
-        <ToolButton label="Blockquote" active={editor.isActive('blockquote')} onClick={() => editor.chain().focus().toggleBlockquote().run()}>
+        <ToolButton
+          label="Blockquote"
+          active={editor.isActive('blockquote')}
+          onClick={() => editor.chain().focus().toggleBlockquote().run()}
+        >
           <Quote className="h-3.5 w-3.5" />
         </ToolButton>
 
@@ -186,10 +222,18 @@ export function ContentBlockEditor({
         </ToolButton>
 
         <span className="ml-auto flex items-center gap-0.5">
-          <ToolButton label="Undo" disabled={!editor.can().chain().focus().undo().run()} onClick={() => editor.chain().focus().undo().run()}>
+          <ToolButton
+            label="Undo"
+            disabled={!editor.can().chain().focus().undo().run()}
+            onClick={() => editor.chain().focus().undo().run()}
+          >
             <Undo2 className="h-3.5 w-3.5" />
           </ToolButton>
-          <ToolButton label="Redo" disabled={!editor.can().chain().focus().redo().run()} onClick={() => editor.chain().focus().redo().run()}>
+          <ToolButton
+            label="Redo"
+            disabled={!editor.can().chain().focus().redo().run()}
+            onClick={() => editor.chain().focus().redo().run()}
+          >
             <Redo2 className="h-3.5 w-3.5" />
           </ToolButton>
         </span>

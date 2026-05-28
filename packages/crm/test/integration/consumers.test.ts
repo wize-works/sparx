@@ -30,11 +30,7 @@ import {
   resetPlatformBusForTesting,
   type PlatformEventBus,
 } from '../../src/index.js';
-import {
-  createTestTenant,
-  dropTestTenant,
-  type TestTenant,
-} from '../helpers.js';
+import { createTestTenant, dropTestTenant, type TestTenant } from '../helpers.js';
 
 describe('CRM consumers', () => {
   let bus: PlatformEventBus;
@@ -111,7 +107,7 @@ describe('CRM consumers', () => {
     const activities = await withTenant(aliceCtx, (tx) =>
       tx.crmActivity.findMany({
         where: { customerId: aliceCustomerId, type: 'order.placed' },
-      }),
+      })
     );
     expect(activities).toHaveLength(1);
     expect(activities[0]?.linkedEntityId).toBe(orderId);
@@ -171,7 +167,7 @@ describe('CRM consumers', () => {
     const refund = await withTenant(aliceCtx, (tx) =>
       tx.crmActivity.findFirst({
         where: { customerId: aliceCustomerId, type: 'order.refunded' },
-      }),
+      })
     );
     expect(refund).not.toBeNull();
   });
@@ -195,7 +191,7 @@ describe('CRM consumers', () => {
     const activity = await withTenant(aliceCtx, (tx) =>
       tx.crmActivity.findFirst({
         where: { customerId: aliceCustomerId, type: 'email.unsubscribed' },
-      }),
+      })
     );
     expect(activity).not.toBeNull();
   });
@@ -217,7 +213,7 @@ describe('CRM consumers', () => {
       tx.crmActivity.findFirst({
         where: { customerId: aliceCustomerId, type: 'login' },
         orderBy: { createdAt: 'desc' },
-      }),
+      })
     );
     expect(activity).not.toBeNull();
     const metadata = activity!.metadata as Record<string, unknown>;

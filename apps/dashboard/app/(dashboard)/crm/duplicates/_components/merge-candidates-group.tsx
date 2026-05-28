@@ -8,12 +8,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
 import type { Customer } from '@sparx/db';
-import {
-  Badge,
-  Button,
-  Stack,
-  Text,
-} from '@sparx/ui';
+import { Badge, Button, Stack, Text } from '@sparx/ui';
 
 import { mergeCustomersAction } from '../../actions';
 
@@ -25,7 +20,7 @@ export function MergeCandidatesGroup({ customers }: Props) {
   const router = useRouter();
   const [primaryId, setPrimaryId] = useState<string>(customers[0]?.id ?? '');
   const [duplicateIds, setDuplicateIds] = useState<Set<string>>(
-    () => new Set(customers.slice(1).map((c) => c.id)),
+    () => new Set(customers.slice(1).map((c) => c.id))
   );
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -145,13 +140,11 @@ export function MergeCandidatesGroup({ customers }: Props) {
 
       <Stack direction="row" gap={2}>
         <Button onClick={onMerge} variant="module" disabled={pending}>
-          {pending
-            ? 'Merging…'
-            : `Merge ${duplicateIds.size} into primary`}
+          {pending ? 'Merging…' : `Merge ${duplicateIds.size} into primary`}
         </Button>
         <Text size="xs" variant="muted">
-          Activities, deals, tasks, and addresses on the duplicates reattach to the primary.
-          The duplicates are soft-deleted with a pointer to the primary.
+          Activities, deals, tasks, and addresses on the duplicates reattach to the primary. The
+          duplicates are soft-deleted with a pointer to the primary.
         </Text>
       </Stack>
     </Stack>

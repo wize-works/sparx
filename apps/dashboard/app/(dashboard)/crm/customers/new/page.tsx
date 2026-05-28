@@ -85,7 +85,8 @@ export default function NewCustomerPage() {
           </Button>
           <Heading level={1}>New customer</Heading>
           <Text variant="muted">
-            Add a contact manually. Prospects can later be promoted to retail or B2B with no row migration.
+            Add a contact manually. Prospects can later be promoted to retail or B2B with no row
+            migration.
           </Text>
         </Stack>
 
@@ -93,7 +94,9 @@ export default function NewCustomerPage() {
           <Card>
             <CardHeader>
               <Heading level={3}>Profile</Heading>
-              <CardDescription>Only the type is required — the rest is fillable later.</CardDescription>
+              <CardDescription>
+                Only the type is required — the rest is fillable later.
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <Stack gap={4}>

@@ -57,7 +57,7 @@ const publicContentRoutes: FastifyPluginAsync = async (app) => {
         orderBy: [{ publishedAt: 'desc' }, { id: 'desc' }],
         take: q.limit + 1,
         ...(q.cursor ? { cursor: { id: q.cursor }, skip: 1 } : {}),
-      }),
+      })
     );
     const hasMore = rows.length > q.limit;
     const page = hasMore ? rows.slice(0, q.limit) : rows;
@@ -71,7 +71,7 @@ const publicContentRoutes: FastifyPluginAsync = async (app) => {
     const row = await withTenant({ tenantId }, (tx) =>
       tx.contentEntry.findFirst({
         where: { typeKey: q.type, slug: q.slug, status: 'published', deletedAt: null },
-      }),
+      })
     );
     if (!row) throw notFound(`${q.type}`, q.slug);
     return ok(serializeEntry(row));
@@ -87,7 +87,7 @@ const publicContentRoutes: FastifyPluginAsync = async (app) => {
     const row = await withTenant({ tenantId }, (tx) =>
       tx.contentEntry.findFirst({
         where: { id, status: 'published', deletedAt: null },
-      }),
+      })
     );
     if (!row) throw notFound('Entry', id);
     return ok(serializeEntry(row));
@@ -101,7 +101,7 @@ const publicContentRoutes: FastifyPluginAsync = async (app) => {
       tx.contentType.findFirst({
         where: { key },
         orderBy: [{ isBuiltIn: 'asc' }, { updatedAt: 'desc' }],
-      }),
+      })
     );
     if (!row) throw notFound('Content type', key);
     return ok(row);

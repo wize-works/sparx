@@ -59,10 +59,10 @@ const INACTIVE_DAYS_DEFAULT = 90;
  *  (the RLS check fires before this function ever sees the row). */
 export async function buildCustomerProjection(
   ctx: ServiceContext,
-  customerId: string,
+  customerId: string
 ): Promise<CustomerProjection> {
   const customer = await withTenant(ctx, (tx) =>
-    tx.customer.findUnique({ where: { id: customerId } }),
+    tx.customer.findUnique({ where: { id: customerId } })
   );
   if (!customer || customer.deletedAt !== null) {
     throw new CrmNotFoundError('Customer', customerId);
@@ -78,9 +78,7 @@ export function projectionFromCustomer(customer: Customer): CustomerProjection {
   const lastOrderMs = customer.lastOrderAt?.getTime() ?? null;
   const daysSinceLastOrder =
     lastOrderMs === null ? null : Math.floor((now - lastOrderMs) / 86_400_000);
-  const daysSinceCreated = Math.floor(
-    (now - customer.createdAt.getTime()) / 86_400_000,
-  );
+  const daysSinceCreated = Math.floor((now - customer.createdAt.getTime()) / 86_400_000);
   const totalSpent = Number(customer.totalSpent);
 
   return {
@@ -118,11 +116,11 @@ export function projectionFromCustomer(customer: Customer): CustomerProjection {
  *  happened on a different platform), letting the consumer no-op gracefully. */
 export async function resolveCustomerByAuthUserId(
   ctx: ServiceContext,
-  authUserId: string,
+  authUserId: string
 ): Promise<Customer | null> {
   return withTenant(ctx, (tx) =>
     tx.customer.findFirst({
       where: { authUserId, deletedAt: null },
-    }),
+    })
   );
 }

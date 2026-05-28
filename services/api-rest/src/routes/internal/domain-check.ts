@@ -85,7 +85,7 @@ const domainCheckRoutes: FastifyPluginAsync = async (app) => {
       //   if (row) return reply.code(200).send({ allowed: true, source: 'tenant', domainId: row.id });
 
       return reply.code(403).send({ allowed: false, reason: 'unknown_host' });
-    },
+    }
   );
 };
 

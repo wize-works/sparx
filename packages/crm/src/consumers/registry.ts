@@ -51,13 +51,13 @@ export function registerCrmConsumers(opts: RegisterOptions = {}): ConsumerRegist
     bus.subscribe('module.activated', async (event) => {
       const slug = (event.payload as { module?: string } | null)?.module;
       if (slug === 'crm') invalidateModuleCache(event.tenantId, 'crm');
-    }),
+    })
   );
   teardowns.push(
     bus.subscribe('module.deactivated', async (event) => {
       const slug = (event.payload as { module?: string } | null)?.module;
       if (slug === 'crm') invalidateModuleCache(event.tenantId, 'crm');
-    }),
+    })
   );
 
   return {
@@ -86,7 +86,7 @@ export interface ConsumerContext {
  *    bus.subscribe('order.created', gateHandler(async (event) => { ... }))
  */
 export function gateHandler<T = unknown>(
-  handler: PlatformEventHandler<T>,
+  handler: PlatformEventHandler<T>
 ): PlatformEventHandler<T> {
   return async (event: PlatformEvent<T>) => {
     // Gate first — disabled tenants don't even consult dedupe.

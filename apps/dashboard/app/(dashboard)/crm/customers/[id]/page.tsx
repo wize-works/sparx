@@ -87,7 +87,7 @@ export default async function CustomerDetailPage({ params }: PageProps) {
   const aov = customer.orderCount > 0 ? totalSpent / customer.orderCount : 0;
   const lifetimeDays = Math.max(
     1,
-    Math.floor((Date.now() - customer.createdAt.getTime()) / 86_400_000),
+    Math.floor((Date.now() - customer.createdAt.getTime()) / 86_400_000)
   );
 
   return (
@@ -131,18 +131,17 @@ export default async function CustomerDetailPage({ params }: PageProps) {
                 label="Average order"
                 value={customer.orderCount > 0 ? `$${aov.toFixed(2)}` : '—'}
               />
-              <StatItem label="Lifetime" value={`${lifetimeDays} day${lifetimeDays === 1 ? '' : 's'}`} />
+              <StatItem
+                label="Lifetime"
+                value={`${lifetimeDays} day${lifetimeDays === 1 ? '' : 's'}`}
+              />
               <StatItem
                 label="First order"
-                value={
-                  customer.firstOrderAt ? customer.firstOrderAt.toLocaleDateString() : '—'
-                }
+                value={customer.firstOrderAt ? customer.firstOrderAt.toLocaleDateString() : '—'}
               />
               <StatItem
                 label="Last order"
-                value={
-                  customer.lastOrderAt ? customer.lastOrderAt.toLocaleDateString() : '—'
-                }
+                value={customer.lastOrderAt ? customer.lastOrderAt.toLocaleDateString() : '—'}
               />
             </Stack>
           </CardContent>
@@ -154,10 +153,12 @@ export default async function CustomerDetailPage({ params }: PageProps) {
             <Tabs defaultValue="activity">
               <TabsList>
                 <TabsTrigger value="activity">
-                  Activity {activities.length > 0 && <Badge variant="outline">{activities.length}</Badge>}
+                  Activity{' '}
+                  {activities.length > 0 && <Badge variant="outline">{activities.length}</Badge>}
                 </TabsTrigger>
                 <TabsTrigger value="tasks">
-                  Tasks {openTasks.length > 0 && <Badge variant="warning">{openTasks.length}</Badge>}
+                  Tasks{' '}
+                  {openTasks.length > 0 && <Badge variant="warning">{openTasks.length}</Badge>}
                 </TabsTrigger>
                 <TabsTrigger value="deals">Deals</TabsTrigger>
                 <TabsTrigger value="notes">Notes</TabsTrigger>
@@ -171,8 +172,8 @@ export default async function CustomerDetailPage({ params }: PageProps) {
                   <CardContent>
                     {activities.length === 0 ? (
                       <Text variant="muted" size="sm">
-                        No activity recorded yet. Orders, emails, and notes will appear here
-                        as they happen.
+                        No activity recorded yet. Orders, emails, and notes will appear here as they
+                        happen.
                       </Text>
                     ) : (
                       <ActivityTimeline activities={activities} />
@@ -193,7 +194,9 @@ export default async function CustomerDetailPage({ params }: PageProps) {
                   </CardHeader>
                   <CardContent>
                     {openTasks.length === 0 ? (
-                      <Text variant="muted" size="sm">No open tasks for this customer.</Text>
+                      <Text variant="muted" size="sm">
+                        No open tasks for this customer.
+                      </Text>
                     ) : (
                       <Stack gap={3}>
                         {openTasks.map((task) => (
@@ -230,8 +233,8 @@ export default async function CustomerDetailPage({ params }: PageProps) {
                 <Card>
                   <CardContent>
                     <Text variant="muted" size="sm">
-                      Deal list lands in Phase 3 (sales pipeline). Until then, deals attached
-                      to this customer can be opened from the Pipeline view.
+                      Deal list lands in Phase 3 (sales pipeline). Until then, deals attached to
+                      this customer can be opened from the Pipeline view.
                     </Text>
                   </CardContent>
                 </Card>
@@ -242,12 +245,10 @@ export default async function CustomerDetailPage({ params }: PageProps) {
                   <CardContent>
                     <Stack gap={4}>
                       <Text variant="muted" size="sm">
-                        Notes are recorded as activities of type <Badge variant="outline">note</Badge>.
-                        Use the right rail to add one.
+                        Notes are recorded as activities of type{' '}
+                        <Badge variant="outline">note</Badge>. Use the right rail to add one.
                       </Text>
-                      <ActivityTimeline
-                        activities={activities.filter((a) => a.type === 'note')}
-                      />
+                      <ActivityTimeline activities={activities.filter((a) => a.type === 'note')} />
                     </Stack>
                   </CardContent>
                 </Card>
@@ -269,7 +270,9 @@ export default async function CustomerDetailPage({ params }: PageProps) {
                       <Text size="sm">{customer.email}</Text>
                     </Stack>
                   ) : (
-                    <Text variant="muted" size="sm">No email on file.</Text>
+                    <Text variant="muted" size="sm">
+                      No email on file.
+                    </Text>
                   )}
                   {customer.phone && (
                     <Stack direction="row" align="center" gap={2}>
@@ -334,7 +337,15 @@ function StatItem({ label, value }: { label: string; value: string }) {
 function B2BAccountCard({
   account,
 }: {
-  account: { id: string; companyName: string; pricingTier: string | null; creditLimit: unknown; creditUsed: unknown; paymentTerms: string | null; status: string };
+  account: {
+    id: string;
+    companyName: string;
+    pricingTier: string | null;
+    creditLimit: unknown;
+    creditUsed: unknown;
+    paymentTerms: string | null;
+    status: string;
+  };
 }) {
   const limit = Number(account.creditLimit ?? 0);
   const used = Number(account.creditUsed ?? 0);
@@ -353,9 +364,7 @@ function B2BAccountCard({
           <Stack gap={1}>
             <Text size="sm">{account.companyName}</Text>
             <Stack direction="row" gap={2}>
-              {account.pricingTier && (
-                <Badge variant="outline">{account.pricingTier}</Badge>
-              )}
+              {account.pricingTier && <Badge variant="outline">{account.pricingTier}</Badge>}
               {account.status === 'credit_hold' && (
                 <Badge variant="warning">
                   <AlertCircle className="h-3 w-3" />
@@ -377,10 +386,7 @@ function B2BAccountCard({
                 </Text>
               </Stack>
               <div className="h-1.5 w-full overflow-hidden rounded-full bg-[var(--color-bg-subtle)]">
-                <div
-                  className="h-full bg-[var(--module-active)]"
-                  style={{ width: `${pct}%` }}
-                />
+                <div className="h-full bg-[var(--module-active)]" style={{ width: `${pct}%` }} />
               </div>
             </Stack>
           )}

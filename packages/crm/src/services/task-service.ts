@@ -26,10 +26,7 @@ export interface ListTasksFilter {
   take?: number;
 }
 
-export async function list(
-  ctx: ServiceContext,
-  filter: ListTasksFilter = {},
-): Promise<Task[]> {
+export async function list(ctx: ServiceContext, filter: ListTasksFilter = {}): Promise<Task[]> {
   return withTenant(ctx, (tx) =>
     tx.task.findMany({
       where: {
@@ -41,7 +38,7 @@ export async function list(
       },
       orderBy: [{ status: 'asc' }, { dueAt: 'asc' }],
       take: Math.min(filter.take ?? 50, 250),
-    }),
+    })
   );
 }
 
@@ -130,7 +127,7 @@ export async function create(ctx: ServiceContext, rawInput: unknown): Promise<Ta
 export async function update(
   ctx: ServiceContext,
   taskId: string,
-  rawInput: unknown,
+  rawInput: unknown
 ): Promise<Task> {
   const input = UpdateTaskInput.parse(rawInput);
   return withTenant(ctx, async (tx) => {
@@ -142,9 +139,7 @@ export async function update(
       ...(input.description !== undefined ? { description: input.description } : {}),
       ...(input.dueAt !== undefined ? { dueAt: input.dueAt ? new Date(input.dueAt) : null } : {}),
       ...(input.priority !== undefined ? { priority: input.priority } : {}),
-      ...(input.assignedToUserId !== undefined
-        ? { assignedToUserId: input.assignedToUserId }
-        : {}),
+      ...(input.assignedToUserId !== undefined ? { assignedToUserId: input.assignedToUserId } : {}),
       ...(input.customerId !== undefined ? { customerId: input.customerId } : {}),
       ...(input.dealId !== undefined ? { dealId: input.dealId } : {}),
       ...(input.status !== undefined ? { status: input.status } : {}),
@@ -230,7 +225,7 @@ export async function complete(ctx: ServiceContext, rawInput: unknown): Promise<
  *  omitted). The Phase 5 overdue-reminder worker calls this. */
 export async function getOverdue(
   ctx: ServiceContext,
-  args: { userId?: string } = {},
+  args: { userId?: string } = {}
 ): Promise<Task[]> {
   return withTenant(ctx, (tx) =>
     tx.task.findMany({
@@ -240,7 +235,7 @@ export async function getOverdue(
         ...(args.userId ? { assignedToUserId: args.userId } : {}),
       },
       orderBy: { dueAt: 'asc' },
-    }),
+    })
   );
 }
 
@@ -248,7 +243,7 @@ export async function getOverdue(
  *  dashboard widget. */
 export async function getTodayForUser(
   ctx: ServiceContext,
-  args: { userId: string },
+  args: { userId: string }
 ): Promise<Task[]> {
   const startOfDay = new Date();
   startOfDay.setHours(0, 0, 0, 0);
@@ -265,6 +260,6 @@ export async function getTodayForUser(
         ],
       },
       orderBy: [{ dueAt: 'asc' }, { priority: 'desc' }],
-    }),
+    })
   );
 }

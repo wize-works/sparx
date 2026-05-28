@@ -5,15 +5,8 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { withTenant } from '@sparx/db';
-import {
-  buildCustomerProjection,
-  customerService,
-} from '../../src/index.js';
-import {
-  disposeTestContext,
-  makeTestContext,
-  type TestContext,
-} from '../helpers.js';
+import { buildCustomerProjection, customerService } from '../../src/index.js';
+import { disposeTestContext, makeTestContext, type TestContext } from '../helpers.js';
 
 describe('customer projection', () => {
   let test: TestContext;
@@ -48,8 +41,13 @@ describe('customer projection', () => {
     await withTenant(test.ctx, (tx) =>
       tx.customer.update({
         where: { id: c.id },
-        data: { totalSpent: 7500, orderCount: 3, lastOrderAt: new Date(), firstOrderAt: new Date() },
-      }),
+        data: {
+          totalSpent: 7500,
+          orderCount: 3,
+          lastOrderAt: new Date(),
+          firstOrderAt: new Date(),
+        },
+      })
     );
 
     const p = await buildCustomerProjection(test.ctx, c.id);
@@ -72,7 +70,7 @@ describe('customer projection', () => {
           firstOrderAt: longAgo,
           lastOrderAt: longAgo,
         },
-      }),
+      })
     );
 
     const p = await buildCustomerProjection(test.ctx, c.id);
@@ -82,7 +80,7 @@ describe('customer projection', () => {
 
   it('throws NOT_FOUND for a missing customer', async () => {
     await expect(
-      buildCustomerProjection(test.ctx, '00000000-0000-0000-0000-000000000000'),
+      buildCustomerProjection(test.ctx, '00000000-0000-0000-0000-000000000000')
     ).rejects.toMatchObject({ code: 'NOT_FOUND', entityType: 'Customer' });
   });
 });

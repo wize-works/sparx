@@ -46,13 +46,12 @@ export class ApiError extends Error {
 export const unauthorized = (message = 'Authentication required.'): ApiError =>
   new ApiError('UNAUTHORIZED', message);
 
-export const forbidden = (message = 'Not allowed.'): ApiError =>
-  new ApiError('FORBIDDEN', message);
+export const forbidden = (message = 'Not allowed.'): ApiError => new ApiError('FORBIDDEN', message);
 
 export const notFound = (entity: string, identifier?: string): ApiError =>
   new ApiError(
     'NOT_FOUND',
-    identifier ? `${entity} "${identifier}" not found.` : `${entity} not found.`,
+    identifier ? `${entity} "${identifier}" not found.` : `${entity} not found.`
   );
 
 export const conflict = (message: string, details?: unknown): ApiError =>

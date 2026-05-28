@@ -129,7 +129,9 @@ export function EditPageForm({ page }: { page: EditableTenantPage }) {
         <Card>
           <CardHeader>
             <Heading level={3}>Content</Heading>
-            <CardDescription>Block editor — autosave + revisions land in the next pass.</CardDescription>
+            <CardDescription>
+              Block editor — autosave + revisions land in the next pass.
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <Stack gap={4}>

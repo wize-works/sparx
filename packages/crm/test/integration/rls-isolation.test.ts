@@ -13,11 +13,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { prisma } from '@sparx/db';
 import { customerService, dealService, pipelineService } from '../../src/services/index.js';
-import {
-  createTestTenant,
-  dropTestTenant,
-  type TestTenant,
-} from '../helpers.js';
+import { createTestTenant, dropTestTenant, type TestTenant } from '../helpers.js';
 
 describe('cross-tenant RLS isolation', () => {
   let alice: TestTenant;
@@ -91,14 +87,14 @@ describe('cross-tenant RLS isolation', () => {
 
   it("Bob cannot update Alice's customer", async () => {
     await expect(
-      customerService.update(bobCtx, aliceCustomerId, { firstName: 'pwned' }),
+      customerService.update(bobCtx, aliceCustomerId, { firstName: 'pwned' })
     ).rejects.toMatchObject({ code: 'NOT_FOUND' });
   });
 
   it("Bob cannot soft-delete Alice's customer", async () => {
-    await expect(customerService.softDelete(bobCtx, aliceCustomerId)).rejects.toMatchObject(
-      { code: 'NOT_FOUND' },
-    );
+    await expect(customerService.softDelete(bobCtx, aliceCustomerId)).rejects.toMatchObject({
+      code: 'NOT_FOUND',
+    });
 
     // And Alice's row is still there.
     const stillThere = await customerService.get(aliceCtx, aliceCustomerId);

@@ -26,7 +26,7 @@ export async function writeAudit(
   tx: TxClient,
   request: FastifyRequest,
   auth: AuthContext,
-  entry: AuditEntry,
+  entry: AuditEntry
 ): Promise<void> {
   const diff =
     entry.before !== undefined || entry.after !== undefined
@@ -44,10 +44,7 @@ export async function writeAudit(
       // Prisma's JSON field accepts `JsonNullValueInput` or
       // `InputJsonValue` — passing JS `null` is a runtime error, so we
       // explicitly use `Prisma.JsonNull` for the "no diff" case.
-      diff:
-        diff === null
-          ? Prisma.JsonNull
-          : (diff as unknown as Prisma.InputJsonValue),
+      diff: diff === null ? Prisma.JsonNull : (diff as unknown as Prisma.InputJsonValue),
       ipAddress: request.ip || null,
       userAgent: request.headers['user-agent'] ?? null,
     },

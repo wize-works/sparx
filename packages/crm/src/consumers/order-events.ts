@@ -99,28 +99,40 @@ export function registerOrderEventConsumers(ctx: ConsumerContext): Array<() => v
               AND first_order_at IS NULL
           `;
         });
-      }),
+      })
     ),
 
     ctx.bus.subscribe(
       'order.fulfilled',
       gateHandler(async (event) => {
-        await recordLifecycleActivity(event.tenantId, event.payload as OrderLifecyclePayload, 'order.shipped');
-      }),
+        await recordLifecycleActivity(
+          event.tenantId,
+          event.payload as OrderLifecyclePayload,
+          'order.shipped'
+        );
+      })
     ),
 
     ctx.bus.subscribe(
       'order.delivered',
       gateHandler(async (event) => {
-        await recordLifecycleActivity(event.tenantId, event.payload as OrderLifecyclePayload, 'order.delivered');
-      }),
+        await recordLifecycleActivity(
+          event.tenantId,
+          event.payload as OrderLifecyclePayload,
+          'order.delivered'
+        );
+      })
     ),
 
     ctx.bus.subscribe(
       'order.cancelled',
       gateHandler(async (event) => {
-        await recordLifecycleActivity(event.tenantId, event.payload as OrderLifecyclePayload, 'order.cancelled');
-      }),
+        await recordLifecycleActivity(
+          event.tenantId,
+          event.payload as OrderLifecyclePayload,
+          'order.cancelled'
+        );
+      })
     ),
 
     ctx.bus.subscribe(
@@ -153,7 +165,7 @@ export function registerOrderEventConsumers(ctx: ConsumerContext): Array<() => v
             data: { totalSpent: { decrement: payload.refundAmount } },
           });
         });
-      }),
+      })
     ),
   ];
 }
@@ -161,7 +173,7 @@ export function registerOrderEventConsumers(ctx: ConsumerContext): Array<() => v
 async function recordLifecycleActivity(
   tenantId: string,
   payload: OrderLifecyclePayload,
-  type: 'order.shipped' | 'order.delivered' | 'order.cancelled',
+  type: 'order.shipped' | 'order.delivered' | 'order.cancelled'
 ): Promise<void> {
   const occurredAt = payload.occurredAt ? new Date(payload.occurredAt) : new Date();
   await withTenant({ tenantId }, async (tx) => {

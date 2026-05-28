@@ -50,7 +50,7 @@ describe('content entry lifecycle', () => {
     entryId = res.json().data.id;
 
     const revisions = await withTenant({ tenantId: tenant.tenantId }, (tx) =>
-      tx.contentRevision.findMany({ where: { entryId } }),
+      tx.contentRevision.findMany({ where: { entryId } })
     );
     expect(revisions.length).toBe(1);
     expect(revisions[0]?.kind).toBe('manual');
@@ -76,7 +76,7 @@ describe('content entry lifecycle', () => {
       tx.contentRevision.findMany({
         where: { entryId },
         orderBy: { revisionNumber: 'desc' },
-      }),
+      })
     );
     expect(revisions.length).toBe(2);
     expect(revisions[0]?.kind).toBe('autosave');
@@ -146,7 +146,7 @@ describe('content entry lifecycle', () => {
     expect(list.json().data.map((e: { id: string }) => e.id)).not.toContain(entryId);
 
     const row = await withTenant({ tenantId: tenant.tenantId }, (tx) =>
-      tx.contentEntry.findFirst({ where: { id: entryId } }),
+      tx.contentEntry.findFirst({ where: { id: entryId } })
     );
     expect(row?.deletedAt).not.toBeNull();
   });
@@ -156,7 +156,7 @@ describe('content entry lifecycle', () => {
       tx.auditLog.findMany({
         where: { entityType: 'content_entry', entityId: entryId },
         orderBy: { createdAt: 'asc' },
-      }),
+      })
     );
     const actions = rows.map((r) => r.action);
     expect(actions).toEqual(
@@ -167,7 +167,7 @@ describe('content entry lifecycle', () => {
         'content.entry.scheduled',
         'content.entry.unpublished',
         'content.entry.deleted',
-      ]),
+      ])
     );
   });
 });
