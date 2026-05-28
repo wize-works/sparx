@@ -29,9 +29,11 @@ interface PageProps {
 
 const STATUS_VARIANT: Record<string, 'success' | 'warning' | 'outline' | 'danger'> = {
   active: 'success',
-  on_hold: 'warning',
-  closed: 'outline',
+  credit_hold: 'warning',
+  suspended: 'danger',
+  inactive: 'outline',
 };
+const STATUS_VALUES = ['active', 'credit_hold', 'suspended', 'inactive'] as const;
 
 export default async function B2bAccountsPage({ searchParams }: PageProps) {
   const session = await requireSession();
@@ -43,7 +45,9 @@ export default async function B2bAccountsPage({ searchParams }: PageProps) {
     { tenantId: session.user.tenantId, userId: session.user.id },
     {
       take: 100,
-      ...(status ? { status } : {}),
+      ...(status && (STATUS_VALUES as readonly string[]).includes(status)
+        ? { status: status as (typeof STATUS_VALUES)[number] }
+        : {}),
       ...(q ? { q } : {}),
     }
   );

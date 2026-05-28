@@ -28,8 +28,9 @@ interface PageProps {
 
 const STATUS_VARIANT: Record<string, 'success' | 'warning' | 'outline' | 'danger'> = {
   active: 'success',
-  on_hold: 'warning',
-  closed: 'outline',
+  credit_hold: 'warning',
+  suspended: 'danger',
+  inactive: 'outline',
 };
 
 export default async function B2bAccountDetailPage({ params }: PageProps) {
@@ -131,7 +132,7 @@ export default async function B2bAccountDetailPage({ params }: PageProps) {
                 {utilization >= 75 && (
                   <Stack direction="row" align="center" gap={1}>
                     <AlertTriangle className="h-3.5 w-3.5 text-[var(--color-warning-500)]" />
-                    <Text size="sm" variant="warning">
+                    <Text size="sm" className="text-[var(--color-warning-500)]">
                       Near credit limit
                     </Text>
                   </Stack>

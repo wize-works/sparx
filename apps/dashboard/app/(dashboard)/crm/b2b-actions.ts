@@ -32,14 +32,19 @@ export async function updateB2bAccountAction(
   });
 }
 
-export async function setB2bCreditHoldAction(
+/** Credit-hold toggle — just a status flip on the B2B account row.
+ *  Going through update() means the audit row + RLS check happen via the
+ *  same path the rest of the form uses; a dedicated service method would
+ *  add no invariant a status change doesn't already cover. */
+export async function setB2bAccountStatusAction(
   accountId: string,
-  input: unknown
-): Promise<ActionResult<{ id: string }>> {
+  status: 'active' | 'on_hold' | 'closed'
+): Promise<ActionResult<{ id: string; status: string }>> {
   return runAction(async () => {
     const ctx = await sessionContext();
-    const account = await b2bAccountService.setCreditHold(ctx, accountId, input);
+    const account = await b2bAccountService.update(ctx, accountId, { status });
+    revalidatePath('/crm/b2b');
     revalidatePath(`/crm/b2b/${accountId}`);
-    return { id: account.id };
+    return { id: account.id, status: account.status };
   });
 }
