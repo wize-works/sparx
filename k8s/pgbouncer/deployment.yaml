@@ -18,7 +18,7 @@ spec:
       serviceAccountName: pgbouncer
       containers:
         - name: pgbouncer
-          image: edoburu/pgbouncer:1.23.0
+          image: edoburu/pgbouncer:v1.25.1-p0
           ports:
             - name: pgbouncer
               containerPort: 5432

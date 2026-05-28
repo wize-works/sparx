@@ -3,10 +3,10 @@ kind: Kustomization
 namespace: sparx-prod
 resources:
   - web.yaml
+  - api-rest.yaml
+  - dashboard.yaml
 # Add per-app manifests here as they ship to Artifact Registry.
 # Templates available:
-#   - api-rest.example.yaml
 #   - api-graphql (copy from api-rest.example.yaml)
 #   - api-mcp     (copy from api-rest.example.yaml)
-#   - dashboard   (copy from api-rest.example.yaml)
 #   - storefront  (copy from api-rest.example.yaml)

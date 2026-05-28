@@ -28,6 +28,9 @@ on:
           - caddy
           - redis
           - pgbouncer
+          - app-env
+          - app-secrets
+          - apps
 
 permissions:
   contents: read
@@ -100,8 +103,78 @@ jobs:
         if: ${{ inputs.components == 'all-platform' || inputs.components == 'pgbouncer' }}
         run: |
           set -euo pipefail
+          # PgBouncer reads POSTGRES_HOST and POSTGRES_PASSWORD from
+          # `pgbouncer-secrets`. Source of truth: the Cloud SQL private IP
+          # (from terraform output) and the app role password (sparx-db-app-password
+          # in Secret Manager).
+          DB_HOST=$(gcloud sql instances list --project="$PROJECT_ID" \
+            --filter="name~sparx-prod-pg" --format="value(ipAddresses[0].ipAddress)" | head -1)
+          DB_PWD=$(gcloud secrets versions access latest --secret=sparx-db-app-password --project="$PROJECT_ID")
+          kubectl create secret generic pgbouncer-secrets \
+            -n "$NAMESPACE" \
+            --from-literal=POSTGRES_HOST="$DB_HOST" \
+            --from-literal=POSTGRES_PASSWORD="$DB_PWD" \
+            --dry-run=client -o yaml | kubectl apply -f -
           kubectl apply -k k8s/pgbouncer/
+          # If the image or env changed, force a rollout so existing pods pick
+          # up the new spec.
+          kubectl rollout restart deployment/pgbouncer -n "$NAMESPACE"
           kubectl rollout status deployment/pgbouncer -n "$NAMESPACE" --timeout=5m
+
+      # Non-secret app env shared by api-rest, dashboard, and future services.
+      # Pulls from k8s/sparx-prod/app-env-configmap.yaml. Pod restarts pick up
+      # changes on the next rollout (no automatic refresh — explicit by design).
+      - name: Apply sparx-app-env ConfigMap
+        if: ${{ inputs.components == 'all-platform' || inputs.components == 'app-env' }}
+        run: |
+          set -euo pipefail
+          kubectl apply -f k8s/sparx-prod/app-env-configmap.yaml
+
+      # Pull every entry of the canonical secret list out of GCP Secret Manager
+      # and recreate `sparx-app-secrets` from them. This mirrors what
+      # k8s/scripts/sync-secrets.ps1 does locally, but workflow-driven so the
+      # cluster state is reproducible from CI. Missing-in-SM secrets are
+      # warned, not failed — phase 1 doesn't have every key populated yet.
+      - name: Sync sparx-app-secrets from Secret Manager
+        if: ${{ inputs.components == 'all-platform' || inputs.components == 'app-secrets' }}
+        run: |
+          set -euo pipefail
+          KEYS=(
+            database-url
+            redis-url
+            better-auth-secret
+            sparx-internal-jwt-secret
+            stripe-secret-key
+            stripe-webhook-secret
+            godaddy-api-key-ote
+            godaddy-api-secret-ote
+            godaddy-api-key-prod
+            godaddy-api-secret-prod
+            postal-api-key
+            cloudflare-api-token
+          )
+          literals=()
+          for key in "${KEYS[@]}"; do
+            if value=$(gcloud secrets versions access latest --secret="$key" --project="$PROJECT_ID" 2>/dev/null); then
+              env_name=$(echo "$key" | tr 'a-z-' 'A-Z_')
+              literals+=("--from-literal=${env_name}=${value}")
+              echo "  + $env_name"
+            else
+              echo "::warning::Skipping $key — not set in Secret Manager yet."
+            fi
+          done
+          kubectl delete secret sparx-app-secrets -n "$NAMESPACE" --ignore-not-found
+          kubectl create secret generic sparx-app-secrets -n "$NAMESPACE" "${literals[@]}"
+
+      # App Deployments themselves (web, api-rest, dashboard). The deploy-prod
+      # workflow only rolls images into existing Deployments — this step is
+      # what *creates* them in the first place. Re-apply is safe (kubectl
+      # apply is declarative).
+      - name: Apply app Deployments
+        if: ${{ inputs.components == 'all-platform' || inputs.components == 'apps' }}
+        run: |
+          set -euo pipefail
+          kubectl apply -k k8s/apps/
 
       - name: Show cluster state
         if: always()

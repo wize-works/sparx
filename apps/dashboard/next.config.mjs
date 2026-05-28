@@ -1,6 +1,10 @@
-import type { NextConfig } from 'next';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const config: NextConfig = {
+const __dirname = dirname(fileURLToPath(import.meta.url));
+
+/** @type {import('next').NextConfig} */
+const config = {
   reactStrictMode: true,
   transpilePackages: [
     '@sparx/ui',
@@ -13,6 +17,8 @@ const config: NextConfig = {
   ],
   serverExternalPackages: ['@prisma/client', 'better-auth'],
   typedRoutes: true,
+  output: 'standalone',
+  outputFileTracingRoot: join(__dirname, '../../'),
 };
 
 export default config;

@@ -21,6 +21,7 @@ $secretKeys = @(
     "database-url",
     "redis-url",
     "better-auth-secret",
+    "sparx-internal-jwt-secret",
     "stripe-secret-key",
     "stripe-webhook-secret",
     "godaddy-api-key-ote",

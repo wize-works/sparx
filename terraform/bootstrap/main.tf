@@ -62,6 +62,9 @@ resource "google_project_iam_member" "deployer_roles" {
     "roles/artifactregistry.writer",
     "roles/container.developer",
     "roles/cloudsql.client",
+    # Needed so the bootstrap workflow can resolve the Cloud SQL private IP
+    # at runtime when seeding pgbouncer-secrets (sql.instances.get).
+    "roles/cloudsql.viewer",
     "roles/secretmanager.secretAccessor",
     "roles/storage.objectAdmin",
     "roles/iam.serviceAccountUser",

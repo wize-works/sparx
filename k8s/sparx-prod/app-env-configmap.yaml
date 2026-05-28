@@ -1,0 +1,22 @@
+# sparx-app-env — non-secret runtime env shared by api-rest, dashboard,
+# and future @sparx services. Secrets (DATABASE_URL, JWT secret, Stripe
+# keys, etc.) live in `sparx-app-secrets` and are synced from GCP Secret
+# Manager via k8s/scripts/sync-secrets.ps1.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: sparx-app-env
+  namespace: sparx-prod
+data:
+  # Where pods publish events. Empty / absent disables Pub/Sub (dev path).
+  GCP_PROJECT_ID: sparxworks
+  PUBSUB_TOPIC: sparx.events
+  # Better Auth / dashboard need to know the canonical public origin so the
+  # OAuth/session cookies scope correctly. NOT a secret.
+  BETTER_AUTH_URL: https://app.sparx.works
+  NEXT_PUBLIC_APP_URL: https://app.sparx.works
+  NEXT_PUBLIC_API_URL: https://api.sparx.works
+  NEXT_PUBLIC_MARKETING_URL: https://sparx.works
+  # Dashboard → api-rest in-cluster URL. Avoids going out through Caddy.
+  SPARX_API_REST_URL: http://api-rest.sparx-prod.svc.cluster.local:3000
+  LOG_LEVEL: info
