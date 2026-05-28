@@ -1,12 +1,20 @@
 name: Deploy to production
 
+# Triggered by a v* tag push (from release-please) or manual workflow_dispatch.
+# Rolls out the image for the resolved tag to each Deployment that exists in
+# the cluster, then runs a smoke check.
+#
+# Migrations are NOT part of this workflow — db-migrate.yml owns them and
+# runs on every push to main that touches the schema. By the time a tag is
+# released and this workflow runs, migrations have already been applied.
+
 on:
   push:
     tags: ['v*']
   workflow_dispatch:
     inputs:
       sha:
-        description: "Image tag/sha to deploy (default: current commit)"
+        description: 'Image tag/sha to deploy (default: current commit)'
         required: false
 
 permissions:
@@ -23,53 +31,8 @@ env:
   DEPLOYER_SA: sparx-deployer@sparxworks.iam.gserviceaccount.com
 
 jobs:
-  migrate:
-    name: Run Prisma migrations
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: google-github-actions/auth@v2
-        with:
-          workload_identity_provider: ${{ env.WIF_PROVIDER }}
-          service_account: ${{ env.DEPLOYER_SA }}
-
-      - uses: google-github-actions/get-gke-credentials@v2
-        with:
-          cluster_name: ${{ env.CLUSTER }}
-          location: ${{ env.REGION }}
-
-      - name: Resolve image tag
-        id: tag
-        run: |
-          TAG="${{ inputs.sha || github.sha }}"
-          if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
-            TAG="${GITHUB_REF#refs/tags/}"
-          fi
-          echo "tag=$TAG" >> $GITHUB_OUTPUT
-
-      - name: Apply migration Job
-        run: |
-          # Render the Job template with the current image tag and apply it.
-          # The Job runs `prisma migrate deploy` against pgbouncer (which forwards
-          # to Cloud SQL on the private IP) — safe because GKE pods are inside
-          # the same VPC as Cloud SQL.
-          sed \
-            -e "s|IMAGE_TAG|${{ steps.tag.outputs.tag }}|g" \
-            -e "s|PROJECT_ID|${{ env.PROJECT_ID }}|g" \
-            -e "s|JOB_SUFFIX|$(echo ${{ github.run_id }} | tail -c 9)|g" \
-            k8s/jobs/migrate.yaml | kubectl apply -f -
-
-      - name: Wait for migrations to complete
-        run: |
-          JOB="sparx-migrate-$(echo ${{ github.run_id }} | tail -c 9)"
-          kubectl wait --for=condition=complete --timeout=15m job/$JOB -n $NAMESPACE
-          kubectl logs -n $NAMESPACE job/$JOB --tail=200
-
   deploy:
     name: Rollout
-    needs: migrate
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -80,10 +43,17 @@ jobs:
           workload_identity_provider: ${{ env.WIF_PROVIDER }}
           service_account: ${{ env.DEPLOYER_SA }}
 
-      - uses: google-github-actions/get-gke-credentials@v2
+      # Connect Gateway routes through Google's proxy and works against the
+      # private GKE endpoint. `get-gke-credentials@v2` returns the public IP
+      # which is unreachable from the runner — that's what caused the i/o
+      # timeout against 35.255.x.x in earlier runs.
+      - name: Set up gcloud
+        uses: google-github-actions/setup-gcloud@v2
         with:
-          cluster_name: ${{ env.CLUSTER }}
-          location: ${{ env.REGION }}
+          install_components: gke-gcloud-auth-plugin
+
+      - name: Get GKE credentials via Connect Gateway
+        run: gcloud container fleet memberships get-credentials "$CLUSTER" --location "$REGION"
 
       - name: Resolve image tag
         id: tag
@@ -115,8 +85,8 @@ jobs:
 
       - name: Smoke test
         run: |
-          # Hit /health on the public endpoints. Will only succeed once Cloudflare
-          # is live and DNS resolves.
+          # Hit /health on the public endpoints. Will only succeed once
+          # Cloudflare is live and DNS resolves.
           for host in api.sparx.works app.sparx.works mcp.sparx.works; do
             if curl -fsSL --max-time 10 "https://$host/health" >/dev/null; then
               echo "OK: $host"
