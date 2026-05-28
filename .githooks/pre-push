@@ -21,7 +21,11 @@ fail() { printf "${RED}✗ %s${RESET}\n" "$1"; exit 1; }
 step "pre-push: verifying tree before push"
 
 step "pnpm install --frozen-lockfile (lockfile drift check)"
-pnpm install --frozen-lockfile --silent || fail "pnpm-lock.yaml out of sync with a package.json — run \`pnpm install\` and commit the updated lockfile"
+# --ignore-scripts skips postinstall (prisma generate); the hook only needs
+# to verify lockfile consistency, not regenerate the client. Avoids the
+# Windows EPERM file-lock that postinstall is prone to on already-built
+# Prisma engines.
+pnpm install --frozen-lockfile --ignore-scripts --silent || fail "pnpm-lock.yaml out of sync with a package.json — run \`pnpm install\` and commit the updated lockfile"
 ok "lockfile in sync"
 
 step "pnpm format:check"

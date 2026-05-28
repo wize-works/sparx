@@ -109,8 +109,12 @@ jobs:
             ${{ steps.tags.outputs.sha_tag }}
             ${{ steps.tags.outputs.version_tag }}
             ${{ steps.tags.outputs.latest_tag }}
+          # mode=min exports only the final image layers, not every
+          # intermediate. mode=max regularly hangs uploading the heavy
+          # Next.js layers to GitHub Actions Cache (the image itself
+          # had already been pushed to AR by the time we noticed).
           cache-from: type=gha,scope=${{ matrix.service }}
-          cache-to: type=gha,mode=max,scope=${{ matrix.service }}
+          cache-to: type=gha,mode=min,scope=${{ matrix.service }}
 
       - name: Trivy scan
         if: steps.dockerfile.outputs.path != ''
