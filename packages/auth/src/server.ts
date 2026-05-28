@@ -1,7 +1,7 @@
 import { betterAuth } from 'better-auth';
 import { prismaAdapter } from 'better-auth/adapters/prisma';
 import { nextCookies } from 'better-auth/next-js';
-import { authPrisma } from './prisma.js';
+import { authPrisma } from './prisma';
 
 // Sparx Better Auth server instance. One per process — same caching strategy
 // as @sparx/db's prisma client so dev HMR does not leak adapters.
@@ -15,7 +15,6 @@ import { authPrisma } from './prisma.js';
 // landed. Tenant context is carried on User.tenantId until then.
 
 declare global {
-  // eslint-disable-next-line no-var
   var __sparxAuth: ReturnType<typeof createAuth> | undefined;
 }
 

@@ -24,19 +24,25 @@
   "scripts": {
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
+    "verify": "tsx scripts/verify-signup.ts",
     "clean": "rm -rf .turbo dist *.tsbuildinfo"
   },
   "dependencies": {
+    "@prisma/client": "^6.19.3",
     "@sparx/db": "workspace:*",
     "better-auth": "^1.6.11"
   },
   "peerDependencies": {
+    "next": "^16.0.0",
     "react": "^19.0.0"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",
     "@types/react": "^19.0.0",
+    "dotenv": "^16.4.7",
+    "next": "^16.2.6",
     "react": "^19.0.0",
+    "tsx": "^4.19.2",
     "typescript": "^5.7.0"
   }
 }

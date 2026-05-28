@@ -1,0 +1,13 @@
+.next/
+.turbo/
+node_modules/
+*.tsbuildinfo
+
+# Playwright artefacts
+playwright-report/
+test-results/
+playwright/.auth/
+
+# Local env
+.env
+.env.local

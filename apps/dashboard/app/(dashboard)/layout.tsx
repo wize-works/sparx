@@ -1,18 +1,11 @@
-import { redirect } from 'next/navigation';
-import { headers } from 'next/headers';
-import { auth } from '@sparx/auth/server';
+import { requireSession } from '@sparx/auth';
 import { DashboardShell } from './_components/dashboard-shell';
 
-// Server-side session gate. If there's no session, bounce to /sign-in before
-// the client ever sees the dashboard chrome. Everything that needs the user
-// (UserMenu, etc.) receives it as a prop — no client-side useSession ping on
-// first paint.
+// Server-side session gate. requireSession() redirects to /sign-in when there
+// is no session, so by the time we hit the shell we have a known user +
+// tenantId. The shell only needs the user; tenantId travels via context-aware
+// helpers (withTenant) inside server actions.
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const session = await auth.api.getSession({ headers: await headers() });
-
-  if (!session) {
-    redirect('/sign-in');
-  }
-
-  return <DashboardShell user={session.user}>{children}</DashboardShell>;
+  const { user } = await requireSession();
+  return <DashboardShell user={user}>{children}</DashboardShell>;
 }

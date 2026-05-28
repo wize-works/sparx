@@ -1,0 +1,94 @@
+# Migration Job — applied by .github/workflows/db-migrate.yml after the
+# runner image has been built and pushed. The workflow substitutes ${IMAGE}
+# and ${RUN_SEED} via `envsubst` before kubectl apply.
+#
+# The Job name includes ${RUN_ID} so each workflow run creates a fresh Job
+# (k8s Jobs are immutable). TTL of 1h cleans up completed Jobs automatically.
+#
+# Two containers:
+#   - cloud-sql-proxy (sidecar) — listens on 127.0.0.1:5432, connects to the
+#     Cloud SQL instance via PRIVATE IP from inside the VPC. Uses Workload
+#     Identity for IAM auth (no key file needed).
+#   - migrate (main) — fetches DB passwords from Secret Manager and runs
+#     bootstrap.sql + prisma migrate deploy + (optionally) the seed.
+#
+# Sidecar pattern: the proxy is marked restartPolicy: Always inside the
+# initContainers list — this is k8s 1.29+ native sidecar support, which
+# ensures the proxy starts before the main container AND terminates after.
+# Without it, the proxy would keep running after migrate exits and the Job
+# would never report success.
+
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: db-migrate-${RUN_ID}
+  namespace: sparx-prod
+  labels:
+    app.kubernetes.io/name: db-migrate
+    app.kubernetes.io/part-of: sparx
+    app.kubernetes.io/component: migration
+spec:
+  ttlSecondsAfterFinished: 3600
+  backoffLimit: 1
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: db-migrate
+    spec:
+      serviceAccountName: sparx-db-migrator
+      restartPolicy: Never
+      initContainers:
+        - name: cloud-sql-proxy
+          image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.21.3
+          restartPolicy: Always  # native sidecar (k8s 1.29+)
+          args:
+            - "--private-ip"
+            - "--port=5432"
+            - "--health-check"
+            - "--http-port=9090"
+            - "sparxworks:us-central1:sparx-prod-pg-6b5d7d"
+          startupProbe:
+            httpGet:
+              path: /startup
+              port: 9090
+            periodSeconds: 2
+            failureThreshold: 30
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "256Mi"
+      containers:
+        - name: migrate
+          image: ${IMAGE}
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: GCP_PROJECT_ID
+              value: "sparxworks"
+            - name: PROXY_HOST
+              value: "127.0.0.1"
+            - name: PROXY_PORT
+              value: "5432"
+            - name: DB_NAME
+              value: "sparx"
+            - name: RUN_SEED
+              value: "${RUN_SEED}"
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            requests:
+              cpu: "200m"
+              memory: "512Mi"
+            limits:
+              cpu: "1000m"
+              memory: "1Gi"

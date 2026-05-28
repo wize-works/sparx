@@ -1,4 +1,8 @@
 import Link from 'next/link';
+import { requireSession } from '@sparx/auth';
+import { withTenant } from '@sparx/db';
+import { OnboardingBanner } from './_components/onboarding-banner';
+import { loadOnboardingProgress } from './welcome/onboarding';
 import {
   Badge,
   Button,
@@ -45,15 +49,7 @@ interface ModuleSummary {
   href: string;
 }
 
-const ACTIVE_MODULES: ModuleSummary[] = [
-  {
-    id: 'cms',
-    label: 'CMS',
-    description: 'Pages, blog posts, media library',
-    metric: '42 pages',
-    href: '/cms',
-  },
-];
+export const dynamic = 'force-dynamic';
 
 const COMING_SOON: { href: string; label: string; description: string; icon: React.ReactNode }[] = [
   { href: '/sitebuilder', label: 'Sitebuilder', description: 'Themes, sections, visual editor', icon: <LayoutTemplate className="h-4 w-4" /> },
@@ -65,7 +61,26 @@ const COMING_SOON: { href: string; label: string; description: string; icon: Rea
   { href: '/ai', label: 'AI', description: 'MCP server, copilots, agents', icon: <Sparkles className="h-4 w-4" /> },
 ];
 
-export default function DashboardHome() {
+async function loadActiveModules(tenantId: string): Promise<ModuleSummary[]> {
+  const pageCount = await withTenant({ tenantId }, (tx) => tx.page.count());
+  return [
+    {
+      id: 'cms',
+      label: 'CMS',
+      description: 'Pages, blog posts, media library',
+      metric: `${pageCount} ${pageCount === 1 ? 'page' : 'pages'}`,
+      href: '/cms',
+    },
+  ];
+}
+
+export default async function DashboardHome() {
+  const { user } = await requireSession();
+  const [activeModules, onboarding] = await Promise.all([
+    loadActiveModules(user.tenantId),
+    loadOnboardingProgress(user.tenantId),
+  ]);
+
   return (
     <Container size="xl">
       <Stack gap={8} className="py-8">
@@ -76,6 +91,8 @@ export default function DashboardHome() {
           </Stack>
           <Button leftIcon={<Plus className="h-4 w-4" />}>New product</Button>
         </Stack>
+
+        <OnboardingBanner progress={onboarding} />
 
         <Grid cols={1} mdCols={2} lgCols={4} gap={4}>
           <Stat
@@ -108,11 +125,11 @@ export default function DashboardHome() {
           <Stack direction="row" align="end" justify="between">
             <Heading level={3}>Active modules</Heading>
             <Text size="xs" variant="muted">
-              {ACTIVE_MODULES.length} of 8 modules active
+              {activeModules.length} of 8 modules active
             </Text>
           </Stack>
           <Grid cols={1} mdCols={2} lgCols={3} gap={4}>
-            {ACTIVE_MODULES.map((m) => (
+            {activeModules.map((m) => (
               <ModuleProvider key={m.id} module={m.id}>
                 <Card variant="module">
                   <CardHeader>

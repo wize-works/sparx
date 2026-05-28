@@ -1,0 +1,117 @@
+# Database migration pipeline.
+#
+# Trigger: push to main that touches the schema or a migration file, OR
+# manual run via workflow_dispatch (with optional RUN_SEED toggle).
+#
+# Flow:
+#   1. Authenticate to GCP via Workload Identity Federation (no service
+#      account key — the wize-works/sparx repo is bound to sparx-deployer).
+#   2. Build the @sparx/db migration runner image, push to Artifact Registry.
+#   3. Fetch fleet credentials via Connect Gateway and apply the K8s Job
+#      manifest (envsubst injects the image tag + RUN_SEED flag).
+#   4. Wait for the Job to complete and stream its logs back into the run.
+
+name: DB Migrate
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'packages/db/prisma/schema.prisma'
+      - 'packages/db/prisma/migrations/**'
+      - 'packages/db/sql/**'
+      - 'packages/db/scripts/run-migrations.ts'
+      - 'packages/db/Dockerfile'
+      - 'k8s/sparx-prod/db-migrate-job.yaml'
+      - '.github/workflows/db-migrate.yml'
+  workflow_dispatch:
+    inputs:
+      run_seed:
+        description: 'Run the dev seed after migrations complete'
+        required: false
+        default: 'false'
+        type: choice
+        options: ['false', 'true']
+
+permissions:
+  contents: read
+  id-token: write   # required for Workload Identity Federation OIDC token
+
+env:
+  PROJECT_ID: sparxworks
+  REGION: us-central1
+  CLUSTER: sparx-prod-autopilot
+  AR_REPO: us-central1-docker.pkg.dev/sparxworks/sparx
+  IMAGE_NAME: db-migrate
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Authenticate to GCP via WIF
+        id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: projects/631794111842/locations/global/workloadIdentityPools/github-pool/providers/github-provider
+          service_account: sparx-deployer@sparxworks.iam.gserviceaccount.com
+
+      - name: Set up gcloud
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          install_components: gke-gcloud-auth-plugin
+
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker us-central1-docker.pkg.dev --quiet
+
+      - name: Build migration runner image
+        run: |
+          set -euo pipefail
+          IMAGE="${AR_REPO}/${IMAGE_NAME}:${GITHUB_SHA}"
+          docker build \
+            -f packages/db/Dockerfile \
+            -t "$IMAGE" \
+            -t "${AR_REPO}/${IMAGE_NAME}:latest" \
+            .
+          echo "IMAGE=$IMAGE" >> "$GITHUB_ENV"
+
+      - name: Push image to Artifact Registry
+        run: |
+          docker push "$IMAGE"
+          docker push "${AR_REPO}/${IMAGE_NAME}:latest"
+
+      - name: Get GKE credentials via Connect Gateway
+        run: |
+          gcloud container fleet memberships get-credentials "$CLUSTER" --location "$REGION"
+
+      - name: Render + apply migration Job
+        env:
+          RUN_ID: ${{ github.run_id }}-${{ github.run_attempt }}
+          RUN_SEED: ${{ github.event.inputs.run_seed || 'false' }}
+        run: |
+          set -euo pipefail
+          export IMAGE RUN_ID RUN_SEED
+          envsubst < k8s/sparx-prod/db-migrate-job.yaml > /tmp/job.yaml
+          echo "--- Rendered manifest ---"
+          cat /tmp/job.yaml
+          kubectl apply -f /tmp/job.yaml
+          echo "JOB_NAME=db-migrate-${RUN_ID}" >> "$GITHUB_ENV"
+
+      - name: Wait for Job + stream logs
+        run: |
+          set -euo pipefail
+          # Tail logs in the background; kubectl wait blocks until the Job
+          # transitions to Complete or Failed (or the timeout hits).
+          kubectl -n sparx-prod logs -f -l "batch.kubernetes.io/job-name=${JOB_NAME}" -c migrate --tail=-1 --ignore-errors=true &
+          LOG_PID=$!
+          if ! kubectl -n sparx-prod wait --for=condition=Complete --timeout=15m "job/${JOB_NAME}"; then
+            kill "$LOG_PID" 2>/dev/null || true
+            echo "Job did not complete successfully — final state:"
+            kubectl -n sparx-prod describe "job/${JOB_NAME}"
+            kubectl -n sparx-prod logs -l "batch.kubernetes.io/job-name=${JOB_NAME}" -c migrate --tail=-1 --ignore-errors=true
+            exit 1
+          fi
+          kill "$LOG_PID" 2>/dev/null || true
+          echo "Job completed successfully."

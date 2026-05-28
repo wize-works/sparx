@@ -12,10 +12,14 @@ export interface SignUpFormState {
 // Creates Tenant + User + Account in one transaction, then signs the user in
 // so the dashboard layout's session check finds a fresh cookie.
 export async function signUpAction(formData: FormData): Promise<SignUpFormState> {
-  const email = String(formData.get('email') ?? '');
-  const password = String(formData.get('password') ?? '');
-  const name = String(formData.get('name') ?? '');
-  const storeName = String(formData.get('storeName') ?? '');
+  function readField(key: string): string {
+    const value = formData.get(key);
+    return typeof value === 'string' ? value : '';
+  }
+  const email = readField('email');
+  const password = readField('password');
+  const name = readField('name');
+  const storeName = readField('storeName');
 
   if (!email || !password || !name || !storeName) {
     return { ok: false, error: 'All fields are required.' };

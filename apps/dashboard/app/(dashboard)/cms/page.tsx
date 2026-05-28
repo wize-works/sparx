@@ -1,6 +1,6 @@
-'use client';
-
-import * as React from 'react';
+import Link from 'next/link';
+import { requireSession } from '@sparx/auth';
+import { withTenant } from '@sparx/db';
 import {
   Badge,
   Button,
@@ -10,35 +10,42 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-  Code,
   Container,
+  EmptyState,
   Grid,
   Heading,
   Stack,
-  Switch,
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
   Text,
 } from '@sparx/ui';
-import { FileText } from 'lucide-react';
+import { FileText, Plus } from 'lucide-react';
 
-const PAGES = [
-  { slug: 'home', title: 'Home', status: 'published', views: '12.4k' },
-  { slug: 'about', title: 'About us', status: 'published', views: '3.2k' },
-  { slug: 'pricing', title: 'Pricing', status: 'draft', views: '—' },
-  { slug: 'b2b', title: 'Wholesale program', status: 'published', views: '824' },
-];
+export const dynamic = 'force-dynamic';
 
-export default function CmsPage() {
-  const [draftsOnly, setDraftsOnly] = React.useState(false);
-  const visible = draftsOnly ? PAGES.filter((p) => p.status === 'draft') : PAGES;
+interface PageRow {
+  id: string;
+  slug: string;
+  title: string;
+  status: string;
+  updatedAt: Date;
+}
+
+async function loadPages(tenantId: string): Promise<PageRow[]> {
+  return withTenant({ tenantId }, (tx) =>
+    tx.page.findMany({
+      select: { id: true, slug: true, title: true, status: true, updatedAt: true },
+      orderBy: { updatedAt: 'desc' },
+    }),
+  );
+}
+
+export default async function CmsPage() {
+  const { user } = await requireSession();
+  const pages = await loadPages(user.tenantId);
 
   return (
     <Container size="xl">
       <Stack gap={8} className="py-10">
-        <Stack direction="row" align="center" justify="between">
+        <Stack direction="row" align="end" justify="between">
           <Stack gap={2}>
             <Stack direction="row" align="center" gap={2}>
               <FileText className="h-5 w-5" />
@@ -46,61 +53,54 @@ export default function CmsPage() {
               <Badge variant="module">teal active</Badge>
             </Stack>
             <Text variant="muted">
-              Everything in this route is wrapped in{' '}
-              <Code>&lt;ModuleProvider module=&quot;cms&quot;&gt;</Code>. Watch the buttons, badge,
-              card stripes, and active tab indicator turn teal.
+              Pages, landing pages, and policy content for your storefront.
             </Text>
           </Stack>
-          <Stack direction="row" align="center" gap={3}>
-            <Text size="sm" variant="muted">Drafts only</Text>
-            <Switch checked={draftsOnly} onCheckedChange={setDraftsOnly} />
-          </Stack>
+          <Button asChild variant="module" leftIcon={<Plus className="h-4 w-4" />}>
+            <Link href="/cms/new">New page</Link>
+          </Button>
         </Stack>
 
-        <Tabs defaultValue="pages">
-          <TabsList>
-            <TabsTrigger value="pages">Pages</TabsTrigger>
-            <TabsTrigger value="blog">Blog</TabsTrigger>
-            <TabsTrigger value="media">Media</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="pages">
-            <Grid cols={1} mdCols={2} lgCols={3} gap={4}>
-              {visible.map((p) => (
-                <Card key={p.slug} variant="module">
-                  <CardHeader>
-                    <CardDescription>/{p.slug}</CardDescription>
-                    <CardTitle>{p.title}</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <Stack direction="row" align="center" gap={2}>
-                      <Badge variant={p.status === 'published' ? 'success' : 'outline'}>
-                        {p.status}
-                      </Badge>
-                      <Text size="xs" variant="muted">{p.views} views</Text>
-                    </Stack>
-                  </CardContent>
-                  <CardFooter>
-                    <Button variant="module-outline" size="sm">
-                      Edit
-                    </Button>
-                    <Button variant="module" size="sm">
-                      View
-                    </Button>
-                  </CardFooter>
-                </Card>
-              ))}
-            </Grid>
-          </TabsContent>
-
-          <TabsContent value="blog">
-            <Text variant="muted">Blog list goes here.</Text>
-          </TabsContent>
-
-          <TabsContent value="media">
-            <Text variant="muted">Media library goes here.</Text>
-          </TabsContent>
-        </Tabs>
+        {pages.length === 0 ? (
+          <Card padding="none">
+            <EmptyState
+              icon={<FileText className="h-5 w-5" />}
+              title="No pages yet"
+              description="Create your first page to start building out your store."
+              action={
+                <Button asChild>
+                  <Link href="/cms/new">Create a page</Link>
+                </Button>
+              }
+            />
+          </Card>
+        ) : (
+          <Grid cols={1} mdCols={2} lgCols={3} gap={4}>
+            {pages.map((p) => (
+              <Card key={p.id} variant="module">
+                <CardHeader>
+                  <CardDescription>/{p.slug}</CardDescription>
+                  <CardTitle>{p.title}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <Stack direction="row" align="center" gap={2}>
+                    <Badge variant={p.status === 'published' ? 'success' : 'outline'}>
+                      {p.status}
+                    </Badge>
+                    <Text size="xs" variant="muted">
+                      Updated {p.updatedAt.toLocaleDateString()}
+                    </Text>
+                  </Stack>
+                </CardContent>
+                <CardFooter>
+                  <Button variant="module-outline" size="sm" asChild>
+                    <Link href={`/cms/${p.id}`}>Edit</Link>
+                  </Button>
+                </CardFooter>
+              </Card>
+            ))}
+          </Grid>
+        )}
       </Stack>
     </Container>
   );

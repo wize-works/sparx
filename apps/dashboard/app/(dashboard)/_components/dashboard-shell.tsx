@@ -71,7 +71,9 @@ export interface DashboardShellProps {
 
 export function DashboardShell({ user, children }: DashboardShellProps) {
   const pathname = usePathname();
-  const displayName = user.name?.trim() || user.email.split('@')[0] || user.email;
+  const trimmedName = user.name?.trim();
+  const emailLocal = user.email.split('@')[0] ?? user.email;
+  const displayName = trimmedName && trimmedName.length > 0 ? trimmedName : emailLocal;
 
   return (
     <div className="flex min-h-screen">

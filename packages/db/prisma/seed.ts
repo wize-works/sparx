@@ -1,34 +1,46 @@
-// Dev seed — one tenant + one owner user. Idempotent: re-running upserts in
-// place, so `pnpm --filter @sparx/db db:seed` is safe to call repeatedly.
+// Dev seed — idempotent: re-running upserts in place, so it's safe to call
+// `pnpm --filter @sparx/db db:seed` repeatedly.
 //
-// Gillett Diesel is the named pilot tenant in CLAUDE.md / docs/01; using it
-// here means local dev mirrors the data that will exist in staging.
-//
-// The owner's password hash is a placeholder. Better Auth issues Argon2
-// hashes once the auth service is wired up — at that point this seed will
-// switch to calling Better Auth's signUp API instead of writing accounts
-// directly.
+// Creates the "E2E Store" tenant with one staff user
+// (e2e-staff@sparx.test / e2e-test-password) — these credentials are baked
+// into Playwright tests and any local dashboard smoke test. The password
+// hash uses argon2id with Better Auth's default parameters so the same
+// row works against the live login flow once the auth service is wired in.
 
 import { PrismaClient } from '@prisma/client';
+import { hash, Algorithm } from '@node-rs/argon2';
 
 const prisma = new PrismaClient();
+
+const TENANT_SLUG = 'e2e-store';
+const STAFF_EMAIL = 'e2e-staff@sparx.test';
+const STAFF_PASSWORD = 'e2e-test-password';
 
 async function main(): Promise<void> {
   // tenants has no RLS — safe to upsert outside a tenant context.
   const tenant = await prisma.tenant.upsert({
-    where: { slug: 'gillett-diesel' },
+    where: { slug: TENANT_SLUG },
     update: {},
     create: {
-      slug: 'gillett-diesel',
-      name: 'Gillett Diesel Service',
-      email: 'owner@gillettdiesel.example',
-      plan: 'enterprise',
+      slug: TENANT_SLUG,
+      name: 'E2E Store',
+      email: STAFF_EMAIL,
+      plan: 'starter',
       status: 'active',
       settings: {
-        primaryDomain: 'gillettdiesel.example',
-        modules: ['storefront', 'commerce', 'b2b', 'crm'],
+        primaryDomain: 'e2e.sparx.test',
+        modules: ['storefront', 'commerce'],
       },
     },
+  });
+
+  // Better Auth defaults to argon2id with these parameters (docs/16 §1).
+  // Match them here so the seeded hash verifies against the live login flow.
+  const passwordHash = await hash(STAFF_PASSWORD, {
+    algorithm: Algorithm.Argon2id,
+    memoryCost: 19_456,
+    timeCost: 2,
+    parallelism: 1,
   });
 
   // users and accounts are RLS-protected; set the tenant context inside a
@@ -39,16 +51,13 @@ async function main(): Promise<void> {
 
     const owner = await tx.user.upsert({
       where: {
-        tenantId_email: {
-          tenantId: tenant.id,
-          email: 'brandon@wizeworks.example',
-        },
+        tenantId_email: { tenantId: tenant.id, email: STAFF_EMAIL },
       },
       update: {},
       create: {
         tenantId: tenant.id,
-        email: 'brandon@wizeworks.example',
-        name: 'Brandon Korous',
+        email: STAFF_EMAIL,
+        name: 'E2E Staff',
         role: 'owner',
         emailVerified: true,
       },
@@ -63,19 +72,18 @@ async function main(): Promise<void> {
           accountId: owner.id,
         },
       },
-      update: {},
+      update: { password: passwordHash },
       create: {
         userId: owner.id,
         providerId: 'credential',
         accountId: owner.id,
-        // Placeholder — replaced by a real Argon2 hash once Better Auth is wired.
-        password: 'SEED_PLACEHOLDER_NOT_A_REAL_HASH',
+        password: passwordHash,
       },
     });
 
     // eslint-disable-next-line no-console
     console.log(
-      `Seeded tenant ${tenant.slug} (${tenant.id}) with owner ${owner.email}`,
+      `Seeded tenant "${tenant.name}" (${tenant.id}) with staff user ${owner.email}`,
     );
   });
 }

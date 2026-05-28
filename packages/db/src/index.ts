@@ -1,6 +1,6 @@
-export { prisma } from './client.js';
-export { withTenant } from './tenant-context.js';
-export type { TenantContext, TxClient } from './tenant-context.js';
+export { prisma } from './client';
+export { withTenant } from './tenant-context';
+export type { TenantContext, TxClient } from './tenant-context';
 
 export type {
   Tenant,

@@ -37,8 +37,8 @@ const GROUPS: SettingsGroup[] = [
     icon: <SettingsIcon className="h-4 w-4" />,
     title: 'General',
     description: 'Store name, locale, currency, time zone.',
-    href: '/settings',
-    ready: false,
+    href: '/settings/general',
+    ready: true,
   },
   {
     icon: <Users className="h-4 w-4" />,

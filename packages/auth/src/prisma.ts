@@ -12,7 +12,6 @@ import { PrismaClient } from '@prisma/client';
 // so cross-tenant reads are impossible.
 
 declare global {
-  // eslint-disable-next-line no-var
   var __sparxAuthPrisma: PrismaClient | undefined;
 }
 

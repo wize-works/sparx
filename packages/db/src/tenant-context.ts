@@ -1,6 +1,6 @@
 import type { Prisma, PrismaClient } from '@prisma/client';
 
-import { prisma as defaultPrisma } from './client.js';
+import { prisma as defaultPrisma } from './client';
 
 // `Prisma.TransactionClient` is the subset of PrismaClient methods that work
 // inside a `$transaction(callback)` — no nested transactions, no $connect, etc.

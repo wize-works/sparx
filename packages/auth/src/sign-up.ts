@@ -1,5 +1,5 @@
-import { authPrisma } from './prisma.js';
-import { auth } from './server.js';
+import { authPrisma } from './prisma';
+import { auth } from './server';
 
 // Merchant self-service signup. Better Auth's stock `signUpEmail` assumes
 // one user = one account. Sparx needs each new merchant to also get a Tenant

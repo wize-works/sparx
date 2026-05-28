@@ -2,10 +2,11 @@
 // '@sparx/auth/client' explicitly to keep the React/browser-only surface out
 // of server bundles.
 
-export { auth, type Auth } from './server.js';
+export { auth, type Auth } from './server';
 export {
   signUpMerchant,
   SignUpError,
   type SignUpMerchantInput,
   type SignUpMerchantResult,
-} from './sign-up.js';
+} from './sign-up';
+export { getSession, requireSession, type SparxSession } from './session';

@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: sparx-prod
+  labels:
+    app.kubernetes.io/part-of: sparx
+---
+# ServiceAccount used by the DB migration Job. Bound to the sparx-app GCP
+# service account via Workload Identity, which has roles/cloudsql.client and
+# roles/secretmanager.secretAccessor. The migration Job uses these to:
+#   - Connect to Cloud SQL through the Auth Proxy sidecar (private IP)
+#   - Read the sparx_app + sparx_owner passwords from Secret Manager
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: sparx-db-migrator
+  namespace: sparx-prod
+  annotations:
+    iam.gke.io/gcp-service-account: sparx-app@sparxworks.iam.gserviceaccount.com

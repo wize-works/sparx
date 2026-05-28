@@ -1,8 +1,14 @@
 import { defineConfig, devices } from '@playwright/test';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const PORT = Number(process.env.PORT ?? 3001);
 const baseURL = `http://localhost:${PORT}`;
 const isCI = Boolean(process.env.CI);
+
+const STORAGE_STATE = path.resolve(__dirname, 'playwright/.auth/user.json');
 
 export default defineConfig({
   testDir: './e2e',
@@ -16,9 +22,23 @@ export default defineConfig({
     trace: 'on-first-retry',
   },
   projects: [
+    // Runs once; signs the test user up and saves the session cookie that the
+    // chromium project reuses for every other spec.
+    { name: 'setup', testMatch: /auth\.setup\.ts/ },
+
+    // Auth flow itself must use a clean session (otherwise we are already
+    // logged in when we try to test sign-in). No storageState, no dependency.
+    {
+      name: 'auth-flow',
+      testMatch: /auth\.spec\.ts/,
+      use: { ...devices['Desktop Chrome'] },
+    },
+
     {
       name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
+      testIgnore: /auth\.(setup|spec)\.ts/,
+      use: { ...devices['Desktop Chrome'], storageState: STORAGE_STATE },
+      dependencies: ['setup'],
     },
   ],
   // Use the production build in CI for realism; `next dev` locally for speed.
