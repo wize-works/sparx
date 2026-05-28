@@ -18,10 +18,10 @@ generator client {
 }
 
 datasource db {
-  provider          = "postgresql"
-  url               = env("DATABASE_URL")
-  directUrl         = env("MIGRATION_DATABASE_URL")
-  extensions        = [pgcrypto]
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  directUrl  = env("MIGRATION_DATABASE_URL")
+  extensions = [pgcrypto]
 }
 
 // ───────────────────────────────────────────────────────────────────────────
@@ -47,6 +47,24 @@ model Tenant {
   users     User[]
   auditLogs AuditLog[]
   pages     Page[]
+
+  // CMS module
+  contentTypes         ContentType[]
+  contentEntries       ContentEntry[]
+  contentRevisions     ContentRevision[]
+  contentReferences    ContentReference[]
+  taxonomies           Taxonomy[]
+  taxonomyTerms        TaxonomyTerm[]
+  entryTaxonomyTerms   EntryTaxonomyTerm[]
+  authors              Author[]
+  redirects            Redirect[]
+  navigationMenus      NavigationMenu[]
+  navigationItems      NavigationItem[]
+  previewTokens        PreviewToken[]
+  webhookSubscriptions WebhookSubscription[]
+  webhookDeliveries    WebhookDelivery[]
+  mediaAssets          MediaAsset[]
+  mediaVariants        MediaVariant[]
 
   @@map("tenants")
 }
@@ -90,11 +108,11 @@ model Page {
 // per docs/16 §2.
 
 model User {
-  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  email         String    @db.VarChar(255)
-  emailVerified Boolean   @default(false) @map("email_verified")
-  name          String?   @db.VarChar(255)
-  image         String?   @db.Text
+  id            String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email         String  @db.VarChar(255)
+  emailVerified Boolean @default(false) @map("email_verified")
+  name          String? @db.VarChar(255)
+  image         String? @db.Text
 
   // Sparx-specific extensions
   tenantId    String    @map("tenant_id") @db.Uuid
@@ -208,4 +226,417 @@ model AuditLog {
   @@index([tenantId, createdAt(sort: Desc)])
   @@index([tenantId, entityType, entityId])
   @@map("audit_logs")
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+// CMS — Content types (docs/12 §3, plan Phase 1.1)
+// ───────────────────────────────────────────────────────────────────────────
+// Polymorphic content model. Each ContentType row defines the field schema
+// for a class of entries (page, blog_post, module, feature, faq_item,
+// editorial_section, …). Built-in types live under the sentinel "Sparx
+// Platform" tenant (00000000-0000-0000-0000-000000000000) and the RLS policy
+// exposes them read-visible to every tenant; custom types are tenant-owned
+// and gated to Pro+ at the API layer.
+//
+// ContentEntry has no hard FK back here because typeKey resolution is dual
+// (tenant-local override first, then platform built-in fallback) — the api
+// service runs that lookup in code rather than denormalizing it.
+
+model ContentType {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId    String   @map("tenant_id") @db.Uuid
+  key         String   @db.VarChar(63)
+  name        String   @db.VarChar(120)
+  pluralName  String   @map("plural_name") @db.VarChar(120)
+  description String?  @db.Text
+  schemaJson  Json     @map("schema_json")
+  urlPattern  String?  @map("url_pattern") @db.VarChar(255)
+  icon        String?  @db.VarChar(64)
+  isSingleton Boolean  @default(false) @map("is_singleton")
+  isBuiltIn   Boolean  @default(false) @map("is_built_in")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, key])
+  @@index([tenantId])
+  @@map("content_types")
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+// CMS — Content entries
+// ───────────────────────────────────────────────────────────────────────────
+// One row per editable record. `body` JSONB validated against the resolved
+// ContentType.schemaJson at write time. `slug` is nullable for non-routable
+// types (feature, faq_item, editorial_section embedded in a parent page).
+
+model ContentEntry {
+  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId      String    @map("tenant_id") @db.Uuid
+  typeKey       String    @map("type_key") @db.VarChar(63)
+  slug          String?   @db.VarChar(255)
+  status        String    @default("draft") @db.VarChar(20) // draft | scheduled | published | archived
+  body          Json      @default("{}")
+  seoJson       Json      @default("{}") @map("seo_json")
+  publishedAt   DateTime? @map("published_at") @db.Timestamptz
+  scheduledAt   DateTime? @map("scheduled_at") @db.Timestamptz
+  archivedAt    DateTime? @map("archived_at") @db.Timestamptz
+  authorId      String?   @map("author_id") @db.Uuid
+  localeCode    String?   @map("locale_code") @db.VarChar(10) // e.g. "en-US"
+  parentEntryId String?   @map("parent_entry_id") @db.Uuid // localization parent
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt     DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt     DateTime? @map("deleted_at") @db.Timestamptz
+
+  tenant          Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  author          Author?             @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  parent          ContentEntry?       @relation("EntryLocalization", fields: [parentEntryId], references: [id], onDelete: SetNull)
+  localeVariants  ContentEntry[]      @relation("EntryLocalization")
+  revisions       ContentRevision[]
+  refsFrom        ContentReference[]  @relation("ContentReferenceFrom")
+  refsTo          ContentReference[]  @relation("ContentReferenceTo")
+  terms           EntryTaxonomyTerm[]
+  previewTokens   PreviewToken[]
+  navigationItems NavigationItem[]
+
+  @@unique([tenantId, typeKey, slug])
+  @@index([tenantId, typeKey, status])
+  @@index([tenantId, status, publishedAt(sort: Desc)])
+  @@index([tenantId, updatedAt(sort: Desc)])
+  @@index([tenantId, scheduledAt])
+  @@map("content_entries")
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+// CMS — Content revisions
+// ───────────────────────────────────────────────────────────────────────────
+// Every PATCH creates a revision tagged `autosave`; explicit Save/Publish
+// creates `manual`. Retain ~25 per entry; older `autosave` rows GC monthly.
+
+model ContentRevision {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId       String   @map("tenant_id") @db.Uuid
+  entryId        String   @map("entry_id") @db.Uuid
+  revisionNumber Int      @map("revision_number")
+  kind           String   @db.VarChar(20) // autosave | manual
+  body           Json
+  seoJson        Json     @map("seo_json")
+  status         String   @db.VarChar(20)
+  authorId       String?  @map("author_id") @db.Uuid
+  summary        String?  @db.VarChar(500)
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  tenant Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  entry  ContentEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
+
+  @@unique([entryId, revisionNumber])
+  @@index([tenantId, entryId, createdAt(sort: Desc)])
+  @@map("content_revisions")
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+// CMS — Content references (edge list)
+// ───────────────────────────────────────────────────────────────────────────
+// Maintained on entry save: every reference / asset field in `body` produces
+// one row. Powers usage-tracking, broken-link detection on publish, and
+// orphan-asset GC. Exactly one of (toEntryId, toAssetId) is set.
+
+model ContentReference {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId    String   @map("tenant_id") @db.Uuid
+  fromEntryId String   @map("from_entry_id") @db.Uuid
+  toEntryId   String?  @map("to_entry_id") @db.Uuid
+  toAssetId   String?  @map("to_asset_id") @db.Uuid
+  field       String   @db.VarChar(255) // JSON path into body, e.g. "features[2].image"
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  tenant    Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  fromEntry ContentEntry  @relation("ContentReferenceFrom", fields: [fromEntryId], references: [id], onDelete: Cascade)
+  toEntry   ContentEntry? @relation("ContentReferenceTo", fields: [toEntryId], references: [id], onDelete: Cascade)
+  toAsset   MediaAsset?   @relation(fields: [toAssetId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, fromEntryId])
+  @@index([tenantId, toEntryId])
+  @@index([tenantId, toAssetId])
+  @@map("content_references")
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+// CMS — Taxonomies (categories, tags, custom vocabularies)
+// ───────────────────────────────────────────────────────────────────────────
+
+model Taxonomy {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId     String   @map("tenant_id") @db.Uuid
+  key          String   @db.VarChar(63) // e.g. "blog_category", "blog_tag"
+  name         String   @db.VarChar(120)
+  pluralName   String   @map("plural_name") @db.VarChar(120)
+  hierarchical Boolean  @default(false)
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  tenant Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  terms  TaxonomyTerm[]
+
+  @@unique([tenantId, key])
+  @@map("taxonomies")
+}
+
+model TaxonomyTerm {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId     String   @map("tenant_id") @db.Uuid
+  taxonomyId   String   @map("taxonomy_id") @db.Uuid
+  parentTermId String?  @map("parent_term_id") @db.Uuid
+  slug         String   @db.VarChar(255)
+  name         String   @db.VarChar(255)
+  description  String?  @db.Text
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  tenant   Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  taxonomy Taxonomy            @relation(fields: [taxonomyId], references: [id], onDelete: Cascade)
+  parent   TaxonomyTerm?       @relation("TaxonomyTermTree", fields: [parentTermId], references: [id], onDelete: SetNull)
+  children TaxonomyTerm[]      @relation("TaxonomyTermTree")
+  entries  EntryTaxonomyTerm[]
+
+  @@unique([taxonomyId, slug])
+  @@index([tenantId, taxonomyId])
+  @@map("taxonomy_terms")
+}
+
+model EntryTaxonomyTerm {
+  entryId   String   @map("entry_id") @db.Uuid
+  termId    String   @map("term_id") @db.Uuid
+  tenantId  String   @map("tenant_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  tenant Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  entry  ContentEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  term   TaxonomyTerm @relation(fields: [termId], references: [id], onDelete: Cascade)
+
+  @@id([entryId, termId])
+  @@index([tenantId, termId])
+  @@map("entry_taxonomy_terms")
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+// CMS — Authors
+// ───────────────────────────────────────────────────────────────────────────
+// A byline. Distinct from User so a single user can publish under multiple
+// pen names and an author can persist after the user row is removed.
+
+model Author {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId      String   @map("tenant_id") @db.Uuid
+  userId        String?  @map("user_id") @db.Uuid
+  slug          String   @db.VarChar(255)
+  displayName   String   @map("display_name") @db.VarChar(255)
+  bio           String?  @db.Text
+  avatarAssetId String?  @map("avatar_asset_id") @db.Uuid
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  tenant      Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  avatarAsset MediaAsset?    @relation(fields: [avatarAssetId], references: [id], onDelete: SetNull)
+  entries     ContentEntry[]
+
+  @@unique([tenantId, slug])
+  @@index([tenantId])
+  @@map("authors")
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+// CMS — Redirects
+// ───────────────────────────────────────────────────────────────────────────
+// 301/302 manual redirects with chain/loop detection enforced at the API.
+
+model Redirect {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId   String    @map("tenant_id") @db.Uuid
+  fromPath   String    @map("from_path") @db.VarChar(2048)
+  toPath     String    @map("to_path") @db.VarChar(2048)
+  statusCode Int       @default(301) @map("status_code")
+  hitCount   BigInt    @default(0) @map("hit_count")
+  lastHitAt  DateTime? @map("last_hit_at") @db.Timestamptz
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt  DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, fromPath])
+  @@index([tenantId])
+  @@map("redirects")
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+// CMS — Navigation menus
+// ───────────────────────────────────────────────────────────────────────────
+// header / footer / mega / custom_*. Items reference internal entries or
+// external URLs; exactly one is non-null, validated at the API layer.
+
+model NavigationMenu {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId  String   @map("tenant_id") @db.Uuid
+  location  String   @db.VarChar(63)
+  name      String   @db.VarChar(120)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  tenant Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  items  NavigationItem[]
+
+  @@unique([tenantId, location])
+  @@map("navigation_menus")
+}
+
+model NavigationItem {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId     String   @map("tenant_id") @db.Uuid
+  menuId       String   @map("menu_id") @db.Uuid
+  parentItemId String?  @map("parent_item_id") @db.Uuid
+  position     Int
+  label        String   @db.VarChar(255)
+  entryId      String?  @map("entry_id") @db.Uuid
+  externalUrl  String?  @map("external_url") @db.VarChar(2048)
+  openInNewTab Boolean  @default(false) @map("open_in_new_tab")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  tenant   Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  menu     NavigationMenu   @relation(fields: [menuId], references: [id], onDelete: Cascade)
+  parent   NavigationItem?  @relation("NavTree", fields: [parentItemId], references: [id], onDelete: Cascade)
+  children NavigationItem[] @relation("NavTree")
+  entry    ContentEntry?    @relation(fields: [entryId], references: [id], onDelete: SetNull)
+
+  @@index([menuId, position])
+  @@index([tenantId])
+  @@map("navigation_items")
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+// CMS — Preview tokens
+// ───────────────────────────────────────────────────────────────────────────
+// HS256 JWTs are stateless; this row keyed on `jti` lets us revoke individual
+// tokens (or all tokens for an entry) without rotating the tenant secret.
+
+model PreviewToken {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId   String    @map("tenant_id") @db.Uuid
+  entryId    String    @map("entry_id") @db.Uuid
+  issuedById String?   @map("issued_by_id") @db.Uuid
+  jti        String    @unique @db.Uuid
+  expiresAt  DateTime  @map("expires_at") @db.Timestamptz
+  revokedAt  DateTime? @map("revoked_at") @db.Timestamptz
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  tenant Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  entry  ContentEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, entryId])
+  @@index([expiresAt])
+  @@map("preview_tokens")
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+// CMS — Webhooks
+// ───────────────────────────────────────────────────────────────────────────
+
+model WebhookSubscription {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId      String   @map("tenant_id") @db.Uuid
+  name          String   @db.VarChar(120)
+  url           String   @db.VarChar(2048)
+  events        String[] @db.VarChar(120)
+  signingSecret String   @map("signing_secret") @db.Text
+  active        Boolean  @default(true)
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  tenant     Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  deliveries WebhookDelivery[]
+
+  @@index([tenantId, active])
+  @@map("webhook_subscriptions")
+}
+
+model WebhookDelivery {
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId       String    @map("tenant_id") @db.Uuid
+  subscriptionId String    @map("subscription_id") @db.Uuid
+  eventType      String    @map("event_type") @db.VarChar(120)
+  payload        Json
+  attemptCount   Int       @default(0) @map("attempt_count")
+  status         String    @default("pending") @db.VarChar(20) // pending | delivered | failed
+  responseStatus Int?      @map("response_status")
+  responseBody   String?   @map("response_body") @db.Text
+  nextAttemptAt  DateTime? @map("next_attempt_at") @db.Timestamptz
+  deliveredAt    DateTime? @map("delivered_at") @db.Timestamptz
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  tenant       Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  subscription WebhookSubscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, status, nextAttemptAt])
+  @@index([subscriptionId, createdAt(sort: Desc)])
+  @@map("webhook_deliveries")
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+// CMS — Media assets (stubs; pipeline lands Phase 3)
+// ───────────────────────────────────────────────────────────────────────────
+// Defined now so ContentReference can carry asset edges and Author can link
+// an avatar. Transcode worker, signed-URL routes, and focal-point UI all
+// land in Phase 3.
+
+model MediaAsset {
+  id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId         String    @map("tenant_id") @db.Uuid
+  key              String    @db.VarChar(1024)
+  originalFilename String    @map("original_filename") @db.VarChar(512)
+  mimeType         String    @map("mime_type") @db.VarChar(127)
+  byteSize         BigInt    @map("byte_size")
+  width            Int?
+  height           Int?
+  durationSec      Float?    @map("duration_sec")
+  dominantColor    String?   @map("dominant_color") @db.VarChar(9)
+  blurhash         String?   @db.VarChar(128)
+  focalPointX      Float     @default(0.5) @map("focal_point_x")
+  focalPointY      Float     @default(0.5) @map("focal_point_y")
+  altText          String?   @map("alt_text") @db.VarChar(500)
+  caption          String?   @db.Text
+  status           String    @default("uploading") @db.VarChar(20) // uploading | ready | failed
+  processingError  String?   @map("processing_error") @db.Text
+  usageCount       Int       @default(0) @map("usage_count")
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt        DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt        DateTime? @map("deleted_at") @db.Timestamptz
+
+  tenant        Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  variants      MediaVariant[]
+  refsTo        ContentReference[]
+  authorAvatars Author[]
+
+  @@index([tenantId, status])
+  @@index([tenantId, updatedAt(sort: Desc)])
+  @@map("media_assets")
+}
+
+model MediaVariant {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId  String   @map("tenant_id") @db.Uuid
+  assetId   String   @map("asset_id") @db.Uuid
+  format    String   @db.VarChar(20) // webp | avif | jpeg | png | mp4-720 | ...
+  width     Int
+  height    Int
+  byteSize  BigInt   @map("byte_size")
+  key       String   @db.VarChar(1024)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  tenant Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  asset  MediaAsset @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  @@unique([assetId, format, width])
+  @@index([tenantId, assetId])
+  @@map("media_variants")
 }

@@ -1,0 +1,35 @@
+{
+  "name": "@sparx/cms-schemas",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Sparx CMS — content type schema format, built-in type definitions, and runtime body validator. Source of truth for the cms-schemas JSONB shape (docs/12-cms-prd.md, plan Phase 1.1).",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    },
+    "./builtins": {
+      "types": "./src/builtins/index.ts",
+      "default": "./src/builtins/index.ts"
+    }
+  },
+  "files": [
+    "src"
+  ],
+  "scripts": {
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "clean": "rm -rf .turbo dist *.tsbuildinfo"
+  },
+  "dependencies": {
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "typescript": "^5.7.0",
+    "vitest": "^4.1.7"
+  }
+}
