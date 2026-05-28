@@ -6,8 +6,8 @@
 
 import { z } from 'zod';
 
-import { AddressSnapshot, Currency, LineItemInput, Money } from './common-commerce.js';
-import { Uuid } from './common.js';
+import { AddressSnapshot, Currency, LineItemInput, Money } from './common-commerce';
+import { Uuid } from './common';
 
 export const OrderStatus = z.enum(['placed', 'fulfilled', 'delivered', 'cancelled', 'refunded']);
 export type OrderStatus = z.infer<typeof OrderStatus>;

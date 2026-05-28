@@ -6,7 +6,7 @@
 
 import { z } from 'zod';
 
-import { Uuid } from './common.js';
+import { Uuid } from './common';
 
 export const FulfillmentStatus = z.enum(['pending', 'shipped', 'delivered', 'failed', 'cancelled']);
 export type FulfillmentStatus = z.infer<typeof FulfillmentStatus>;

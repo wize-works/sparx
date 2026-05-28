@@ -6,9 +6,9 @@
 
 import { z } from 'zod';
 
-import { Currency, LineItemInput, Money } from './common-commerce.js';
-import { PaymentTerms } from './common.js';
-import { Uuid } from './common.js';
+import { Currency, LineItemInput, Money } from './common-commerce';
+import { PaymentTerms } from './common';
+import { Uuid } from './common';
 
 export const QuoteStatus = z.enum([
   'draft',

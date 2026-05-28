@@ -7,8 +7,8 @@
 
 import { z } from 'zod';
 
-import { Currency, Money } from './common-commerce.js';
-import { Uuid } from './common.js';
+import { Currency, Money } from './common-commerce';
+import { Uuid } from './common';
 
 export const PaymentProcessor = z.enum([
   'stripe',

@@ -2,7 +2,7 @@
 
 import { z } from 'zod';
 
-import { Uuid } from './common.js';
+import { Uuid } from './common';
 
 export const Currency = z
   .string()
