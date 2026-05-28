@@ -43,9 +43,11 @@ spec:
             limits:
               cpu: '500m'
               memory: '512Mi'
+          # TCP probe — HTTP probe gets 301-redirected to https://<podIP>/, then fails
+          # TLS handshake because Caddy can't mint a cert for an IP. TCP is sufficient
+          # here: if Caddy isn't listening on 80, the pod is broken.
           livenessProbe:
-            httpGet:
-              path: /
+            tcpSocket:
               port: 80
             initialDelaySeconds: 10
             periodSeconds: 30
