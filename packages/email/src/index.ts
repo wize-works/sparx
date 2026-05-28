@@ -8,12 +8,7 @@ export {
   _setEmailProvider,
   type ConsoleSend,
 } from './providers';
-export {
-  sendEmail,
-  sendTemplate,
-  _renderTemplateForTest,
-  type TemplateSend,
-} from './send';
+export { sendEmail, sendTemplate, _renderTemplateForTest, type TemplateSend } from './send';
 export {
   PasswordResetEmail,
   WelcomeMerchantEmail,

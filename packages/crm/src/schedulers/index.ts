@@ -8,7 +8,4 @@ export {
   type TriggerSummary,
 } from './automation-triggers';
 export { emitOverdueTaskReminders } from './overdue-task-reminders';
-export {
-  ensureCrmActivitiesPartitions,
-  type PartitionRolloverResult,
-} from './partition-rollover';
+export { ensureCrmActivitiesPartitions, type PartitionRolloverResult } from './partition-rollover';

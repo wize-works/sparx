@@ -87,9 +87,7 @@ export default async function ReportsPage() {
               <Stat
                 label="Open tasks"
                 value={snapshot.openTasks.toLocaleString()}
-                hint={
-                  snapshot.overdueTasks > 0 ? `${snapshot.overdueTasks} overdue` : 'on track'
-                }
+                hint={snapshot.overdueTasks > 0 ? `${snapshot.overdueTasks} overdue` : 'on track'}
               />
             </CardContent>
           </Card>
