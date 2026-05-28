@@ -21,7 +21,21 @@ const STAFF_EMAIL = 'e2e-staff@sparx.test';
 const STAFF_PASSWORD = 'e2e-test-password';
 
 async function main(): Promise<void> {
-  // tenants has no RLS — safe to upsert outside a tenant context.
+  // tenants has no RLS — safe to upsert outside a tenant context. Default
+  // settings (incl. the module activation registry read by
+  // @sparx/auth#requireModule) are JSON-merged via raw SQL so re-running
+  // the seed adds new module flags without clobbering unrelated keys (e.g.
+  // the onboarding tracker).
+  const defaultSettings = {
+    primaryDomain: 'e2e.sparx.test',
+    modules: {
+      storefront: { enabled: true },
+      commerce: { enabled: true },
+      cms: { enabled: true },
+      crm: { enabled: true },
+    },
+  };
+
   const tenant = await prisma.tenant.upsert({
     where: { slug: TENANT_SLUG },
     update: {},
@@ -31,12 +45,18 @@ async function main(): Promise<void> {
       email: STAFF_EMAIL,
       plan: 'starter',
       status: 'active',
-      settings: {
-        primaryDomain: 'e2e.sparx.test',
-        modules: ['storefront', 'commerce'],
-      },
+      settings: defaultSettings,
     },
   });
+
+  // Merge module flags onto existing settings without overwriting other
+  // top-level keys. jsonb || jsonb does a shallow merge — fine here since
+  // each module slot is independently structured.
+  await prisma.$executeRaw`
+    UPDATE tenants
+    SET settings = settings || ${JSON.stringify(defaultSettings)}::jsonb
+    WHERE id = ${tenant.id}::uuid
+  `;
 
   // Better Auth defaults to argon2id with these parameters (docs/16 §1).
   // Match them here so the seeded hash verifies against the live login flow.

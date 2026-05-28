@@ -1,0 +1,53 @@
+{
+  "name": "@sparx/cms-editor",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Sparx CMS block editor — TipTap extension set, React editor component, and server-side JSON-to-HTML serializer/sanitizer. Used by the dashboard and consumed by api-rest at read time when callers request HTML.",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    },
+    "./extensions": {
+      "types": "./src/extensions.ts",
+      "default": "./src/extensions.ts"
+    },
+    "./serialize": {
+      "types": "./src/serialize.ts",
+      "default": "./src/serialize.ts"
+    },
+    "./editor": {
+      "types": "./src/editor.tsx",
+      "default": "./src/editor.tsx"
+    }
+  },
+  "files": [
+    "src"
+  ],
+  "scripts": {
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --passWithNoTests",
+    "clean": "rm -rf .turbo dist *.tsbuildinfo"
+  },
+  "dependencies": {
+    "@sparx/ui": "workspace:*",
+    "@tiptap/extension-link": "^3.23.6",
+    "@tiptap/extension-placeholder": "^3.23.6",
+    "@tiptap/pm": "^3.23.6",
+    "@tiptap/react": "^3.23.6",
+    "@tiptap/starter-kit": "^3.23.6"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "typescript": "^5.7.0",
+    "vitest": "^4.1.7"
+  }
+}

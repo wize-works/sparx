@@ -2,13 +2,22 @@
 
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
-import { requireSession } from '@sparx/auth';
-import { withTenant } from '@sparx/db';
+import { api, type ApiRestError } from '@/lib/api-rest-client';
 
-// CRUD server actions for CMS pages. All wrapped in withTenant() — pages are
-// FORCE RLS tenant-scoped, so even sparx_owner cannot bypass the tenant
-// filter. The Zod schemas double as runtime validation and as the source of
-// truth for what fields the forms can submit.
+// Server actions are thin adapters over api-rest. The dashboard CMS UI still
+// uses "page" vocabulary (slug / title / status / body / SEO) for continuity,
+// but underneath each action calls /v1/content/entries with type_key='page'.
+// Moving to the unified content model means a future block editor needs
+// zero changes to the URLs the dashboard hits.
+//
+// Why we keep server actions instead of posting straight to api-rest from
+// the browser: server actions inherit Next.js cookies + `requireSession()`,
+// run on the dashboard server (which holds the JWT secret), and integrate
+// with `revalidatePath` for cache invalidation. Calling api-rest from the
+// client would require either CORS + double session validation or a public
+// internet exposure of api-rest — neither yet warranted.
+
+const PAGE_TYPE_KEY = 'page';
 
 const slugify = (input: string): string =>
   input
@@ -43,14 +52,50 @@ export interface ActionResult<T = void> {
   error?: string;
 }
 
+interface ApiEntry {
+  id: string;
+  type_key: string;
+  slug: string | null;
+  status: string;
+  body: Record<string, unknown>;
+  seo: Record<string, unknown>;
+  published_at: string | null;
+  updated_at: string;
+  created_at: string;
+}
+
 function readField(formData: FormData, key: string): string {
   const value = formData.get(key);
   return typeof value === 'string' ? value : '';
 }
 
-export async function createPage(formData: FormData): Promise<ActionResult<{ id: string }>> {
-  const { user } = await requireSession();
+// Wrap plain-text form input as a minimal TipTap doc so it passes the
+// `rich_text` validator on api-rest. The Phase 2 block editor produces a
+// real doc and this helper drops away.
+function wrapPlainText(body: string | undefined): Record<string, unknown> {
+  if (!body) return { type: 'doc', content: [] };
+  return {
+    type: 'doc',
+    content: [
+      {
+        type: 'paragraph',
+        content: [{ type: 'text', text: body }],
+      },
+    ],
+  };
+}
 
+function friendly(err: unknown): string {
+  const e = err as ApiRestError;
+  if (e?.code === 'VALIDATION_ERROR' && Array.isArray(e.details) && e.details.length) {
+    const first = e.details[0] as { path?: string; message?: string };
+    return first.message ?? e.message ?? 'Invalid input.';
+  }
+  if (typeof e?.message === 'string') return e.message;
+  return 'An error occurred.';
+}
+
+export async function createPage(formData: FormData): Promise<ActionResult<{ id: string }>> {
   const parsed = CreateSchema.safeParse({
     title: readField(formData, 'title'),
     slug: readField(formData, 'slug') || undefined,
@@ -66,32 +111,22 @@ export async function createPage(formData: FormData): Promise<ActionResult<{ id:
   }
 
   try {
-    const page = await withTenant({ tenantId: user.tenantId }, (tx) =>
-      tx.page.create({
-        data: {
-          tenantId: user.tenantId,
-          title: parsed.data.title,
-          slug,
-          content: parsed.data.content ? { body: parsed.data.content } : {},
-        },
-        select: { id: true },
-      })
-    );
-
+    const entry = await api.post<ApiEntry>('/v1/content/entries', {
+      type_key: PAGE_TYPE_KEY,
+      slug,
+      body: {
+        title: parsed.data.title,
+        body: wrapPlainText(parsed.data.content),
+      },
+    });
     revalidatePath('/cms');
-    return { ok: true, data: { id: page.id } };
-  } catch (err: unknown) {
-    if (isPrismaCode(err, 'P2002')) {
-      return { ok: false, error: `A page with slug "${slug}" already exists.` };
-    }
-    console.error('createPage failed', err);
-    return { ok: false, error: 'Could not create page.' };
+    return { ok: true, data: { id: entry.id } };
+  } catch (err) {
+    return { ok: false, error: friendly(err) };
   }
 }
 
 export async function updatePage(id: string, formData: FormData): Promise<ActionResult> {
-  const { user } = await requireSession();
-
   const parsed = UpdateSchema.safeParse({
     title: readField(formData, 'title'),
     slug: readField(formData, 'slug'),
@@ -104,24 +139,19 @@ export async function updatePage(id: string, formData: FormData): Promise<Action
   }
 
   try {
-    await withTenant({ tenantId: user.tenantId }, (tx) =>
-      tx.page.update({
-        where: { id },
-        data: {
-          title: parsed.data.title,
-          slug: parsed.data.slug,
-          content: parsed.data.content ? { body: parsed.data.content } : undefined,
-          seoTitle: parsed.data.seoTitle ?? null,
-          metaDescription: parsed.data.metaDescription ?? null,
-        },
-      })
-    );
-  } catch (err: unknown) {
-    if (isPrismaCode(err, 'P2002')) {
-      return { ok: false, error: `Another page already uses slug "${parsed.data.slug}".` };
-    }
-    console.error('updatePage failed', err);
-    return { ok: false, error: 'Could not save changes.' };
+    await api.patch(`/v1/content/entries/${id}`, {
+      slug: parsed.data.slug,
+      body: {
+        title: parsed.data.title,
+        body: wrapPlainText(parsed.data.content),
+      },
+      seo: {
+        ...(parsed.data.seoTitle ? { title: parsed.data.seoTitle } : {}),
+        ...(parsed.data.metaDescription ? { description: parsed.data.metaDescription } : {}),
+      },
+    });
+  } catch (err) {
+    return { ok: false, error: friendly(err) };
   }
 
   revalidatePath('/cms');
@@ -130,38 +160,30 @@ export async function updatePage(id: string, formData: FormData): Promise<Action
 }
 
 export async function setPageStatus(id: string, rawStatus: string): Promise<ActionResult> {
-  const { user } = await requireSession();
-
   const parsed = StatusSchema.safeParse(rawStatus);
   if (!parsed.success) {
     return { ok: false, error: 'Invalid status.' };
   }
-
-  await withTenant({ tenantId: user.tenantId }, (tx) =>
-    tx.page.update({
-      where: { id },
-      data: {
-        status: parsed.data,
-        publishedAt: parsed.data === 'published' ? new Date() : null,
-      },
-    })
-  );
-
+  try {
+    if (parsed.data === 'published') {
+      await api.post(`/v1/content/entries/${id}/publish`);
+    } else {
+      await api.post(`/v1/content/entries/${id}/unpublish`);
+    }
+  } catch (err) {
+    return { ok: false, error: friendly(err) };
+  }
   revalidatePath('/cms');
   revalidatePath(`/cms/${id}`);
   return { ok: true };
 }
 
 export async function deletePage(id: string): Promise<ActionResult> {
-  const { user } = await requireSession();
-
-  await withTenant({ tenantId: user.tenantId }, (tx) => tx.page.delete({ where: { id } }));
-
+  try {
+    await api.delete(`/v1/content/entries/${id}`);
+  } catch (err) {
+    return { ok: false, error: friendly(err) };
+  }
   revalidatePath('/cms');
   return { ok: true };
-}
-
-function isPrismaCode(err: unknown, code: string): boolean {
-  if (typeof err !== 'object' || err === null || !('code' in err)) return false;
-  return (err as { code: string }).code === code;
 }

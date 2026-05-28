@@ -1,0 +1,43 @@
+# api-rest runtime image. Same shape as packages/db/Dockerfile:
+#   - single stage, node:24-alpine
+#   - pnpm via corepack
+#   - workspace context limited to api-rest + the packages it depends on so
+#     `pnpm install --filter` doesn't drag the entire monorepo into the image
+#   - runs tsx from the entrypoint; no separate compile step (the Prisma
+#     client is the only generated artifact, baked in via `prisma generate`
+#     against @sparx/db).
+#
+# Built by GitHub Actions, pushed to
+# us-central1-docker.pkg.dev/sparxworks/sparx/api-rest:<sha>.
+
+FROM node:24-alpine
+
+RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
+
+WORKDIR /app
+
+# Workspace context.
+COPY pnpm-workspace.yaml pnpm-lock.yaml package.json ./
+COPY tsconfig.base.json ./
+COPY packages/db ./packages/db
+COPY packages/cms-schemas ./packages/cms-schemas
+COPY services/api-rest ./services/api-rest
+
+# Install only what api-rest needs (and transitive workspace deps).
+RUN pnpm install --filter @sparx/api-rest... --frozen-lockfile --prod=false
+
+# Pre-generate the Prisma client so the first request doesn't pay the cost.
+RUN cd packages/db && pnpm exec prisma generate
+
+WORKDIR /app/services/api-rest
+
+# k8s SecurityContext requires runAsNonRoot. node:24-alpine ships a `node`
+# user (uid 1000) which satisfies the GKE Autopilot policy.
+RUN chown -R node:node /app
+USER node
+
+EXPOSE 3000
+
+# tsx as entrypoint matches the dev script; Fastify handles SIGTERM via the
+# graceful-shutdown hook in src/index.ts.
+ENTRYPOINT ["pnpm", "exec", "tsx", "src/index.ts"]

@@ -1,0 +1,37 @@
+{
+  "name": "@sparx/crm",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Sparx CRM — service layer (the single source of truth shared by REST, GraphQL, MCP, and Server Actions), event consumers, and MCP tool registry (docs/11-crm-prd.md, memory/feedback_crm_architecture.md decision #7).",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    },
+    "./services": {
+      "types": "./src/services/index.ts",
+      "default": "./src/services/index.ts"
+    }
+  },
+  "files": [
+    "src"
+  ],
+  "scripts": {
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --passWithNoTests",
+    "test:watch": "vitest",
+    "clean": "rm -rf .turbo dist *.tsbuildinfo"
+  },
+  "dependencies": {
+    "@sparx/crm-schemas": "workspace:*",
+    "@sparx/db": "workspace:*",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "typescript": "^5.7.0",
+    "vitest": "^4.1.7"
+  }
+}

@@ -41,12 +41,22 @@ export default defineConfig({
       dependencies: ['setup'],
     },
   ],
+  // Two web servers: the dashboard (this app) AND services/api-rest, which
+  // the CMS server actions call. Playwright boots both before tests run.
   // Use the production build in CI for realism; `next dev` locally for speed.
-  // `reuseExistingServer` lets a manually-started dev server be reused.
-  webServer: {
-    command: isCI ? `pnpm next start --port ${PORT}` : `pnpm next dev --port ${PORT}`,
-    url: baseURL,
-    timeout: 120_000,
-    reuseExistingServer: !isCI,
-  },
+  // `reuseExistingServer` lets a manually-started server be reused.
+  webServer: [
+    {
+      command: isCI ? `pnpm next start --port ${PORT}` : `pnpm next dev --port ${PORT}`,
+      url: baseURL,
+      timeout: 120_000,
+      reuseExistingServer: !isCI,
+    },
+    {
+      command: 'pnpm --filter @sparx/api-rest dev',
+      url: 'http://localhost:3100/health',
+      timeout: 120_000,
+      reuseExistingServer: !isCI,
+    },
+  ],
 });

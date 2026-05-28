@@ -1,6 +1,4 @@
 import Link from 'next/link';
-import { requireSession } from '@sparx/auth';
-import { withTenant } from '@sparx/db';
 import {
   Badge,
   Button,
@@ -18,29 +16,20 @@ import {
   Text,
 } from '@sparx/ui';
 import { FileText, Plus } from 'lucide-react';
+import { api } from '@/lib/api-rest-client';
 
 export const dynamic = 'force-dynamic';
 
-interface PageRow {
+interface ApiEntry {
   id: string;
-  slug: string;
-  title: string;
+  slug: string | null;
   status: string;
-  updatedAt: Date;
-}
-
-async function loadPages(tenantId: string): Promise<PageRow[]> {
-  return withTenant({ tenantId }, (tx) =>
-    tx.page.findMany({
-      select: { id: true, slug: true, title: true, status: true, updatedAt: true },
-      orderBy: { updatedAt: 'desc' },
-    })
-  );
+  body: { title?: string } & Record<string, unknown>;
+  updated_at: string;
 }
 
 export default async function CmsPage() {
-  const { user } = await requireSession();
-  const pages = await loadPages(user.tenantId);
+  const entries = await api.get<ApiEntry[]>('/v1/content/entries?type=page&limit=100');
 
   return (
     <Container size="xl">
@@ -61,7 +50,7 @@ export default async function CmsPage() {
           </Button>
         </Stack>
 
-        {pages.length === 0 ? (
+        {entries.length === 0 ? (
           <Card padding="none">
             <EmptyState
               icon={<FileText className="h-5 w-5" />}
@@ -76,25 +65,25 @@ export default async function CmsPage() {
           </Card>
         ) : (
           <Grid cols={1} mdCols={2} lgCols={3} gap={4}>
-            {pages.map((p) => (
-              <Card key={p.id} variant="module">
+            {entries.map((e) => (
+              <Card key={e.id} variant="module">
                 <CardHeader>
-                  <CardDescription>/{p.slug}</CardDescription>
-                  <CardTitle>{p.title}</CardTitle>
+                  <CardDescription>/{e.slug ?? ''}</CardDescription>
+                  <CardTitle>{e.body.title ?? '(untitled)'}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <Stack direction="row" align="center" gap={2}>
-                    <Badge variant={p.status === 'published' ? 'success' : 'outline'}>
-                      {p.status}
+                    <Badge variant={e.status === 'published' ? 'success' : 'outline'}>
+                      {e.status}
                     </Badge>
                     <Text size="xs" variant="muted">
-                      Updated {p.updatedAt.toLocaleDateString()}
+                      Updated {new Date(e.updated_at).toLocaleDateString()}
                     </Text>
                   </Stack>
                 </CardContent>
                 <CardFooter>
                   <Button variant="module-outline" size="sm" asChild>
-                    <Link href={`/cms/${p.id}`}>Edit</Link>
+                    <Link href={`/cms/${e.id}`}>Edit</Link>
                   </Button>
                 </CardFooter>
               </Card>

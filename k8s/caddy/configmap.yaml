@@ -27,27 +27,37 @@ data:
 
     # ----- Platform hostnames (Cloudflare-proxied; cert from on-demand) -----
     api.sparx.works {
-      tls { on_demand }
+      tls {
+        on_demand
+      }
       reverse_proxy api-rest.sparx-prod.svc.cluster.local:3000
     }
 
     graphql.sparx.works {
-      tls { on_demand }
+      tls {
+        on_demand
+      }
       reverse_proxy api-graphql.sparx-prod.svc.cluster.local:3000
     }
 
     mcp.sparx.works {
-      tls { on_demand }
+      tls {
+        on_demand
+      }
       reverse_proxy api-mcp.sparx-prod.svc.cluster.local:3000
     }
 
     app.sparx.works {
-      tls { on_demand }
+      tls {
+        on_demand
+      }
       reverse_proxy dashboard.sparx-prod.svc.cluster.local:3000
     }
 
     sparx.works, www.sparx.works {
-      tls { on_demand }
+      tls {
+        on_demand
+      }
       reverse_proxy web.sparx-prod.svc.cluster.local:3000
     }
 
@@ -59,35 +69,47 @@ data:
     sparxemail.com, www.sparxemail.com,
     sparxb2b.com, www.sparxb2b.com,
     sparx.email, www.sparx.email {
-      tls { on_demand }
+      tls {
+        on_demand
+      }
       reverse_proxy web.sparx-prod.svc.cluster.local:3000
     }
 
     # ----- Placeholder domains (301 to corresponding sparx.works path) -----
     # Replace with real reverse_proxy targets when each product matures.
     sparx.host, www.sparx.host {
-      tls { on_demand }
+      tls {
+        on_demand
+      }
       redir https://sparx.works/hosting{uri} permanent
     }
 
     sparx.software, www.sparx.software {
-      tls { on_demand }
+      tls {
+        on_demand
+      }
       redir https://sparx.works/docs{uri} permanent
     }
 
     sparx.market, www.sparx.market {
-      tls { on_demand }
+      tls {
+        on_demand
+      }
       redir https://sparx.works/market{uri} permanent
     }
 
     sparx.exchange, www.sparx.exchange {
-      tls { on_demand }
+      tls {
+        on_demand
+      }
       redir https://sparx.works{uri} permanent
     }
 
     # sparx.zone apex — redirect to platform home.
     sparx.zone, www.sparx.zone {
-      tls { on_demand }
+      tls {
+        on_demand
+      }
       redir https://sparx.works{uri} permanent
     }
 
@@ -96,6 +118,8 @@ data:
     # to customers.sparx.zone. The /internal/domain-check API decides if a
     # cert is issued.
     :443 {
-      tls { on_demand }
+      tls {
+        on_demand
+      }
       reverse_proxy storefront.sparx-prod.svc.cluster.local:3000
     }

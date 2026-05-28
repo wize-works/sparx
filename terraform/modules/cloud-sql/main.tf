@@ -4,7 +4,7 @@ resource "random_id" "instance_suffix" {
 
 resource "google_sql_database_instance" "primary" {
   name             = "${var.name_prefix}-pg-${random_id.instance_suffix.hex}"
-  database_version = "POSTGRES_16"
+  database_version = "POSTGRES_18"
   region           = var.region
 
   settings {
@@ -14,6 +14,11 @@ resource "google_sql_database_instance" "primary" {
     disk_size         = var.disk_size_gb
     disk_type         = "PD_SSD"
     disk_autoresize   = true
+
+    database_flags {
+      name  = "cloudsql.iam_authentication"
+      value = "on"
+    }
 
     ip_configuration {
       ipv4_enabled    = false

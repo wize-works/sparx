@@ -10,3 +10,11 @@ export {
   type SignUpMerchantResult,
 } from './sign-up';
 export { getSession, requireSession, type SparxSession } from './session';
+export {
+  isModuleEnabled,
+  requireModule,
+  invalidateModuleCache,
+  moduleDisabledEnvelope,
+  ModuleDisabledError,
+  type ModuleSlug,
+} from './module-gate';

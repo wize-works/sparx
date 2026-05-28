@@ -20,24 +20,20 @@ import {
 import { Trash2 } from 'lucide-react';
 import { deletePage, setPageStatus, updatePage } from '../actions';
 
+// EditableTenantPage holds the dashboard's plain-text view of a page entry.
+// The server component in [id]/page.tsx unwraps the rich-text doc into the
+// `content` string field for now (until the block editor lands in Phase 2).
+
 export interface EditableTenantPage {
   id: string;
   slug: string;
   title: string;
   status: string;
-  content: unknown;
+  content: string;
   seoTitle: string | null;
   metaDescription: string | null;
   publishedAt: Date | null;
   updatedAt: Date;
-}
-
-function readBody(content: unknown): string {
-  if (typeof content === 'object' && content !== null && 'body' in content) {
-    const body = content.body;
-    if (typeof body === 'string') return body;
-  }
-  return '';
 }
 
 export function EditPageForm({ page }: { page: EditableTenantPage }) {
@@ -129,7 +125,7 @@ export function EditPageForm({ page }: { page: EditableTenantPage }) {
         <Card>
           <CardHeader>
             <Heading level={3}>Content</Heading>
-            <CardDescription>Plain text for now — the rich editor lands later.</CardDescription>
+            <CardDescription>Plain text for now — the rich editor lands in Phase 2.</CardDescription>
           </CardHeader>
           <CardContent>
             <Stack gap={4}>
@@ -150,7 +146,7 @@ export function EditPageForm({ page }: { page: EditableTenantPage }) {
                   id="content"
                   name="content"
                   rows={8}
-                  defaultValue={readBody(page.content)}
+                  defaultValue={page.content}
                 />
               </Stack>
               <Stack gap={2}>
