@@ -19,9 +19,7 @@ const EnvSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   PORT: z.coerce.number().int().min(0).max(65535).default(3200),
   HOST: z.string().default('0.0.0.0'),
-  LOG_LEVEL: z
-    .enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent'])
-    .default('info'),
+  LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']).default('info'),
   DATABASE_URL: z.string().min(1),
   // Shared with the dashboard (and api-rest) — used to verify the
   // internal-trust JWTs carrying the staff session's {tenantId, userId, role}.

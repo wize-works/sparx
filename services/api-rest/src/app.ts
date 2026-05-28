@@ -8,7 +8,11 @@
 // REST-only route plumbing. GraphQL is a separate service (api-graphql).
 
 import { randomUUID } from 'node:crypto';
-import Fastify, { type FastifyInstance, type FastifyReply, type FastifyServerOptions } from 'fastify';
+import Fastify, {
+  type FastifyInstance,
+  type FastifyReply,
+  type FastifyServerOptions,
+} from 'fastify';
 import { CrmConflictError, CrmNotFoundError, CrmValidationError } from '@sparx/crm';
 import { createAuthPlugin } from '@sparx/api-core/auth';
 import { createErrorsPlugin, type ErrorEnvelope } from '@sparx/api-core/errors-plugin';
@@ -54,7 +58,11 @@ function loggerOptions(): FastifyServerOptions['logger'] {
 // CRM service-layer errors share the platform vocabulary (NOT_FOUND /
 // VALIDATION_ERROR / CONFLICT) — register them as extra mappers so the
 // generic api-core plugin doesn't need to know CRM exists.
-function crmErrorMapper(err: unknown, request: { id: string }, reply: FastifyReply): FastifyReply | undefined {
+function crmErrorMapper(
+  err: unknown,
+  request: { id: string },
+  reply: FastifyReply
+): FastifyReply | undefined {
   const requestId = request.id;
   if (err instanceof CrmNotFoundError) {
     const body: ErrorEnvelope = {
