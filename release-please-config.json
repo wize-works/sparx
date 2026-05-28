@@ -22,6 +22,7 @@
   "packages": {
     ".": {
       "package-name": "sparx",
+      "release-as": "0.1.0",
       "extra-files": []
     }
   }

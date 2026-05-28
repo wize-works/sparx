@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+# Pre-push guard. Runs the exact checks CI runs so red builds never reach
+# `main`. Enable once with `git config core.hooksPath .githooks` (the root
+# `prepare` script in package.json does this automatically after install).
+#
+# Bypass intentionally with `git push --no-verify` if you really need to.
+
+set -e
+
+# Color helpers (no-op when not a TTY)
+if [ -t 1 ]; then
+  GREY=$'\033[90m'; RED=$'\033[31m'; GREEN=$'\033[32m'; RESET=$'\033[0m'
+else
+  GREY=""; RED=""; GREEN=""; RESET=""
+fi
+
+step() { printf "${GREY}→${RESET} %s\n" "$1"; }
+ok()   { printf "${GREEN}✓${RESET} %s\n" "$1"; }
+fail() { printf "${RED}✗ %s${RESET}\n" "$1"; exit 1; }
+
+step "pre-push: verifying tree before push"
+
+step "pnpm install --frozen-lockfile (lockfile drift check)"
+pnpm install --frozen-lockfile --silent || fail "pnpm-lock.yaml out of sync with a package.json — run \`pnpm install\` and commit the updated lockfile"
+ok "lockfile in sync"
+
+step "pnpm format:check"
+pnpm format:check >/dev/null || fail "prettier found unformatted files — run \`pnpm format\` and commit"
+ok "format clean"
+
+step "pnpm lint"
+pnpm lint >/dev/null || fail "eslint failed — fix errors above and commit"
+ok "lint clean"
+
+step "pnpm typecheck"
+pnpm typecheck >/dev/null || fail "tsc found type errors — fix errors above and commit"
+ok "typecheck clean"
+
+printf "${GREEN}✓ pre-push checks passed${RESET}\n"

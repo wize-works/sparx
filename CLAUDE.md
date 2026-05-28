@@ -25,6 +25,10 @@ The repo is in **early scaffold phase**: design docs under [docs/](docs/) plus t
 
 Nothing has been `pnpm install`ed yet — the first time anyone clones, they need to run it. Don't claim builds/tests pass without actually running them.
 
+### Pre-push guard
+
+`pnpm install` wires `git config core.hooksPath .githooks` (via the root `prepare` script), which enables [.githooks/pre-push](.githooks/pre-push). Every `git push` first runs `pnpm install --frozen-lockfile && pnpm format:check && pnpm lint && pnpm typecheck` against the working tree. A red local check blocks the push — this is intentional: CI on `main` is the production tripwire, not a debugging surface. Bypass deliberately with `git push --no-verify` if you really need to (e.g. recovering from a hook bug).
+
 ## What this product is
 
 Sparx (sparx.works) is WizeWorks' modular commerce OS — a single platform combining storefront, commerce, CRM, CMS, email, B2B/wholesale, dropship, and MCP/AI integration. Modules activate independently; a merchant pays only for what they use. The first Enterprise client driving the initial feature set is **Gillett Diesel Service** (B2B + fleet + MCP requirements).

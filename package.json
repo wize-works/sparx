@@ -10,6 +10,7 @@
     "pnpm": ">=9.0.0"
   },
   "scripts": {
+    "prepare": "git config core.hooksPath .githooks 2>/dev/null || true",
     "postinstall": "pnpm --filter @sparx/db db:generate",
     "build": "turbo run build",
     "dev": "turbo run dev",
