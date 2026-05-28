@@ -40,8 +40,8 @@ export default async function EmailPage() {
           <CardHeader>
             <Heading level={3}>Send a test email</Heading>
             <CardDescription>
-              Renders the production template against the active provider and reports the
-              delivery id. In dev (console provider) the email content is also logged to stdout.
+              Renders the production template against the active provider and reports the delivery
+              id. In dev (console provider) the email content is also logged to stdout.
             </CardDescription>
           </CardHeader>
           <CardContent>
