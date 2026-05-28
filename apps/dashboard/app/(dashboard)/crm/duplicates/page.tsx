@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
 import { ArrowLeft, Users } from 'lucide-react';
 
 import { requireSession, isModuleEnabled } from '@sparx/auth';
@@ -17,7 +18,6 @@ import {
   Text,
 } from '@sparx/ui';
 
-import { ModuleStub } from '../../../../components/module-stub';
 import { MergeCandidatesGroup } from './_components/merge-candidates-group';
 
 // Find-duplicates landing — surfaces groups of customers that share an email
@@ -30,7 +30,9 @@ export default async function DuplicatesPage() {
   const session = await requireSession();
   const enabled = await isModuleEnabled(session.user.tenantId, 'crm');
   if (!enabled) {
-    return <ModuleStub icon={<Users className="h-5 w-5" />} title="CRM" tagline="" />;
+    // CRM disabled — bounce back to the landing page, which renders the
+    // ModuleStub explaining how to activate.
+    redirect('/crm');
   }
 
   const groups = await customerService.findLikelyDuplicates(
