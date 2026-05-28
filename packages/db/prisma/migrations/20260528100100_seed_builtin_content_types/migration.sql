@@ -212,6 +212,9 @@ ON CONFLICT ("tenant_id", "key") DO UPDATE SET
     "is_built_in"  = EXCLUDED."is_built_in",
     "updated_at"   = NOW();
 
+-- (module insert below; the DROP DEFAULT alters run last so these inserts
+-- can still rely on the table-level updated_at default.)
+
 -- ─────────────────────────────────────────────────────────────────────────
 -- module
 -- ─────────────────────────────────────────────────────────────────────────
@@ -282,3 +285,23 @@ ON CONFLICT ("tenant_id", "key") DO UPDATE SET
     "is_singleton" = EXCLUDED."is_singleton",
     "is_built_in"  = EXCLUDED."is_built_in",
     "updated_at"   = NOW();
+
+-- ─────────────────────────────────────────────────────────────────────────
+-- Align updated_at columns with the codebase convention.
+-- ─────────────────────────────────────────────────────────────────────────
+-- The earlier auth migration (20260527162102_init) dropped DB defaults on
+-- `updated_at` for tables Prisma manages with `@updatedAt`; the same drift
+-- would otherwise re-appear here on every `prisma migrate diff`. We dropped
+-- defaults only AFTER the built-in INSERTs above so those inserts could
+-- still rely on the table-level default.
+
+ALTER TABLE "content_types"          ALTER COLUMN "updated_at" DROP DEFAULT;
+ALTER TABLE "content_entries"        ALTER COLUMN "updated_at" DROP DEFAULT;
+ALTER TABLE "taxonomies"             ALTER COLUMN "updated_at" DROP DEFAULT;
+ALTER TABLE "taxonomy_terms"         ALTER COLUMN "updated_at" DROP DEFAULT;
+ALTER TABLE "authors"                ALTER COLUMN "updated_at" DROP DEFAULT;
+ALTER TABLE "redirects"              ALTER COLUMN "updated_at" DROP DEFAULT;
+ALTER TABLE "navigation_menus"       ALTER COLUMN "updated_at" DROP DEFAULT;
+ALTER TABLE "navigation_items"       ALTER COLUMN "updated_at" DROP DEFAULT;
+ALTER TABLE "webhook_subscriptions"  ALTER COLUMN "updated_at" DROP DEFAULT;
+ALTER TABLE "media_assets"           ALTER COLUMN "updated_at" DROP DEFAULT;

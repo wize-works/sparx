@@ -25,7 +25,10 @@
 -- idempotent for `prisma migrate reset` and for environments where a
 -- previous attempt partially succeeded.
 
-INSERT INTO "tenants" ("id", "slug", "name", "email", "plan", "status", "settings")
+-- `tenants.updated_at` lost its DB default in 20260527162102_init — Prisma
+-- now sets it from the client. Raw-SQL INSERTs must supply it explicitly.
+
+INSERT INTO "tenants" ("id", "slug", "name", "email", "plan", "status", "settings", "updated_at")
 VALUES (
     '00000000-0000-0000-0000-000000000000',
     'sparx-platform',
@@ -33,7 +36,8 @@ VALUES (
     'platform@sparx.works',
     'platform',
     'system',
-    '{}'::jsonb
+    '{}'::jsonb,
+    NOW()
 )
 ON CONFLICT ("id") DO NOTHING;
 
