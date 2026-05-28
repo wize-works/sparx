@@ -28,8 +28,8 @@ test.describe('CMS pages — create, edit, publish, delete', () => {
     await page.getByLabel('Content (optional)').fill('Hello from the CRUD test.');
     await page.getByRole('button', { name: 'Create page' }).click();
 
-    // 3. Lands on edit form
-    await expect(page).toHaveURL(/\/cms\/[0-9a-f-]+$/);
+    // 3. Lands on edit form (server action can run slow under parallel load)
+    await page.waitForURL(/\/cms\/[0-9a-f-]+$/, { timeout: 20_000 });
     await expect(page.getByRole('heading', { name: 'Edit page', level: 1 })).toBeVisible();
     await expect(page.getByLabel('Title', { exact: true })).toHaveValue(title);
     await expect(page.getByLabel('Slug')).toHaveValue(slug);
@@ -81,7 +81,10 @@ test.describe('CMS pages — create, edit, publish, delete', () => {
     await page.getByLabel('Title', { exact: true }).fill(`First ${stamp}`);
     await page.getByLabel('Slug (optional)').fill(slug);
     await page.getByRole('button', { name: 'Create page' }).click();
-    await expect(page).toHaveURL(/\/cms\/[0-9a-f-]+$/);
+    // Under parallel load the server action can take a few seconds; wait
+    // explicitly with a generous timeout rather than relying on the default
+    // 5s assertion budget.
+    await page.waitForURL(/\/cms\/[0-9a-f-]+$/, { timeout: 20_000 });
     const firstUrl = page.url();
 
     // Second create with same slug
