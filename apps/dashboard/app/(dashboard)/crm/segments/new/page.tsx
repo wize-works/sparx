@@ -114,7 +114,7 @@ export default function NewSegmentPage() {
           <Heading level={1}>New segment</Heading>
           <Text variant="muted">
             Segments are materialized incrementally; this rule is evaluated on every event that
-            could change a customer's projection (orders, opens, clicks, B2B updates).
+            could change a customer&apos;s projection (orders, opens, clicks, B2B updates).
           </Text>
         </Stack>
 

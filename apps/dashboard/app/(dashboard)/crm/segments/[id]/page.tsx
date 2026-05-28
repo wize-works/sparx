@@ -184,10 +184,6 @@ function customerLabel(c: {
   company: string | null;
   email: string | null;
 }): string {
-  return (
-    [c.firstName, c.lastName].filter(Boolean).join(' ') ||
-    c.company ||
-    c.email ||
-    'Unnamed customer'
-  );
+  const fullName = [c.firstName, c.lastName].filter(Boolean).join(' ');
+  return fullName !== '' ? fullName : (c.company ?? c.email ?? 'Unnamed customer');
 }

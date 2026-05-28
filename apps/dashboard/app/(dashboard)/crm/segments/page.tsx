@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Layers, Plus, Star, Archive, RefreshCw } from 'lucide-react';
+import { Layers, Plus, Star, Archive } from 'lucide-react';
 
 import { requireSession } from '@sparx/auth';
 import { segmentService } from '@sparx/crm';
