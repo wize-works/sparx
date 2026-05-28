@@ -93,17 +93,31 @@ export default function NewB2bAccountPage() {
                   </Stack>
                   <Stack gap={2} className="flex-1">
                     <Label htmlFor="website">Website</Label>
-                    <Input id="website" name="website" type="url" placeholder="https://example.com" />
+                    <Input
+                      id="website"
+                      name="website"
+                      type="url"
+                      placeholder="https://example.com"
+                    />
                   </Stack>
                 </Stack>
                 <Stack direction="row" gap={4}>
                   <Stack gap={2} className="flex-1">
                     <Label htmlFor="pricingTier">Pricing tier</Label>
-                    <Input id="pricingTier" name="pricingTier" placeholder="bronze, silver, gold…" />
+                    <Input
+                      id="pricingTier"
+                      name="pricingTier"
+                      placeholder="bronze, silver, gold…"
+                    />
                   </Stack>
                   <Stack gap={2} className="w-40">
                     <Label htmlFor="status">Status</Label>
-                    <select id="status" name="status" defaultValue="active" className={SELECT_CLASS}>
+                    <select
+                      id="status"
+                      name="status"
+                      defaultValue="active"
+                      className={SELECT_CLASS}
+                    >
                       <option value="active">Active</option>
                       <option value="on_hold">On hold</option>
                       <option value="closed">Closed</option>
@@ -113,7 +127,14 @@ export default function NewB2bAccountPage() {
                 <Stack direction="row" gap={4}>
                   <Stack gap={2} className="flex-1">
                     <Label htmlFor="creditLimit">Credit limit</Label>
-                    <Input id="creditLimit" name="creditLimit" type="number" min="0" step="0.01" defaultValue={0} />
+                    <Input
+                      id="creditLimit"
+                      name="creditLimit"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      defaultValue={0}
+                    />
                   </Stack>
                   <Stack gap={2} className="w-40">
                     <Label htmlFor="discountPercent">Discount %</Label>
@@ -128,7 +149,12 @@ export default function NewB2bAccountPage() {
                   </Stack>
                   <Stack gap={2} className="flex-1">
                     <Label htmlFor="paymentTerms">Payment terms</Label>
-                    <select id="paymentTerms" name="paymentTerms" defaultValue="" className={SELECT_CLASS}>
+                    <select
+                      id="paymentTerms"
+                      name="paymentTerms"
+                      defaultValue=""
+                      className={SELECT_CLASS}
+                    >
                       <option value="">(unspecified)</option>
                       <option value="due_on_receipt">Due on receipt</option>
                       <option value="net_15">Net 15</option>
