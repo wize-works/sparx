@@ -112,7 +112,7 @@ export function ContentBlockEditor({
     if (!editor || !value) return;
     const current = editor.getJSON();
     if (JSON.stringify(current) !== JSON.stringify(value)) {
-      editor.commands.setContent(value as JSONContent, { emitUpdate: false });
+      editor.commands.setContent(value, { emitUpdate: false });
     }
   }, [editor, value]);
 
