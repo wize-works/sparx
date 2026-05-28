@@ -20,7 +20,11 @@ WORKDIR /app
 COPY pnpm-workspace.yaml pnpm-lock.yaml package.json ./
 COPY tsconfig.base.json ./
 COPY packages/db ./packages/db
+COPY packages/auth ./packages/auth
+COPY packages/email ./packages/email
 COPY packages/cms-schemas ./packages/cms-schemas
+COPY packages/crm-schemas ./packages/crm-schemas
+COPY packages/crm ./packages/crm
 COPY services/api-rest ./services/api-rest
 
 # Install only what api-rest needs (and transitive workspace deps).
