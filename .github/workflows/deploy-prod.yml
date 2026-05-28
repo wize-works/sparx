@@ -48,7 +48,7 @@ jobs:
       # which is unreachable from the runner — that's what caused the i/o
       # timeout against 35.255.x.x in earlier runs.
       - name: Set up gcloud
-        uses: google-github-actions/setup-gcloud@v2
+        uses: google-github-actions/setup-gcloud@v3
         with:
           install_components: gke-gcloud-auth-plugin
 
