@@ -25,8 +25,10 @@ locals {
     "cloudbuild.googleapis.com",
     "cloudresourcemanager.googleapis.com",
     "compute.googleapis.com",
+    "connectgateway.googleapis.com",
     "container.googleapis.com",
     "dns.googleapis.com",
+    "gkehub.googleapis.com",
     "iam.googleapis.com",
     "iamcredentials.googleapis.com",
     "logging.googleapis.com",
@@ -64,6 +66,10 @@ resource "google_project_iam_member" "deployer_roles" {
     "roles/storage.objectAdmin",
     "roles/iam.serviceAccountUser",
     "roles/pubsub.publisher",
+    # Required to call the GKE Connect Gateway proxy (which the deploy
+    # workflow uses to reach the private control plane).
+    "roles/gkehub.gatewayEditor",
+    "roles/gkehub.viewer",
   ])
   project = var.project_id
   role    = each.value

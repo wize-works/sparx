@@ -15,3 +15,11 @@ output "cluster_ca_certificate" {
 output "cluster_location" {
   value = google_container_cluster.primary.location
 }
+
+output "fleet_membership_id" {
+  value = google_gke_hub_membership.primary.membership_id
+}
+
+output "fleet_membership_location" {
+  value = google_gke_hub_membership.primary.location
+}

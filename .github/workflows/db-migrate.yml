@@ -88,8 +88,9 @@ jobs:
           docker push "${AR_REPO}/${IMAGE_NAME}:latest"
 
       - name: Get GKE credentials via Connect Gateway
+        # Fleet membership lives at `global` (terraform/modules/gke/main.tf).
         run: |
-          gcloud container fleet memberships get-credentials "$CLUSTER" --location "$REGION"
+          gcloud container fleet memberships get-credentials "$CLUSTER" --location global
 
       # If RESOLVE_MIGRATION is set, first run the resolve Job to mark the
       # named migration row as rolled-back in `_prisma_migrations`. The main

@@ -36,3 +36,27 @@ resource "google_container_cluster" "primary" {
 
   deletion_protection = var.deletion_protection
 }
+
+# Fleet membership — prerequisite for Connect Gateway, which the deploy
+# workflow uses to reach the private control plane from GitHub-hosted
+# runners. The membership_id matches the cluster name so the workflow can
+# resolve it with `gcloud container fleet memberships get-credentials
+# "$CLUSTER" --location "$REGION"`.
+resource "google_gke_hub_membership" "primary" {
+  membership_id = google_container_cluster.primary.name
+  # Fleet memberships are global by default; the deploy workflow looks them
+  # up with `gcloud container fleet memberships get-credentials "$CLUSTER"
+  # --location global`. Regional memberships exist but require explicit
+  # opt-in we don't need here.
+  location = "global"
+
+  endpoint {
+    gke_cluster {
+      resource_link = "//container.googleapis.com/${google_container_cluster.primary.id}"
+    }
+  }
+
+  authority {
+    issuer = "https://container.googleapis.com/v1/${google_container_cluster.primary.id}"
+  }
+}

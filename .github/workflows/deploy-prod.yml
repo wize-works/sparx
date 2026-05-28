@@ -53,7 +53,8 @@ jobs:
           install_components: gke-gcloud-auth-plugin
 
       - name: Get GKE credentials via Connect Gateway
-        run: gcloud container fleet memberships get-credentials "$CLUSTER" --location "$REGION"
+        # Fleet membership lives at `global` (terraform/modules/gke/main.tf).
+        run: gcloud container fleet memberships get-credentials "$CLUSTER" --location global
 
       - name: Resolve image tag
         id: tag
