@@ -49,6 +49,7 @@ describe('order lifecycle', () => {
     for (const t of topics) {
       bus.subscribe(t, (event) => {
         platformEvents.push(event);
+        return Promise.resolve();
       });
     }
 

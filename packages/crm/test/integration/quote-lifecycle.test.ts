@@ -23,6 +23,7 @@ describe('quote lifecycle', () => {
     const bus = resetPlatformBusForTesting();
     bus.subscribe('order.created', (e) => {
       platformEvents.push(e);
+      return Promise.resolve();
     });
 
     const customer = await customerService.create(test.ctx, {
