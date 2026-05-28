@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { KanbanSquare, ArrowRight, Archive } from 'lucide-react';
+import { KanbanSquare, ArrowRight, Archive, Plus, Settings } from 'lucide-react';
 
 import { requireSession } from '@sparx/auth';
 import { pipelineService } from '@sparx/crm';
@@ -63,6 +63,9 @@ export default async function PipelinesPage({ searchParams }: PageProps) {
                 {includeArchived ? 'Hide archived' : 'Show archived'}
               </Link>
             </Button>
+            <Button asChild variant="module" leftIcon={<Plus className="h-4 w-4" />}>
+              <Link href="/crm/pipelines/new">New pipeline</Link>
+            </Button>
           </Stack>
         </Stack>
 
@@ -100,6 +103,11 @@ export default async function PipelinesPage({ searchParams }: PageProps) {
                       </Text>
                     </Stack>
                     <Stack direction="row" gap={2}>
+                      <Button asChild variant="ghost" size="icon-sm" aria-label="Edit pipeline">
+                        <Link href={`/crm/pipelines/${pipeline.id}/edit`}>
+                          <Settings className="h-4 w-4" />
+                        </Link>
+                      </Button>
                       <Button asChild variant="ghost">
                         <Link href={`/crm/pipelines/${pipeline.id}?view=list`}>List</Link>
                       </Button>
