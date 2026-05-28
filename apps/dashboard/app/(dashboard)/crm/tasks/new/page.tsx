@@ -45,8 +45,8 @@ export default async function NewTaskPage({ searchParams }: PageProps) {
           </Button>
           <Heading level={1}>New task</Heading>
           <Text variant="muted">
-            Assign a follow-up to yourself or a teammate. Tasks linked to a customer or deal show
-            up on that record's task list as well.
+            Assign a follow-up to yourself or a teammate. Tasks linked to a customer or deal show up
+            on that record's task list as well.
           </Text>
         </Stack>
 

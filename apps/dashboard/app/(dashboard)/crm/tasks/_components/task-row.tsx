@@ -82,11 +82,11 @@ export function TaskRow({ task, overdue }: { task: TaskCard; overdue?: boolean }
           <Check className="h-3 w-3" />
         </div>
       )}
-      <Stack gap={1} className="flex-1 min-w-0">
+      <Stack gap={1} className="min-w-0 flex-1">
         <Text
           size="sm"
           weight="medium"
-          className={isOpen ? '' : 'line-through text-[var(--color-text-tertiary)]'}
+          className={isOpen ? '' : 'text-[var(--color-text-tertiary)] line-through'}
         >
           {task.title}
         </Text>
