@@ -74,7 +74,7 @@ spec:
           resources:
             requests:
               cpu: '100m'
-              memory: '256Mi'
+              memory: '512Mi'
             limits:
               cpu: '1000m'
               memory: '512Mi'
@@ -130,12 +130,6 @@ spec:
         target:
           type: Utilization
           averageUtilization: 70
-    - type: Resource
-      resource:
-        name: memory
-        target:
-          type: Utilization
-          averageUtilization: 80
   behavior:
     scaleDown:
       stabilizationWindowSeconds: 300
