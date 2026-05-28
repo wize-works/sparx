@@ -31,6 +31,7 @@ on:
           - app-env
           - app-secrets
           - apps
+          - workers
 
 permissions:
   contents: read
@@ -175,6 +176,14 @@ jobs:
         run: |
           set -euo pipefail
           kubectl apply -k k8s/apps/
+
+      # Worker Deployments (Pub/Sub consumers). Same pattern as apps —
+      # deploy-prod only rolls images; this step creates the Deployments.
+      - name: Apply worker Deployments
+        if: ${{ inputs.components == 'all-platform' || inputs.components == 'workers' }}
+        run: |
+          set -euo pipefail
+          kubectl apply -k k8s/workers/
 
       - name: Show cluster state
         if: always()

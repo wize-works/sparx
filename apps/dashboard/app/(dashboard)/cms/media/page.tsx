@@ -33,7 +33,7 @@ interface MediaAsset {
   status: string;
   alt_text: string | null;
   usage_count: number;
-  variants: Array<{ id: string; format: string; width: number; url: string }>;
+  variants: { id: string; format: string; width: number; url: string }[];
   original_url: string | null;
   updated_at: string;
 }
@@ -97,7 +97,6 @@ function MediaCard({ asset }: { asset: MediaAsset }) {
           style={asset.dominant_color ? { backgroundColor: asset.dominant_color } : undefined}
         >
           {isImage && thumb ? (
-            // eslint-disable-next-line @next/next/no-img-element
             <img
               src={thumb}
               alt={asset.alt_text ?? asset.original_filename}

@@ -34,14 +34,14 @@ interface MediaAssetDetail {
   status: string;
   processing_error: string | null;
   usage_count: number;
-  variants: Array<{
+  variants: {
     id: string;
     format: string;
     width: number;
     height: number;
     byte_size: string;
     url: string;
-  }>;
+  }[];
   original_url: string | null;
   created_at: string;
   updated_at: string;

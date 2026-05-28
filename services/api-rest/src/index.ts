@@ -3,12 +3,19 @@
 
 import { createApp } from './app.js';
 import { env } from './env.js';
+import { startScheduledPublishLoop } from './lib/scheduled-publish.js';
 
 async function main(): Promise<void> {
   const app = await createApp();
 
+  // Background tick that flips entries with status='scheduled' to
+  // 'published' once their `scheduled_at` has passed. Singleton across
+  // pods via Postgres advisory lock — see lib/scheduled-publish.ts.
+  const stopScheduledPublish = startScheduledPublishLoop(app.log);
+
   const shutdown = (signal: NodeJS.Signals): void => {
     app.log.info({ signal }, 'shutdown received');
+    stopScheduledPublish();
     void app
       .close()
       .then(() => {

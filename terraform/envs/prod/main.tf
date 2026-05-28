@@ -57,22 +57,53 @@ module "artifact_registry" {
 module "pubsub" {
   source = "../../modules/pubsub"
 
+  # One topic per event type. Topic name == event type — api-rest's
+  # CloudPubSubPublisher (services/api-rest/src/lib/pubsub.ts) resolves a
+  # topic by `event.type`, so adding a new EventType requires:
+  #   1. Add the literal to the EventType union in pubsub.ts
+  #   2. Add the same string here
+  #   3. (Optionally) add a subscription below for the consumer(s)
   topics = [
+    # Commerce / orders
     "order.created",
     "order.updated",
+    # CRM customers
     "customer.created",
     "customer.updated",
+    # Cart
     "cart.abandoned",
+    # Domains
     "domain.verified",
     "domain.purchased",
+    # Email
     "email.send",
     "email.domain.verified",
+    # Module lifecycle
     "module.activated",
     "module.deactivated",
+    # Stripe webhooks
     "stripe.webhook",
+    # CMS content lifecycle (published by api-rest content routes)
+    "content.entry.created",
+    "content.entry.updated",
+    "content.entry.published",
+    "content.entry.scheduled",
+    "content.entry.unpublished",
+    "content.entry.deleted",
+    "content.revision.created",
+    "content_type.upserted",
+    # Media pipeline (published by api-rest media routes, consumed by media-worker)
+    "media.uploaded",
+    "media.processed",
+    "media.deleted",
+    # Redirects (consumed by edge/cache invalidation workers, Phase 4)
+    "redirect.added",
+    "redirect.removed",
   ]
 
   # Subscription naming convention: <topic>.<consumer>
+  # Only add a subscription once the consumer worker is being deployed —
+  # idle subscriptions still cost retention storage.
   subscriptions = {
     "email.send.worker-email" = {
       topic                = "email.send"
@@ -102,6 +133,12 @@ module "pubsub" {
     }
     "customer.updated.worker-webhook" = {
       topic = "customer.updated"
+    }
+    # media-worker: pulls media.uploaded events, generates AVIF/WebP/JPEG
+    # variants, persists under /variants/ in the media bucket.
+    "media.uploaded.media-worker" = {
+      topic                = "media.uploaded"
+      ack_deadline_seconds = 120 # sharp encodes for large AVIFs can run ~60s
     }
   }
 }

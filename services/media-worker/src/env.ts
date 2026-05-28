@@ -12,7 +12,9 @@ const EnvSchema = z.object({
   // Pub/Sub. The worker pulls from a tenant-agnostic subscription that
   // filters on `attributes.type='media.uploaded'`.
   GCP_PROJECT_ID: z.string().min(1),
-  PUBSUB_SUBSCRIPTION: z.string().default('media-worker'),
+  // Subscription name matches the TF-managed subscription
+  // `media.uploaded.media-worker` (terraform/envs/prod/main.tf).
+  PUBSUB_SUBSCRIPTION: z.string().default('media.uploaded.media-worker'),
   // Cloud Storage — must be set, the worker has no local-disk fallback.
   GCS_MEDIA_BUCKET: z.string().min(1),
   // Variant widths (px). Smaller than 400 isn't worth a network round-trip;

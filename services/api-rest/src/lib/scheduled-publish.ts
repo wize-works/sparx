@@ -106,7 +106,10 @@ export async function runScheduledPublishTick(logger: FastifyBaseLogger): Promis
               entityId: after.id,
               diff: {
                 before: { status: 'scheduled' },
-                after: { status: 'published', publishedAt: after.publishedAt.toISOString() },
+                after: {
+                  status: 'published',
+                  publishedAt: after.publishedAt?.toISOString() ?? null,
+                },
               },
             },
           });

@@ -14,7 +14,7 @@ interface CmsTabsProps {
   current: CmsSection;
 }
 
-const TABS: Array<{ section: CmsSection; href: string; label: string }> = [
+const TABS: { section: CmsSection; href: string; label: string }[] = [
   { section: 'pages', href: '/cms', label: 'Pages' },
   { section: 'media', href: '/cms/media', label: 'Media' },
 ];

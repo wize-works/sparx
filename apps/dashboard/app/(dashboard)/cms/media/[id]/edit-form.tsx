@@ -99,7 +99,6 @@ export function AssetEditForm({
           className="relative w-full cursor-crosshair overflow-hidden rounded-md border border-[var(--color-border-default)] bg-[var(--color-bg-subtle)]"
           style={{ aspectRatio: '16 / 9' }}
         >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={previewUrl}
             alt={altText || 'Asset preview'}

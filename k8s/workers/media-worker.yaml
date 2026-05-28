@@ -48,7 +48,7 @@ spec:
             - name: SERVICE_NAME
               value: media-worker
             - name: PUBSUB_SUBSCRIPTION
-              value: media-worker
+              value: media.uploaded.media-worker
             - name: GCS_MEDIA_BUCKET
               valueFrom:
                 configMapKeyRef:

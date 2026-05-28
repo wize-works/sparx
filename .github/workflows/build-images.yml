@@ -42,6 +42,7 @@ jobs:
           - api-mcp
           - dashboard
           - storefront
+          - media-worker
           - worker-email
           - worker-domain
           - worker-dropship
