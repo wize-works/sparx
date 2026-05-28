@@ -47,7 +47,7 @@ describe('order lifecycle', () => {
       'order.delivered',
     ];
     for (const t of topics) {
-      bus.subscribe(t, async (event) => {
+      bus.subscribe(t, (event) => {
         platformEvents.push(event);
       });
     }

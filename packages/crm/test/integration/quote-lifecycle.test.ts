@@ -21,7 +21,7 @@ describe('quote lifecycle', () => {
   beforeAll(async () => {
     test = await makeTestContext('owner');
     const bus = resetPlatformBusForTesting();
-    bus.subscribe('order.created', async (e) => {
+    bus.subscribe('order.created', (e) => {
       platformEvents.push(e);
     });
 
