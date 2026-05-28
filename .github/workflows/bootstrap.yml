@@ -166,6 +166,13 @@ jobs:
           done
           kubectl delete secret sparx-app-secrets -n "$NAMESPACE" --ignore-not-found
           kubectl create secret generic sparx-app-secrets -n "$NAMESPACE" "${literals[@]}"
+          # Force-roll any Deployment that consumes the secret so the new
+          # values land. Selector tier=api|web matches the app manifests.
+          for tier in api web; do
+            if kubectl get deployment -n "$NAMESPACE" -l "tier=$tier" -o name | grep -q .; then
+              kubectl rollout restart deployment -n "$NAMESPACE" -l "tier=$tier"
+            fi
+          done
 
       # App Deployments themselves (web, api-rest, dashboard). The deploy-prod
       # workflow only rolls images into existing Deployments — this step is
