@@ -32,12 +32,16 @@ step "pnpm format:check"
 pnpm format:check >/dev/null || fail "prettier found unformatted files — run \`pnpm format\` and commit"
 ok "format clean"
 
-step "pnpm lint"
-pnpm lint >/dev/null || fail "eslint failed — fix errors above and commit"
+# Bypass turbo's `^build` dep graph by running each workspace's lint/typecheck
+# script directly. We rely on whatever generated artifacts (Prisma client etc.)
+# are already on disk — CI runs the full turbo graph as the source of truth.
+# Avoids EPERM on locked Prisma DLLs when `next dev` is running locally.
+step "pnpm -r run lint"
+pnpm -r --workspace-concurrency=4 run lint || fail "eslint failed — fix errors above and commit"
 ok "lint clean"
 
-step "pnpm typecheck"
-pnpm typecheck >/dev/null || fail "tsc found type errors — fix errors above and commit"
+step "pnpm -r run typecheck"
+pnpm -r --workspace-concurrency=4 run typecheck || fail "tsc found type errors — fix errors above and commit"
 ok "typecheck clean"
 
 printf "${GREEN}✓ pre-push checks passed${RESET}\n"
