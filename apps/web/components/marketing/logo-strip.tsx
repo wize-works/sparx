@@ -23,47 +23,44 @@ export function LogoStrip() {
       }}
     >
       <Container style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Eyebrow>Operating live on Sparx</Eyebrow>
-        <span
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <Eyebrow>Operating live on Sparx</Eyebrow>
+          <span
+            style={{
+              fontFamily: 'var(--font-mono)',
+              fontSize: '12px',
+              color: 'var(--color-text-tertiary)',
+            }}
+          >
+            — and growing
+          </span>
+        </div>
+        <div
+          className="mkt-cluster"
           style={{
-            fontFamily: 'var(--font-mono)',
-            fontSize: '12px',
-            color: 'var(--color-text-tertiary)',
+            justifyContent: 'space-between',
+            gap: '32px',
+            rowGap: '20px',
           }}
         >
-          — and growing
-        </span>
-      </div>
-      <div
-        className="mkt-cluster"
-        style={{
-          justifyContent: 'space-between',
-          gap: '32px',
-          rowGap: '20px',
-        }}
-      >
-        {LOGOS.map((logo, i) => (
-          <div
-            key={logo.name}
-            style={{ display: 'flex', alignItems: 'center', gap: '10px' }}
-          >
-            <LogoMark index={i} />
-            <span
-              style={{
-                fontFamily: 'var(--font-sans)',
-                fontWeight: 500,
-                fontSize: '18px',
-                letterSpacing: '-0.02em',
-                color: 'var(--color-text-primary)',
-                whiteSpace: 'nowrap',
-              }}
-            >
-              {logo.name}
-            </span>
-          </div>
-        ))}
-      </div>
+          {LOGOS.map((logo, i) => (
+            <div key={logo.name} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <LogoMark index={i} />
+              <span
+                style={{
+                  fontFamily: 'var(--font-sans)',
+                  fontWeight: 500,
+                  fontSize: '18px',
+                  letterSpacing: '-0.02em',
+                  color: 'var(--color-text-primary)',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {logo.name}
+              </span>
+            </div>
+          ))}
+        </div>
       </Container>
     </section>
   );
@@ -92,12 +89,7 @@ function LogoMark({ index }: { index: number }) {
     case 2:
       return (
         <svg width={22} height={22} viewBox="0 0 24 24" fill="none" aria-hidden>
-          <path
-            d="M12 2L22 8V16L12 22L2 16V8L12 2Z"
-            stroke={fill}
-            strokeWidth={2}
-            fill="none"
-          />
+          <path d="M12 2L22 8V16L12 22L2 16V8L12 2Z" stroke={fill} strokeWidth={2} fill="none" />
         </svg>
       );
     case 3:

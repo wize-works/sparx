@@ -119,7 +119,7 @@ export function ColorPicker({
                     'hover:scale-110',
                     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)]',
                     isActive
-                      ? 'border-[var(--module-active)] ring-2 ring-[var(--module-active)]/40'
+                      ? 'ring-[var(--module-active)]/40 border-[var(--module-active)] ring-2'
                       : 'border-[var(--color-border-default)]'
                   )}
                   style={{ backgroundColor: swatch }}

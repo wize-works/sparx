@@ -6,3 +6,15 @@ build
 coverage
 pnpm-lock.yaml
 *.tsbuildinfo
+
+# Terraform-managed directories
+**/.terraform/**
+
+# Prisma-generated SQL migrations
+packages/db/prisma/migrations/**
+
+# Auto-generated Next.js declaration
+**/next-env.d.ts
+
+# Playwright auth state (regenerated per test run)
+**/playwright/.auth/**

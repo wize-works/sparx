@@ -52,13 +52,48 @@ interface ModuleSummary {
 export const dynamic = 'force-dynamic';
 
 const COMING_SOON: { href: string; label: string; description: string; icon: React.ReactNode }[] = [
-  { href: '/sitebuilder', label: 'Sitebuilder', description: 'Themes, sections, visual editor', icon: <LayoutTemplate className="h-4 w-4" /> },
-  { href: '/commerce', label: 'Commerce', description: 'Products, orders, checkout', icon: <ShoppingCart className="h-4 w-4" /> },
-  { href: '/crm', label: 'CRM', description: 'Customers, pipeline, automation', icon: <Users className="h-4 w-4" /> },
-  { href: '/email', label: 'Email', description: 'Templates, broadcasts, flows', icon: <Mail className="h-4 w-4" /> },
-  { href: '/b2b', label: 'B2B', description: 'Wholesale, fleet, net terms', icon: <Building2 className="h-4 w-4" /> },
-  { href: '/dropship', label: 'Dropship', description: 'Suppliers, routing, reconciliation', icon: <Truck className="h-4 w-4" /> },
-  { href: '/ai', label: 'AI', description: 'MCP server, copilots, agents', icon: <Sparkles className="h-4 w-4" /> },
+  {
+    href: '/sitebuilder',
+    label: 'Sitebuilder',
+    description: 'Themes, sections, visual editor',
+    icon: <LayoutTemplate className="h-4 w-4" />,
+  },
+  {
+    href: '/commerce',
+    label: 'Commerce',
+    description: 'Products, orders, checkout',
+    icon: <ShoppingCart className="h-4 w-4" />,
+  },
+  {
+    href: '/crm',
+    label: 'CRM',
+    description: 'Customers, pipeline, automation',
+    icon: <Users className="h-4 w-4" />,
+  },
+  {
+    href: '/email',
+    label: 'Email',
+    description: 'Templates, broadcasts, flows',
+    icon: <Mail className="h-4 w-4" />,
+  },
+  {
+    href: '/b2b',
+    label: 'B2B',
+    description: 'Wholesale, fleet, net terms',
+    icon: <Building2 className="h-4 w-4" />,
+  },
+  {
+    href: '/dropship',
+    label: 'Dropship',
+    description: 'Suppliers, routing, reconciliation',
+    icon: <Truck className="h-4 w-4" />,
+  },
+  {
+    href: '/ai',
+    label: 'AI',
+    description: 'MCP server, copilots, agents',
+    icon: <Sparkles className="h-4 w-4" />,
+  },
 ];
 
 async function loadActiveModules(tenantId: string): Promise<ModuleSummary[]> {

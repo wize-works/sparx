@@ -17,10 +17,8 @@ const textareaVariants = cva(
   {
     variants: {
       variant: {
-        default:
-          'border-[var(--color-border-default)] hover:border-[var(--color-border-strong)]',
-        error:
-          'border-[var(--color-danger)] focus-visible:ring-[var(--color-danger)]',
+        default: 'border-[var(--color-border-default)] hover:border-[var(--color-border-strong)]',
+        error: 'border-[var(--color-danger)] focus-visible:ring-[var(--color-danger)]',
       },
     },
     defaultVariants: { variant: 'default' },
@@ -28,7 +26,8 @@ const textareaVariants = cva(
 );
 
 export interface TextareaProps
-  extends React.TextareaHTMLAttributes<HTMLTextAreaElement>,
+  extends
+    React.TextareaHTMLAttributes<HTMLTextAreaElement>,
     VariantProps<typeof textareaVariants> {}
 
 export const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(

@@ -368,11 +368,7 @@ function FormPrimitivesSection() {
           </Stack>
 
           <Stack direction="row" align="center" gap={2}>
-            <Checkbox
-              id="agree"
-              checked={agreed}
-              onCheckedChange={(v) => setAgreed(v === true)}
-            />
+            <Checkbox id="agree" checked={agreed} onCheckedChange={(v) => setAgreed(v === true)} />
             <Label htmlFor="agree">I agree to the platform terms</Label>
           </Stack>
         </Grid>
@@ -724,10 +720,7 @@ function NavigationSection() {
   const [page, setPage] = React.useState(3);
 
   return (
-    <Section
-      title="Navigation"
-      description="Sidebar shell, Breadcrumb, Pagination, Stepper."
-    >
+    <Section title="Navigation" description="Sidebar shell, Breadcrumb, Pagination, Stepper.">
       <Stack gap={4}>
         <Card padding="none" className="overflow-hidden">
           <Stack direction="row" gap={0} className="h-72">
@@ -868,7 +861,11 @@ function DataDisplaySection() {
             <Heading level={4}>Filters</Heading>
             <Stack direction="row" gap={2} wrap>
               {tags.map((t) => (
-                <Tag key={t} variant="primary" onRemove={() => setTags((xs) => xs.filter((x) => x !== t))}>
+                <Tag
+                  key={t}
+                  variant="primary"
+                  onRemove={() => setTags((xs) => xs.filter((x) => x !== t))}
+                >
                   {t}
                 </Tag>
               ))}
@@ -988,4 +985,3 @@ function Section({
     </Stack>
   );
 }
-

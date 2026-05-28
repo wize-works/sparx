@@ -2,13 +2,13 @@
 
 Pub/Sub consumers — one Deployment per logical worker, one Pub/Sub subscription per topic-to-consumer pair.
 
-| Worker | Subscribes to | Purpose |
-|---|---|---|
-| `worker-email` | `email.send` | Render React Email + send via Postal |
-| `worker-domain` | `domain.purchased`, `domain.verified` | CNAME validation + post-purchase DNS config |
-| `worker-dropship` | (cron + `dropship.sync`) | Pull supplier catalog updates |
-| `worker-billing` | Stripe webhook fan-out topic | Process invoice paid / subscription updated |
-| `worker-webhook` | `*` (subset) | Dispatch outbound webhooks to merchant endpoints |
+| Worker            | Subscribes to                         | Purpose                                          |
+| ----------------- | ------------------------------------- | ------------------------------------------------ |
+| `worker-email`    | `email.send`                          | Render React Email + send via Postal             |
+| `worker-domain`   | `domain.purchased`, `domain.verified` | CNAME validation + post-purchase DNS config      |
+| `worker-dropship` | (cron + `dropship.sync`)              | Pull supplier catalog updates                    |
+| `worker-billing`  | Stripe webhook fan-out topic          | Process invoice paid / subscription updated      |
+| `worker-webhook`  | `*` (subset)                          | Dispatch outbound webhooks to merchant endpoints |
 
 ## Pub/Sub subscriptions
 

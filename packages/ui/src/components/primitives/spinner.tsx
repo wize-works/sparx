@@ -15,7 +15,8 @@ const spinnerVariants = cva('animate-spin', {
 });
 
 export interface SpinnerProps
-  extends Omit<React.SVGAttributes<SVGSVGElement>, 'children'>,
+  extends
+    Omit<React.SVGAttributes<SVGSVGElement>, 'children'>,
     VariantProps<typeof spinnerVariants> {
   label?: string;
 }

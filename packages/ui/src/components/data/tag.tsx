@@ -15,8 +15,7 @@ const tagVariants = cva(
       variant: {
         default:
           'border-[var(--color-border-default)] bg-[var(--color-bg-subtle)] text-[var(--color-text-secondary)]',
-        primary:
-          'border-transparent bg-[var(--sparx-primary-tint)] text-[var(--sparx-primary)]',
+        primary: 'border-transparent bg-[var(--sparx-primary-tint)] text-[var(--sparx-primary)]',
         module:
           'border-transparent bg-[var(--module-active-tint)] text-[var(--module-active-text)]',
       },
@@ -26,8 +25,7 @@ const tagVariants = cva(
 );
 
 export interface TagProps
-  extends React.HTMLAttributes<HTMLSpanElement>,
-    VariantProps<typeof tagVariants> {
+  extends React.HTMLAttributes<HTMLSpanElement>, VariantProps<typeof tagVariants> {
   /** When provided, shows an inline remove button. */
   onRemove?: () => void;
   removeLabel?: string;

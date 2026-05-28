@@ -31,7 +31,8 @@ export const pageType: ContentTypeDefinition = {
         type: 'long_text',
         label: 'Excerpt',
         max: 500,
-        helpText: 'Plain-text summary used in search results, feeds, and OG cards when no description is set.',
+        helpText:
+          'Plain-text summary used in search results, feeds, and OG cards when no description is set.',
       },
       {
         key: 'featuredImage',

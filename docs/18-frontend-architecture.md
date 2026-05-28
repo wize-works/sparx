@@ -20,22 +20,22 @@ All three consume the WizeWorks REST/GraphQL API and share the `@sparx/ui` compo
 
 ## 2. Technology Stack
 
-| Concern | Technology | Rationale |
-|---------|-----------|-----------|
-| Framework | Next.js 15 (App Router) | SSR/SSG, edge rendering, streaming, image optimization |
-| Language | TypeScript (strict) | Type safety, better DX, fewer runtime errors |
-| Styling | Tailwind CSS 4 | Utility-first, design tokens, no runtime overhead |
-| State (server) | React Query (TanStack) | Cache management, background refetch, optimistic updates |
-| State (client) | Zustand | Lightweight, no boilerplate, works with SSR |
-| Forms | React Hook Form + Zod | Performant, type-safe validation |
-| Components | Radix UI primitives | Accessible, unstyled, composable |
-| Icons | Lucide React | Consistent, tree-shakeable |
-| Rich text | TipTap | ProseMirror-based, extensible |
-| Charts | Recharts | React-native, composable |
-| Tables | TanStack Table | Headless, powerful, flexible |
-| Drag & drop | dnd-kit | Accessible, touch support |
-| Email templates | React Email | Component-based, preview in browser |
-| Testing | Playwright (E2E), Vitest (unit) | Fast, modern, excellent TS support |
+| Concern         | Technology                      | Rationale                                                |
+| --------------- | ------------------------------- | -------------------------------------------------------- |
+| Framework       | Next.js 15 (App Router)         | SSR/SSG, edge rendering, streaming, image optimization   |
+| Language        | TypeScript (strict)             | Type safety, better DX, fewer runtime errors             |
+| Styling         | Tailwind CSS 4                  | Utility-first, design tokens, no runtime overhead        |
+| State (server)  | React Query (TanStack)          | Cache management, background refetch, optimistic updates |
+| State (client)  | Zustand                         | Lightweight, no boilerplate, works with SSR              |
+| Forms           | React Hook Form + Zod           | Performant, type-safe validation                         |
+| Components      | Radix UI primitives             | Accessible, unstyled, composable                         |
+| Icons           | Lucide React                    | Consistent, tree-shakeable                               |
+| Rich text       | TipTap                          | ProseMirror-based, extensible                            |
+| Charts          | Recharts                        | React-native, composable                                 |
+| Tables          | TanStack Table                  | Headless, powerful, flexible                             |
+| Drag & drop     | dnd-kit                         | Accessible, touch support                                |
+| Email templates | React Email                     | Component-based, preview in browser                      |
+| Testing         | Playwright (E2E), Vitest (unit) | Fast, modern, excellent TS support                       |
 
 ---
 
@@ -64,32 +64,33 @@ packages/
 ## 4. Design System
 
 ### Design Tokens (CSS Custom Properties)
+
 Defined in `packages/ui/tokens.css`:
 
 ```css
 :root {
   /* Colors */
-  --color-primary:        hsl(221, 83%, 53%);
-  --color-primary-hover:  hsl(221, 83%, 48%);
-  --color-danger:         hsl(0, 84%, 60%);
-  --color-success:        hsl(142, 71%, 45%);
-  --color-warning:        hsl(38, 92%, 50%);
+  --color-primary: hsl(221, 83%, 53%);
+  --color-primary-hover: hsl(221, 83%, 48%);
+  --color-danger: hsl(0, 84%, 60%);
+  --color-success: hsl(142, 71%, 45%);
+  --color-warning: hsl(38, 92%, 50%);
 
   /* Neutral scale */
-  --color-gray-50:  hsl(210, 40%, 98%);
+  --color-gray-50: hsl(210, 40%, 98%);
   --color-gray-100: hsl(210, 40%, 96%);
   --color-gray-900: hsl(222, 47%, 11%);
 
   /* Typography */
   --font-sans: 'Inter', system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
-  --font-size-xs:   0.75rem;
-  --font-size-sm:   0.875rem;
+  --font-size-xs: 0.75rem;
+  --font-size-sm: 0.875rem;
   --font-size-base: 1rem;
-  --font-size-lg:   1.125rem;
-  --font-size-xl:   1.25rem;
-  --font-size-2xl:  1.5rem;
-  --font-size-3xl:  1.875rem;
+  --font-size-lg: 1.125rem;
+  --font-size-xl: 1.25rem;
+  --font-size-2xl: 1.5rem;
+  --font-size-3xl: 1.875rem;
 
   /* Spacing */
   --spacing-1: 0.25rem;
@@ -98,9 +99,9 @@ Defined in `packages/ui/tokens.css`:
   --spacing-8: 2rem;
 
   /* Border radius */
-  --radius-sm:   0.25rem;
-  --radius-md:   0.375rem;
-  --radius-lg:   0.5rem;
+  --radius-sm: 0.25rem;
+  --radius-md: 0.375rem;
+  --radius-lg: 0.5rem;
   --radius-full: 9999px;
 
   /* Shadows */
@@ -108,20 +109,21 @@ Defined in `packages/ui/tokens.css`:
   --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
 }
 
-[data-theme="dark"] {
+[data-theme='dark'] {
   /* Dark mode overrides */
 }
 ```
 
 ### Theme Overrides (Merchant Themes)
+
 Merchant themes override the base tokens via CSS custom properties on the `:root` of their storefront:
 
 ```css
 /* Industrial theme (Gillett Diesel) */
 :root {
-  --color-primary: hsl(0, 80%, 40%);          /* GDS red */
-  --color-background: hsl(0, 0%, 4%);         /* Near black */
-  --color-surface: hsl(0, 0%, 11%);           /* Dark charcoal */
+  --color-primary: hsl(0, 80%, 40%); /* GDS red */
+  --color-background: hsl(0, 0%, 4%); /* Near black */
+  --color-surface: hsl(0, 0%, 11%); /* Dark charcoal */
   --font-sans: 'Bebas Neue', 'Inter', sans-serif;
 }
 ```
@@ -153,6 +155,7 @@ Table, DataGrid, Avatar, Card, Stat, Timeline, Tag, Code
 Sidebar, Breadcrumb, Tabs, Pagination, Stepper, NavMenu
 
 ### Component Conventions
+
 ```typescript
 // All components follow this pattern:
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
@@ -185,6 +188,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
 ## 6. Merchant Dashboard
 
 ### App Router Structure
+
 ```
 app/
 ├── (auth)/
@@ -233,6 +237,7 @@ app/
 ```
 
 ### Data Fetching Strategy
+
 - Server Components for initial page data (no loading flash)
 - Client Components for interactive elements
 - React Query for client-side mutations and real-time updates
@@ -243,24 +248,26 @@ app/
 ## 7. Storefront (Multi-Tenant)
 
 ### Tenant Resolution
+
 The storefront resolves the correct tenant from the request's `Host` header:
 
 ```typescript
 // middleware.ts
 export async function middleware(request: NextRequest) {
-  const host = request.headers.get('host')
-  const tenant = await resolveTenant(host)  // DB lookup, cached in Redis
+  const host = request.headers.get('host');
+  const tenant = await resolveTenant(host); // DB lookup, cached in Redis
 
-  if (!tenant) return NextResponse.rewrite(new URL('/not-found', request.url))
+  if (!tenant) return NextResponse.rewrite(new URL('/not-found', request.url));
 
-  const response = NextResponse.next()
-  response.headers.set('x-tenant-id', tenant.id)
-  response.headers.set('x-tenant-theme', tenant.theme)
-  return response
+  const response = NextResponse.next();
+  response.headers.set('x-tenant-id', tenant.id);
+  response.headers.set('x-tenant-theme', tenant.theme);
+  return response;
 }
 ```
 
 ### Theme Rendering
+
 Each storefront page reads the tenant's theme configuration and generates CSS variables:
 
 ```typescript
@@ -281,6 +288,7 @@ export default async function RootLayout({ children }) {
 ```
 
 ### Caching Strategy
+
 - Product pages: ISR (Incremental Static Regeneration), revalidate every 60s
 - Collection pages: ISR, revalidate every 300s
 - Cart: no caching (always fresh)
@@ -292,14 +300,16 @@ export default async function RootLayout({ children }) {
 ## 8. Performance
 
 ### Core Web Vitals Targets
-| Metric | Target | Strategy |
-|--------|--------|---------|
-| LCP | < 2.5s | Image optimization, CDN, ISR |
-| FID / INP | < 100ms | Code splitting, minimal JS |
-| CLS | < 0.1 | Explicit image dimensions, font display swap |
-| TTFB | < 200ms | Edge caching, regional deployment |
+
+| Metric    | Target  | Strategy                                     |
+| --------- | ------- | -------------------------------------------- |
+| LCP       | < 2.5s  | Image optimization, CDN, ISR                 |
+| FID / INP | < 100ms | Code splitting, minimal JS                   |
+| CLS       | < 0.1   | Explicit image dimensions, font display swap |
+| TTFB      | < 200ms | Edge caching, regional deployment            |
 
 ### Optimization Techniques
+
 - `next/image` for automatic WebP, lazy load, blur placeholder
 - Dynamic imports for heavy components (rich text editor, charts)
 - Route-level code splitting (automatic in Next.js App Router)
@@ -312,13 +322,16 @@ export default async function RootLayout({ children }) {
 ## 9. Testing
 
 ### Unit Tests (Vitest)
+
 - Component rendering tests
 - Hook logic tests
 - Utility function tests
 - Coverage threshold: 80% for UI package
 
 ### E2E Tests (Playwright)
+
 Key flows tested on every deploy to staging:
+
 - Merchant signup → onboarding → live store
 - Add product → publish
 - Place order as customer → checkout
@@ -327,6 +340,7 @@ Key flows tested on every deploy to staging:
 - Email automation trigger
 
 ### Accessibility
+
 - Radix UI primitives are ARIA-compliant by default
 - Keyboard navigation tested in E2E suite
 - Color contrast ratios meet WCAG AA

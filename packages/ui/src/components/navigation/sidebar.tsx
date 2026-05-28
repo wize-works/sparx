@@ -23,18 +23,12 @@ export const Sidebar = React.forwardRef<HTMLElement, React.HTMLAttributes<HTMLEl
 );
 Sidebar.displayName = 'Sidebar';
 
-export const SidebarHeader = ({
-  className,
-  ...props
-}: React.HTMLAttributes<HTMLDivElement>) => (
+export const SidebarHeader = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
   <div className={cn('px-2 pb-3 pt-1', className)} {...props} />
 );
 SidebarHeader.displayName = 'SidebarHeader';
 
-export const SidebarSection = ({
-  className,
-  ...props
-}: React.HTMLAttributes<HTMLDivElement>) => (
+export const SidebarSection = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
   <div className={cn('flex flex-col gap-0.5 py-2', className)} {...props} />
 );
 SidebarSection.displayName = 'SidebarSection';
@@ -53,15 +47,9 @@ export const SidebarSectionLabel = ({
 );
 SidebarSectionLabel.displayName = 'SidebarSectionLabel';
 
-export const SidebarFooter = ({
-  className,
-  ...props
-}: React.HTMLAttributes<HTMLDivElement>) => (
+export const SidebarFooter = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
   <div
-    className={cn(
-      'mt-auto border-t border-[var(--color-border-default)] pt-2',
-      className
-    )}
+    className={cn('mt-auto border-t border-[var(--color-border-default)] pt-2', className)}
     {...props}
   />
 );
@@ -87,8 +75,7 @@ const sidebarItemVariants = cva(
 );
 
 export interface SidebarItemProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
-    VariantProps<typeof sidebarItemVariants> {
+  extends React.ButtonHTMLAttributes<HTMLButtonElement>, VariantProps<typeof sidebarItemVariants> {
   icon?: React.ReactNode;
   /** When true, the item is rendered into the polymorphic child (e.g. a Next.js Link). */
   asChild?: boolean;

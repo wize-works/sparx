@@ -164,14 +164,14 @@ src/
 
 ## 7. `turbo.json` Tasks
 
-| Task        | Settings                                                    |
-|-------------|-------------------------------------------------------------|
-| `build`     | `dependsOn: ^build`, outputs `.next/**` `dist/**`           |
-| `dev`       | `cache: false`, `persistent: true`                          |
-| `lint`      | `dependsOn: ^build`                                         |
-| `typecheck` | `dependsOn: ^build`                                         |
-| `test`      | `dependsOn: ^build`, outputs `coverage/**`                  |
-| `test:e2e`  | `dependsOn: build`, `cache: false`                          |
+| Task        | Settings                                          |
+| ----------- | ------------------------------------------------- |
+| `build`     | `dependsOn: ^build`, outputs `.next/**` `dist/**` |
+| `dev`       | `cache: false`, `persistent: true`                |
+| `lint`      | `dependsOn: ^build`                               |
+| `typecheck` | `dependsOn: ^build`                               |
+| `test`      | `dependsOn: ^build`, outputs `coverage/**`        |
+| `test:e2e`  | `dependsOn: build`, `cache: false`                |
 
 ---
 
@@ -186,12 +186,12 @@ src/
 
 ## 9. Workspace Dependencies
 
-| Workspace    | Depends on                                            |
-|--------------|-------------------------------------------------------|
-| `dashboard`  | `@sparx/ui`, `@sparx/auth`, `@sparx/db`, `@sparx/types` |
+| Workspace    | Depends on                                                 |
+| ------------ | ---------------------------------------------------------- | --- | ----- |
+| `dashboard`  | `@sparx/ui`, `@sparx/auth`, `@sparx/db`, `@sparx/types`    |
 | `api`        | `@sparx/db`, `@sparx/auth`, `@sparx/email`, `@sparx/types` |
-| `storefront` | `@sparx/ui`, `@sparx/sdk`, `@sparx/types`             |
-| `ui`         | `@sparx/types` (peerDeps: `react ^18 || ^19`)         |
+| `storefront` | `@sparx/ui`, `@sparx/sdk`, `@sparx/types`                  |
+| `ui`         | `@sparx/types` (peerDeps: `react ^18                       |     | ^19`) |
 
 All internal: `"workspace:*"`
 
@@ -214,15 +214,15 @@ NEXT_PUBLIC_APP_URL | NEXT_PUBLIC_API_URL | NEXT_PUBLIC_STOREFRONT_URL
 
 ## 11. Dev Server Ports
 
-| Service       | Port |
-|---------------|------|
-| `api`         | 3000 |
-| `dashboard`   | 3001 |
-| `storefront`  | 3002 |
-| `web`         | 3003 |
-| Typesense     | 8108 |
-| Redis         | 6379 |
-| PostgreSQL    | 5432 |
+| Service      | Port |
+| ------------ | ---- |
+| `api`        | 3000 |
+| `dashboard`  | 3001 |
+| `storefront` | 3002 |
+| `web`        | 3003 |
+| Typesense    | 8108 |
+| Redis        | 6379 |
+| PostgreSQL   | 5432 |
 
 ---
 

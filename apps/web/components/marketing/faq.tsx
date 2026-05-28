@@ -30,10 +30,10 @@ const FAQ = [
     a: (
       <>
         You enable the AI module, copy your MCP endpoint URL and a scoped API key, and paste them
-        into Claude Desktop, ChatGPT, Cursor, or any MCP-compatible client. The client now sees
-        your tenant&apos;s tools — read products, search customers, draft emails, create orders,
-        etc. Every call is scoped to your tenant, signed with your key, and logged. Revoke the key
-        in one click.
+        into Claude Desktop, ChatGPT, Cursor, or any MCP-compatible client. The client now sees your
+        tenant&apos;s tools — read products, search customers, draft emails, create orders, etc.
+        Every call is scoped to your tenant, signed with your key, and logged. Revoke the key in one
+        click.
       </>
     ),
   },
@@ -42,8 +42,8 @@ const FAQ = [
     a: (
       <>
         You own your data. Sparx runs on Google Kubernetes Engine in us-central1 with Postgres
-        backed up nightly. Multi-tenancy is enforced at the database level with row-level security
-        — your data is isolated from every other tenant. Full export to JSON or SQL is available in
+        backed up nightly. Multi-tenancy is enforced at the database level with row-level security —
+        your data is isolated from every other tenant. Full export to JSON or SQL is available in
         the dashboard at any time, no support ticket required.
       </>
     ),
@@ -121,7 +121,8 @@ export function Faq() {
                 alignItems: 'flex-start',
                 padding: '28px 32px',
                 gap: '32px',
-                borderBottom: i === FAQ.length - 1 ? undefined : '1px solid var(--color-border-default)',
+                borderBottom:
+                  i === FAQ.length - 1 ? undefined : '1px solid var(--color-border-default)',
               }}
             >
               <div

@@ -20,8 +20,7 @@ const PLANS = [
     description: 'All modules except B2B. Zero transaction fees.',
     price: '$299',
     period: '/mo',
-    includes:
-      'Storefront · Commerce · CMS · CRM · Email · AI/MCP · Dropship · 0% txn fee',
+    includes: 'Storefront · Commerce · CMS · CRM · Email · AI/MCP · Dropship · 0% txn fee',
     featured: true,
   },
   {
@@ -112,7 +111,9 @@ function PlanCard({ name, description, price, period, includes, ...rest }: Plan)
                 borderRadius: '9999px',
               }}
             >
-              <span style={{ width: 5, height: 5, borderRadius: 9999, backgroundColor: '#818CF8' }} />
+              <span
+                style={{ width: 5, height: 5, borderRadius: 9999, backgroundColor: '#818CF8' }}
+              />
               <span
                 style={{
                   fontFamily: 'var(--font-sans)',

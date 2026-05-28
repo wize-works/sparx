@@ -42,6 +42,7 @@ Rolling auth primitives from scratch — password hashing, token rotation, MFA, 
 Sparx has two distinct user populations requiring auth:
 
 ### Layer 1 — Merchant Staff (Platform Users)
+
 Staff members managing a Sparx merchant account.
 
 ```
@@ -53,6 +54,7 @@ Merchant Owner (Brandon's contact at GDS)
 ```
 
 Better Auth's organization plugin maps directly: **Organization = Tenant**. Organization member = Staff user with role.
+
 - Organization = Tenant
 - Organization member = Staff user with role
 - Roles: owner | admin | editor | viewer
@@ -60,6 +62,7 @@ Better Auth's organization plugin maps directly: **Organization = Tenant**. Orga
 Example: Merchant Owner (e.g., Brandon's contact at Gillett Diesel Service) creates a Sparx account → becomes tenant owner → invites staff via Better Auth's organization invitations.
 
 ### Layer 2 — Merchant's Customers (Storefront Users)
+
 End customers logging into a merchant's storefront, B2B portal, or account page.
 
 ```
@@ -73,6 +76,7 @@ Customer of "Gillett Diesel"
 Critical: a customer account at Tenant A has zero relationship to Tenant B. The same email address can register as a customer at multiple merchants — they are completely separate records with separate credentials.
 
 ### Layer 3 — API Keys (Programmatic Access)
+
 For headless frontends, MCP servers, and third-party integrations.
 
 ```
@@ -96,6 +100,7 @@ Rotation: Old key valid for configurable overlap window
 ## 3. Session Management
 
 ### JWT Structure
+
 ```typescript
 // Access token payload
 {
@@ -110,6 +115,7 @@ Rotation: Old key valid for configurable overlap window
 ```
 
 ### Refresh Token Rotation
+
 - Refresh token is opaque random bytes (not JWT)
 - Stored hashed (SHA-256) in DB via Better Auth
 - Single-use: new refresh token issued on every refresh
@@ -117,13 +123,15 @@ Rotation: Old key valid for configurable overlap window
 - All active sessions visible in dashboard → user can revoke any session
 
 ### Tenant Context Establishment
+
 After JWT validation, API middleware sets database tenant context:
+
 ```typescript
 fastify.addHook('preHandler', async (request) => {
-  const user = await betterAuth.validateToken(request.headers.authorization)
-  request.tenantId = user.tid
-  await db.$executeRaw`SET LOCAL app.tenant_id = ${user.tid}`
-})
+  const user = await betterAuth.validateToken(request.headers.authorization);
+  request.tenantId = user.tid;
+  await db.$executeRaw`SET LOCAL app.tenant_id = ${user.tid}`;
+});
 ```
 
 A minimal per-request hook that issues `SET LOCAL app.tenant_id` once the
@@ -142,6 +150,7 @@ app.addHook('preHandler', async (req) => {
 ## 4. Multi-Tenancy & Data Isolation
 
 ### Row Level Security (RLS)
+
 Every tenant-scoped table enforces isolation at the database level:
 
 ```sql
@@ -160,6 +169,7 @@ This is a backstop — if application-level tenant filtering has a bug, RLS prev
 **Tenant-scoped tables** use `ALTER TABLE <table> FORCE ROW LEVEL SECURITY;` so even table owners (the app role) cannot bypass policies — closing the BYPASSRLS hole. **Shared/global tables** (e.g., `tenants`, `plans`, `modules`, `migrations`) do not use FORCE since they're intentionally readable across all tenant contexts.
 
 ### Enterprise Isolation
+
 Enterprise clients (like Gillett Diesel) can have a dedicated Cloud SQL instance. Same application code, different connection target resolved from tenant configuration.
 
 ---
@@ -167,33 +177,36 @@ Enterprise clients (like Gillett Diesel) can have a dedicated Cloud SQL instance
 ## 5. Authorization (RBAC)
 
 ### Staff Roles
-| Role | Capabilities |
-|------|-------------|
-| `owner` | Everything including billing, tenant deletion, staff management |
-| `admin` | Everything except billing and tenant deletion |
-| `editor` | CRUD on products, orders, customers, content |
-| `viewer` | Read-only all data |
-| `api` | Scope-based access via API key only |
+
+| Role     | Capabilities                                                    |
+| -------- | --------------------------------------------------------------- |
+| `owner`  | Everything including billing, tenant deletion, staff management |
+| `admin`  | Everything except billing and tenant deletion                   |
+| `editor` | CRUD on products, orders, customers, content                    |
+| `viewer` | Read-only all data                                              |
+| `api`    | Scope-based access via API key only                             |
 
 ### Customer Roles (B2B Portal)
-| Role | Capabilities |
-|------|-------------|
+
+| Role            | Capabilities                                           |
+| --------------- | ------------------------------------------------------ |
 | `account_admin` | Manage contacts, approve purchases, full portal access |
-| `buyer` | Place orders, submit RFQs, view history |
-| `viewer` | View orders and invoices only |
+| `buyer`         | Place orders, submit RFQs, view history                |
+| `viewer`        | View orders and invoices only                          |
 
 ### Enforcement (Defense in Depth)
+
 Authorization checked at both route level (fast reject) and service level (defense in depth):
 
 ```typescript
 // Route level
-fastify.addHook('preHandler', requireRole('editor'))
+fastify.addHook('preHandler', requireRole('editor'));
 
 // Service level — never trust route-level alone
 async function updateProduct(userId: string, productId: string, data: UpdateInput) {
-  const user = await getUser(userId)
+  const user = await getUser(userId);
   if (!hasPermission(user.role, 'products.write')) {
-    throw new ForbiddenError()
+    throw new ForbiddenError();
   }
 }
 ```
@@ -215,17 +228,21 @@ app.get('/orders/:id', { preHandler: requireTenant }, async (req) => {
 ## 6. Data Encryption
 
 ### At Rest
+
 - Cloud SQL: Google-managed AES-256
 - GCS: Google-managed AES-256
 - Sensitive fields (API credentials, DKIM private keys, Postal credentials, payment tokens): application-level AES-256-GCM before storage, key in Google Secret Manager
 
 ### In Transit
+
 - TLS 1.3 for all external connections
 - TLS 1.2 minimum for internal service-to-service
 - HSTS: max-age=31536000; includeSubDomains; preload
 
 ### PII Handling
+
 Customer PII (name, email, phone, address) is:
+
 - Never written to application logs
 - Masked in error reporting (Sentry)
 - Exportable by merchant (GDPR data export)

@@ -25,7 +25,8 @@ type TabsListVariant = NonNullable<VariantProps<typeof tabsListVariants>['varian
 const TabsListVariantContext = React.createContext<TabsListVariant>('default');
 
 export interface TabsListProps
-  extends React.ComponentPropsWithoutRef<typeof TabsPrimitive.List>,
+  extends
+    React.ComponentPropsWithoutRef<typeof TabsPrimitive.List>,
     VariantProps<typeof tabsListVariants> {}
 
 export const TabsList = React.forwardRef<
@@ -51,7 +52,7 @@ const triggerByVariant: Record<TabsListVariant, string> = {
     'border-b-2 border-transparent transition-colors duration-150',
     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)]',
     'disabled:pointer-events-none disabled:opacity-40',
-    'data-[state=active]:text-[var(--module-active-text)] data-[state=active]:border-[var(--module-active)]'
+    'data-[state=active]:border-[var(--module-active)] data-[state=active]:text-[var(--module-active-text)]'
   ),
   pills: cn(
     'inline-flex h-7 items-center rounded-sm px-3 text-sm font-medium',
@@ -69,7 +70,11 @@ export const TabsTrigger = React.forwardRef<
 >(({ className, ...props }, ref) => {
   const variant = React.useContext(TabsListVariantContext);
   return (
-    <TabsPrimitive.Trigger ref={ref} className={cn(triggerByVariant[variant], className)} {...props} />
+    <TabsPrimitive.Trigger
+      ref={ref}
+      className={cn(triggerByVariant[variant], className)}
+      {...props}
+    />
   );
 });
 TabsTrigger.displayName = TabsPrimitive.Trigger.displayName;
@@ -81,7 +86,7 @@ export const TabsContent = React.forwardRef<
   <TabsPrimitive.Content
     ref={ref}
     className={cn(
-      'mt-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:rounded-sm',
+      'mt-4 focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)]',
       className
     )}
     {...props}

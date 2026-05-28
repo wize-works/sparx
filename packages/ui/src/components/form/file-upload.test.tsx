@@ -48,9 +48,7 @@ describe('FileUpload', () => {
     const input = document.querySelector<HTMLInputElement>('input[type=file]')!;
     await userEvent.upload(input, mkFile('big.bin', 'application/octet-stream', 100));
 
-    expect(onReject).toHaveBeenCalledWith(
-      expect.objectContaining({ reason: 'size' })
-    );
+    expect(onReject).toHaveBeenCalledWith(expect.objectContaining({ reason: 'size' }));
   });
 
   it('removes a file via its remove button', async () => {

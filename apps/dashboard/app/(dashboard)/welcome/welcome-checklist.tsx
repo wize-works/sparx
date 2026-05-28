@@ -3,16 +3,7 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import {
-  Badge,
-  Button,
-  Card,
-  CardContent,
-  CardHeader,
-  Heading,
-  Stack,
-  Text,
-} from '@sparx/ui';
+import { Badge, Button, Card, CardContent, CardHeader, Heading, Stack, Text } from '@sparx/ui';
 import { ArrowRight, Check, Circle } from 'lucide-react';
 import { dismissOnboarding } from './actions';
 import type { OnboardingProgress } from './onboarding';
@@ -76,7 +67,12 @@ export function WelcomeChecklist({ progress }: WelcomeChecklistProps) {
                 </Text>
               </Stack>
               {step.cta && !step.done && (
-                <Button asChild variant="ghost" size="sm" rightIcon={<ArrowRight className="h-3.5 w-3.5" />}>
+                <Button
+                  asChild
+                  variant="ghost"
+                  size="sm"
+                  rightIcon={<ArrowRight className="h-3.5 w-3.5" />}
+                >
                   <Link href={step.cta.href}>{step.cta.label}</Link>
                 </Button>
               )}

@@ -1,11 +1,5 @@
 import { Button } from '@sparx/ui';
-import {
-  Container,
-  Display,
-  Eyebrow,
-  EyebrowBadge,
-  Spark,
-} from './primitives';
+import { Container, Display, Eyebrow, EyebrowBadge, Spark } from './primitives';
 
 /**
  * Placeholder page for marketing surfaces that exist as routes but don't have

@@ -17,7 +17,9 @@ The CRM is designed for merchants who need to manage customer relationships, tra
 ## 2. Customer Intelligence
 
 ### Unified Customer Record
+
 Every customer record shows:
+
 - **Profile:** Contact info, company, tags, notes
 - **Commerce data:** Total spend, order count, AOV, first/last order date
 - **B2B data:** Account membership, pricing tier, credit status
@@ -25,7 +27,9 @@ Every customer record shows:
 - **Activity feed:** Chronological log of all interactions
 
 ### Customer Segments
+
 Rule-based segments that update automatically:
+
 - "High Value" — Total spend > $5,000
 - "At Risk" — No purchase in 90 days, previously ordered 4+ times
 - "B2B Fleet" — B2B account members with fleet profile
@@ -33,6 +37,7 @@ Rule-based segments that update automatically:
 - Custom segments with any combination of fields
 
 Segments are used for:
+
 - Email broadcast targeting
 - Dashboard filtering
 - MCP queries ("show me all at-risk customers")
@@ -45,6 +50,7 @@ Segments are used for:
 Every customer has a chronological activity feed:
 
 ### Auto-Logged Activities
+
 - Order placed (linked to order)
 - Order shipped / delivered
 - Email sent (automation or broadcast)
@@ -56,6 +62,7 @@ Every customer has a chronological activity feed:
 - Password reset
 
 ### Manual Activities (Staff)
+
 - Note (free text)
 - Call logged (date, duration, summary)
 - Meeting logged
@@ -63,6 +70,7 @@ Every customer has a chronological activity feed:
 - File attached
 
 ### Activity Fields
+
 - Type
 - Description
 - Actor (staff member or system)
@@ -76,17 +84,21 @@ Every customer has a chronological activity feed:
 The pipeline tracks sales opportunities from first contact to closed deal.
 
 ### Pipeline Structure
+
 Default stages (fully customizable):
+
 ```
 Lead → Qualified → Proposal Sent → Negotiation → Closed Won / Closed Lost
 ```
 
 Merchants create multiple pipelines for different use cases:
+
 - New B2B Account Acquisition
 - Fleet Contract Renewals
 - Wholesale Distributor Onboarding
 
 ### Deal Fields
+
 - Title
 - Customer / B2B account linked
 - Pipeline stage
@@ -98,6 +110,7 @@ Merchants create multiple pipelines for different use cases:
 - Associated quotes and orders
 
 ### Pipeline Views
+
 - **Kanban board** — Deals as cards, columns as stages, drag to advance
 - **List view** — Sortable table with all deal data
 - **Forecast view** — Deals weighted by probability, grouped by close month
@@ -107,12 +120,15 @@ Merchants create multiple pipelines for different use cases:
 ## 5. Contact Management
 
 ### Contact Roles
+
 Contacts can have multiple roles across the system:
+
 - Retail customer (standard)
 - B2B account member (with role: buyer, viewer, account admin)
 - Sales prospect (pipeline only, no orders yet)
 
 ### Contact Fields
+
 - Name, email, phone, job title
 - Company (free text or linked B2B account)
 - Address(es)
@@ -123,6 +139,7 @@ Contacts can have multiple roles across the system:
 - Assigned sales rep
 
 ### Deduplication
+
 - Duplicate detection on email address
 - Merge flow: choose primary record, merge activity feeds
 - Bulk deduplicate tool (surface likely duplicates by name + company)
@@ -141,6 +158,7 @@ Sales reps can create tasks linked to customers or deals:
 - Completion status
 
 Tasks surface in:
+
 - Personal task list (filtered by assignee)
 - Customer record (in activity feed)
 - Deal record (in deal detail)
@@ -154,21 +172,22 @@ Overdue tasks trigger email reminders to assigned rep.
 
 The CRM integrates with the email automation engine. Triggers available:
 
-| Trigger | Condition | Example Action |
-|---------|-----------|----------------|
-| `customer.inactive` | No order in N days | Send win-back email |
-| `customer.high_value` | Total spend exceeds threshold | Assign to senior rep, send VIP email |
-| `deal.stage_changed` | Deal moves to Proposal stage | Send proposal template email |
-| `deal.close_date_approaching` | 7 days until expected close | Create follow-up task |
-| `b2b.credit_near_limit` | Credit utilization > 80% | Alert assigned rep |
-| `b2b.invoice_overdue` | Invoice past due date | Send overdue notice |
-| `quote.expiring` | Quote expires in 3 days | Send reminder to customer |
+| Trigger                       | Condition                     | Example Action                       |
+| ----------------------------- | ----------------------------- | ------------------------------------ |
+| `customer.inactive`           | No order in N days            | Send win-back email                  |
+| `customer.high_value`         | Total spend exceeds threshold | Assign to senior rep, send VIP email |
+| `deal.stage_changed`          | Deal moves to Proposal stage  | Send proposal template email         |
+| `deal.close_date_approaching` | 7 days until expected close   | Create follow-up task                |
+| `b2b.credit_near_limit`       | Credit utilization > 80%      | Alert assigned rep                   |
+| `b2b.invoice_overdue`         | Invoice past due date         | Send overdue notice                  |
+| `quote.expiring`              | Quote expires in 3 days       | Send reminder to customer            |
 
 ---
 
 ## 8. Reporting
 
 ### CRM Reports
+
 - Pipeline value by stage (funnel visualization)
 - Win/loss rate by rep, by pipeline, by time period
 - Average deal cycle length
@@ -179,6 +198,7 @@ The CRM integrates with the email automation engine. Triggers available:
 - Repeat purchase rate
 
 ### Rep Performance Dashboard
+
 - Deals closed (period)
 - Revenue generated (period)
 - Tasks completed

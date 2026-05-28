@@ -45,7 +45,7 @@ export const Stepper = React.forwardRef<HTMLOListElement, StepperProps>(
                   status === 'complete' &&
                     'border-[var(--module-active)] bg-[var(--module-active)] text-white',
                   status === 'current' &&
-                    'border-[var(--module-active)] text-[var(--module-active-text)] bg-[var(--module-active-tint)]',
+                    'border-[var(--module-active)] bg-[var(--module-active-tint)] text-[var(--module-active-text)]',
                   status === 'upcoming' &&
                     'border-[var(--color-border-default)] text-[var(--color-text-tertiary)]'
                 )}

@@ -15,12 +15,14 @@ The WizeWorks Site Builder enables merchants to launch a professional storefront
 ## 2. Architecture: Two Tiers
 
 ### Tier 1 — Theme System (All Plans)
+
 - Curated, industry-optimized themes
 - Merchant customizes via settings panel (no code)
 - Rendered by the platform's Next.js storefront service
 - Updates to theme engine automatically benefit all merchants on that theme
 
 ### Tier 2 — Headless API (Pro + Enterprise)
+
 - Merchant (or their developer) builds any frontend
 - Connects to WizeWorks REST/GraphQL API
 - Platform manages all commerce, CRM, email, MCP logic
@@ -32,6 +34,7 @@ The WizeWorks Site Builder enables merchants to launch a professional storefront
 ## 3. Theme System
 
 ### Theme Structure
+
 ```
 theme/
 ├── theme.json          # Metadata, settings schema
@@ -59,6 +62,7 @@ theme/
 ```
 
 ### theme.json Schema
+
 ```json
 {
   "name": "Apex",
@@ -82,14 +86,15 @@ theme/
 ```
 
 ### Initial Theme Library
-| Theme | Category | Style |
-|-------|----------|-------|
-| **Apex** | General | Clean, modern, versatile |
-| **Industrial** | B2B / Parts | Dark, bold, technical |
-| **Drift** | Fashion / Lifestyle | Editorial, image-forward |
-| **Market** | Food / Specialty | Warm, artisan |
-| **Fleet** | B2B / Fleet | Data-dense, professional |
-| **Drop** | Dropship | Product-grid focused |
+
+| Theme          | Category            | Style                    |
+| -------------- | ------------------- | ------------------------ |
+| **Apex**       | General             | Clean, modern, versatile |
+| **Industrial** | B2B / Parts         | Dark, bold, technical    |
+| **Drift**      | Fashion / Lifestyle | Editorial, image-forward |
+| **Market**     | Food / Specialty    | Warm, artisan            |
+| **Fleet**      | B2B / Fleet         | Data-dense, professional |
+| **Drop**       | Dropship            | Product-grid focused     |
 
 ---
 
@@ -98,6 +103,7 @@ theme/
 The customizer panel renders alongside the live storefront preview. Changes are reflected in real-time without page reload.
 
 ### Customizer Panels
+
 1. **Theme** — Switch theme (shows migration warning if content structure differs)
 2. **Colors** — Primary, secondary, background, text, accent
 3. **Fonts** — Heading and body font selection (Google Fonts catalog)
@@ -108,6 +114,7 @@ The customizer panel renders alongside the live storefront preview. Changes are 
 8. **CSS** — (Advanced) Custom CSS injection
 
 ### Section Editing
+
 Each section exposes its own settings:
 
 ```
@@ -165,12 +172,14 @@ Step 5: Payments (60 sec)
 ├── "Connect Stripe" (OAuth — one click)
 ├── Or "Skip for now" (store visible, checkout disabled)
 └── Done — store is live and taking orders
-                                    
+
 Total: ~4.5 minutes
 ```
 
 ### Progressive Disclosure
+
 The following features exist but are NOT shown during onboarding:
+
 - Custom domain
 - Email automations
 - B2B / wholesale settings
@@ -189,6 +198,7 @@ They're accessible from the dashboard sidebar but don't block the path to live.
 For Enterprise clients (like Gillett Diesel) who want a fully custom frontend:
 
 ### API Access
+
 ```
 Base URL: https://api.wizeworks.com/v1
 Auth: Bearer token (merchant API key)
@@ -199,34 +209,36 @@ Endpoint: https://api.wizeworks.com/graphql
 ```
 
 ### Example: Fetch Products
+
 ```typescript
 const response = await fetch('https://api.wizeworks.com/v1/products', {
   headers: {
-    'Authorization': `Bearer ${API_KEY}`,
-    'X-Tenant-ID': TENANT_ID
-  }
-})
-const { products } = await response.json()
+    Authorization: `Bearer ${API_KEY}`,
+    'X-Tenant-ID': TENANT_ID,
+  },
+});
+const { products } = await response.json();
 ```
 
 ### Storefront SDK (Published NPM Package)
+
 ```bash
 npm install @wizeworks/storefront-sdk
 ```
 
 ```typescript
-import { WizeWorks } from '@wizeworks/storefront-sdk'
+import { WizeWorks } from '@wizeworks/storefront-sdk';
 
 const ww = new WizeWorks({
   tenantId: process.env.WW_TENANT_ID,
   apiKey: process.env.WW_API_KEY,
-  environment: 'production'
-})
+  environment: 'production',
+});
 
-const products = await ww.products.list({ status: 'active' })
-const cart = await ww.cart.create()
-await ww.cart.addItem(cart.id, { variantId, quantity: 1 })
-const order = await ww.checkout.complete(cart.id, paymentDetails)
+const products = await ww.products.list({ status: 'active' });
+const cart = await ww.cart.create();
+await ww.cart.addItem(cart.id, { variantId, quantity: 1 });
+const order = await ww.checkout.complete(cart.id, paymentDetails);
 ```
 
 The SDK is a thin type-safe wrapper over the REST API. The same SDK powers WizeWorks' own theme system.

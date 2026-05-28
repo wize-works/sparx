@@ -5,12 +5,11 @@ import { cn } from '../../utils/cn';
 // Dots inherit the active module color via --module-active so order/activity
 // feeds in CMS/CRM/etc. routes tint automatically.
 
-export const Timeline = React.forwardRef<
-  HTMLOListElement,
-  React.HTMLAttributes<HTMLOListElement>
->(({ className, ...props }, ref) => (
-  <ol ref={ref} className={cn('relative flex flex-col gap-4', className)} {...props} />
-));
+export const Timeline = React.forwardRef<HTMLOListElement, React.HTMLAttributes<HTMLOListElement>>(
+  ({ className, ...props }, ref) => (
+    <ol ref={ref} className={cn('relative flex flex-col gap-4', className)} {...props} />
+  )
+);
 Timeline.displayName = 'Timeline';
 
 export interface TimelineItemProps extends React.HTMLAttributes<HTMLLIElement> {
@@ -44,10 +43,7 @@ export const TimelineTitle = ({
   className,
   ...props
 }: React.HTMLAttributes<HTMLParagraphElement>) => (
-  <p
-    className={cn('text-sm font-medium text-[var(--color-text-primary)]', className)}
-    {...props}
-  />
+  <p className={cn('text-sm font-medium text-[var(--color-text-primary)]', className)} {...props} />
 );
 TimelineTitle.displayName = 'TimelineTitle';
 
@@ -55,10 +51,7 @@ export const TimelineDescription = ({
   className,
   ...props
 }: React.HTMLAttributes<HTMLParagraphElement>) => (
-  <p
-    className={cn('mt-0.5 text-xs text-[var(--color-text-secondary)]', className)}
-    {...props}
-  />
+  <p className={cn('mt-0.5 text-xs text-[var(--color-text-secondary)]', className)} {...props} />
 );
 TimelineDescription.displayName = 'TimelineDescription';
 
@@ -66,9 +59,6 @@ export const TimelineTime = ({
   className,
   ...props
 }: React.TimeHTMLAttributes<HTMLTimeElement>) => (
-  <time
-    className={cn('text-xs text-[var(--color-text-tertiary)]', className)}
-    {...props}
-  />
+  <time className={cn('text-xs text-[var(--color-text-tertiary)]', className)} {...props} />
 );
 TimelineTime.displayName = 'TimelineTime';

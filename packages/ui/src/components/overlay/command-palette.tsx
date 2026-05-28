@@ -64,10 +64,7 @@ export const CommandEmpty = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <CommandPrimitive.Empty
     ref={ref}
-    className={cn(
-      'py-6 text-center text-sm text-[var(--color-text-secondary)]',
-      className
-    )}
+    className={cn('py-6 text-center text-sm text-[var(--color-text-secondary)]', className)}
     {...props}
   />
 ));
@@ -123,15 +120,9 @@ export const CommandItem = React.forwardRef<
 ));
 CommandItem.displayName = CommandPrimitive.Item.displayName;
 
-export const CommandShortcut = ({
-  className,
-  ...props
-}: React.HTMLAttributes<HTMLSpanElement>) => (
+export const CommandShortcut = ({ className, ...props }: React.HTMLAttributes<HTMLSpanElement>) => (
   <span
-    className={cn(
-      'ml-auto text-xs tracking-wide text-[var(--color-text-tertiary)]',
-      className
-    )}
+    className={cn('ml-auto text-xs tracking-wide text-[var(--color-text-tertiary)]', className)}
     {...props}
   />
 );

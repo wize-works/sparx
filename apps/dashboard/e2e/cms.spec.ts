@@ -15,7 +15,7 @@ test.describe('/cms — module color shift', () => {
     await expect(wrapper).toBeAttached();
 
     const moduleActive = await wrapper.evaluate((el) =>
-      getComputedStyle(el).getPropertyValue('--module-active').trim(),
+      getComputedStyle(el).getPropertyValue('--module-active').trim()
     );
     expect(moduleActive.toLowerCase()).toContain('#14b8a6');
   });

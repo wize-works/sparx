@@ -8,8 +8,7 @@ const cardVariants = cva(
     variants: {
       variant: {
         default: '',
-        module:
-          'rounded-t-none border-t-[3px] border-t-[var(--module-active)]',
+        module: 'rounded-t-none border-t-[3px] border-t-[var(--module-active)]',
         elevated: 'shadow-md',
         ghost: 'border-transparent bg-transparent',
         subtle: 'border-transparent bg-[var(--color-bg-subtle)]',
@@ -26,8 +25,7 @@ const cardVariants = cva(
 );
 
 export interface CardProps
-  extends React.HTMLAttributes<HTMLDivElement>,
-    VariantProps<typeof cardVariants> {}
+  extends React.HTMLAttributes<HTMLDivElement>, VariantProps<typeof cardVariants> {}
 
 export const Card = React.forwardRef<HTMLDivElement, CardProps>(
   ({ className, variant, padding, ...props }, ref) => (
@@ -61,11 +59,7 @@ export const CardDescription = React.forwardRef<
   HTMLParagraphElement,
   React.HTMLAttributes<HTMLParagraphElement>
 >(({ className, ...props }, ref) => (
-  <p
-    ref={ref}
-    className={cn('text-sm text-[var(--color-text-secondary)]', className)}
-    {...props}
-  />
+  <p ref={ref} className={cn('text-sm text-[var(--color-text-secondary)]', className)} {...props} />
 ));
 CardDescription.displayName = 'CardDescription';
 

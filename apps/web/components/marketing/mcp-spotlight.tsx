@@ -24,10 +24,28 @@ const FEATURES = [
 ] as const;
 
 const RESULTS = [
-  { n: '01', name: 'Ranchero Trucking Co.', revenue: '$48,200', status: 'active' as const, days: undefined },
-  { n: '02', name: 'Halcyon & Reed', revenue: '$41,800', status: 'active' as const, days: undefined },
+  {
+    n: '01',
+    name: 'Ranchero Trucking Co.',
+    revenue: '$48,200',
+    status: 'active' as const,
+    days: undefined,
+  },
+  {
+    n: '02',
+    name: 'Halcyon & Reed',
+    revenue: '$41,800',
+    status: 'active' as const,
+    days: undefined,
+  },
   { n: '03', name: 'Northwind Supply', revenue: '$36,400', status: 'cold' as const, days: '51d' },
-  { n: '04', name: 'Pacific Forge Logistics', revenue: '$29,150', status: 'cold' as const, days: '48d' },
+  {
+    n: '04',
+    name: 'Pacific Forge Logistics',
+    revenue: '$29,150',
+    status: 'cold' as const,
+    days: '48d',
+  },
 ] as const;
 
 export function McpSpotlight() {
@@ -42,87 +60,87 @@ export function McpSpotlight() {
       }}
     >
       <Container style={{ display: 'flex', flexDirection: 'column', gap: '64px' }}>
-      <SectionHeader
-        invert
-        headlineSize={64}
-        headlineLineHeight={68}
-        eyebrow={
-          <EyebrowBadge color="#EC4899" background="#2D0A1E" text="#EC4899">
-            AI · MCP
-          </EyebrowBadge>
-        }
-        headline={
-          <>
-            Ask your AI
-            <br />
-            anything
-            <Spark color="#EC4899" />
-          </>
-        }
-        lede={
-          <>
-            Sparx is the first commerce platform built around the Model Context Protocol. Connect
-            Claude, ChatGPT, or Copilot once, then read live business data with plain English. No
-            exports. No CSVs. No Zapier.
-          </>
-        }
-      />
+        <SectionHeader
+          invert
+          headlineSize={64}
+          headlineLineHeight={68}
+          eyebrow={
+            <EyebrowBadge color="#EC4899" background="#2D0A1E" text="#EC4899">
+              AI · MCP
+            </EyebrowBadge>
+          }
+          headline={
+            <>
+              Ask your AI
+              <br />
+              anything
+              <Spark color="#EC4899" />
+            </>
+          }
+          lede={
+            <>
+              Sparx is the first commerce platform built around the Model Context Protocol. Connect
+              Claude, ChatGPT, or Copilot once, then read live business data with plain English. No
+              exports. No CSVs. No Zapier.
+            </>
+          }
+        />
 
-      <div className="mkt-stack-on-tablet" style={{ alignItems: 'stretch', gap: '32px' }}>
-        <div
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            width: '480px',
-            maxWidth: '100%',
-            flexShrink: 0,
-            gap: '32px',
-            paddingTop: '24px',
-          }}
-        >
-          {FEATURES.map((f) => (
-            <div key={f.number} style={{ display: 'flex', gap: '18px' }}>
-              <span
-                style={{
-                  fontFamily: 'var(--font-mono)',
-                  fontSize: '13px',
-                  color: '#52525B',
-                  paddingTop: '4px',
-                  width: '30px',
-                  flexShrink: 0,
-                }}
-              >
-                {f.number}
-              </span>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+        <div className="mkt-stack-on-tablet" style={{ alignItems: 'stretch', gap: '32px' }}>
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              width: '480px',
+              maxWidth: '100%',
+              flexShrink: 0,
+              gap: '32px',
+              paddingTop: '24px',
+            }}
+          >
+            {FEATURES.map((f) => (
+              <div key={f.number} style={{ display: 'flex', gap: '18px' }}>
                 <span
                   style={{
-                    fontFamily: 'var(--font-sans)',
-                    fontWeight: 500,
-                    fontSize: '18px',
-                    letterSpacing: '-0.015em',
-                    color: '#FFFFFF',
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: '13px',
+                    color: '#52525B',
+                    paddingTop: '4px',
+                    width: '30px',
+                    flexShrink: 0,
                   }}
                 >
-                  {f.title}
+                  {f.number}
                 </span>
-                <span
-                  style={{
-                    fontFamily: 'var(--font-sans)',
-                    fontSize: '14px',
-                    lineHeight: '22px',
-                    color: '#A1A1AA',
-                  }}
-                >
-                  {f.body}
-                </span>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <span
+                    style={{
+                      fontFamily: 'var(--font-sans)',
+                      fontWeight: 500,
+                      fontSize: '18px',
+                      letterSpacing: '-0.015em',
+                      color: '#FFFFFF',
+                    }}
+                  >
+                    {f.title}
+                  </span>
+                  <span
+                    style={{
+                      fontFamily: 'var(--font-sans)',
+                      fontSize: '14px',
+                      lineHeight: '22px',
+                      color: '#A1A1AA',
+                    }}
+                  >
+                    {f.body}
+                  </span>
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
 
-        <ChatCard />
-      </div>
+          <ChatCard />
+        </div>
       </Container>
     </section>
   );
@@ -164,10 +182,7 @@ function ChatCard() {
             }}
           >
             <svg width={10} height={10} viewBox="0 0 24 24" fill="none" aria-hidden>
-              <path
-                d="M12 2L14 9L21 9L15 14L17 21L12 17L7 21L9 14L3 9L10 9L12 2Z"
-                fill="#FFFFFF"
-              />
+              <path d="M12 2L14 9L21 9L15 14L17 21L12 17L7 21L9 14L3 9L10 9L12 2Z" fill="#FFFFFF" />
             </svg>
           </span>
           <span

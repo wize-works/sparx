@@ -2,7 +2,7 @@ import * as React from 'react';
 import { cva, type VariantProps } from '../../utils/cva';
 import { cn } from '../../utils/cn';
 
-const dividerVariants = cva('bg-[var(--color-border-default)] shrink-0', {
+const dividerVariants = cva('shrink-0 bg-[var(--color-border-default)]', {
   variants: {
     orientation: {
       horizontal: 'h-px w-full',
@@ -13,8 +13,7 @@ const dividerVariants = cva('bg-[var(--color-border-default)] shrink-0', {
 });
 
 export interface DividerProps
-  extends Omit<React.HTMLAttributes<HTMLDivElement>, 'role'>,
-    VariantProps<typeof dividerVariants> {
+  extends Omit<React.HTMLAttributes<HTMLDivElement>, 'role'>, VariantProps<typeof dividerVariants> {
   /** When true (default), exposed to assistive tech as a separator. */
   decorative?: boolean;
 }

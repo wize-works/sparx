@@ -16,7 +16,7 @@ export default async function GeneralSettingsPage() {
     tx.tenant.findUnique({
       where: { id: user.tenantId },
       select: { name: true, email: true, slug: true, plan: true },
-    }),
+    })
   );
 
   if (!tenant) {

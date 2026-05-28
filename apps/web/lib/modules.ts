@@ -48,8 +48,7 @@ export const MODULES: Record<MarketingModule, ModuleMeta> = {
     title: 'Sparx Storefront — Themes, pages, live URLs.',
     description:
       'The Sparx site builder. Pick a theme, edit blocks, point your domain. No code. No staging dance. Live in five minutes.',
-    lede:
-      'The site builder. Pick a theme, edit blocks, point your domain. No code. No staging dance. The same theme system powers a five-product test store and a 50,000-SKU catalog.',
+    lede: 'The site builder. Pick a theme, edit blocks, point your domain. No code. No staging dance. The same theme system powers a five-product test store and a 50,000-SKU catalog.',
     features: [
       {
         number: '01',
@@ -99,8 +98,7 @@ export const MODULES: Record<MarketingModule, ModuleMeta> = {
     title: 'Sparx Commerce — Cart, checkout, orders.',
     description:
       'Products, inventory, payments. Stripe, PayPal, Klarna. Tax and shipping handled. The transactional core of Sparx.',
-    lede:
-      'Products, inventory, payments. Stripe, PayPal, Klarna out of the box. Tax (Avalara, TaxJar) and shipping (Shippo, EasyPost) wired in. D2C and B2B from the same codebase.',
+    lede: 'Products, inventory, payments. Stripe, PayPal, Klarna out of the box. Tax (Avalara, TaxJar) and shipping (Shippo, EasyPost) wired in. D2C and B2B from the same codebase.',
     features: [
       {
         number: '01',
@@ -150,8 +148,7 @@ export const MODULES: Record<MarketingModule, ModuleMeta> = {
     title: 'Sparx CMS — Words, media, SEO.',
     description:
       'Editor, blog, media library, structured content. Works standalone — no storefront required.',
-    lede:
-      'Editor, blog, media library, structured content. Works standalone — no storefront required. The same publishing toolset whether you sell something or just write.',
+    lede: 'Editor, blog, media library, structured content. Works standalone — no storefront required. The same publishing toolset whether you sell something or just write.',
     features: [
       {
         number: '01',
@@ -202,8 +199,7 @@ export const MODULES: Record<MarketingModule, ModuleMeta> = {
     title: 'Sparx CRM — Customers, pipeline, signal.',
     description:
       'Activity log, automations, segments. Built on your commerce data — not stitched to it.',
-    lede:
-      'Activity log, automations, segments — sitting on top of the same database as your orders. No sync, no Zapier, no "the HubSpot record disagrees with the Shopify record."',
+    lede: 'Activity log, automations, segments — sitting on top of the same database as your orders. No sync, no Zapier, no "the HubSpot record disagrees with the Shopify record."',
     features: [
       {
         number: '01',
@@ -213,7 +209,7 @@ export const MODULES: Record<MarketingModule, ModuleMeta> = {
       {
         number: '02',
         title: 'Dynamic segments.',
-        body: 'Build audiences from any signal: spent over X, hasn\'t reordered in N days, opened the last email but didn\'t buy. Sync to Email automatically.',
+        body: "Build audiences from any signal: spent over X, hasn't reordered in N days, opened the last email but didn't buy. Sync to Email automatically.",
       },
       {
         number: '03',
@@ -254,8 +250,7 @@ export const MODULES: Record<MarketingModule, ModuleMeta> = {
     title: 'Sparx Email — Transactional and marketing.',
     description:
       'Self-hosted Postal on sparx.email. Your domain, your reputation. No SendGrid markup.',
-    lede:
-      'Self-hosted Postal on sparx.email. Your sending domain, your reputation, SPF/DKIM/DMARC auto-configured. No per-email markup, no $0.0008 nickel-and-dime.',
+    lede: 'Self-hosted Postal on sparx.email. Your sending domain, your reputation, SPF/DKIM/DMARC auto-configured. No per-email markup, no $0.0008 nickel-and-dime.',
     features: [
       {
         number: '01',
@@ -306,8 +301,7 @@ export const MODULES: Record<MarketingModule, ModuleMeta> = {
     title: 'Sparx B2B — Wholesale, fleet, net terms.',
     description:
       'Account-tier pricing, RFQ, purchase orders, fleet accounts, service scheduling. Built for industrial.',
-    lede:
-      'Shopify charges $2,400/mo for B2B and still doesn’t do net terms properly. Sparx ships wholesale pricing, RFQ, purchase orders, fleet accounts, and service scheduling natively. $99/mo. Built for how industrial actually works.',
+    lede: 'Shopify charges $2,400/mo for B2B and still doesn’t do net terms properly. Sparx ships wholesale pricing, RFQ, purchase orders, fleet accounts, and service scheduling natively. $99/mo. Built for how industrial actually works.',
     features: [
       {
         number: '01',
@@ -358,8 +352,7 @@ export const MODULES: Record<MarketingModule, ModuleMeta> = {
     title: 'Sparx AI — Native MCP server for Claude, ChatGPT, Copilot.',
     description:
       'Sparx is the first commerce platform built around the Model Context Protocol. Read live business data with plain English. No exports. No CSVs.',
-    lede:
-      'Sparx is the first commerce platform built around the Model Context Protocol. Connect Claude, ChatGPT, or Copilot once and read live business data with plain English. No exports. No CSVs. No Zapier.',
+    lede: 'Sparx is the first commerce platform built around the Model Context Protocol. Connect Claude, ChatGPT, or Copilot once and read live business data with plain English. No exports. No CSVs. No Zapier.',
     features: [
       {
         number: '01',
@@ -407,10 +400,8 @@ export const MODULES: Record<MarketingModule, ModuleMeta> = {
     headlinePrimary: 'Suppliers, sync,',
     headlineSecondary: 'fulfillment',
     title: 'Sparx Dropship — Suppliers, sync, fulfillment.',
-    description:
-      'Catalog sync, margin math, automated order routing. Sell without inventory.',
-    lede:
-      'Catalog sync, margin math, automated order routing. Sell without holding inventory — but with a real platform underneath, not a Shopify app stacked on a Shopify app.',
+    description: 'Catalog sync, margin math, automated order routing. Sell without inventory.',
+    lede: 'Catalog sync, margin math, automated order routing. Sell without holding inventory — but with a real platform underneath, not a Shopify app stacked on a Shopify app.',
     features: [
       {
         number: '01',

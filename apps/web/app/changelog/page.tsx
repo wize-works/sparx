@@ -5,8 +5,7 @@ import { ComingSoon } from '@/components/marketing/coming-soon';
 
 export const metadata: Metadata = {
   title: 'Changelog — Sparx',
-  description:
-    'Every release, every breaking change, every deprecation. RSS feed ships with v1.0.',
+  description: 'Every release, every breaking change, every deprecation. RSS feed ships with v1.0.',
   alternates: { canonical: '/changelog' },
   robots: { index: false },
 };

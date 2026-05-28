@@ -34,7 +34,7 @@ async function loadPages(tenantId: string): Promise<PageRow[]> {
     tx.page.findMany({
       select: { id: true, slug: true, title: true, status: true, updatedAt: true },
       orderBy: { updatedAt: 'desc' },
-    }),
+    })
   );
 }
 

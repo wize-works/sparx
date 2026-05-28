@@ -14,13 +14,7 @@ import {
 } from './alert-dialog';
 import { Button } from '../primitives/button';
 
-function Fixture({
-  onConfirm,
-  onCancel,
-}: {
-  onConfirm?: () => void;
-  onCancel?: () => void;
-}) {
+function Fixture({ onConfirm, onCancel }: { onConfirm?: () => void; onCancel?: () => void }) {
   return (
     <AlertDialog>
       <AlertDialogTrigger asChild>

@@ -150,7 +150,7 @@ const ObjectField = z.lazy(() =>
   BaseField.extend({
     type: z.literal('object'),
     fields: z.array(FieldDefSchema),
-  }),
+  })
 );
 
 const RepeaterField = z.lazy(() =>
@@ -160,7 +160,7 @@ const RepeaterField = z.lazy(() =>
     min: z.number().int().min(0).optional(),
     max: z.number().int().min(1).optional(),
     fields: z.array(FieldDefSchema),
-  }),
+  })
 );
 
 export const FieldDefSchema: z.ZodType<FieldDef> = z.lazy(() =>
@@ -180,7 +180,7 @@ export const FieldDefSchema: z.ZodType<FieldDef> = z.lazy(() =>
     AssetField,
     ObjectField,
     RepeaterField,
-  ]),
+  ])
 );
 
 export const ContentTypeSchema = z.object({

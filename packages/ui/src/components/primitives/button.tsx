@@ -18,8 +18,7 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        primary:
-          'bg-[var(--sparx-primary)] text-white hover:bg-[var(--sparx-primary-hover)]',
+        primary: 'bg-[var(--sparx-primary)] text-white hover:bg-[var(--sparx-primary-hover)]',
         secondary:
           'border border-[var(--color-border-default)] bg-[var(--color-bg-surface)] text-[var(--color-text-primary)] hover:bg-[var(--color-bg-subtle)]',
         ghost:
@@ -46,8 +45,7 @@ const buttonVariants = cva(
 );
 
 export interface ButtonProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
-    VariantProps<typeof buttonVariants> {
+  extends React.ButtonHTMLAttributes<HTMLButtonElement>, VariantProps<typeof buttonVariants> {
   loading?: boolean;
   leftIcon?: React.ReactNode;
   rightIcon?: React.ReactNode;
@@ -74,11 +72,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     // and skip the icon/spinner slots. The provided child owns its layout.
     if (asChild) {
       return (
-        <Slot
-          ref={ref}
-          className={cn(buttonVariants({ variant, size }), className)}
-          {...props}
-        >
+        <Slot ref={ref} className={cn(buttonVariants({ variant, size }), className)} {...props}>
           {children}
         </Slot>
       );
@@ -92,11 +86,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         aria-busy={loading || undefined}
         {...props}
       >
-        {loading ? (
-          <Spinner size="sm" />
-        ) : (
-          leftIcon && <span className="shrink-0">{leftIcon}</span>
-        )}
+        {loading ? <Spinner size="sm" /> : leftIcon && <span className="shrink-0">{leftIcon}</span>}
         {children}
         {rightIcon && !loading && <span className="shrink-0">{rightIcon}</span>}
       </button>

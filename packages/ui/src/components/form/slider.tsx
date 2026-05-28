@@ -26,9 +26,7 @@ export const Slider = React.forwardRef<
       )}
       {...props}
     >
-      <SliderPrimitive.Track
-        className="relative h-1.5 w-full grow overflow-hidden rounded-full bg-[var(--color-bg-muted)]"
-      >
+      <SliderPrimitive.Track className="relative h-1.5 w-full grow overflow-hidden rounded-full bg-[var(--color-bg-muted)]">
         <SliderPrimitive.Range className="absolute h-full bg-[var(--module-active)]" />
       </SliderPrimitive.Track>
       {value.map((_, i) => (

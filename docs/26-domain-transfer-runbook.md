@@ -10,19 +10,19 @@
 
 Moving eight Sparx-owned domains from GoDaddy (current registrar) to Cloudflare (new registrar + DNS). After this is complete, Cloudflare manages all platform DNS via Terraform.
 
-| Domain | Purpose | Priority |
-|---|---|---|
-| `sparx.works` | Platform brand — app, api, mcp, marketing | **P0 — first** |
-| `sparx.zone` | Tenant storefronts (`*.sparx.zone`, `customers.sparx.zone`). Shopify-style split for reputation isolation. | **P0 — also first** |
-| `sparx.email` | Postal sending infrastructure **and** platform-to-merchant transactional emails (replaces planned `sparx.mx`) | P1 |
-| `sparxcms.com` | CMS module marketing site | P2 |
-| `sparxcrm.com` | CRM module marketing site | P2 |
-| `sparxemail.com` | Email module marketing site | P2 |
-| `sparxb2b.com` | B2B module marketing site | P2 |
-| `sparx.host` | Managed hosting product marketing (301 → sparx.works/hosting for now) | P3 |
-| `sparx.software` | Developer portal (301 → sparx.works/docs for now) | P3 |
-| `sparx.market` | Future theme/plugin marketplace | P3 |
-| `sparx.exchange` | Defensive (301 → sparx.works) | P3 |
+| Domain           | Purpose                                                                                                       | Priority            |
+| ---------------- | ------------------------------------------------------------------------------------------------------------- | ------------------- |
+| `sparx.works`    | Platform brand — app, api, mcp, marketing                                                                     | **P0 — first**      |
+| `sparx.zone`     | Tenant storefronts (`*.sparx.zone`, `customers.sparx.zone`). Shopify-style split for reputation isolation.    | **P0 — also first** |
+| `sparx.email`    | Postal sending infrastructure **and** platform-to-merchant transactional emails (replaces planned `sparx.mx`) | P1                  |
+| `sparxcms.com`   | CMS module marketing site                                                                                     | P2                  |
+| `sparxcrm.com`   | CRM module marketing site                                                                                     | P2                  |
+| `sparxemail.com` | Email module marketing site                                                                                   | P2                  |
+| `sparxb2b.com`   | B2B module marketing site                                                                                     | P2                  |
+| `sparx.host`     | Managed hosting product marketing (301 → sparx.works/hosting for now)                                         | P3                  |
+| `sparx.software` | Developer portal (301 → sparx.works/docs for now)                                                             | P3                  |
+| `sparx.market`   | Future theme/plugin marketplace                                                                               | P3                  |
+| `sparx.exchange` | Defensive (301 → sparx.works)                                                                                 | P3                  |
 
 `sparx.mx` was the original plan for Postal sending; it is already registered to a third party. `sparx.email` plays both the infrastructure-sending and merchant-facing roles.
 
@@ -115,6 +115,7 @@ terraform apply
 ```
 
 Terraform will create:
+
 - `sparx.works` records: `@`, `www`, `app`, `api`, `mcp`, `*`, `customers` — all pointing at the ingress IP from [terraform/envs/prod/main.tf](../terraform/envs/prod/main.tf)
 - Cloudflare proxy ON for `app`/`api`/`mcp`/`@`/`www`; OFF for `*` and `customers` (Caddy on-demand TLS needs to terminate)
 
@@ -151,6 +152,7 @@ dig +short NS sparx.works
 ```
 
 Expected:
+
 - All A records resolve to the same IP (the GCP L4 ingress)
 - `https://` works on the proxied hostnames (Cloudflare cert)
 - `https://*.sparx.zone` works for any slug that exists in the database (Caddy on-demand Let's Encrypt cert)
@@ -178,12 +180,12 @@ Expected:
 
 If a transfer goes wrong mid-flight:
 
-| Stage | Reverse by |
-|---|---|
-| EPP code obtained, nameservers still at GoDaddy | Re-lock at GoDaddy. No customer impact. |
+| Stage                                            | Reverse by                                                                          |
+| ------------------------------------------------ | ----------------------------------------------------------------------------------- |
+| EPP code obtained, nameservers still at GoDaddy  | Re-lock at GoDaddy. No customer impact.                                             |
 | Nameservers moved to Cloudflare, traffic flowing | Re-point nameservers back at GoDaddy via the GoDaddy console. ~10 min TTL recovery. |
-| Registrar transfer initiated, pending | Reject the confirmation email at GoDaddy — transfer cancels. |
-| Registrar transfer completed | Initiate a transfer back to GoDaddy. 60-day registrar lock applies first. |
+| Registrar transfer initiated, pending            | Reject the confirmation email at GoDaddy — transfer cancels.                        |
+| Registrar transfer completed                     | Initiate a transfer back to GoDaddy. 60-day registrar lock applies first.           |
 
 `sparx.works` is the only one with live customer impact during the transfer window — keep the rollback window for it under one business day.
 

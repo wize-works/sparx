@@ -26,10 +26,8 @@ const selectTriggerVariants = cva(
   {
     variants: {
       variant: {
-        default:
-          'border-[var(--color-border-default)] hover:border-[var(--color-border-strong)]',
-        error:
-          'border-[var(--color-danger)] focus-visible:ring-[var(--color-danger)]',
+        default: 'border-[var(--color-border-default)] hover:border-[var(--color-border-strong)]',
+        error: 'border-[var(--color-danger)] focus-visible:ring-[var(--color-danger)]',
       },
       size: {
         sm: 'h-8 px-2.5 py-1.5 text-xs',
@@ -42,7 +40,8 @@ const selectTriggerVariants = cva(
 );
 
 export interface SelectTriggerProps
-  extends Omit<React.ComponentPropsWithoutRef<typeof SelectPrimitive.Trigger>, 'size'>,
+  extends
+    Omit<React.ComponentPropsWithoutRef<typeof SelectPrimitive.Trigger>, 'size'>,
     VariantProps<typeof selectTriggerVariants> {}
 
 export const SelectTrigger = React.forwardRef<
@@ -103,8 +102,7 @@ export const SelectContent = React.forwardRef<
         'border border-[var(--color-border-default)] bg-[var(--color-bg-surface)] shadow-md',
         'data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95',
         'data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95',
-        position === 'popper' &&
-          'data-[side=bottom]:translate-y-1 data-[side=top]:-translate-y-1',
+        position === 'popper' && 'data-[side=bottom]:translate-y-1 data-[side=top]:-translate-y-1',
         className
       )}
       {...props}

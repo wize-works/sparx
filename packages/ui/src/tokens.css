@@ -133,11 +133,11 @@
 
   /* Marketing display type — scales fluidly from phone to desktop */
   --display-hero: clamp(48px, 10vw, 120px); /* Hero headline */
-  --display-xl: clamp(40px, 7vw, 88px);     /* Final CTA, big editorial */
-  --display-lg: clamp(36px, 6vw, 72px);     /* Section headlines */
-  --display-md: clamp(30px, 5vw, 56px);     /* Default Display */
-  --display-sm: clamp(26px, 4.2vw, 46px);   /* Testimonial blockquote */
-  --display-xs: clamp(22px, 3.4vw, 32px);   /* Small section headlines */
+  --display-xl: clamp(40px, 7vw, 88px); /* Final CTA, big editorial */
+  --display-lg: clamp(36px, 6vw, 72px); /* Section headlines */
+  --display-md: clamp(30px, 5vw, 56px); /* Default Display */
+  --display-sm: clamp(26px, 4.2vw, 46px); /* Testimonial blockquote */
+  --display-xs: clamp(22px, 3.4vw, 32px); /* Small section headlines */
 
   /* Hero line-height should track the size, not 120px forever */
   --display-hero-leading: clamp(48px, 10vw, 104px);

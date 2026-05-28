@@ -21,8 +21,8 @@ resource "google_storage_bucket" "media" {
 
   lifecycle_rule {
     condition {
-      age                = 30
-      with_state         = "ARCHIVED"
+      age                   = 30
+      with_state            = "ARCHIVED"
       matches_storage_class = ["STANDARD"]
     }
     action {

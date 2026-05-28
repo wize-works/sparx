@@ -15,14 +15,7 @@ import {
 } from '@tanstack/react-table';
 import { ArrowUpDown, ChevronDown, ChevronUp } from 'lucide-react';
 import { cn } from '../../utils/cn';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from './table';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './table';
 import { EmptyState } from './empty-state';
 
 // Generic TanStack-backed table with built-in sorting/pagination/filtering
@@ -88,7 +81,7 @@ export function DataTable<TData, TValue>({
                           className={cn(
                             'inline-flex items-center gap-1 text-xs font-medium uppercase tracking-wider',
                             'transition-colors duration-150 hover:text-[var(--color-text-primary)]',
-                            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:rounded-sm',
+                            'focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)]',
                             sortDir
                               ? 'text-[var(--color-text-primary)]'
                               : 'text-[var(--color-text-tertiary)]'
@@ -186,7 +179,7 @@ function DataTablePager({
             'transition-colors duration-150',
             'hover:bg-[var(--color-bg-subtle)]',
             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)]',
-            'disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent'
+            'disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent'
           )}
         >
           Prev
@@ -200,7 +193,7 @@ function DataTablePager({
             'transition-colors duration-150',
             'hover:bg-[var(--color-bg-subtle)]',
             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)]',
-            'disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent'
+            'disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent'
           )}
         >
           Next

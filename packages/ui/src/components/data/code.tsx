@@ -3,7 +3,7 @@ import { cva, type VariantProps } from '../../utils/cva';
 import { cn } from '../../utils/cn';
 
 const codeVariants = cva(
-  'rounded font-mono text-[var(--color-text-primary)] bg-[var(--color-bg-subtle)]',
+  'rounded bg-[var(--color-bg-subtle)] font-mono text-[var(--color-text-primary)]',
   {
     variants: {
       variant: {
@@ -16,8 +16,7 @@ const codeVariants = cva(
 );
 
 export interface CodeProps
-  extends React.HTMLAttributes<HTMLElement>,
-    VariantProps<typeof codeVariants> {}
+  extends React.HTMLAttributes<HTMLElement>, VariantProps<typeof codeVariants> {}
 
 export const Code = React.forwardRef<HTMLElement, CodeProps>(
   ({ className, variant, children, ...props }, ref) => {

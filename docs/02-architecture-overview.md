@@ -11,6 +11,7 @@
 Sparx is built API-first, cloud-native, modular, and multi-tenant from day one. Every feature exposed in the UI is available via API. The platform runs on Google Kubernetes Engine (GKE) with horizontal scalability at every layer.
 
 Core tenets:
+
 - **Modular** — Modules activate independently; disabled modules add zero overhead
 - **Stateless services** — No session state in application tier; all state in data layer
 - **Event-driven** — Business events (order placed, customer created) emit to Pub/Sub; all side effects are consumers
@@ -77,81 +78,90 @@ EMAIL INFRASTRUCTURE (Postal)
 ## 3. Technology Stack
 
 ### Infrastructure
-| Component | Technology |
-|-----------|-----------|
+
+| Component               | Technology                               |
+| ----------------------- | ---------------------------------------- |
 | Container orchestration | Google Kubernetes Engine (GKE Autopilot) |
-| Infrastructure as code | Terraform |
-| CI/CD | GitHub Actions + Cloud Build |
-| Container registry | Google Artifact Registry |
-| Secret management | Google Secret Manager |
-| DNS / Edge | Cloudflare |
+| Infrastructure as code  | Terraform                                |
+| CI/CD                   | GitHub Actions + Cloud Build             |
+| Container registry      | Google Artifact Registry                 |
+| Secret management       | Google Secret Manager                    |
+| DNS / Edge              | Cloudflare                               |
 
 ### Authentication
-| Component | Technology |
-|-----------|-----------|
-| Auth framework | Better Auth (self-hosted, open source) |
-| Password hashing | Argon2 (via Better Auth) |
+
+| Component          | Technology                             |
+| ------------------ | -------------------------------------- |
+| Auth framework     | Better Auth (self-hosted, open source) |
+| Password hashing   | Argon2 (via Better Auth)               |
 | Session management | JWT (15 min) + refresh tokens (30 day) |
-| Social OAuth | Google, Apple (via Better Auth) |
-| MFA | TOTP + SMS (via Better Auth) |
-| Multi-tenancy | Better Auth organizations plugin |
-| API keys | Better Auth API key plugin |
+| Social OAuth       | Google, Apple (via Better Auth)        |
+| MFA                | TOTP + SMS (via Better Auth)           |
+| Multi-tenancy      | Better Auth organizations plugin       |
+| API keys           | Better Auth API key plugin             |
 
 ### Backend
-| Component | Technology |
-|-----------|-----------|
-| Runtime | Node.js (TypeScript strict) |
-| HTTP framework | Fastify |
-| GraphQL | Pothos + Mercurius |
-| ORM | Prisma |
-| Queue | BullMQ (Redis-backed) |
-| Event bus | Google Pub/Sub |
+
+| Component      | Technology                  |
+| -------------- | --------------------------- |
+| Runtime        | Node.js (TypeScript strict) |
+| HTTP framework | Fastify                     |
+| GraphQL        | Pothos + Mercurius          |
+| ORM            | Prisma                      |
+| Queue          | BullMQ (Redis-backed)       |
+| Event bus      | Google Pub/Sub              |
 
 ### Email
-| Component | Technology |
-|-----------|-----------|
-| Mail delivery | Postal (self-hosted, GKE deployment) — built-in tracking (clicks, opens, bounces) |
-| Sending domain | sparx.email (dedicated) |
-| Template rendering | React Email |
-| IP management | Dedicated pools per volume tier |
-| Tracking | Postal built-in (clicks, opens, bounces) |
+
+| Component          | Technology                                                                        |
+| ------------------ | --------------------------------------------------------------------------------- |
+| Mail delivery      | Postal (self-hosted, GKE deployment) — built-in tracking (clicks, opens, bounces) |
+| Sending domain     | sparx.email (dedicated)                                                           |
+| Template rendering | React Email                                                                       |
+| IP management      | Dedicated pools per volume tier                                                   |
+| Tracking           | Postal built-in (clicks, opens, bounces)                                          |
 
 ### Data
-| Component | Technology |
-|-----------|-----------|
-| Primary database | PostgreSQL 16 (Cloud SQL) |
-| Cache / sessions | Redis (Memorystore) |
-| Search | Search index — Typesense (Phase 2 onward) or Elasticsearch (Phase 3+) |
-| File storage | Google Cloud Storage |
-| CDN | Cloudflare |
+
+| Component        | Technology                                                            |
+| ---------------- | --------------------------------------------------------------------- |
+| Primary database | PostgreSQL 16 (Cloud SQL)                                             |
+| Cache / sessions | Redis (Memorystore)                                                   |
+| Search           | Search index — Typesense (Phase 2 onward) or Elasticsearch (Phase 3+) |
+| File storage     | Google Cloud Storage                                                  |
+| CDN              | Cloudflare                                                            |
 
 ### Frontend
-| Component | Technology |
-|-----------|-----------|
-| Framework | Next.js 15 (App Router) |
-| Styling | Tailwind CSS |
-| State | Zustand + React Query |
-| Components | Radix UI + custom |
-| Email templates | React Email |
+
+| Component       | Technology              |
+| --------------- | ----------------------- |
+| Framework       | Next.js 15 (App Router) |
+| Styling         | Tailwind CSS            |
+| State           | Zustand + React Query   |
+| Components      | Radix UI + custom       |
+| Email templates | React Email             |
 
 ### Payments
-| Component | Technology |
-|-----------|-----------|
-| Payment processing | Stripe |
+
+| Component            | Technology                    |
+| -------------------- | ----------------------------- |
+| Payment processing   | Stripe                        |
 | Subscription billing | Stripe Billing (module-based) |
-| B2B invoicing | Custom (backed by Stripe) |
+| B2B invoicing        | Custom (backed by Stripe)     |
 
 ---
 
 ## 4. Module Architecture
 
 Each module is a feature-flagged set of services, routes, and UI components. Disabled modules:
+
 - Have no active API routes (404 returned **with a clear error message** identifying the disabled module)
 - Have no running workers
 - Contribute no overhead to the application tier
 - Store no data (tables exist, no rows for disabled modules)
 
 Module activation:
+
 1. Merchant activates module in billing settings
 2. Stripe subscription item added
 3. `module.activated` event published to Pub/Sub
@@ -167,6 +177,7 @@ Module activation:
 Shared database, row-level isolation using PostgreSQL Row Level Security (RLS). Every tenant-scoped table has `tenant_id`. RLS policies enforce isolation at the database level — backstop against application-level bugs. RLS is the backstop against application-tier bugs — even if an ORM query forgets the tenant filter, the database refuses to return cross-tenant rows.
 
 Better Auth's organization model maps directly:
+
 - Better Auth Organization = Sparx Tenant
 - Better Auth Organization Member = Sparx Staff User
 - Tenant context established from Better Auth session claims
@@ -211,13 +222,13 @@ Bounces/complaints → Postal webhook → Sparx suppression list
 
 ## 8. Scalability Targets
 
-| Metric | Target |
-|--------|--------|
-| Storefront page load (p95) | < 200ms |
-| API response time (p95) | < 100ms |
-| Concurrent tenants | 10,000+ |
-| Orders per second (peak) | 1,000+ |
-| Email delivery | < 30 seconds |
-| Domain SSL provisioning | < 5 minutes |
-| Uptime SLA | 99.9% (99.99% Enterprise) |
-| Email deliverability | > 98% inbox placement |
+| Metric                     | Target                    |
+| -------------------------- | ------------------------- |
+| Storefront page load (p95) | < 200ms                   |
+| API response time (p95)    | < 100ms                   |
+| Concurrent tenants         | 10,000+                   |
+| Orders per second (peak)   | 1,000+                    |
+| Email delivery             | < 30 seconds              |
+| Domain SSL provisioning    | < 5 minutes               |
+| Uptime SLA                 | 99.9% (99.99% Enterprise) |
+| Email deliverability       | > 98% inbox placement     |

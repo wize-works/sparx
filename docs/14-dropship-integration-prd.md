@@ -15,17 +15,20 @@ WizeWorks treats dropshipping as a first-class commerce channel, not a plugin. M
 ## 2. Supported Suppliers
 
 ### Tier 1 (Native Connectors)
-| Supplier | Type | Catalog Size | Shipping |
-|----------|------|-------------|----------|
-| DSers / AliExpress | General | 100M+ products | 7–30 days |
-| Spocket | US/EU Premium | 7M+ products | 3–7 days |
-| Faire | Wholesale / B2B | 100K+ brands | 3–5 days |
-| AutoDS | Multi-supplier automation | Aggregator | Varies |
+
+| Supplier           | Type                      | Catalog Size   | Shipping  |
+| ------------------ | ------------------------- | -------------- | --------- |
+| DSers / AliExpress | General                   | 100M+ products | 7–30 days |
+| Spocket            | US/EU Premium             | 7M+ products   | 3–7 days  |
+| Faire              | Wholesale / B2B           | 100K+ brands   | 3–5 days  |
+| AutoDS             | Multi-supplier automation | Aggregator     | Varies    |
 
 ### Tier 2 (API Connector — Custom)
+
 Any supplier with a REST API can be connected via the custom connector framework. Merchants provide API credentials and field mappings.
 
 ### Tier 3 (Manual / CSV)
+
 For suppliers without APIs, merchants upload CSV product files. Orders are exported as CSV for manual submission.
 
 ---
@@ -60,13 +63,14 @@ Tracking Webhook → Customer Email
 ```
 
 Each adapter implements:
+
 ```typescript
 interface SupplierAdapter {
-  authenticate(credentials: Credentials): Promise<boolean>
-  syncCatalog(since?: Date): AsyncGenerator<NormalizedProduct>
-  submitOrder(order: Order): Promise<SupplierOrderResult>
-  getTrackingUpdate(supplierOrderId: string): Promise<TrackingInfo>
-  checkInventory(skus: string[]): Promise<InventoryMap>
+  authenticate(credentials: Credentials): Promise<boolean>;
+  syncCatalog(since?: Date): AsyncGenerator<NormalizedProduct>;
+  submitOrder(order: Order): Promise<SupplierOrderResult>;
+  getTrackingUpdate(supplierOrderId: string): Promise<TrackingInfo>;
+  checkInventory(skus: string[]): Promise<InventoryMap>;
 }
 ```
 
@@ -75,6 +79,7 @@ interface SupplierAdapter {
 ## 4. Product Import Flow
 
 ### Connect Supplier
+
 1. Merchant goes to **Dropship → Suppliers → Add Supplier**
 2. Selects supplier type
 3. Enters API credentials (stored encrypted in Google Secret Manager)
@@ -82,6 +87,7 @@ interface SupplierAdapter {
 5. Initial catalog sync queued (background job)
 
 ### Product Search & Import
+
 1. Merchant searches supplier catalog within dashboard
 2. Filters by category, price, shipping time, rating
 3. Selects product → clicks "Import"
@@ -94,7 +100,9 @@ interface SupplierAdapter {
 6. Product published to store
 
 ### Pricing Rules
+
 Merchants configure automatic markup rules:
+
 ```
 Cost + 40% margin (minimum $5 profit)
 Cost × 2.5 (2.5x multiplier)
@@ -108,13 +116,14 @@ Compare-at price: Supplier MSRP
 
 Syncs run on a schedule and on-demand:
 
-| Supplier Tier | Sync Frequency | What Syncs |
-|--------------|---------------|-----------|
-| Tier 1 (native) | Every 4 hours | Price, inventory, availability |
-| Tier 2 (custom) | Every 12 hours | Configurable |
-| Tier 3 (CSV) | Manual upload | Full catalog |
+| Supplier Tier   | Sync Frequency | What Syncs                     |
+| --------------- | -------------- | ------------------------------ |
+| Tier 1 (native) | Every 4 hours  | Price, inventory, availability |
+| Tier 2 (custom) | Every 12 hours | Configurable                   |
+| Tier 3 (CSV)    | Manual upload  | Full catalog                   |
 
 If a supplier product is discontinued or goes out of stock:
+
 - Product marked as unavailable on storefront
 - Merchant notified via dashboard alert + email
 - Merchant can remove or substitute product
@@ -140,12 +149,15 @@ Order Router Analysis
 ```
 
 ### Mixed Orders
+
 An order can contain both inventory-held and dropship products. The router:
+
 1. Splits into fulfillment groups by supplier
 2. Submits each group independently
 3. Customer receives combined tracking when all groups ship
 
 ### Supplier Order Payload
+
 ```json
 {
   "merchant_reference": "WW-ORDER-1234",
@@ -174,6 +186,7 @@ An order can contain both inventory-held and dropship products. The router:
 ## 8. Margin & Profitability Reporting
 
 Merchants can see per-product and per-order profitability:
+
 - Cost (from supplier)
 - Revenue (from customer)
 - Gross margin ($, %)
@@ -181,4 +194,5 @@ Merchants can see per-product and per-order profitability:
 - Platform fees
 
 Accessible in the dashboard and via MCP:
+
 > "What are my top 10 most profitable dropship products this month?"

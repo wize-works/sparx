@@ -5,7 +5,8 @@ import { ComingSoon } from '@/components/marketing/coming-soon';
 
 export const metadata: Metadata = {
   title: 'Careers — Sparx',
-  description: "We're hiring engineers, designers, and a customer success lead. Remote-first, Visalia or anywhere.",
+  description:
+    "We're hiring engineers, designers, and a customer success lead. Remote-first, Visalia or anywhere.",
   alternates: { canonical: '/careers' },
   robots: { index: false },
 };

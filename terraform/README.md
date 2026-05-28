@@ -53,14 +53,14 @@ terraform apply
 
 ## Phase 1 cost estimate
 
-| Resource | Monthly |
-|---|---|
-| Cloud SQL `db-g1-small` (private IP) | ~$25 |
-| L4 load balancer static IP + traffic | ~$18 |
-| GKE Autopilot (idle → light) | $0–30 |
-| Cloud NAT (1 IP, low egress) | ~$2 |
-| Everything else (GCS, Pub/Sub, Artifact Registry, Secret Manager) | ~$0–5 |
-| **Total before credits** | **~$50–80/mo** |
+| Resource                                                          | Monthly        |
+| ----------------------------------------------------------------- | -------------- |
+| Cloud SQL `db-g1-small` (private IP)                              | ~$25           |
+| L4 load balancer static IP + traffic                              | ~$18           |
+| GKE Autopilot (idle → light)                                      | $0–30          |
+| Cloud NAT (1 IP, low egress)                                      | ~$2            |
+| Everything else (GCS, Pub/Sub, Artifact Registry, Secret Manager) | ~$0–5          |
+| **Total before credits**                                          | **~$50–80/mo** |
 
 GCP startup credits cover this for 12–18 months. See [docs/21-cost-scaling-guide.md](../docs/21-cost-scaling-guide.md).
 
@@ -68,7 +68,7 @@ GCP startup credits cover this for 12–18 months. See [docs/21-cost-scaling-gui
 
 - **Kubernetes workloads.** Caddy, Redis, Postal, the app Deployments — those live in `k8s/` (TBD) and are applied via `kubectl`/Helm, not Terraform. Terraform owns the platform; kubectl owns the apps.
 - **Cloudflare DNS records.** Defined in `envs/prod/cloudflare.tf` but gated by `var.cloudflare_enabled = false` until domain transfers from GoDaddy complete and the API token is provisioned.
-- **GitHub Actions workflows.** The WIF pool + deployer SA are created so CI *can* deploy; workflows themselves go in `.github/workflows/`.
+- **GitHub Actions workflows.** The WIF pool + deployer SA are created so CI _can_ deploy; workflows themselves go in `.github/workflows/`.
 
 ## Applying changes
 

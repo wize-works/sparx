@@ -5,7 +5,7 @@ import { cva, type VariantProps } from '../../utils/cva';
 import { cn } from '../../utils/cn';
 
 const avatarVariants = cva(
-  'relative inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-[var(--color-bg-subtle)] text-[var(--color-text-secondary)] select-none',
+  'relative inline-flex shrink-0 select-none items-center justify-center overflow-hidden rounded-full bg-[var(--color-bg-subtle)] text-[var(--color-text-secondary)]',
   {
     variants: {
       size: {
@@ -20,8 +20,7 @@ const avatarVariants = cva(
 );
 
 export interface AvatarProps
-  extends React.HTMLAttributes<HTMLSpanElement>,
-    VariantProps<typeof avatarVariants> {
+  extends React.HTMLAttributes<HTMLSpanElement>, VariantProps<typeof avatarVariants> {
   src?: string;
   alt?: string;
   /** Two-letter fallback shown when the image is missing or fails to load. */

@@ -39,7 +39,7 @@ export async function updateGeneralSettings(formData: FormData): Promise<UpdateG
     tx.tenant.update({
       where: { id: user.tenantId },
       data: { name: parsed.data.name, email: parsed.data.email },
-    }),
+    })
   );
 
   revalidatePath('/settings/general');

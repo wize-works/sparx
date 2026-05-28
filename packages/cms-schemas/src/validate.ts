@@ -120,13 +120,10 @@ export interface BodyValidationResult {
   errors?: Record<string, string>;
 }
 
-export function validateBody(
-  schema: ContentTypeSchema,
-  input: unknown,
-): BodyValidationResult {
+export function validateBody(schema: ContentTypeSchema, input: unknown): BodyValidationResult {
   const result = bodyValidatorFor(schema).safeParse(input);
   if (result.success) {
-    return { ok: true, body: result.data as Record<string, unknown> };
+    return { ok: true, body: result.data };
   }
   const errors: Record<string, string> = {};
   for (const issue of result.error.issues) {

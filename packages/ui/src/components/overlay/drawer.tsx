@@ -40,12 +40,12 @@ const drawerContentVariants = cva(
   {
     variants: {
       side: {
-        left: 'inset-y-0 left-0 h-full w-3/4 max-w-sm border-r border-[var(--color-border-default)] data-[state=open]:slide-in-from-left data-[state=closed]:slide-out-to-left',
+        left: 'data-[state=open]:slide-in-from-left data-[state=closed]:slide-out-to-left inset-y-0 left-0 h-full w-3/4 max-w-sm border-r border-[var(--color-border-default)]',
         right:
-          'inset-y-0 right-0 h-full w-3/4 max-w-sm border-l border-[var(--color-border-default)] data-[state=open]:slide-in-from-right data-[state=closed]:slide-out-to-right',
-        top: 'inset-x-0 top-0 h-1/3 max-h-md border-b border-[var(--color-border-default)] data-[state=open]:slide-in-from-top data-[state=closed]:slide-out-to-top',
+          'data-[state=open]:slide-in-from-right data-[state=closed]:slide-out-to-right inset-y-0 right-0 h-full w-3/4 max-w-sm border-l border-[var(--color-border-default)]',
+        top: 'max-h-md data-[state=open]:slide-in-from-top data-[state=closed]:slide-out-to-top inset-x-0 top-0 h-1/3 border-b border-[var(--color-border-default)]',
         bottom:
-          'inset-x-0 bottom-0 h-1/3 max-h-md border-t border-[var(--color-border-default)] data-[state=open]:slide-in-from-bottom data-[state=closed]:slide-out-to-bottom',
+          'max-h-md data-[state=open]:slide-in-from-bottom data-[state=closed]:slide-out-to-bottom inset-x-0 bottom-0 h-1/3 border-t border-[var(--color-border-default)]',
       },
     },
     defaultVariants: { side: 'right' },
@@ -53,7 +53,8 @@ const drawerContentVariants = cva(
 );
 
 export interface DrawerContentProps
-  extends React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>,
+  extends
+    React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>,
     VariantProps<typeof drawerContentVariants> {
   hideClose?: boolean;
 }
@@ -75,7 +76,7 @@ export const DrawerContent = React.forwardRef<
           aria-label="Close"
           className={cn(
             'absolute right-3 top-3 rounded-md p-1',
-            'text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-bg-subtle)]',
+            'text-[var(--color-text-tertiary)] hover:bg-[var(--color-bg-subtle)] hover:text-[var(--color-text-primary)]',
             'transition-colors duration-150',
             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)]'
           )}
@@ -121,10 +122,7 @@ export const DrawerTitle = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <DialogPrimitive.Title
     ref={ref}
-    className={cn(
-      'text-lg leading-tight font-medium text-[var(--color-text-primary)]',
-      className
-    )}
+    className={cn('text-lg font-medium leading-tight text-[var(--color-text-primary)]', className)}
     {...props}
   />
 ));

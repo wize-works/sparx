@@ -27,10 +27,10 @@ resource "google_pubsub_subscription" "dead_letter_inspect" {
 data "google_project" "current" {}
 
 resource "google_pubsub_topic_iam_member" "dlq_publisher" {
-  count   = var.enable_dead_letter ? 1 : 0
-  topic   = google_pubsub_topic.dead_letter[0].name
-  role    = "roles/pubsub.publisher"
-  member  = "serviceAccount:service-${data.google_project.current.number}@gcp-sa-pubsub.iam.gserviceaccount.com"
+  count  = var.enable_dead_letter ? 1 : 0
+  topic  = google_pubsub_topic.dead_letter[0].name
+  role   = "roles/pubsub.publisher"
+  member = "serviceAccount:service-${data.google_project.current.number}@gcp-sa-pubsub.iam.gserviceaccount.com"
 }
 
 resource "google_pubsub_subscription" "subscriptions" {

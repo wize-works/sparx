@@ -1,11 +1,12 @@
 import { Section, SectionHeader, Spark, Wordmark } from './primitives';
 
-type Cell =
-  | { kind: 'check' }
-  | { kind: 'cross' }
-  | { kind: 'text'; text: string; color?: string };
+type Cell = { kind: 'check' } | { kind: 'cross' } | { kind: 'text'; text: string; color?: string };
 
-const ROWS: { capability: React.ReactNode; cells: [Cell, Cell, Cell, Cell]; highlight?: boolean }[] = [
+const ROWS: {
+  capability: React.ReactNode;
+  cells: [Cell, Cell, Cell, Cell];
+  highlight?: boolean;
+}[] = [
   {
     capability: 'Live store in under 5 minutes',
     cells: [
@@ -132,86 +133,89 @@ export function CompareTable() {
           }
         />
 
-        <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch', margin: '0 calc(var(--gutter-page) * -1)', padding: '0 var(--gutter-page)' }}>
         <div
           style={{
-            display: 'flex',
-            flexDirection: 'column',
-            border: '1px solid var(--color-border-default)',
-            borderRadius: '8px',
-            overflow: 'hidden',
-            backgroundColor: 'var(--color-bg-surface)',
-            minWidth: '760px',
+            overflowX: 'auto',
+            WebkitOverflowScrolling: 'touch',
+            margin: '0 calc(var(--gutter-page) * -1)',
+            padding: '0 var(--gutter-page)',
           }}
         >
           <div
             style={{
               display: 'flex',
-              alignItems: 'center',
-              padding: '18px 24px',
-              backgroundColor: 'var(--color-bg-page)',
-              borderBottom: '1px solid var(--color-border-default)',
-              gap: '16px',
+              flexDirection: 'column',
+              border: '1px solid var(--color-border-default)',
+              borderRadius: '8px',
+              overflow: 'hidden',
+              backgroundColor: 'var(--color-bg-surface)',
+              minWidth: '760px',
             }}
           >
-            <span
-              style={{
-                fontFamily: 'var(--font-sans)',
-                fontWeight: 500,
-                fontSize: '11px',
-                letterSpacing: '0.08em',
-                color: 'var(--color-text-secondary)',
-                textTransform: 'uppercase',
-                flex: 1,
-              }}
-            >
-              Capability
-            </span>
-            <ColHeader
-              width={COL_WIDTHS[0]}
-              highlight
-              title={<Wordmark size={13} />}
-              subtitle="$79–$449/mo"
-              subtitleColor="var(--sparx-primary)"
-            />
-            <ColHeader width={COL_WIDTHS[1]} title="Shopify" subtitle="$39–$399/mo" />
-            <ColHeader width={COL_WIDTHS[2]} title="HubSpot" subtitle="$45–$1,600/mo" />
-            <ColHeader
-              width={COL_WIDTHS[3]}
-              title="WordPress"
-              subtitle="Self-host + plugins"
-            />
-          </div>
-
-          {ROWS.map((row, i) => (
             <div
-              key={i}
               style={{
                 display: 'flex',
                 alignItems: 'center',
                 padding: '18px 24px',
+                backgroundColor: 'var(--color-bg-page)',
+                borderBottom: '1px solid var(--color-border-default)',
                 gap: '16px',
-                borderBottom: i === ROWS.length - 1 ? undefined : '1px solid #F4F4F5',
-                backgroundColor: row.highlight ? '#FDF2F8' : undefined,
               }}
             >
               <span
                 style={{
                   fontFamily: 'var(--font-sans)',
                   fontWeight: 500,
-                  fontSize: '14px',
-                  color: 'var(--color-text-primary)',
+                  fontSize: '11px',
+                  letterSpacing: '0.08em',
+                  color: 'var(--color-text-secondary)',
+                  textTransform: 'uppercase',
                   flex: 1,
                 }}
               >
-                {row.capability}
+                Capability
               </span>
-              {row.cells.map((cell, j) => (
-                <CellView key={j} cell={cell} width={COL_WIDTHS[j]!} />
-              ))}
+              <ColHeader
+                width={COL_WIDTHS[0]}
+                highlight
+                title={<Wordmark size={13} />}
+                subtitle="$79–$449/mo"
+                subtitleColor="var(--sparx-primary)"
+              />
+              <ColHeader width={COL_WIDTHS[1]} title="Shopify" subtitle="$39–$399/mo" />
+              <ColHeader width={COL_WIDTHS[2]} title="HubSpot" subtitle="$45–$1,600/mo" />
+              <ColHeader width={COL_WIDTHS[3]} title="WordPress" subtitle="Self-host + plugins" />
             </div>
-          ))}
-        </div>
+
+            {ROWS.map((row, i) => (
+              <div
+                key={i}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  padding: '18px 24px',
+                  gap: '16px',
+                  borderBottom: i === ROWS.length - 1 ? undefined : '1px solid #F4F4F5',
+                  backgroundColor: row.highlight ? '#FDF2F8' : undefined,
+                }}
+              >
+                <span
+                  style={{
+                    fontFamily: 'var(--font-sans)',
+                    fontWeight: 500,
+                    fontSize: '14px',
+                    color: 'var(--color-text-primary)',
+                    flex: 1,
+                  }}
+                >
+                  {row.capability}
+                </span>
+                {row.cells.map((cell, j) => (
+                  <CellView key={j} cell={cell} width={COL_WIDTHS[j]!} />
+                ))}
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </Section>
@@ -298,11 +302,7 @@ function CellView({ cell, width }: { cell: Cell; width: string }) {
         </span>
       ) : cell.kind === 'cross' ? (
         <svg width={12} height={12} viewBox="0 0 24 24" fill="none" aria-hidden>
-          <path
-            d="M5 5L19 19M19 5L5 19"
-            stroke="var(--color-text-tertiary)"
-            strokeWidth={2.5}
-          />
+          <path d="M5 5L19 19M19 5L5 19" stroke="var(--color-text-tertiary)" strokeWidth={2.5} />
         </svg>
       ) : (
         <span

@@ -30,7 +30,7 @@ export default async function EditCmsPage({ params }: PageParams) {
         publishedAt: true,
         updatedAt: true,
       },
-    }),
+    })
   );
 
   if (!page) {

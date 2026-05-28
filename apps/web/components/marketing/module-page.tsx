@@ -82,7 +82,15 @@ function ModuleHero({ meta, color }: { meta: ModuleMeta; color: ModuleColor }) {
             {meta.lede}
           </p>
 
-          <div className="mkt-align-end-on-desktop" style={{ display: 'flex', flexDirection: 'column', gap: '14px', alignItems: 'flex-start' }}>
+          <div
+            className="mkt-align-end-on-desktop"
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '14px',
+              alignItems: 'flex-start',
+            }}
+          >
             <div className="mkt-cluster" style={{ gap: '12px' }}>
               <Button size="lg" style={{ backgroundColor: '#0A0A0A' }}>
                 Start free
@@ -310,8 +318,8 @@ function ModuleCta({ meta, color }: { meta: ModuleMeta; color: ModuleColor }) {
             margin: 0,
           }}
         >
-          Activate {shortLabel(meta.label)} in one click. No migration, no consultant, no
-          contract. Turn it back off any time — your data stays.
+          Activate {shortLabel(meta.label)} in one click. No migration, no consultant, no contract.
+          Turn it back off any time — your data stays.
         </p>
         <div className="mkt-cluster" style={{ gap: '12px' }}>
           <Button size="xl" variant="primary">

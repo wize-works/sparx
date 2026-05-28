@@ -8,9 +8,7 @@ test.describe('/showcase', () => {
   test('renders the hero, modules, and major sections', async ({ page }) => {
     await page.goto('/showcase');
 
-    await expect(
-      page.getByRole('heading', { name: '@sparx/ui Showcase', level: 1 })
-    ).toBeVisible();
+    await expect(page.getByRole('heading', { name: '@sparx/ui Showcase', level: 1 })).toBeVisible();
 
     // Module grid — one ModuleProvider-wrapped card per module
     for (const m of ['Commerce', 'CMS', 'CRM', 'Email']) {

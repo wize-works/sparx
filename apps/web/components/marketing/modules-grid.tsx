@@ -16,7 +16,8 @@ const MODULES: ModuleCard[] = [
     number: '01',
     label: 'Storefront',
     title: 'Themes, pages, live URLs.',
-    description: 'The site builder. Pick a theme, edit blocks, point your domain. No code. No staging dance.',
+    description:
+      'The site builder. Pick a theme, edit blocks, point your domain. No code. No staging dance.',
     price: '$49/mo',
   },
   {
@@ -32,7 +33,8 @@ const MODULES: ModuleCard[] = [
     number: '03',
     label: 'CMS',
     title: 'Words, media, SEO.',
-    description: 'Editor, blog, media library, structured content. Works standalone — no storefront required.',
+    description:
+      'Editor, blog, media library, structured content. Works standalone — no storefront required.',
     price: '$49/mo',
   },
   {
@@ -40,7 +42,8 @@ const MODULES: ModuleCard[] = [
     number: '04',
     label: 'CRM',
     title: 'Customers, pipeline, signal.',
-    description: 'Activity log, automations, segments. Built on your commerce data — not stitched to it.',
+    description:
+      'Activity log, automations, segments. Built on your commerce data — not stitched to it.',
     price: '+$49/mo',
   },
   {
@@ -48,7 +51,8 @@ const MODULES: ModuleCard[] = [
     number: '05',
     label: 'Email',
     title: 'Transactional and marketing.',
-    description: 'Self-hosted Postal on sparx.email. Your domain, your reputation. No SendGrid markup.',
+    description:
+      'Self-hosted Postal on sparx.email. Your domain, your reputation. No SendGrid markup.',
     price: '+$29/mo',
   },
   {
@@ -56,7 +60,8 @@ const MODULES: ModuleCard[] = [
     number: '06',
     label: 'B2B',
     title: 'Accounts, net terms, fleet.',
-    description: 'Wholesale pricing, RFQ, purchase orders, service scheduling. Built for industrial.',
+    description:
+      'Wholesale pricing, RFQ, purchase orders, service scheduling. Built for industrial.',
     price: '+$99/mo',
   },
   {
@@ -64,7 +69,8 @@ const MODULES: ModuleCard[] = [
     number: '07',
     label: 'AI / MCP',
     title: 'Your AI speaks your data.',
-    description: 'First-class MCP server. Claude, ChatGPT, and Copilot read live business data — natively.',
+    description:
+      'First-class MCP server. Claude, ChatGPT, and Copilot read live business data — natively.',
     price: '+$49/mo',
   },
   {
@@ -111,14 +117,7 @@ export function ModulesGrid() {
   );
 }
 
-function ModuleCard({
-  id,
-  number,
-  label,
-  title,
-  description,
-  price,
-}: ModuleCard) {
+function ModuleCard({ id, number, label, title, description, price }: ModuleCard) {
   const color = getModuleColor(id);
   return (
     <div
@@ -133,7 +132,14 @@ function ModuleCard({
         padding: '28px',
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '12px',
+        }}
+      >
         <span
           style={{
             display: 'inline-flex',

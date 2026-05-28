@@ -32,10 +32,10 @@ helm install postal postal/postal `
 
 These are stubbed as TODO in [terraform/envs/prod/cloudflare.tf](../../terraform/envs/prod/cloudflare.tf) — fill in once the DKIM public key is known and Postal's SMTP IP is assigned:
 
-| Type | Name | Value |
-|------|------|-------|
-| MX | `@` (sparx.email) | `mail.sparx.email` priority 10 |
-| TXT | `@` | `v=spf1 ip4:<postal-ip> ~all` |
-| TXT | `dkim._domainkey` | `v=DKIM1; k=rsa; p=<public-key>` |
-| TXT | `_dmarc` | `v=DMARC1; p=quarantine; rua=mailto:dmarc@sparx.email` |
-| A | `mail` | `<postal-smtp-ingress-ip>` |
+| Type | Name              | Value                                                  |
+| ---- | ----------------- | ------------------------------------------------------ |
+| MX   | `@` (sparx.email) | `mail.sparx.email` priority 10                         |
+| TXT  | `@`               | `v=spf1 ip4:<postal-ip> ~all`                          |
+| TXT  | `dkim._domainkey` | `v=DKIM1; k=rsa; p=<public-key>`                       |
+| TXT  | `_dmarc`          | `v=DMARC1; p=quarantine; rua=mailto:dmarc@sparx.email` |
+| A    | `mail`            | `<postal-smtp-ingress-ip>`                             |

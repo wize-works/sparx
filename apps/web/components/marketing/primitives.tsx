@@ -115,7 +115,13 @@ export function Display({
 /**
  * Indigo dot used as a bullet/decorative accent (eyebrow row, hero strip).
  */
-export function Dot({ color = 'var(--sparx-primary)', size = 6 }: { color?: string; size?: number }) {
+export function Dot({
+  color = 'var(--sparx-primary)',
+  size = 6,
+}: {
+  color?: string;
+  size?: number;
+}) {
   return (
     <span
       aria-hidden

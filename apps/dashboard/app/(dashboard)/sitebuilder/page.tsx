@@ -12,7 +12,10 @@ export default function SitebuilderPage() {
         { title: 'Themes', description: 'Curated starting points with token-driven theming.' },
         { title: 'Sections', description: 'Drag-and-drop blocks per template (home, PDP, etc).' },
         { title: 'Navigation', description: 'Header, footer, and menu management.' },
-        { title: 'Global tokens', description: 'Brand colors, type scale, spacing — applied site-wide.' },
+        {
+          title: 'Global tokens',
+          description: 'Brand colors, type scale, spacing — applied site-wide.',
+        },
         { title: 'Live preview', description: 'See changes mid-edit on real storefront data.' },
         { title: 'Publishing', description: 'Draft, schedule, and roll back with one click.' },
       ]}

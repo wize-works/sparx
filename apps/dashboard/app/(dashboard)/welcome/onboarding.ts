@@ -44,7 +44,7 @@ export function readOnboarding(settings: Prisma.JsonValue): OnboardingState {
 
 export async function patchOnboarding(
   tenantId: string,
-  patch: Partial<OnboardingState>,
+  patch: Partial<OnboardingState>
 ): Promise<OnboardingState> {
   return withTenant({ tenantId }, async (tx) => {
     const tenant = await tx.tenant.findUnique({
@@ -65,7 +65,7 @@ export async function patchOnboarding(
 
 function mergeSettings(
   current: Prisma.JsonValue,
-  patch: Record<string, unknown>,
+  patch: Record<string, unknown>
 ): Prisma.InputJsonValue {
   const base =
     typeof current === 'object' && current !== null && !Array.isArray(current)

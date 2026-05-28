@@ -66,6 +66,21 @@ model Tenant {
   mediaAssets          MediaAsset[]
   mediaVariants        MediaVariant[]
 
+  // CRM module
+  customers        Customer[]
+  customerAddresses CustomerAddress[]
+  b2bAccounts      B2BAccount[]
+  pipelines        Pipeline[]
+  pipelineStages   PipelineStage[]
+  deals            Deal[]
+  dealOrders       DealOrder[]
+  dealQuotes       DealQuote[]
+  crmActivities    CrmActivity[]
+  tasks            Task[]
+  segments         Segment[]
+  segmentMembers   SegmentMember[]
+  savedViews       SavedView[]
+
   @@map("tenants")
 }
 
@@ -125,6 +140,14 @@ model User {
   tenant   Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   sessions Session[]
   accounts Account[]
+
+  // CRM module — staff acting as sales rep / task owner / activity actor
+  assignedCustomers   Customer[]    @relation("CustomerAssignedRep")
+  assignedB2bAccounts B2BAccount[]  @relation("B2BAccountAssignedRep")
+  assignedDeals       Deal[]        @relation("DealAssignedRep")
+  assignedTasks       Task[]        @relation("TaskAssignedTo")
+  createdTasks        Task[]        @relation("TaskCreatedBy")
+  completedTasks      Task[]        @relation("TaskCompletedBy")
 
   @@unique([tenantId, email])
   @@index([tenantId])
@@ -639,4 +662,458 @@ model MediaVariant {
   @@unique([assetId, format, width])
   @@index([tenantId, assetId])
   @@map("media_variants")
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+// CRM — Customers (docs/11 §2, docs/05 §3)
+// ───────────────────────────────────────────────────────────────────────────
+// The customer-intelligence spine introduced by the CRM module. Commerce and
+// B2B will later FK into this row rather than defining a parallel customer
+// table — this is the "shared customer spine, no sync, no integration"
+// promise in docs/11 §1.
+//
+// Architectural commitments (locked, see memory/feedback_crm_architecture.md):
+//   • One table, three types — `type` ∈ {'prospect','retail','b2b'}. Promotion
+//     is a column update, never a row migration.
+//   • `authUserId` is NOT a FK to staff `users` (which is staff-only per
+//     docs/16 §2 Layer 1). It will FK to a customer-auth-layer table when
+//     that module lands. Stored as plain UUID for now.
+//   • `totalSpent` / `orderCount` are denormalized fast-read columns updated
+//     by the order-event consumer (Phase 2). Never written inline.
+//   • `mergedIntoCustomerId` carries the dedup audit trail — soft-deleted
+//     duplicates retain a pointer to the surviving primary.
+
+model Customer {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId    String   @map("tenant_id") @db.Uuid
+  type        String   @default("prospect") @db.VarChar(20) // prospect | retail | b2b
+  authUserId  String?  @map("auth_user_id") @db.Uuid // FK added when customer-auth-layer ships
+  b2bAccountId String? @map("b2b_account_id") @db.Uuid
+  assignedRepId String? @map("assigned_rep_id") @db.Uuid
+
+  email                  String? @db.VarChar(255)
+  phone                  String? @db.VarChar(50)
+  firstName              String? @map("first_name") @db.VarChar(255)
+  lastName               String? @map("last_name") @db.VarChar(255)
+  company                String? @db.VarChar(255)
+  jobTitle               String? @map("job_title") @db.VarChar(255)
+  preferredContactMethod String? @map("preferred_contact_method") @db.VarChar(20) // email | phone | sms
+  doNotContact           Boolean @default(false) @map("do_not_contact")
+  gdprConsent            Json    @default("{}") @map("gdpr_consent") // { granted_at, ip, source, scope }
+  tags                   String[] @default([]) @db.VarChar(63)
+  metadata               Json     @default("{}")
+
+  // Denormalized commerce projection — populated by the order-event consumer.
+  totalSpent  Decimal   @default(0) @map("total_spent") @db.Decimal(12, 2)
+  orderCount  Int       @default(0) @map("order_count")
+  firstOrderAt DateTime? @map("first_order_at") @db.Timestamptz
+  lastOrderAt  DateTime? @map("last_order_at") @db.Timestamptz
+
+  // Merge / soft-delete audit
+  mergedIntoCustomerId String?  @map("merged_into_customer_id") @db.Uuid
+
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz
+
+  tenant       Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  b2bAccount   B2BAccount?  @relation(fields: [b2bAccountId], references: [id], onDelete: SetNull)
+  assignedRep  User?        @relation("CustomerAssignedRep", fields: [assignedRepId], references: [id], onDelete: SetNull)
+  mergedInto   Customer?    @relation("CustomerMerge", fields: [mergedIntoCustomerId], references: [id], onDelete: SetNull)
+  mergedFrom   Customer[]   @relation("CustomerMerge")
+
+  addresses      CustomerAddress[]
+  deals          Deal[]
+  activities     CrmActivity[]
+  tasks          Task[]
+  segmentMembers SegmentMember[]
+
+  @@unique([tenantId, email], map: "customers_tenant_email_unique")
+  @@index([tenantId, type])
+  @@index([tenantId, assignedRepId])
+  @@index([tenantId, b2bAccountId])
+  @@index([tenantId, lastOrderAt(sort: Desc)])
+  @@index([tenantId, totalSpent(sort: Desc)])
+  @@index([tenantId, updatedAt(sort: Desc)])
+  @@index([authUserId])
+  @@map("customers")
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+// CRM — Customer addresses
+// ───────────────────────────────────────────────────────────────────────────
+// Multiple addresses per customer; one is flagged default per type. Used by
+// Commerce for shipping/billing once Commerce lands.
+
+model CustomerAddress {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId   String   @map("tenant_id") @db.Uuid
+  customerId String   @map("customer_id") @db.Uuid
+  type       String   @db.VarChar(20) // shipping | billing | both
+  label      String?  @db.VarChar(120) // "HQ", "Warehouse 2"
+  isDefault  Boolean  @default(false) @map("is_default")
+
+  recipientName String? @map("recipient_name") @db.VarChar(255)
+  company       String? @db.VarChar(255)
+  line1         String  @db.VarChar(255)
+  line2         String? @db.VarChar(255)
+  city          String  @db.VarChar(120)
+  region        String? @db.VarChar(120) // state / province
+  postalCode    String? @map("postal_code") @db.VarChar(32)
+  country       String  @db.VarChar(2) // ISO 3166-1 alpha-2
+  phone         String? @db.VarChar(50)
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  tenant   Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, customerId])
+  @@map("customer_addresses")
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+// CRM — B2B accounts (docs/10 §2)
+// ───────────────────────────────────────────────────────────────────────────
+// Business entity that aggregates multiple customer contacts. Owned by the
+// CRM module; B2B module adds quotes, credit holds, approval workflows
+// when it lands. Per the locked architectural commitment, this lives here
+// so Commerce/B2B never define a parallel account record.
+
+model B2BAccount {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId      String   @map("tenant_id") @db.Uuid
+  assignedRepId String?  @map("assigned_rep_id") @db.Uuid
+
+  companyName  String  @map("company_name") @db.VarChar(255)
+  taxId        String? @map("tax_id") @db.VarChar(64)
+  website      String? @db.VarChar(2048)
+  pricingTier  String? @map("pricing_tier") @db.VarChar(63)
+
+  creditLimit     Decimal @default(0) @map("credit_limit") @db.Decimal(12, 2)
+  creditUsed      Decimal @default(0) @map("credit_used") @db.Decimal(12, 2)
+  paymentTerms    String? @map("payment_terms") @db.VarChar(20) // prepay | net15 | net30 | net60 | net90
+  discountPercent Decimal @default(0) @map("discount_percent") @db.Decimal(5, 2)
+
+  status String @default("active") @db.VarChar(20) // active | credit_hold | suspended | inactive
+
+  // Fleet-specific (Gillett Diesel reference case)
+  fleetSize       Int?     @map("fleet_size")
+  engineProfiles  Json     @default("[]") @map("engine_profiles") // [{year, make, model, engine, count}]
+
+  notes String? @db.Text
+  tags  String[] @default([]) @db.VarChar(63)
+
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz
+
+  tenant      Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  assignedRep User?  @relation("B2BAccountAssignedRep", fields: [assignedRepId], references: [id], onDelete: SetNull)
+
+  customers  Customer[]
+  deals      Deal[]
+  activities CrmActivity[]
+
+  @@index([tenantId, status])
+  @@index([tenantId, assignedRepId])
+  @@index([tenantId, updatedAt(sort: Desc)])
+  @@map("b2b_accounts")
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+// CRM — Sales pipelines (docs/11 §4)
+// ───────────────────────────────────────────────────────────────────────────
+// Tenants run multiple pipelines (e.g. "New B2B Acquisition", "Fleet Contract
+// Renewals"). Stages are tenant-editable rows on PipelineStage.
+
+model Pipeline {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId   String    @map("tenant_id") @db.Uuid
+  name       String    @db.VarChar(120)
+  slug       String    @db.VarChar(63)
+  isDefault  Boolean   @default(false) @map("is_default")
+  sortOrder  Int       @default(0) @map("sort_order")
+  archivedAt DateTime? @map("archived_at") @db.Timestamptz
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt  DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  tenant Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  stages PipelineStage[]
+  deals  Deal[]
+
+  @@unique([tenantId, slug])
+  @@index([tenantId, archivedAt])
+  @@map("pipelines")
+}
+
+model PipelineStage {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId   String   @map("tenant_id") @db.Uuid
+  pipelineId String   @map("pipeline_id") @db.Uuid
+  name       String   @db.VarChar(120)
+  sortOrder  Int      @map("sort_order")
+  probability Decimal @default(0) @db.Decimal(5, 2) // 0–100
+  stageType  String   @default("open") @map("stage_type") @db.VarChar(20) // open | won | lost
+  color      String?  @db.VarChar(9) // optional hex override for the kanban column
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt  DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  tenant   Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  pipeline Pipeline @relation(fields: [pipelineId], references: [id], onDelete: Cascade)
+  deals    Deal[]
+
+  @@unique([pipelineId, sortOrder])
+  @@index([tenantId, pipelineId])
+  @@map("pipeline_stages")
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+// CRM — Deals (docs/11 §4)
+// ───────────────────────────────────────────────────────────────────────────
+// Tracks a sales opportunity from first contact through close. Linked to
+// either a customer, a B2B account, or both (a deal with a B2B fleet contact
+// will have both set). Orders/quotes attach via join tables, never via
+// columns on this row — locked decision #5.
+
+model Deal {
+  id            String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId      String  @map("tenant_id") @db.Uuid
+  pipelineId    String  @map("pipeline_id") @db.Uuid
+  stageId       String  @map("stage_id") @db.Uuid
+  customerId    String? @map("customer_id") @db.Uuid
+  b2bAccountId  String? @map("b2b_account_id") @db.Uuid
+  assignedRepId String? @map("assigned_rep_id") @db.Uuid
+
+  title             String  @db.VarChar(255)
+  value             Decimal @default(0) @db.Decimal(12, 2)
+  currency          String  @default("USD") @db.VarChar(3)
+  probability       Decimal @default(0) @db.Decimal(5, 2) // 0–100; manual override of stage default
+  expectedCloseDate DateTime? @map("expected_close_date") @db.Date
+  closedAt          DateTime? @map("closed_at") @db.Timestamptz
+  closedReason      String?   @map("closed_reason") @db.VarChar(500)
+  source            String?   @db.VarChar(63) // referral | website | event | …
+  tags              String[]  @default([]) @db.VarChar(63)
+  metadata          Json      @default("{}")
+
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz
+
+  tenant      Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  pipeline    Pipeline       @relation(fields: [pipelineId], references: [id], onDelete: Cascade)
+  stage       PipelineStage  @relation(fields: [stageId], references: [id])
+  customer    Customer?      @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  b2bAccount  B2BAccount?    @relation(fields: [b2bAccountId], references: [id], onDelete: SetNull)
+  assignedRep User?          @relation("DealAssignedRep", fields: [assignedRepId], references: [id], onDelete: SetNull)
+
+  activities CrmActivity[]
+  tasks      Task[]
+  orderLinks DealOrder[]
+  quoteLinks DealQuote[]
+
+  @@index([tenantId, pipelineId, stageId])
+  @@index([tenantId, assignedRepId, stageId])
+  @@index([tenantId, customerId])
+  @@index([tenantId, b2bAccountId])
+  @@index([tenantId, expectedCloseDate])
+  @@index([tenantId, closedAt])
+  @@index([tenantId, updatedAt(sort: Desc)])
+  @@map("deals")
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+// CRM — Deal/order and deal/quote join tables (locked decision #5)
+// ───────────────────────────────────────────────────────────────────────────
+// Pure join tables — no business state, no order columns polluted by CRM
+// concerns. `orderId` / `quoteId` carry no FK constraint yet because the
+// orders / quotes tables ship with Commerce / B2B. The FK is added in a
+// follow-up migration when those tables land; until then these tables are
+// empty in production.
+
+model DealOrder {
+  dealId    String   @map("deal_id") @db.Uuid
+  orderId   String   @map("order_id") @db.Uuid
+  tenantId  String   @map("tenant_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  deal   Deal   @relation(fields: [dealId], references: [id], onDelete: Cascade)
+
+  @@id([dealId, orderId])
+  @@index([tenantId, orderId])
+  @@map("deal_orders")
+}
+
+model DealQuote {
+  dealId    String   @map("deal_id") @db.Uuid
+  quoteId   String   @map("quote_id") @db.Uuid
+  tenantId  String   @map("tenant_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  deal   Deal   @relation(fields: [dealId], references: [id], onDelete: Cascade)
+
+  @@id([dealId, quoteId])
+  @@index([tenantId, quoteId])
+  @@map("deal_quotes")
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+// CRM — Activities (locked decision #3 — append-only event log)
+// ───────────────────────────────────────────────────────────────────────────
+// Append-only. Never UPDATE. Editing a note inserts a `note` row with
+// `correctsActivityId` pointing at the original; the original stays for
+// audit. Native Postgres RANGE partition by month on `occurredAt` — Prisma
+// declares the columns and indexes; the migration hand-edits the CREATE
+// TABLE to add PARTITION BY RANGE and creates the first month's partition.
+// `linkedEntityType`/`linkedEntityId` carries the soft reference to the
+// originating record (order, email, quote, …) without a hard FK because
+// those tables span modules and lifecycles.
+
+model CrmActivity {
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId     String    @map("tenant_id") @db.Uuid
+  customerId   String?   @map("customer_id") @db.Uuid
+  dealId       String?   @map("deal_id") @db.Uuid
+  b2bAccountId String?   @map("b2b_account_id") @db.Uuid
+
+  type        String  @db.VarChar(63) // see locked taxonomy in feedback_crm_architecture.md / docs/11 §3
+  description String? @db.Text
+
+  actorId   String? @map("actor_id") @db.Uuid // staff user id, customer id, or null
+  actorType String  @map("actor_type") @db.VarChar(20) // staff | customer | system | api | mcp
+
+  occurredAt       DateTime @map("occurred_at") @db.Timestamptz
+  linkedEntityType String?  @map("linked_entity_type") @db.VarChar(63)
+  linkedEntityId   String?  @map("linked_entity_id") @db.Uuid
+
+  metadata           Json    @default("{}")
+  correctsActivityId String? @map("corrects_activity_id") @db.Uuid
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  tenant     Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  customer   Customer?   @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  deal       Deal?       @relation(fields: [dealId], references: [id], onDelete: SetNull)
+  b2bAccount B2BAccount? @relation(fields: [b2bAccountId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, customerId, occurredAt(sort: Desc)])
+  @@index([tenantId, dealId, occurredAt(sort: Desc)])
+  @@index([tenantId, b2bAccountId, occurredAt(sort: Desc)])
+  @@index([tenantId, type, occurredAt(sort: Desc)])
+  @@index([tenantId, occurredAt(sort: Desc)])
+  @@map("crm_activities")
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+// CRM — Tasks (docs/11 §6)
+// ───────────────────────────────────────────────────────────────────────────
+// Task assigned to a staff user, optionally scoped to a customer or deal.
+// Overdue tasks fan out via the email automation engine in Phase 5.
+
+model Task {
+  id                String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId          String    @map("tenant_id") @db.Uuid
+  assignedToUserId  String    @map("assigned_to_user_id") @db.Uuid
+  createdByUserId   String    @map("created_by_user_id") @db.Uuid
+  completedByUserId String?   @map("completed_by_user_id") @db.Uuid
+  customerId        String?   @map("customer_id") @db.Uuid
+  dealId            String?   @map("deal_id") @db.Uuid
+
+  title       String  @db.VarChar(255)
+  description String? @db.Text
+  dueAt       DateTime? @map("due_at") @db.Timestamptz
+  priority    String  @default("medium") @db.VarChar(10) // low | medium | high | urgent
+  status      String  @default("open") @db.VarChar(20)   // open | completed | cancelled
+  completedAt DateTime? @map("completed_at") @db.Timestamptz
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  tenant         Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  assignedTo     User      @relation("TaskAssignedTo", fields: [assignedToUserId], references: [id], onDelete: Cascade)
+  createdBy      User      @relation("TaskCreatedBy", fields: [createdByUserId], references: [id], onDelete: Cascade)
+  completedBy    User?     @relation("TaskCompletedBy", fields: [completedByUserId], references: [id], onDelete: SetNull)
+  customer       Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  deal           Deal?     @relation(fields: [dealId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, assignedToUserId, status, dueAt])
+  @@index([tenantId, dueAt])
+  @@index([tenantId, customerId])
+  @@index([tenantId, dealId])
+  @@map("tasks")
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+// CRM — Segments (locked decision #4 — materialized, incremental)
+// ───────────────────────────────────────────────────────────────────────────
+// `rules` JSONB is validated against SegmentRuleSchema in @sparx/crm-schemas
+// at write time. Membership is materialized into segment_members by the
+// segment-evaluator consumer (Phase 4) — never re-evaluated at email send
+// or filter time.
+
+model Segment {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId    String    @map("tenant_id") @db.Uuid
+  name        String    @db.VarChar(120)
+  slug        String    @db.VarChar(63)
+  description String?   @db.Text
+  rules       Json      // SegmentRuleSchema — AND/OR/NOT tree of leaf predicates
+  color       String?   @db.VarChar(9)
+  isSystem    Boolean   @default(false) @map("is_system") // built-ins seeded under platform tenant
+  isBuiltIn   Boolean   @default(false) @map("is_built_in") // mirrors content_types convention
+  archivedAt  DateTime? @map("archived_at") @db.Timestamptz
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  tenant  Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  members SegmentMember[]
+
+  @@unique([tenantId, slug])
+  @@index([tenantId, archivedAt])
+  @@map("segments")
+}
+
+model SegmentMember {
+  segmentId  String   @map("segment_id") @db.Uuid
+  customerId String   @map("customer_id") @db.Uuid
+  tenantId   String   @map("tenant_id") @db.Uuid
+  enteredAt  DateTime @default(now()) @map("entered_at") @db.Timestamptz
+  score      Decimal? @db.Decimal(10, 4) // optional rule-defined score, e.g. churn-risk weighting
+
+  tenant   Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  segment  Segment  @relation(fields: [segmentId], references: [id], onDelete: Cascade)
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@id([segmentId, customerId])
+  @@index([tenantId, segmentId, enteredAt(sort: Desc)])
+  @@index([tenantId, customerId])
+  @@map("segment_members")
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+// CRM — Saved views (cosmetic per-staff filter persistence)
+// ───────────────────────────────────────────────────────────────────────────
+// Shipped in Phase 1 so customer/deal/task list views can persist filters
+// without growing the schema later. `target` is the surface ("customers",
+// "deals", "tasks", "pipeline"); `config` is opaque JSON the consuming
+// component interprets. `ownerUserId` null = shared with the tenant.
+
+model SavedView {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId    String   @map("tenant_id") @db.Uuid
+  ownerUserId String?  @map("owner_user_id") @db.Uuid
+  target      String   @db.VarChar(63) // customers | deals | tasks | pipeline | activities
+  name        String   @db.VarChar(120)
+  config      Json     @default("{}")
+  isDefault   Boolean  @default(false) @map("is_default")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, target, ownerUserId])
+  @@map("saved_views")
 }

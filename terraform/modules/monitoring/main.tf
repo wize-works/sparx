@@ -8,8 +8,8 @@ resource "google_monitoring_notification_channel" "email" {
 
 # ----- GKE: pod crash looping -----
 resource "google_monitoring_alert_policy" "pod_crashloop" {
-  display_name = "GKE pod crash looping"
-  combiner     = "OR"
+  display_name          = "GKE pod crash looping"
+  combiner              = "OR"
   notification_channels = [google_monitoring_notification_channel.email.id]
 
   conditions {
@@ -35,8 +35,8 @@ resource "google_monitoring_alert_policy" "pod_crashloop" {
 
 # ----- Cloud SQL: CPU saturation -----
 resource "google_monitoring_alert_policy" "cloud_sql_cpu" {
-  display_name = "Cloud SQL CPU > 80%"
-  combiner     = "OR"
+  display_name          = "Cloud SQL CPU > 80%"
+  combiner              = "OR"
   notification_channels = [google_monitoring_notification_channel.email.id]
 
   conditions {
@@ -60,8 +60,8 @@ resource "google_monitoring_alert_policy" "cloud_sql_cpu" {
 
 # ----- Cloud SQL: storage filling up -----
 resource "google_monitoring_alert_policy" "cloud_sql_disk" {
-  display_name = "Cloud SQL disk > 85%"
-  combiner     = "OR"
+  display_name          = "Cloud SQL disk > 85%"
+  combiner              = "OR"
   notification_channels = [google_monitoring_notification_channel.email.id]
 
   conditions {
@@ -81,8 +81,8 @@ resource "google_monitoring_alert_policy" "cloud_sql_disk" {
 
 # ----- Cloud SQL: connection pool saturation -----
 resource "google_monitoring_alert_policy" "cloud_sql_connections" {
-  display_name = "Cloud SQL connection count high"
-  combiner     = "OR"
+  display_name          = "Cloud SQL connection count high"
+  combiner              = "OR"
   notification_channels = [google_monitoring_notification_channel.email.id]
 
   conditions {
@@ -102,9 +102,9 @@ resource "google_monitoring_alert_policy" "cloud_sql_connections" {
 
 # ----- Pub/Sub: dead-letter queue is filling up -----
 resource "google_monitoring_alert_policy" "dlq_messages" {
-  count        = var.dead_letter_subscription != "" ? 1 : 0
-  display_name = "Pub/Sub dead-letter queue has messages"
-  combiner     = "OR"
+  count                 = var.dead_letter_subscription != "" ? 1 : 0
+  display_name          = "Pub/Sub dead-letter queue has messages"
+  combiner              = "OR"
   notification_channels = [google_monitoring_notification_channel.email.id]
 
   conditions {
@@ -146,9 +146,9 @@ resource "google_monitoring_uptime_check_config" "api" {
 }
 
 resource "google_monitoring_alert_policy" "uptime" {
-  for_each     = google_monitoring_uptime_check_config.api
-  display_name = "Uptime failing: ${each.key}"
-  combiner     = "OR"
+  for_each              = google_monitoring_uptime_check_config.api
+  display_name          = "Uptime failing: ${each.key}"
+  combiner              = "OR"
   notification_channels = [google_monitoring_notification_channel.email.id]
 
   conditions {

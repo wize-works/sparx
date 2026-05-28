@@ -5,8 +5,7 @@ import { ComingSoon } from '@/components/marketing/coming-soon';
 
 export const metadata: Metadata = {
   title: 'Data processing agreement — Sparx',
-  description:
-    'GDPR/CCPA-compliant DPA for merchants processing EU and California customer data.',
+  description: 'GDPR/CCPA-compliant DPA for merchants processing EU and California customer data.',
   alternates: { canonical: '/legal/dpa' },
   robots: { index: false },
 };

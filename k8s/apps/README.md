@@ -2,14 +2,14 @@
 
 This directory holds the Deployment + Service + HPA + PDB for each app named in [docs/03-infrastructure-deployment.md](../../docs/03-infrastructure-deployment.md) §5:
 
-| App | Replicas (Phase 1) | Notes |
-|---|---|---|
-| `api-rest` | 2 | Fastify REST API |
-| `api-graphql` | 1 | Pothos + Mercurius |
-| `api-mcp` | 1 | MCP server |
-| `dashboard` | 1 | Next.js merchant admin |
-| `storefront` | 2 | Next.js multi-tenant storefronts |
-| `marketing` | 1 | Public sparx.works marketing site |
+| App           | Replicas (Phase 1) | Notes                             |
+| ------------- | ------------------ | --------------------------------- |
+| `api-rest`    | 2                  | Fastify REST API                  |
+| `api-graphql` | 1                  | Pothos + Mercurius                |
+| `api-mcp`     | 1                  | MCP server                        |
+| `dashboard`   | 1                  | Next.js merchant admin            |
+| `storefront`  | 2                  | Next.js multi-tenant storefronts  |
+| `marketing`   | 1                  | Public sparx.works marketing site |
 
 ## Adding a new app
 

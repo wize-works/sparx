@@ -19,6 +19,7 @@ AI tools (Claude, ChatGPT, Copilot) have become indispensable — but they have 
 Sparx is a modular commerce operating system. Merchants activate only what they need. Every module shares the same data layer, the same dashboard, and the same API — so there's never a sync problem, never a missing integration, never a "you need the $2,400/month plan for that."
 
 **The modules:**
+
 - **Storefront** — Site builder, themes, pages, live in 5 minutes
 - **Commerce** — Products, cart, checkout, orders, payments
 - **CMS** — Content editor, blog, media library, SEO (standalone — no shop required)
@@ -52,51 +53,56 @@ Building product businesses without inventory. Need supplier sync, margin calcul
 
 ## 5. Competitive Differentiation
 
-| Capability | Sparx | Shopify | HubSpot | WordPress |
-|------------|-------|---------|---------|-----------|
-| Store live < 5 min | ✅ | ❌ | ❌ | ❌ |
-| Modular pricing | ✅ | ❌ | ❌ | ❌ |
-| Per-module activation | ✅ | ❌ | ❌ | ❌ |
-| CMS standalone | ✅ | ❌ | ❌ | ✅ |
-| Built-in CRM | ✅ | ❌ | ✅ | ❌ |
-| Native MCP / AI | ✅ | ❌ | ❌ | ❌ |
-| Built-in email (Postal) | ✅ | ❌ | ✅ | ❌ |
-| B2B / Wholesale native | ✅ | +$2,400/mo | ❌ | ❌ |
-| Dropship native | ✅ | Via apps | ❌ | Via plugins |
-| Headless / API-first | ✅ | +cost | ❌ | Via REST |
-| Single monthly bill | ✅ | ❌ | ❌ | ❌ |
-| Self-hosted option | ✅ | ❌ | ❌ | ✅ |
+| Capability              | Sparx | Shopify    | HubSpot | WordPress   |
+| ----------------------- | ----- | ---------- | ------- | ----------- |
+| Store live < 5 min      | ✅    | ❌         | ❌      | ❌          |
+| Modular pricing         | ✅    | ❌         | ❌      | ❌          |
+| Per-module activation   | ✅    | ❌         | ❌      | ❌          |
+| CMS standalone          | ✅    | ❌         | ❌      | ✅          |
+| Built-in CRM            | ✅    | ❌         | ✅      | ❌          |
+| Native MCP / AI         | ✅    | ❌         | ❌      | ❌          |
+| Built-in email (Postal) | ✅    | ❌         | ✅      | ❌          |
+| B2B / Wholesale native  | ✅    | +$2,400/mo | ❌      | ❌          |
+| Dropship native         | ✅    | Via apps   | ❌      | Via plugins |
+| Headless / API-first    | ✅    | +cost      | ❌      | Via REST    |
+| Single monthly bill     | ✅    | ❌         | ❌      | ❌          |
+| Self-hosted option      | ✅    | ❌         | ❌      | ✅          |
 
 ## 6. Pricing Model
 
 ### Module Pricing
-| Module | Price |
-|--------|-------|
-| Storefront | $49/mo |
-| Commerce | +$49/mo |
-| CMS | $49/mo (standalone) |
-| CRM | +$49/mo |
-| Email | +$29/mo |
-| B2B/Wholesale | +$99/mo |
-| AI/MCP | +$49/mo |
-| Dropship | +$29/mo |
+
+| Module        | Price               |
+| ------------- | ------------------- |
+| Storefront    | $49/mo              |
+| Commerce      | +$49/mo             |
+| CMS           | $49/mo (standalone) |
+| CRM           | +$49/mo             |
+| Email         | +$29/mo             |
+| B2B/Wholesale | +$99/mo             |
+| AI/MCP        | +$49/mo             |
+| Dropship      | +$29/mo             |
 
 ### Bundles (for simplicity)
-| Bundle | Modules | Price |
-|--------|---------|-------|
-| **Starter** | Storefront + Commerce | $79/mo |
-| **Content** | Storefront + CMS | $79/mo |
-| **Growth** | Storefront + Commerce + CRM + Email | $149/mo |
-| **Pro** | All modules except B2B | $299/mo |
-| **Business** | All modules | $449/mo |
-| **Enterprise** | All modules + custom frontend + managed hosting + SLA | Custom |
+
+| Bundle         | Modules                                               | Price   |
+| -------------- | ----------------------------------------------------- | ------- |
+| **Starter**    | Storefront + Commerce                                 | $79/mo  |
+| **Content**    | Storefront + CMS                                      | $79/mo  |
+| **Growth**     | Storefront + Commerce + CRM + Email                   | $149/mo |
+| **Pro**        | All modules except B2B                                | $299/mo |
+| **Business**   | All modules                                           | $449/mo |
+| **Enterprise** | All modules + custom frontend + managed hosting + SLA | Custom  |
 
 ### Transaction Fees
+
 - Starter / Growth: 0.5% per transaction
 - Pro / Business / Enterprise: 0%
 
 ### Managed Hosting Add-On
+
 For clients who want Sparx to operate their infrastructure:
+
 - $750/month — hosting, uptime, backups, security patches, support, updates
 - Gillett Diesel is the first managed hosting client
 

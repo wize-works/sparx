@@ -82,14 +82,14 @@ Returns: `orderId`.
 
 After purchase, immediately call `PUT /v1/domains/{domain}/records` to replace ALL DNS with Sparx config:
 
-| Type  | Name              | Value                                   | TTL  |
-|-------|-------------------|-----------------------------------------|------|
-| CNAME | `@`               | `customers.sparx.zone`                 | 600  |
-| CNAME | `www`             | `customers.sparx.zone`                 | 600  |
-| TXT   | `@`               | `v=spf1 include:_spf.sparx.email ~all`     | 3600 |
-| TXT   | `sparx._domainkey`| `v=DKIM1; k=rsa; p={tenant-public-key}` | 3600 |
-| TXT   | `_dmarc`          | `v=DMARC1; p=quarantine; rua=mailto:dmarc@sparx.email` | 3600 |
-| MX    | `@`               | `mail.sparx.email` (priority 10)           | 3600 |
+| Type  | Name               | Value                                                  | TTL  |
+| ----- | ------------------ | ------------------------------------------------------ | ---- |
+| CNAME | `@`                | `customers.sparx.zone`                                 | 600  |
+| CNAME | `www`              | `customers.sparx.zone`                                 | 600  |
+| TXT   | `@`                | `v=spf1 include:_spf.sparx.email ~all`                 | 3600 |
+| TXT   | `sparx._domainkey` | `v=DKIM1; k=rsa; p={tenant-public-key}`                | 3600 |
+| TXT   | `_dmarc`           | `v=DMARC1; p=quarantine; rua=mailto:dmarc@sparx.email` | 3600 |
+| MX    | `@`                | `mail.sparx.email` (priority 10)                       | 3600 |
 
 GoDaddy DNS propagates in seconds for newly registered domains (GoDaddy controls authoritative NS). Domain live in under 30 seconds.
 
@@ -139,8 +139,8 @@ Display: reseller wholesale cost + Sparx convenience fee (~$1.50–3.00 dependin
 
 Suggested markups:
 
-| TLD            | Markup  |
-|----------------|---------|
+| TLD                  | Markup |
+| -------------------- | ------ |
 | `.com`/`.net`/`.org` | +$2.00 |
 | `.io`/`.app`         | +$3.00 |
 | `.shop`/`.store`     | +$1.50 |
@@ -171,15 +171,15 @@ New table `domain_purchases`:
 
 ## 8. API Endpoints
 
-| Method | Path                          | Body                            | Returns                              |
-|--------|-------------------------------|---------------------------------|--------------------------------------|
-| POST   | `/v1/domains/search`          | `{ query }`                     | `DomainSuggestion[]`                 |
-| POST   | `/v1/domains/check`           | `{ domain }`                    | `DomainAvailability`                 |
-| POST   | `/v1/domains/purchase`        | `{ domain, years, privacy }`    | `{ domain, orderId, expiresAt }`     |
-| POST   | `/v1/domains/:id/renew`       | `{ years }`                     | `{ domain, expiresAt }`              |
-| POST   | `/v1/domains/:id/transfer-out`| —                               | `{ authCode }`                       |
-| PATCH  | `/v1/domains/:id/privacy`     | `{ enabled }`                   | `{ domain, privacy }`                |
-| PATCH  | `/v1/domains/:id/auto-renew`  | `{ enabled }`                   | `{ domain, autoRenew }`              |
+| Method | Path                           | Body                         | Returns                          |
+| ------ | ------------------------------ | ---------------------------- | -------------------------------- |
+| POST   | `/v1/domains/search`           | `{ query }`                  | `DomainSuggestion[]`             |
+| POST   | `/v1/domains/check`            | `{ domain }`                 | `DomainAvailability`             |
+| POST   | `/v1/domains/purchase`         | `{ domain, years, privacy }` | `{ domain, orderId, expiresAt }` |
+| POST   | `/v1/domains/:id/renew`        | `{ years }`                  | `{ domain, expiresAt }`          |
+| POST   | `/v1/domains/:id/transfer-out` | —                            | `{ authCode }`                   |
+| PATCH  | `/v1/domains/:id/privacy`      | `{ enabled }`                | `{ domain, privacy }`            |
+| PATCH  | `/v1/domains/:id/auto-renew`   | `{ enabled }`                | `{ domain, autoRenew }`          |
 
 ---
 

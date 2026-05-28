@@ -1,12 +1,47 @@
 import { Section, SectionHeader, Spark } from './primitives';
 
 const OLD_STACK = [
-  { initial: 'S', name: 'Shopify', sub: 'Storefront + Commerce', price: '$399', color: '#95BF47', dark: false },
-  { initial: 'H', name: 'HubSpot', sub: 'CRM + marketing', price: '$1,600', color: '#FF7A59', dark: false },
+  {
+    initial: 'S',
+    name: 'Shopify',
+    sub: 'Storefront + Commerce',
+    price: '$399',
+    color: '#95BF47',
+    dark: false,
+  },
+  {
+    initial: 'H',
+    name: 'HubSpot',
+    sub: 'CRM + marketing',
+    price: '$1,600',
+    color: '#FF7A59',
+    dark: false,
+  },
   { initial: 'M', name: 'Mailchimp', sub: 'Email', price: '$350', color: '#FFE01B', dark: true },
-  { initial: 'Z', name: 'Zapier', sub: 'Glue between everything', price: '$240', color: '#FF4F00', dark: false },
-  { initial: 'W', name: 'WordPress + WooCommerce', sub: 'CMS', price: '$180', color: '#21759B', dark: false },
-  { initial: '…', name: 'Dropship + Quote + Invoice apps', sub: '3–4 more', price: '$180', color: '#E5E5E5', dark: true },
+  {
+    initial: 'Z',
+    name: 'Zapier',
+    sub: 'Glue between everything',
+    price: '$240',
+    color: '#FF4F00',
+    dark: false,
+  },
+  {
+    initial: 'W',
+    name: 'WordPress + WooCommerce',
+    sub: 'CMS',
+    price: '$180',
+    color: '#21759B',
+    dark: false,
+  },
+  {
+    initial: '…',
+    name: 'Dropship + Quote + Invoice apps',
+    sub: '3–4 more',
+    price: '$180',
+    color: '#E5E5E5',
+    dark: true,
+  },
 ] as const;
 
 const NEW_STACK = [
@@ -290,7 +325,11 @@ function Arrow() {
   return (
     <div className="mkt-arrow-connector">
       <svg width={60} height={20} viewBox="0 0 60 20" fill="none" aria-hidden>
-        <path d="M0 10H56M56 10L46 1M56 10L46 19" stroke="var(--color-text-tertiary)" strokeWidth={1.5} />
+        <path
+          d="M0 10H56M56 10L46 1M56 10L46 19"
+          stroke="var(--color-text-tertiary)"
+          strokeWidth={1.5}
+        />
       </svg>
     </div>
   );

@@ -43,10 +43,7 @@ const JUSTIFY: Record<Justify, string> = {
 };
 
 export const Stack = React.forwardRef<HTMLDivElement, StackProps>(
-  (
-    { className, direction = 'column', gap = 4, align, justify, wrap, ...props },
-    ref
-  ) => (
+  ({ className, direction = 'column', gap = 4, align, justify, wrap, ...props }, ref) => (
     <div
       ref={ref}
       className={cn(

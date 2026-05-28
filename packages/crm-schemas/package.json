@@ -1,0 +1,35 @@
+{
+  "name": "@sparx/crm-schemas",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Sparx CRM — Zod input schemas, segment rule shape, and built-in pipeline templates (docs/11-crm-prd.md, memory/feedback_crm_architecture.md).",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    },
+    "./builtins": {
+      "types": "./src/builtins/index.ts",
+      "default": "./src/builtins/index.ts"
+    }
+  },
+  "files": [
+    "src"
+  ],
+  "scripts": {
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "clean": "rm -rf .turbo dist *.tsbuildinfo"
+  },
+  "dependencies": {
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "typescript": "^5.7.0",
+    "vitest": "^4.1.7"
+  }
+}

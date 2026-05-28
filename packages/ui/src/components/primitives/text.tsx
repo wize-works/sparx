@@ -33,8 +33,7 @@ const textVariants = cva('', {
 type TextTag = 'p' | 'span' | 'div' | 'label';
 
 export interface TextProps
-  extends React.HTMLAttributes<HTMLElement>,
-    VariantProps<typeof textVariants> {
+  extends React.HTMLAttributes<HTMLElement>, VariantProps<typeof textVariants> {
   as?: TextTag;
   htmlFor?: string;
 }

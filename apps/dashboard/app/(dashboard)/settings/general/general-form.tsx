@@ -64,13 +64,7 @@ export function GeneralForm({ tenant }: GeneralFormProps) {
             </Stack>
             <Stack gap={2}>
               <Label htmlFor="email">Contact email</Label>
-              <Input
-                id="email"
-                name="email"
-                type="email"
-                defaultValue={tenant.email}
-                required
-              />
+              <Input id="email" name="email" type="email" defaultValue={tenant.email} required />
               <Text size="xs" variant="muted">
                 Receives billing and account notifications.
               </Text>

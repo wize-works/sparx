@@ -9,10 +9,19 @@ export default function EmailPage() {
       tagline="Transactional and broadcast email on sparx.mx."
       description="The Email module sends every transactional message and broadcast through self-hosted Postal with per-tenant DKIM and reputation isolation."
       features={[
-        { title: 'Templates', description: 'React Email templates with live preview and merge fields.' },
-        { title: 'Broadcasts', description: 'One-shot campaigns to segments with A/B subject lines.' },
+        {
+          title: 'Templates',
+          description: 'React Email templates with live preview and merge fields.',
+        },
+        {
+          title: 'Broadcasts',
+          description: 'One-shot campaigns to segments with A/B subject lines.',
+        },
         { title: 'Flows', description: 'Drip sequences triggered by storefront and CRM events.' },
-        { title: 'Deliverability', description: 'DKIM, SPF, dedicated IPs, and reputation dashboards.' },
+        {
+          title: 'Deliverability',
+          description: 'DKIM, SPF, dedicated IPs, and reputation dashboards.',
+        },
         { title: 'Suppression', description: 'Bounce/complaint handling with per-tenant lists.' },
         { title: 'Analytics', description: 'Open, click, and conversion tracking via Postal.' },
       ]}

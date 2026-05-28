@@ -19,18 +19,22 @@ Every WizeWorks merchant gets a live HTTPS storefront the moment they sign up �
 ## 2. Platform Subdomain (Instant)
 
 ### How It Works
+
 At merchant signup, a `slug` is chosen or auto-generated from business name:
+
 ```
 Business: "Acme Parts Co"  →  slug: "acme-parts"
 Storefront URL: https://acme-parts.wizeworks.com
 ```
 
 ### Infrastructure
+
 - **Wildcard DNS:** `*.wizeworks.com → GKE ingress load balancer IP` (set once, never changed)
 - **Wildcard SSL:** Single wildcard cert for `*.wizeworks.com` via Let's Encrypt, auto-renewed
 - **Caddy routing:** Reads `Host` header, extracts slug, looks up tenant in `domains` table, proxies to storefront
 
 ### Slug Rules
+
 - 3–63 characters, lowercase alphanumeric + hyphens
 - Must be unique across all tenants
 - Slug availability checked in real-time during signup
@@ -41,6 +45,7 @@ Storefront URL: https://acme-parts.wizeworks.com
 ## 3. Custom Domain (Self-Serve, Automated)
 
 ### Merchant Flow (UI)
+
 1. Merchant navigates to **Settings → Domains**
 2. Enters their domain: `theirstore.com` or `shop.theirstore.com`
 3. Platform displays DNS records to add:
@@ -79,17 +84,17 @@ POST /api/domains
 ```typescript
 async function verifyDomain(domain: DomainRecord) {
   // Check CNAME points to our infrastructure
-  const cnameTarget = await dns.resolveCname(domain.domain)
+  const cnameTarget = await dns.resolveCname(domain.domain);
   if (!cnameTarget.includes('customers.wizeworks.com')) {
-    await updateDomainStatus(domain.id, 'pending', 'CNAME not yet propagated')
-    return
+    await updateDomainStatus(domain.id, 'pending', 'CNAME not yet propagated');
+    return;
   }
 
   // Mark as verified
-  await updateDomainStatus(domain.id, 'verified', null)
-  
+  await updateDomainStatus(domain.id, 'verified', null);
+
   // Trigger SSL provisioning
-  await pubsub.publish('domain.verified', { domainId: domain.id })
+  await pubsub.publish('domain.verified', { domainId: domain.id });
 }
 ```
 
@@ -115,6 +120,7 @@ Caddy is configured with `on_demand_tls` which issues Let's Encrypt certs on fir
 ```
 
 The `/internal/domain-check` endpoint returns 200 only if:
+
 - Domain exists in `domains` table
 - `status = 'verified'`
 - Domain belongs to an active tenant
@@ -162,7 +168,7 @@ Type: TXT
 Name: @
 Value: v=spf1 include:_spf.wizeworks.com ~all
 
-Type: TXT  
+Type: TXT
 Name: ww._domainkey
 Value: v=DKIM1; k=rsa; p=[generated-public-key]
 
@@ -172,6 +178,7 @@ Value: v=DMARC1; p=quarantine; rua=mailto:dmarc@wizeworks.com
 ```
 
 ### Flow
+
 1. When custom domain is added, platform generates DKIM keypair per tenant
 2. Private key stored in Google Secret Manager
 3. Public key displayed as DNS record for merchant to add
@@ -186,14 +193,14 @@ async function validateEmailRecords(domain: string, tenantId: string) {
   const [spf, dkim, dmarc] = await Promise.all([
     validateSPF(domain),
     validateDKIM(domain, tenantId),
-    validateDMARC(domain)
-  ])
-  
-  await updateTenantEmailAuth(tenantId, { spf, dkim, dmarc })
-  
+    validateDMARC(domain),
+  ]);
+
+  await updateTenantEmailAuth(tenantId, { spf, dkim, dmarc });
+
   if (spf && dkim && dmarc) {
-    await enableCustomEmailDomain(tenantId, domain)
-    await pubsub.publish('email.domain.verified', { tenantId, domain })
+    await enableCustomEmailDomain(tenantId, domain);
+    await pubsub.publish('email.domain.verified', { tenantId, domain });
   }
 }
 ```
@@ -212,6 +219,7 @@ async function validateEmailRecords(domain: string, tenantId: string) {
 ## 7. Enterprise: Managed DNS
 
 Enterprise clients can delegate their entire DNS zone to WizeWorks (via Cloudflare nameservers). In this case:
+
 - WizeWorks manages all DNS records
 - Custom domain setup is instant (no merchant action required)
 - Email records configured automatically

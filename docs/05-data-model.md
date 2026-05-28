@@ -59,6 +59,7 @@ Tenant (merchant account)
 ## 3. Key Table Schemas
 
 ### tenants
+
 ```sql
 CREATE TABLE tenants (
   id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -76,6 +77,7 @@ CREATE TABLE tenants (
 ```
 
 ### users
+
 ```sql
 CREATE TABLE users (
   id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -93,6 +95,7 @@ CREATE TABLE users (
 ```
 
 ### customers
+
 ```sql
 CREATE TABLE customers (
   id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -118,6 +121,7 @@ CREATE INDEX idx_customers_b2b ON customers(b2b_account_id);
 ```
 
 ### b2b_accounts
+
 ```sql
 CREATE TABLE b2b_accounts (
   id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -139,6 +143,7 @@ CREATE TABLE b2b_accounts (
 ```
 
 ### products
+
 ```sql
 CREATE TABLE products (
   id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -161,6 +166,7 @@ CREATE TABLE products (
 ```
 
 ### product_variants
+
 ```sql
 CREATE TABLE product_variants (
   id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -182,6 +188,7 @@ CREATE TABLE product_variants (
 ```
 
 ### orders
+
 ```sql
 CREATE TABLE orders (
   id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -217,6 +224,7 @@ CREATE INDEX idx_orders_created ON orders(tenant_id, created_at DESC);
 ```
 
 ### email_automations
+
 ```sql
 CREATE TABLE email_automations (
   id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -236,6 +244,7 @@ CREATE TABLE email_automations (
 ```
 
 ### dropship_suppliers
+
 ```sql
 CREATE TABLE dropship_suppliers (
   id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),

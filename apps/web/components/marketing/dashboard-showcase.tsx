@@ -14,8 +14,20 @@ const SIDEBAR_MODULES = [
 const KPI = [
   { stripe: '#F97316', label: 'Revenue', value: '$48,210', delta: '+18.4%', deltaColor: '#10B981' },
   { stripe: '#F97316', label: 'Orders', value: '312', delta: '+22 today', deltaColor: '#10B981' },
-  { stripe: '#06B6D4', label: 'Customers', value: '1,847', delta: '+34 new', deltaColor: '#10B981' },
-  { stripe: '#475569', label: 'Open quotes', value: '9', delta: '3 awaiting reply', deltaColor: '#52525B' },
+  {
+    stripe: '#06B6D4',
+    label: 'Customers',
+    value: '1,847',
+    delta: '+34 new',
+    deltaColor: '#10B981',
+  },
+  {
+    stripe: '#475569',
+    label: 'Open quotes',
+    value: '9',
+    delta: '3 awaiting reply',
+    deltaColor: '#52525B',
+  },
 ] as const;
 
 const ORDERS = [
@@ -303,9 +315,30 @@ function HomeIcon() {
   return (
     <svg width={14} height={14} viewBox="0 0 24 24" fill="none" aria-hidden>
       <rect x={3} y={3} width={7} height={7} stroke="var(--color-text-secondary)" strokeWidth={2} />
-      <rect x={14} y={3} width={7} height={7} stroke="var(--color-text-secondary)" strokeWidth={2} />
-      <rect x={3} y={14} width={7} height={7} stroke="var(--color-text-secondary)" strokeWidth={2} />
-      <rect x={14} y={14} width={7} height={7} stroke="var(--color-text-secondary)" strokeWidth={2} />
+      <rect
+        x={14}
+        y={3}
+        width={7}
+        height={7}
+        stroke="var(--color-text-secondary)"
+        strokeWidth={2}
+      />
+      <rect
+        x={3}
+        y={14}
+        width={7}
+        height={7}
+        stroke="var(--color-text-secondary)"
+        strokeWidth={2}
+      />
+      <rect
+        x={14}
+        y={14}
+        width={7}
+        height={7}
+        stroke="var(--color-text-secondary)"
+        strokeWidth={2}
+      />
     </svg>
   );
 }

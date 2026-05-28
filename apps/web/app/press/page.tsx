@@ -5,8 +5,7 @@ import { ComingSoon } from '@/components/marketing/coming-soon';
 
 export const metadata: Metadata = {
   title: 'Press — Sparx',
-  description:
-    'Press inquiries, founder bio, brand assets, hi-res screenshots.',
+  description: 'Press inquiries, founder bio, brand assets, hi-res screenshots.',
   alternates: { canonical: '/press' },
   robots: { index: false },
 };

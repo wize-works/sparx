@@ -138,7 +138,14 @@ export function Footer() {
               width: 'fit-content',
             }}
           >
-            <span style={{ width: 7, height: 7, borderRadius: 9999, backgroundColor: 'var(--color-success)' }} />
+            <span
+              style={{
+                width: 7,
+                height: 7,
+                borderRadius: 9999,
+                backgroundColor: 'var(--color-success)',
+              }}
+            />
             <Eyebrow color="var(--color-success-text)">All systems operational</Eyebrow>
           </span>
           <span
@@ -155,7 +162,13 @@ export function Footer() {
         {COLUMNS.map((col) => (
           <div
             key={col.title}
-            style={{ display: 'flex', flexDirection: 'column', gap: '14px', flex: '1 1 140px', minWidth: '140px' }}
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '14px',
+              flex: '1 1 140px',
+              minWidth: '140px',
+            }}
           >
             <Eyebrow color="var(--color-text-primary)">{col.title}</Eyebrow>
             {col.links.map((link) => {
@@ -164,9 +177,7 @@ export function Footer() {
                 <a
                   key={link.label}
                   href={link.href}
-                  {...(external
-                    ? { target: '_blank', rel: 'noopener noreferrer' }
-                    : {})}
+                  {...(external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
                   style={{
                     fontFamily: 'var(--font-sans)',
                     fontSize: '13px',
@@ -202,18 +213,16 @@ export function Footer() {
         <Eyebrow>The Sparx domain network</Eyebrow>
         <div style={{ display: 'flex', gap: '24px', flexWrap: 'wrap' }}>
           {DOMAINS.map((d) => (
-            <span
-              key={d.name}
-              style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
-            >
-              <span
-                style={{ width: 6, height: 6, borderRadius: 9999, backgroundColor: d.color }}
-              />
+            <span key={d.name} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ width: 6, height: 6, borderRadius: 9999, backgroundColor: d.color }} />
               <span
                 style={{
                   fontFamily: 'var(--font-mono)',
                   fontSize: '12px',
-                  color: 'primary' in d && d.primary ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
+                  color:
+                    'primary' in d && d.primary
+                      ? 'var(--color-text-primary)'
+                      : 'var(--color-text-secondary)',
                 }}
               >
                 {d.name}
@@ -239,7 +248,8 @@ export function Footer() {
             color: 'var(--color-text-tertiary)',
           }}
         >
-          © 2026 WizeWorks, Inc. · Visalia, California · Sparx is a registered trademark of WizeWorks.
+          © 2026 WizeWorks, Inc. · Visalia, California · Sparx is a registered trademark of
+          WizeWorks.
         </span>
         <div style={{ display: 'flex', alignItems: 'center', gap: '18px' }}>
           <span

@@ -19,17 +19,20 @@ This deliberate separation is a core Sparx differentiator — merchants pay for 
 ## 2. Standalone CMS Use Cases
 
 **Content publishers:**
+
 - Blog or editorial site (activate Storefront + CMS = $98/mo)
 - Documentation site for a SaaS product
 - Portfolio or agency site
 - Resource library
 
 **Headless CMS (API-only, no Storefront):**
+
 - Development teams querying Sparx CMS API to render content in their own frontend
 - CMS module only ($49/mo) — no Storefront required
 - Full REST + GraphQL access to all content
 
 **Commerce + Content:**
+
 - Product catalog + blog + landing pages (Storefront + Commerce + CMS)
 - Standard e-commerce site with content marketing strategy
 
@@ -38,18 +41,23 @@ This deliberate separation is a core Sparx differentiator — merchants pay for 
 ## 3. Content Types
 
 ### Pages (Static)
+
 General-purpose pages: About, Contact, FAQ, Shipping Policy, Return Policy, Privacy Policy, Terms, custom landing pages, campaign pages.
 
 ### Blog Posts
+
 Long-form content: SEO articles, product education, how-to guides, company news, industry resources. Full author management, categories, tags, scheduled publishing.
 
 ### Product Descriptions (Commerce integration)
+
 When Commerce module is active: rich text editor for product description field. Full formatting, embedded images, spec tables, embedded video.
 
 ### Custom Content Types (Pro+)
+
 Merchants can define custom content schemas — e.g. "Case Studies" with fields: client name, industry, challenge, solution, result. Content rendered via API.
 
 ### Theme Sections
+
 Homepage and collection page sections managed via Site Builder (visual customizer, not this CMS editor).
 
 ---
@@ -59,6 +67,7 @@ Homepage and collection page sections managed via Site Builder (visual customize
 Built on **TipTap** (ProseMirror-based). Excellent DX. Extensible, TypeScript-native.
 
 Capabilities:
+
 - Headings H1–H4, paragraph, bold, italic, underline, strikethrough, inline code
 - Ordered and unordered lists
 - Blockquotes
@@ -77,12 +86,15 @@ Autosave every 30 seconds. Last 10 versions retained, any version restorable.
 ## 5. Media Library
 
 ### Supported Types
+
 - Images: JPEG, PNG, WebP, GIF, SVG
 - Documents: PDF, DOCX, XLSX (spec sheets, product manuals, guides)
 - Video: MP4 (stored in GCS, streamed via CDN)
 
 ### Image Processing Pipeline
+
 On upload:
+
 1. Original stored in GCS (`/media/{tenantId}/originals/`)
 2. WebP version generated
 3. Responsive sizes: 400px, 800px, 1200px, 2000px width
@@ -90,9 +102,11 @@ On upload:
 5. All served via Cloudflare CDN
 
 ### Library UI
+
 Grid view, search by filename/alt text, filter by type, sort by date/name/size, bulk delete, alt text editing, copy URL, usage count (how many pages reference this asset).
 
 ### Storage Limits
+
 Starter 5GB | Growth 25GB | Pro 100GB | Business 250GB | Enterprise custom.
 
 ---
@@ -100,6 +114,7 @@ Starter 5GB | Growth 25GB | Pro 100GB | Business 250GB | Enterprise custom.
 ## 6. SEO Management
 
 ### Per-Page SEO Fields
+
 - SEO title (max 60 chars, character counter)
 - Meta description (max 160 chars, character counter)
 - OG title and description (for social sharing)
@@ -109,7 +124,9 @@ Starter 5GB | Growth 25GB | Pro 100GB | Business 250GB | Enterprise custom.
 - JSON-LD structured data (auto-generated for articles, products, organization)
 
 ### SEO Audit Panel
+
 Inline checklist per page:
+
 - Title length ✅/⚠️/❌
 - Meta description length ✅/⚠️/❌
 - H1 present and unique ✅/⚠️/❌
@@ -118,9 +135,11 @@ Inline checklist per page:
 - Word count estimate
 
 ### Sitemap
+
 Auto-generated XML sitemap. Includes all active pages, posts, products (if Commerce active), collections. URL: `/sitemap.xml`. Submitted to Google Search Console on first publish and on content updates.
 
 ### Redirects
+
 Manual 301 redirects. Auto-created when page/product slug changes (prevents SEO link rot). Bulk redirect import via CSV. Redirect chain and loop detection.
 
 ---
@@ -143,6 +162,7 @@ Manual 301 redirects. Auto-created when page/product slug changes (prevents SEO 
 ## 8. Navigation Management
 
 Merchants manage navigation menus:
+
 - Header navigation (main nav)
 - Footer navigation (multiple columns)
 - Mega menu (images + featured collections for large catalogs)

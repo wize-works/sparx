@@ -72,12 +72,10 @@ export async function createPage(formData: FormData): Promise<ActionResult<{ id:
           tenantId: user.tenantId,
           title: parsed.data.title,
           slug,
-          content: parsed.data.content
-            ? { body: parsed.data.content }
-            : {},
+          content: parsed.data.content ? { body: parsed.data.content } : {},
         },
         select: { id: true },
-      }),
+      })
     );
 
     revalidatePath('/cms');
@@ -91,10 +89,7 @@ export async function createPage(formData: FormData): Promise<ActionResult<{ id:
   }
 }
 
-export async function updatePage(
-  id: string,
-  formData: FormData,
-): Promise<ActionResult> {
+export async function updatePage(id: string, formData: FormData): Promise<ActionResult> {
   const { user } = await requireSession();
 
   const parsed = UpdateSchema.safeParse({
@@ -115,13 +110,11 @@ export async function updatePage(
         data: {
           title: parsed.data.title,
           slug: parsed.data.slug,
-          content: parsed.data.content
-            ? { body: parsed.data.content }
-            : undefined,
+          content: parsed.data.content ? { body: parsed.data.content } : undefined,
           seoTitle: parsed.data.seoTitle ?? null,
           metaDescription: parsed.data.metaDescription ?? null,
         },
-      }),
+      })
     );
   } catch (err: unknown) {
     if (isPrismaCode(err, 'P2002')) {
@@ -136,10 +129,7 @@ export async function updatePage(
   return { ok: true };
 }
 
-export async function setPageStatus(
-  id: string,
-  rawStatus: string,
-): Promise<ActionResult> {
+export async function setPageStatus(id: string, rawStatus: string): Promise<ActionResult> {
   const { user } = await requireSession();
 
   const parsed = StatusSchema.safeParse(rawStatus);
@@ -154,7 +144,7 @@ export async function setPageStatus(
         status: parsed.data,
         publishedAt: parsed.data === 'published' ? new Date() : null,
       },
-    }),
+    })
   );
 
   revalidatePath('/cms');
@@ -165,9 +155,7 @@ export async function setPageStatus(
 export async function deletePage(id: string): Promise<ActionResult> {
   const { user } = await requireSession();
 
-  await withTenant({ tenantId: user.tenantId }, (tx) =>
-    tx.page.delete({ where: { id } }),
-  );
+  await withTenant({ tenantId: user.tenantId }, (tx) => tx.page.delete({ where: { id } }));
 
   revalidatePath('/cms');
   return { ok: true };

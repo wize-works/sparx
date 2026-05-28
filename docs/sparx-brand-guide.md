@@ -38,30 +38,31 @@ Spar x
 
 ### Primary Brand Color
 
-| Token | Hex | Use |
-|-------|-----|-----|
-| `--sparx-primary` | `#6366F1` | Buttons, links, active states, the "x" in wordmark |
-| `--sparx-primary-hover` | `#4F46E5` | Hover state |
-| `--sparx-primary-light` | `#818CF8` | Dark mode variant |
-| `--sparx-primary-tint` | `#EEF2FF` | Background tints |
+| Token                   | Hex       | Use                                                |
+| ----------------------- | --------- | -------------------------------------------------- |
+| `--sparx-primary`       | `#6366F1` | Buttons, links, active states, the "x" in wordmark |
+| `--sparx-primary-hover` | `#4F46E5` | Hover state                                        |
+| `--sparx-primary-light` | `#818CF8` | Dark mode variant                                  |
+| `--sparx-primary-tint`  | `#EEF2FF` | Background tints                                   |
 
 ### Module Color System
 
 Each module owns one color. This color appears identically across three touchpoints:
+
 1. The module's marketing domain (sparxcms.com, sparxcrm.com, etc.)
 2. The module's nav item in the Sparx dashboard sidebar
 3. The 3px top stripe on all cards within that module
 
-| Module | Color Name | Hex | Why |
-|--------|-----------|-----|-----|
-| Storefront | Indigo | `#6366F1` | The platform color — Storefront IS the foundation |
-| Commerce | Orange | `#F97316` | Action, conversion, energy — every "Buy Now" button ever |
-| CMS | Teal | `#14B8A6` | Editorial, calm, focused — content creation energy |
-| CRM | Cyan | `#06B6D4` | Connective, relational, people-centric |
-| Email | Sky | `#0EA5E9` | Communication, reach, delivery |
-| B2B/Wholesale | Slate | `#475569` | Serious, industrial, business-grade |
-| AI/MCP | Rose | `#EC4899` | Premium, intelligent, unexpected — different in kind |
-| Dropship | Emerald | `#10B981` | Growth, supply chain, organic |
+| Module        | Color Name | Hex       | Why                                                      |
+| ------------- | ---------- | --------- | -------------------------------------------------------- |
+| Storefront    | Indigo     | `#6366F1` | The platform color — Storefront IS the foundation        |
+| Commerce      | Orange     | `#F97316` | Action, conversion, energy — every "Buy Now" button ever |
+| CMS           | Teal       | `#14B8A6` | Editorial, calm, focused — content creation energy       |
+| CRM           | Cyan       | `#06B6D4` | Connective, relational, people-centric                   |
+| Email         | Sky        | `#0EA5E9` | Communication, reach, delivery                           |
+| B2B/Wholesale | Slate      | `#475569` | Serious, industrial, business-grade                      |
+| AI/MCP        | Rose       | `#EC4899` | Premium, intelligent, unexpected — different in kind     |
+| Dropship      | Emerald    | `#10B981` | Growth, supply chain, organic                            |
 
 ### The AI/MCP Exception
 
@@ -75,11 +76,13 @@ The AI/MCP module is the only module that falls outside the cool/blue/green spec
 ### Color Rules
 
 **What warm colors (amber, red, orange) are reserved for:**
+
 - `--color-warning` (#F59E0B) — caution alerts, approaching limits
 - `--color-danger` (#EF4444) — errors, destructive actions
 - `--module-commerce` (#F97316) — Commerce module only
 
 **What warm colors are never used for:**
+
 - Decorative elements
 - Other module identities
 - Brand accents outside of their defined semantic roles
@@ -112,24 +115,26 @@ Like Notion and Framer, Sparx lets typography do the heavy lifting. No decorativ
 ## 5. Platform Palette
 
 ### Light Mode
-| Purpose | Token | Value |
-|---------|-------|-------|
-| Page background | `--color-bg-page` | `#FAFAFA` |
-| Surface (cards) | `--color-bg-surface` | `#FFFFFF` |
-| Border | `--color-border` | `#E5E5E5` |
-| Body text | `--color-text-primary` | `#0A0A0A` |
-| Supporting text | `--color-text-secondary` | `#52525B` |
-| Hint/placeholder | `--color-text-tertiary` | `#A1A1AA` |
+
+| Purpose          | Token                    | Value     |
+| ---------------- | ------------------------ | --------- |
+| Page background  | `--color-bg-page`        | `#FAFAFA` |
+| Surface (cards)  | `--color-bg-surface`     | `#FFFFFF` |
+| Border           | `--color-border`         | `#E5E5E5` |
+| Body text        | `--color-text-primary`   | `#0A0A0A` |
+| Supporting text  | `--color-text-secondary` | `#52525B` |
+| Hint/placeholder | `--color-text-tertiary`  | `#A1A1AA` |
 
 ### Dark Mode
-| Purpose | Token | Value |
-|---------|-------|-------|
-| Page background | `--color-bg-page` | `#0F0F0F` |
-| Surface (cards) | `--color-bg-surface` | `#1A1A1A` |
-| Border | `--color-border` | `#2A2A2A` |
-| Body text | `--color-text-primary` | `#F0F0F0` |
-| Supporting text | `--color-text-secondary` | `#A1A1AA` |
-| Hint/placeholder | `--color-text-tertiary` | `#52525B` |
+
+| Purpose          | Token                    | Value     |
+| ---------------- | ------------------------ | --------- |
+| Page background  | `--color-bg-page`        | `#0F0F0F` |
+| Surface (cards)  | `--color-bg-surface`     | `#1A1A1A` |
+| Border           | `--color-border`         | `#2A2A2A` |
+| Body text        | `--color-text-primary`   | `#F0F0F0` |
+| Supporting text  | `--color-text-secondary` | `#A1A1AA` |
+| Hint/placeholder | `--color-text-tertiary`  | `#52525B` |
 
 Neither pure white nor pure black — this is the Notion trick. Near-white/near-black backgrounds feel intentional in both modes, never like an inverted screenshot.
 
@@ -138,21 +143,27 @@ Neither pure white nor pure black — this is the Notion trick. Near-white/near-
 ## 6. Design Principles
 
 ### Flat by default
+
 No gradients, drop shadows (except functional focus rings), or blur effects. Every surface is flat. Depth comes from border contrast, not shadows.
 
 ### Minimal chrome
+
 The UI gets out of the way of the merchant's work. Navigation is always visible but never dominant. Empty states are helpful, not decorative.
 
 ### The 3px stripe rule
+
 The single most important UI pattern in the Sparx dashboard: every card, panel, and page header within a module context carries a 3px top border in that module's color. It tells the merchant exactly where they are without any additional labeling.
 
 ### Module isolation
+
 When a merchant is working inside the CMS module, the UI shifts subtly to teal accents. When they switch to AI/MCP, rose. The color transition reinforces the module context and makes the system feel coherent rather than arbitrary.
 
 ### Progressive disclosure
+
 The onboarding path hides complexity. Advanced features (API keys, custom webhooks, MCP configuration, B2B pricing rules) exist but are never shown to a new merchant. The 5-minute path to live store is always clear.
 
 ### Mobile-first, always
+
 Every Sparx surface — marketing pages, the merchant dashboard, customer-facing storefronts — must work and look intentional from a 320px phone to a 2560px monitor. Marketing pages in particular are read on phones far more than on desktops; a layout that "doesn't look great on mobile" is a broken layout. Display type uses fluid `clamp()` scaling rather than fixed pixel sizes; layouts reflow, never just shrink. See [docs/23 §13](23-frontend-component-architecture.md) for the implementation rules.
 
 ---
@@ -161,12 +172,12 @@ Every Sparx surface — marketing pages, the merchant dashboard, customer-facing
 
 **Sparx speaks directly.** No hedging, no corporate softness, no "revolutionary" or "game-changing."
 
-| Instead of | Sparx says |
-|-----------|-----------|
-| "Start your free trial today" | "Live in 5 minutes." |
-| "Powerful features for growing businesses" | "Pay for what you use. Own everything." |
+| Instead of                                                   | Sparx says                                  |
+| ------------------------------------------------------------ | ------------------------------------------- |
+| "Start your free trial today"                                | "Live in 5 minutes."                        |
+| "Powerful features for growing businesses"                   | "Pay for what you use. Own everything."     |
 | "Our AI-powered insights help you understand your customers" | "Ask your AI anything about your business." |
-| "Flexible pricing for every stage" | "Add B2B for $99/mo. No upgrade required." |
+| "Flexible pricing for every stage"                           | "Add B2B for $99/mo. No upgrade required."  |
 
 **Short sentences.** Subject, verb, done. Sparx doesn't explain itself — it demonstrates.
 
@@ -178,13 +189,13 @@ Every Sparx surface — marketing pages, the merchant dashboard, customer-facing
 
 Each module marketing domain uses its module color as the primary accent, with sparx.works' neutral palette as the base:
 
-| Domain | Module | Accent |
-|--------|--------|--------|
-| sparx.works | Platform / Storefront | `#6366F1` |
-| sparxcms.com | CMS | `#14B8A6` |
-| sparxcrm.com | CRM | `#06B6D4` |
-| sparxemail.com | Email | `#0EA5E9` |
-| sparxb2b.com | B2B/Wholesale | `#475569` |
+| Domain         | Module                | Accent    |
+| -------------- | --------------------- | --------- |
+| sparx.works    | Platform / Storefront | `#6366F1` |
+| sparxcms.com   | CMS                   | `#14B8A6` |
+| sparxcrm.com   | CRM                   | `#06B6D4` |
+| sparxemail.com | Email                 | `#0EA5E9` |
+| sparxb2b.com   | B2B/Wholesale         | `#475569` |
 
 Each site is conversion-optimized for a specific search intent. All CTAs point to `sparx.works/signup?module={module}` — the module query param pre-selects the relevant module during onboarding.
 

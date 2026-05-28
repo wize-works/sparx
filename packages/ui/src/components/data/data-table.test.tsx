@@ -37,16 +37,16 @@ describe('DataTable', () => {
 
     // First click: ascending — Filter, Gasket, Hose
     await userEvent.click(nameHeader);
-    const cellsAsc = screen.getAllByRole('cell').filter((c) =>
-      ['Filter', 'Gasket', 'Hose'].includes(c.textContent ?? '')
-    );
+    const cellsAsc = screen
+      .getAllByRole('cell')
+      .filter((c) => ['Filter', 'Gasket', 'Hose'].includes(c.textContent ?? ''));
     expect(cellsAsc.map((c) => c.textContent)).toEqual(['Filter', 'Gasket', 'Hose']);
 
     // Second click: descending — Hose, Gasket, Filter
     await userEvent.click(nameHeader);
-    const cellsDesc = screen.getAllByRole('cell').filter((c) =>
-      ['Filter', 'Gasket', 'Hose'].includes(c.textContent ?? '')
-    );
+    const cellsDesc = screen
+      .getAllByRole('cell')
+      .filter((c) => ['Filter', 'Gasket', 'Hose'].includes(c.textContent ?? ''));
     expect(cellsDesc.map((c) => c.textContent)).toEqual(['Hose', 'Gasket', 'Filter']);
   });
 

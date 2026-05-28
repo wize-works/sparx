@@ -22,7 +22,9 @@ test.describe('Module landing pages', () => {
 
       await expect(page.getByRole('heading', { level: 1, name: m.title })).toBeVisible();
       await expect(page.getByText('Module preview')).toBeVisible();
-      await expect(page.getByRole('heading', { level: 3, name: 'What ships in this module' })).toBeVisible();
+      await expect(
+        page.getByRole('heading', { level: 3, name: 'What ships in this module' })
+      ).toBeVisible();
 
       const wrapper = page.locator(`[data-module="${m.dataModule}"]`).first();
       await expect(wrapper).toBeAttached();

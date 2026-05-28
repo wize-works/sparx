@@ -91,8 +91,8 @@ export default function SettingsPage() {
         <Stack gap={2}>
           <Heading level={1}>Settings</Heading>
           <Text variant="muted">
-            Manage your store, team, and integrations. Each section will land here as the
-            platform comes online.
+            Manage your store, team, and integrations. Each section will land here as the platform
+            comes online.
           </Text>
         </Stack>
 

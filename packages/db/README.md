@@ -32,11 +32,13 @@ Subsequent runs only need `pnpm db:up`.
 ### The flow
 
 1. **Author the migration locally** against the docker Postgres:
+
    ```bash
    pnpm db:up
    # Edit prisma/schema.prisma…
    pnpm --filter @sparx/db prisma migrate dev --name <descriptive_name>
    ```
+
    Prisma generates `prisma/migrations/<timestamp>_<name>/migration.sql` by diffing the schema against the local DB.
 
 2. **Hand-edit the SQL** for anything Prisma can't model:
@@ -59,9 +61,11 @@ Subsequent runs only need `pnpm db:up`.
    The workflow builds the migrate image, pushes to Artifact Registry (`us-central1-docker.pkg.dev/sparxworks/sparx/db-migrate:<sha>`), and applies a K8s Job in `sparx-prod` that runs `cloud-sql-bootstrap.sql` (idempotent grants) and `prisma migrate deploy` through the Cloud SQL Auth Proxy sidecar.
 
 4. **Re-seed (rare):** trigger the workflow manually with `run_seed=true`:
+
    ```bash
    gh workflow run db-migrate.yml -f run_seed=true --ref main
    ```
+
    The seed is idempotent (upsert), so it's safe to re-run.
 
 5. **Rollback:** there is none. Write a forward migration that reverses the change. The pipeline always moves the schema forward; never edit a migration that has already been applied.
@@ -79,7 +83,7 @@ Every API request handler that touches tenant data **must** wrap its DB work in 
 import { withTenant } from '@sparx/db';
 
 const orders = await withTenant({ tenantId: req.tenant.id }, (tx) =>
-  tx.order.findMany({ where: { status: 'pending' } }),
+  tx.order.findMany({ where: { status: 'pending' } })
 );
 ```
 

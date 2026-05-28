@@ -34,7 +34,7 @@ ModalOverlay.displayName = DialogPrimitive.Overlay.displayName;
 const modalContentVariants = cva(
   [
     'fixed left-1/2 top-1/2 z-50 -translate-x-1/2 -translate-y-1/2',
-    'w-full max-h-[85vh] overflow-y-auto',
+    'max-h-[85vh] w-full overflow-y-auto',
     'rounded-lg border border-[var(--color-border-default)] bg-[var(--color-bg-surface)]',
     'p-6 shadow-md',
     'data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95',
@@ -54,7 +54,8 @@ const modalContentVariants = cva(
 );
 
 export interface ModalContentProps
-  extends React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>,
+  extends
+    React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>,
     VariantProps<typeof modalContentVariants> {
   /** Hide the built-in close (X) button in the top-right. */
   hideClose?: boolean;
@@ -77,7 +78,7 @@ export const ModalContent = React.forwardRef<
           aria-label="Close"
           className={cn(
             'absolute right-3 top-3 rounded-md p-1',
-            'text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-bg-subtle)]',
+            'text-[var(--color-text-tertiary)] hover:bg-[var(--color-bg-subtle)] hover:text-[var(--color-text-primary)]',
             'transition-colors duration-150',
             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)]'
           )}
@@ -112,10 +113,7 @@ export const ModalTitle = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <DialogPrimitive.Title
     ref={ref}
-    className={cn(
-      'text-lg leading-tight font-medium text-[var(--color-text-primary)]',
-      className
-    )}
+    className={cn('text-lg font-medium leading-tight text-[var(--color-text-primary)]', className)}
     {...props}
   />
 ));

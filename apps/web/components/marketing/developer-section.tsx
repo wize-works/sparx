@@ -4,7 +4,11 @@ const FEATURES = [
   {
     icon: (
       <svg width={16} height={16} viewBox="0 0 24 24" fill="none" aria-hidden>
-        <path d="M8 5L3 12L8 19M16 5L21 12L16 19" stroke="var(--color-text-primary)" strokeWidth={2} />
+        <path
+          d="M8 5L3 12L8 19M16 5L21 12L16 19"
+          stroke="var(--color-text-primary)"
+          strokeWidth={2}
+        />
       </svg>
     ),
     title: 'REST + GraphQL',
@@ -27,7 +31,15 @@ const FEATURES = [
   {
     icon: (
       <svg width={16} height={16} viewBox="0 0 24 24" fill="none" aria-hidden>
-        <rect x={3} y={3} width={18} height={18} rx={2} stroke="var(--color-text-primary)" strokeWidth={2} />
+        <rect
+          x={3}
+          y={3}
+          width={18}
+          height={18}
+          rx={2}
+          stroke="var(--color-text-primary)"
+          strokeWidth={2}
+        />
         <path d="M9 9H15V15H9V9Z" stroke="var(--color-text-primary)" strokeWidth={2} />
       </svg>
     ),
@@ -73,7 +85,9 @@ export function DeveloperSection() {
         />
 
         <div className="mkt-stack-on-tablet" style={{ alignItems: 'stretch', gap: '32px' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', flex: 1, gap: '20px', minWidth: 0 }}>
+          <div
+            style={{ display: 'flex', flexDirection: 'column', flex: 1, gap: '20px', minWidth: 0 }}
+          >
             {FEATURES.map((f) => (
               <div
                 key={f.title}
@@ -196,7 +210,9 @@ function CodeTabs() {
 const LINES = Array.from({ length: 17 }, (_, i) => i + 1);
 
 const CODE: React.ReactNode[] = [
-  <span key="c1" style={{ color: '#52525B' }}>{'// Place a B2B order with net 30 terms'}</span>,
+  <span key="c1" style={{ color: '#52525B' }}>
+    {'// Place a B2B order with net 30 terms'}
+  </span>,
   <>
     <span style={{ color: '#EC4899' }}>import</span> {'{ sparx }'}{' '}
     <span style={{ color: '#EC4899' }}>from</span>{' '}
@@ -204,17 +220,16 @@ const CODE: React.ReactNode[] = [
   </>,
   ' ',
   <>
-    <span style={{ color: '#EC4899' }}>const</span>{' '}
-    <span style={{ color: '#06B6D4' }}>client</span> = sparx({'{ '}
+    <span style={{ color: '#EC4899' }}>const</span> <span style={{ color: '#06B6D4' }}>client</span>{' '}
+    = sparx({'{ '}
     <span style={{ color: '#A1A1AA' }}>apiKey:</span>{' '}
     <span style={{ color: '#10B981' }}>process.env.SPARX_KEY</span>
     {' }'});
   </>,
   ' ',
   <>
-    <span style={{ color: '#EC4899' }}>const</span>{' '}
-    <span style={{ color: '#06B6D4' }}>order</span> ={' '}
-    <span style={{ color: '#EC4899' }}>await</span> client.
+    <span style={{ color: '#EC4899' }}>const</span> <span style={{ color: '#06B6D4' }}>order</span>{' '}
+    = <span style={{ color: '#EC4899' }}>await</span> client.
     <span style={{ color: '#F97316' }}>commerce</span>.orders.
     <span style={{ color: '#818CF8' }}>create</span>({'{'}
   </>,
@@ -248,15 +263,15 @@ const CODE: React.ReactNode[] = [
     {'    { '}
     <span style={{ color: '#A1A1AA' }}>sku:</span>{' '}
     <span style={{ color: '#10B981' }}>&quot;INJ-6.7-CR&quot;</span>,{' '}
-    <span style={{ color: '#A1A1AA' }}>qty:</span>{' '}
-    <span style={{ color: '#F97316' }}>8</span> {' },'}
+    <span style={{ color: '#A1A1AA' }}>qty:</span> <span style={{ color: '#F97316' }}>8</span>{' '}
+    {' },'}
   </>,
   <>
     {'    { '}
     <span style={{ color: '#A1A1AA' }}>sku:</span>{' '}
     <span style={{ color: '#10B981' }}>&quot;FLT-FUEL-CAT3&quot;</span>,{' '}
-    <span style={{ color: '#A1A1AA' }}>qty:</span>{' '}
-    <span style={{ color: '#F97316' }}>24</span> {' },'}
+    <span style={{ color: '#A1A1AA' }}>qty:</span> <span style={{ color: '#F97316' }}>24</span>{' '}
+    {' },'}
   </>,
   '  ],',
   '});',
@@ -268,7 +283,9 @@ const CODE: React.ReactNode[] = [
 
 function CodeBody() {
   return (
-    <div style={{ display: 'flex', padding: '24px 0', backgroundColor: '#0A0A0A', overflowX: 'auto' }}>
+    <div
+      style={{ display: 'flex', padding: '24px 0', backgroundColor: '#0A0A0A', overflowX: 'auto' }}
+    >
       <div
         style={{
           display: 'flex',

@@ -1,11 +1,5 @@
 import { requireSession } from '@sparx/auth';
-import {
-  Badge,
-  Container,
-  Heading,
-  Stack,
-  Text,
-} from '@sparx/ui';
+import { Badge, Container, Heading, Stack, Text } from '@sparx/ui';
 import { loadOnboardingProgress } from './onboarding';
 import { WelcomeChecklist } from './welcome-checklist';
 

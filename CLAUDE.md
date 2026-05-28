@@ -12,16 +12,16 @@ The repo is in **early scaffold phase**: design docs under [docs/](docs/) plus t
 
 ### Common commands
 
-| Command | Purpose |
-|---------|---------|
-| `pnpm install` | Install all workspace dependencies |
-| `pnpm dev` | Run all `dev` tasks (Turborepo, persistent) |
-| `pnpm build` | Build everything (`turbo run build`) |
-| `pnpm lint` | Lint everything |
-| `pnpm typecheck` | Type-check everything |
-| `pnpm test` | Run tests (Vitest in packages, Playwright in apps) |
-| `pnpm format` | Format with Prettier |
-| `pnpm --filter @sparx/ui <script>` | Run a script in a single workspace |
+| Command                            | Purpose                                            |
+| ---------------------------------- | -------------------------------------------------- |
+| `pnpm install`                     | Install all workspace dependencies                 |
+| `pnpm dev`                         | Run all `dev` tasks (Turborepo, persistent)        |
+| `pnpm build`                       | Build everything (`turbo run build`)               |
+| `pnpm lint`                        | Lint everything                                    |
+| `pnpm typecheck`                   | Type-check everything                              |
+| `pnpm test`                        | Run tests (Vitest in packages, Playwright in apps) |
+| `pnpm format`                      | Format with Prettier                               |
+| `pnpm --filter @sparx/ui <script>` | Run a script in a single workspace                 |
 
 Nothing has been `pnpm install`ed yet — the first time anyone clones, they need to run it. Don't claim builds/tests pass without actually running them.
 

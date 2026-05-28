@@ -121,9 +121,7 @@ export const FileUpload = React.forwardRef<HTMLDivElement, FileUploadProps>(
             <span className="font-medium text-[var(--color-text-primary)]">Click to upload</span>
             {' or drag and drop'}
           </p>
-          {accept && (
-            <p className="text-xs text-[var(--color-text-tertiary)]">{accept}</p>
-          )}
+          {accept && <p className="text-xs text-[var(--color-text-tertiary)]">{accept}</p>}
         </div>
 
         <input

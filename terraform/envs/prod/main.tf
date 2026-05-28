@@ -178,9 +178,9 @@ resource "google_service_account_iam_binding" "app_workload_identity" {
 module "monitoring" {
   source = "../../modules/monitoring"
 
-  project_id            = var.project_id
-  ops_email             = var.ops_email
-  public_domains_active = var.cloudflare_enabled
-  uptime_check_hosts    = ["api.sparx.works", "app.sparx.works", "mcp.sparx.works"]
+  project_id               = var.project_id
+  ops_email                = var.ops_email
+  public_domains_active    = var.cloudflare_enabled
+  uptime_check_hosts       = ["api.sparx.works", "app.sparx.works", "mcp.sparx.works"]
   dead_letter_subscription = "dead-letter-inspect"
 }

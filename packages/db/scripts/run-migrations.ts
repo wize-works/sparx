@@ -93,8 +93,17 @@ async function main(): Promise<void> {
   console.log('[migrate] applying bootstrap grants as sparx_owner…');
   await run(
     'pnpm',
-    ['exec', 'prisma', 'db', 'execute', '--url', migrationUrl, '--file', 'sql/cloud-sql-bootstrap.sql'],
-    baseEnv,
+    [
+      'exec',
+      'prisma',
+      'db',
+      'execute',
+      '--url',
+      migrationUrl,
+      '--file',
+      'sql/cloud-sql-bootstrap.sql',
+    ],
+    baseEnv
   );
 
   console.log('[migrate] running prisma migrate deploy…');

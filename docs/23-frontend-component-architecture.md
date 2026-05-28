@@ -28,15 +28,15 @@ Feature developers write semantic component APIs. The styling system — Tailwin
 
 ## 2. Stack
 
-| Layer | Technology | Role |
-|-------|-----------|------|
-| Token foundation | `globals.css` (CSS custom properties) | Single source of truth for all colors, spacing, radius, typography |
-| Component scaffolding | Shadcn/ui | Pre-built accessible component shells, immediately customized |
-| Variant engine | CVA (Class Variance Authority) | Named variant → class mapping, locked inside `@sparx/ui` |
-| Primitive accessibility | Radix UI | ARIA, keyboard navigation, focus management (via Shadcn) |
-| Style composition | `cn()` (clsx + tailwind-merge) | Class deduplication, conditional class logic |
-| Module theming | `ModuleProvider` | CSS variable context shifting per active module |
-| Icons | Lucide React | Consistent, tree-shakeable, outline style |
+| Layer                   | Technology                            | Role                                                               |
+| ----------------------- | ------------------------------------- | ------------------------------------------------------------------ |
+| Token foundation        | `globals.css` (CSS custom properties) | Single source of truth for all colors, spacing, radius, typography |
+| Component scaffolding   | Shadcn/ui                             | Pre-built accessible component shells, immediately customized      |
+| Variant engine          | CVA (Class Variance Authority)        | Named variant → class mapping, locked inside `@sparx/ui`           |
+| Primitive accessibility | Radix UI                              | ARIA, keyboard navigation, focus management (via Shadcn)           |
+| Style composition       | `cn()` (clsx + tailwind-merge)        | Class deduplication, conditional class logic                       |
+| Module theming          | `ModuleProvider`                      | CSS variable context shifting per active module                    |
+| Icons                   | Lucide React                          | Consistent, tree-shakeable, outline style                          |
 
 ---
 
@@ -83,132 +83,132 @@ This file is the single source of truth. Imported once in each app's root layout
 ```css
 /* ── SPARX BRAND ──────────────────────────────────────────── */
 :root {
-  --sparx-primary:          #6366F1;
-  --sparx-primary-hover:    #4F46E5;
-  --sparx-primary-subtle:   #818CF8;
-  --sparx-primary-tint:     #EEF2FF;
+  --sparx-primary: #6366f1;
+  --sparx-primary-hover: #4f46e5;
+  --sparx-primary-subtle: #818cf8;
+  --sparx-primary-tint: #eef2ff;
 
   /* ── MODULE COLORS ─────────────────────────────────────── */
-  --module-storefront:      #6366F1;
-  --module-commerce:        #F97316;
-  --module-cms:             #14B8A6;
-  --module-crm:             #06B6D4;
-  --module-email:           #0EA5E9;
-  --module-b2b:             #475569;
-  --module-ai:              #EC4899;
-  --module-dropship:        #10B981;
+  --module-storefront: #6366f1;
+  --module-commerce: #f97316;
+  --module-cms: #14b8a6;
+  --module-crm: #06b6d4;
+  --module-email: #0ea5e9;
+  --module-b2b: #475569;
+  --module-ai: #ec4899;
+  --module-dropship: #10b981;
 
   /* Active module — set by ModuleProvider, read by components */
-  --module-active:          var(--sparx-primary);
-  --module-active-tint:     var(--sparx-primary-tint);
-  --module-active-text:     #4338CA;
+  --module-active: var(--sparx-primary);
+  --module-active-tint: var(--sparx-primary-tint);
+  --module-active-text: #4338ca;
 
   /* ── NEUTRALS — LIGHT MODE ─────────────────────────────── */
-  --color-bg-page:          #FAFAFA;
-  --color-bg-surface:       #FFFFFF;
-  --color-bg-elevated:      #FFFFFF;
-  --color-bg-subtle:        #F4F4F5;
-  --color-bg-muted:         #E4E4E7;
+  --color-bg-page: #fafafa;
+  --color-bg-surface: #ffffff;
+  --color-bg-elevated: #ffffff;
+  --color-bg-subtle: #f4f4f5;
+  --color-bg-muted: #e4e4e7;
 
-  --color-border-default:   #E5E5E5;
-  --color-border-strong:    #D4D4D8;
-  --color-border-focus:     #6366F1;
+  --color-border-default: #e5e5e5;
+  --color-border-strong: #d4d4d8;
+  --color-border-focus: #6366f1;
 
-  --color-text-primary:     #0A0A0A;
-  --color-text-secondary:   #52525B;
-  --color-text-tertiary:    #A1A1AA;
-  --color-text-muted:       #71717A;  /* Sits between secondary and tertiary; used for neutral metadata, trend=neutral, hint text */
-  --color-text-disabled:    #D4D4D8;
-  --color-text-inverse:     #FFFFFF;
+  --color-text-primary: #0a0a0a;
+  --color-text-secondary: #52525b;
+  --color-text-tertiary: #a1a1aa;
+  --color-text-muted: #71717a; /* Sits between secondary and tertiary; used for neutral metadata, trend=neutral, hint text */
+  --color-text-disabled: #d4d4d8;
+  --color-text-inverse: #ffffff;
 
   /* ── SEMANTIC ───────────────────────────────────────────── */
-  --color-success:          #10B981;
-  --color-success-tint:     #ECFDF5;
-  --color-success-text:     #065F46;
+  --color-success: #10b981;
+  --color-success-tint: #ecfdf5;
+  --color-success-text: #065f46;
 
-  --color-warning:          #F59E0B;
-  --color-warning-tint:     #FFFBEB;
-  --color-warning-text:     #92400E;
+  --color-warning: #f59e0b;
+  --color-warning-tint: #fffbeb;
+  --color-warning-text: #92400e;
 
-  --color-danger:           #EF4444;
-  --color-danger-tint:      #FEF2F2;
-  --color-danger-text:      #991B1B;
+  --color-danger: #ef4444;
+  --color-danger-tint: #fef2f2;
+  --color-danger-text: #991b1b;
 
   /* ── TYPOGRAPHY ─────────────────────────────────────────── */
-  --font-sans:    'Geist', 'Inter', system-ui, sans-serif;
-  --font-mono:    'Geist Mono', 'JetBrains Mono', monospace;
+  --font-sans: 'Geist', 'Inter', system-ui, sans-serif;
+  --font-mono: 'Geist Mono', 'JetBrains Mono', monospace;
 
-  --text-xs:      0.6875rem;   /* 11px */
-  --text-sm:      0.8125rem;   /* 13px */
-  --text-base:    0.9375rem;   /* 15px */
-  --text-lg:      1.0625rem;   /* 17px */
-  --text-xl:      1.25rem;     /* 20px */
-  --text-2xl:     1.5rem;      /* 24px */
-  --text-3xl:     1.875rem;    /* 30px */
-  --text-4xl:     2.25rem;     /* 36px */
+  --text-xs: 0.6875rem; /* 11px */
+  --text-sm: 0.8125rem; /* 13px */
+  --text-base: 0.9375rem; /* 15px */
+  --text-lg: 1.0625rem; /* 17px */
+  --text-xl: 1.25rem; /* 20px */
+  --text-2xl: 1.5rem; /* 24px */
+  --text-3xl: 1.875rem; /* 30px */
+  --text-4xl: 2.25rem; /* 36px */
 
   --weight-regular: 400;
-  --weight-medium:  500;
+  --weight-medium: 500;
 
-  --leading-tight:    1.2;
-  --leading-normal:   1.5;
-  --leading-relaxed:  1.625;
+  --leading-tight: 1.2;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.625;
 
-  --tracking-tight:   -0.025em;
-  --tracking-wide:    0.05em;
-  --tracking-wider:   0.08em;
+  --tracking-tight: -0.025em;
+  --tracking-wide: 0.05em;
+  --tracking-wider: 0.08em;
 
   /* ── SPACING ─────────────────────────────────────────────── */
-  --space-1:  0.25rem;
-  --space-2:  0.5rem;
-  --space-3:  0.75rem;
-  --space-4:  1rem;
-  --space-5:  1.25rem;
-  --space-6:  1.5rem;
-  --space-8:  2rem;
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
   --space-10: 2.5rem;
   --space-12: 3rem;
   --space-16: 4rem;
 
   /* ── RADIUS ──────────────────────────────────────────────── */
-  --radius-sm:    4px;
-  --radius-md:    6px;
-  --radius-lg:    8px;
-  --radius-xl:    12px;
-  --radius-full:  9999px;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+  --radius-full: 9999px;
 
   /* ── SHADOWS ─────────────────────────────────────────────── */
-  --shadow-sm:    0 1px 2px 0 rgb(0 0 0 / 0.05);
-  --shadow-md:    0 2px 8px 0 rgb(0 0 0 / 0.08);
-  --shadow-lg:    0 10px 24px -6px rgb(0 0 0 / 0.12);
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 2px 8px 0 rgb(0 0 0 / 0.08);
+  --shadow-lg: 0 10px 24px -6px rgb(0 0 0 / 0.12);
   --shadow-focus: 0 0 0 3px rgb(99 102 241 / 0.25);
 
   /* ── TRANSITIONS ─────────────────────────────────────────── */
-  --transition-fast:   100ms ease;
-  --transition-base:   175ms ease;
-  --transition-slow:   250ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-fast: 100ms ease;
+  --transition-base: 175ms ease;
+  --transition-slow: 250ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* ── DARK MODE ───────────────────────────────────────────── */
-[data-theme="dark"] {
-  --color-bg-page:          #0F0F0F;
-  --color-bg-surface:       #1A1A1A;
-  --color-bg-elevated:      #222222;
-  --color-bg-subtle:        #1F1F1F;
-  --color-bg-muted:         #2A2A2A;
+[data-theme='dark'] {
+  --color-bg-page: #0f0f0f;
+  --color-bg-surface: #1a1a1a;
+  --color-bg-elevated: #222222;
+  --color-bg-subtle: #1f1f1f;
+  --color-bg-muted: #2a2a2a;
 
-  --color-border-default:   #2A2A2A;
-  --color-border-strong:    #3F3F46;
-  --color-border-focus:     #818CF8;
+  --color-border-default: #2a2a2a;
+  --color-border-strong: #3f3f46;
+  --color-border-focus: #818cf8;
 
-  --color-text-primary:     #F0F0F0;
-  --color-text-secondary:   #A1A1AA;
-  --color-text-tertiary:    #52525B;
-  --color-text-muted:       #8A8A93;
-  --color-text-disabled:    #3F3F46;
-  --color-text-inverse:     #0A0A0A;
+  --color-text-primary: #f0f0f0;
+  --color-text-secondary: #a1a1aa;
+  --color-text-tertiary: #52525b;
+  --color-text-muted: #8a8a93;
+  --color-text-disabled: #3f3f46;
+  --color-text-inverse: #0a0a0a;
 
-  --sparx-primary-tint:     #1E1B4B;
+  --sparx-primary-tint: #1e1b4b;
 }
 ```
 
@@ -220,36 +220,33 @@ Tailwind is configured to use CSS variables as its design tokens. This means Tai
 
 ```typescript
 // tailwind.config.ts
-import type { Config } from 'tailwindcss'
+import type { Config } from 'tailwindcss';
 
 export default {
   darkMode: ['class', '[data-theme="dark"]'],
-  content: [
-    './apps/**/*.{ts,tsx}',
-    './packages/ui/**/*.{ts,tsx}',
-  ],
+  content: ['./apps/**/*.{ts,tsx}', './packages/ui/**/*.{ts,tsx}'],
   theme: {
     extend: {
       colors: {
         // Brand
-        primary:  'var(--sparx-primary)',
+        primary: 'var(--sparx-primary)',
         // Module — active module color (shifts with ModuleProvider)
-        module:   'var(--module-active)',
+        module: 'var(--module-active)',
         // Semantic
-        success:  'var(--color-success)',
-        warning:  'var(--color-warning)',
-        danger:   'var(--color-danger)',
+        success: 'var(--color-success)',
+        warning: 'var(--color-warning)',
+        danger: 'var(--color-danger)',
         // Surfaces
-        page:     'var(--color-bg-page)',
-        surface:  'var(--color-bg-surface)',
+        page: 'var(--color-bg-page)',
+        surface: 'var(--color-bg-surface)',
         elevated: 'var(--color-bg-elevated)',
-        subtle:   'var(--color-bg-subtle)',
-        muted:    'var(--color-bg-muted)',
+        subtle: 'var(--color-bg-subtle)',
+        muted: 'var(--color-bg-muted)',
         // Text
-        foreground:       'var(--color-text-primary)',
+        foreground: 'var(--color-text-primary)',
         'foreground-muted': 'var(--color-text-secondary)',
         // Border
-        border:   'var(--color-border-default)',
+        border: 'var(--color-border-default)',
         'border-strong': 'var(--color-border-strong)',
       },
       fontFamily: {
@@ -257,10 +254,10 @@ export default {
         mono: 'var(--font-mono)',
       },
       borderRadius: {
-        sm:   'var(--radius-sm)',
-        md:   'var(--radius-md)',
-        lg:   'var(--radius-lg)',
-        xl:   'var(--radius-xl)',
+        sm: 'var(--radius-sm)',
+        md: 'var(--radius-md)',
+        lg: 'var(--radius-lg)',
+        xl: 'var(--radius-xl)',
         full: 'var(--radius-full)',
       },
       spacing: {
@@ -268,9 +265,9 @@ export default {
         // custom values via CSS variables where needed
       },
       boxShadow: {
-        sm:    'var(--shadow-sm)',
-        md:    'var(--shadow-md)',
-        lg:    'var(--shadow-lg)',
+        sm: 'var(--shadow-sm)',
+        md: 'var(--shadow-md)',
+        lg: 'var(--shadow-lg)',
         focus: 'var(--shadow-focus)',
       },
       transitionDuration: {
@@ -281,7 +278,7 @@ export default {
     },
   },
   plugins: [],
-} satisfies Config
+} satisfies Config;
 ```
 
 ---
@@ -452,14 +449,10 @@ export function useModule(): SparxModule {
 
 ```tsx
 // apps/dashboard/app/(dashboard)/cms/layout.tsx
-import { ModuleProvider } from '@sparx/ui'
+import { ModuleProvider } from '@sparx/ui';
 
 export default function CmsLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <ModuleProvider module="cms">
-      {children}
-    </ModuleProvider>
-  )
+  return <ModuleProvider module="cms">{children}</ModuleProvider>;
 }
 
 // Now everything inside cms/ automatically uses teal:
@@ -479,26 +472,26 @@ export default function CmsLayout({ children }: { children: React.ReactNode }) {
 
 ```typescript
 const cardVariants = cva(
-  'rounded-lg bg-[var(--color-bg-surface)] border border-[var(--color-border-default)]',
+  'rounded-lg border border-[var(--color-border-default)] bg-[var(--color-bg-surface)]',
   {
     variants: {
       variant: {
-        default:  '',
-        module:   'border-t-[3px] border-t-[var(--module-active)] rounded-t-none',
+        default: '',
+        module: 'rounded-t-none border-t-[3px] border-t-[var(--module-active)]',
         elevated: 'shadow-md',
-        ghost:    'border-transparent bg-transparent',
-        subtle:   'bg-[var(--color-bg-subtle)] border-transparent',
+        ghost: 'border-transparent bg-transparent',
+        subtle: 'border-transparent bg-[var(--color-bg-subtle)]',
       },
       padding: {
         none: '',
-        sm:   'p-3',
-        md:   'p-4',
-        lg:   'p-6',
+        sm: 'p-3',
+        md: 'p-4',
+        lg: 'p-6',
       },
     },
     defaultVariants: { variant: 'default', padding: 'md' },
   }
-)
+);
 ```
 
 The `module` variant is the 3px stripe pattern. It applies automatically when `variant="module"` — no module color prop needed because `--module-active` comes from CSS context.
@@ -507,22 +500,22 @@ The `module` variant is the 3px stripe pattern. It applies automatically when `v
 
 ```typescript
 const badgeVariants = cva(
-  'inline-flex items-center gap-1 rounded-full text-xs font-medium px-2 py-0.5 whitespace-nowrap',
+  'inline-flex items-center gap-1 whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-medium',
   {
     variants: {
       variant: {
-        default:  'bg-[var(--color-bg-subtle)] text-[var(--color-text-secondary)]',
-        primary:  'bg-[var(--sparx-primary-tint)] text-[var(--sparx-primary)]',
-        success:  'bg-[var(--color-success-tint)] text-[var(--color-success-text)]',
-        warning:  'bg-[var(--color-warning-tint)] text-[var(--color-warning-text)]',
-        danger:   'bg-[var(--color-danger-tint)] text-[var(--color-danger-text)]',
-        module:   'bg-[var(--module-active-tint)] text-[var(--module-active-text)]',
-        outline:  'border border-[var(--color-border-default)] text-[var(--color-text-secondary)]',
+        default: 'bg-[var(--color-bg-subtle)] text-[var(--color-text-secondary)]',
+        primary: 'bg-[var(--sparx-primary-tint)] text-[var(--sparx-primary)]',
+        success: 'bg-[var(--color-success-tint)] text-[var(--color-success-text)]',
+        warning: 'bg-[var(--color-warning-tint)] text-[var(--color-warning-text)]',
+        danger: 'bg-[var(--color-danger-tint)] text-[var(--color-danger-text)]',
+        module: 'bg-[var(--module-active-tint)] text-[var(--module-active-text)]',
+        outline: 'border border-[var(--color-border-default)] text-[var(--color-text-secondary)]',
       },
     },
     defaultVariants: { variant: 'default' },
   }
-)
+);
 ```
 
 ### Input
@@ -542,17 +535,17 @@ const inputVariants = cva(
     variants: {
       variant: {
         default: 'border-[var(--color-border-default)] hover:border-[var(--color-border-strong)]',
-        error:   'border-[var(--color-danger)] focus-visible:ring-[var(--color-danger)]',
+        error: 'border-[var(--color-danger)] focus-visible:ring-[var(--color-danger)]',
       },
       size: {
-        sm: 'h-8  px-2.5 py-1.5 text-xs',
-        md: 'h-9  px-3   py-2',
-        lg: 'h-10 px-4   py-2.5 text-base',
+        sm: 'h-8 px-2.5 py-1.5 text-xs',
+        md: 'h-9 px-3 py-2',
+        lg: 'h-10 px-4 py-2.5 text-base',
       },
     },
     defaultVariants: { variant: 'default', size: 'md' },
   }
-)
+);
 ```
 
 ### Stat (metric card)
@@ -629,78 +622,84 @@ Trend colors deliberately use the bare semantic tokens (`--color-success`, `--co
 All components to build in `@sparx/ui`. Each follows the CVA pattern above.
 
 ### Primitives
-| Component | Key variants | Notes |
-|-----------|-------------|-------|
-| `Button` | primary, secondary, ghost, link, danger, module, module-outline | Sizes: xs, sm, md, lg, xl, icon-sm, icon-md, icon-lg |
-| `Badge` | default, primary, success, warning, danger, module, outline | |
-| `Input` | default, error | Sizes: sm, md, lg |
-| `Textarea` | default, error | |
-| `Select` | default, error | Wraps Radix Select |
-| `Checkbox` | — | Wraps Radix Checkbox, uses primary color |
-| `RadioGroup` | — | Wraps Radix Radio |
-| `Switch` | — | Uses primary color, module-aware |
-| `Slider` | — | Uses primary/module color |
-| `Avatar` | default, initials | Sizes: sm, md, lg; falls back to initials on image error |
-| `Spinner` | — | Sizes: sm, md, lg; inherits current color |
-| `Skeleton` | — | Pulse animation, used for loading states |
-| `Heading` | levels 1–6 | Visual size via `level`; semantic tag via `as` override (e.g. visually H1, semantically H2) |
-| `Text` | default, muted, subtle, inverse, danger, success | Sizes: xs, sm, md, lg; `as` polymorphism for `p` / `span` / `div` / `label` |
+
+| Component    | Key variants                                                    | Notes                                                                                       |
+| ------------ | --------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| `Button`     | primary, secondary, ghost, link, danger, module, module-outline | Sizes: xs, sm, md, lg, xl, icon-sm, icon-md, icon-lg                                        |
+| `Badge`      | default, primary, success, warning, danger, module, outline     |                                                                                             |
+| `Input`      | default, error                                                  | Sizes: sm, md, lg                                                                           |
+| `Textarea`   | default, error                                                  |                                                                                             |
+| `Select`     | default, error                                                  | Wraps Radix Select                                                                          |
+| `Checkbox`   | —                                                               | Wraps Radix Checkbox, uses primary color                                                    |
+| `RadioGroup` | —                                                               | Wraps Radix Radio                                                                           |
+| `Switch`     | —                                                               | Uses primary color, module-aware                                                            |
+| `Slider`     | —                                                               | Uses primary/module color                                                                   |
+| `Avatar`     | default, initials                                               | Sizes: sm, md, lg; falls back to initials on image error                                    |
+| `Spinner`    | —                                                               | Sizes: sm, md, lg; inherits current color                                                   |
+| `Skeleton`   | —                                                               | Pulse animation, used for loading states                                                    |
+| `Heading`    | levels 1–6                                                      | Visual size via `level`; semantic tag via `as` override (e.g. visually H1, semantically H2) |
+| `Text`       | default, muted, subtle, inverse, danger, success                | Sizes: xs, sm, md, lg; `as` polymorphism for `p` / `span` / `div` / `label`                 |
 
 ### Layout
-| Component | Key variants | Notes |
-|-----------|-------------|-------|
-| `Card` | default, module, elevated, ghost, subtle | module = 3px top stripe |
-| `CardHeader` | — | Consistent header within Card |
-| `CardContent` | — | |
-| `CardFooter` | — | Border-top, action area |
-| `Stack` | — | Vertical flex with gap prop |
-| `Grid` | — | CSS grid with cols + gap props |
-| `Divider` | horizontal, vertical | |
-| `Container` | sm, md, lg, xl, full | Max-width containers |
-| `ScrollArea` | — | Wraps Radix ScrollArea |
+
+| Component     | Key variants                             | Notes                          |
+| ------------- | ---------------------------------------- | ------------------------------ |
+| `Card`        | default, module, elevated, ghost, subtle | module = 3px top stripe        |
+| `CardHeader`  | —                                        | Consistent header within Card  |
+| `CardContent` | —                                        |                                |
+| `CardFooter`  | —                                        | Border-top, action area        |
+| `Stack`       | —                                        | Vertical flex with gap prop    |
+| `Grid`        | —                                        | CSS grid with cols + gap props |
+| `Divider`     | horizontal, vertical                     |                                |
+| `Container`   | sm, md, lg, xl, full                     | Max-width containers           |
+| `ScrollArea`  | —                                        | Wraps Radix ScrollArea         |
 
 ### Overlay
-| Component | Key variants | Notes |
-|-----------|-------------|-------|
-| `Modal` | sm, md, lg, xl | Wraps Radix Dialog |
-| `Drawer` | left, right | Wraps Radix Dialog with slide animation |
-| `Popover` | — | Wraps Radix Popover |
-| `Tooltip` | — | Wraps Radix Tooltip |
-| `Toast` | success, warning, danger, info | Via sonner |
-| `AlertDialog` | — | Wraps Radix AlertDialog — destructive confirm |
-| `DropdownMenu` | — | Wraps Radix DropdownMenu |
-| `ContextMenu` | — | Wraps Radix ContextMenu |
-| `CommandPalette` | — | ⌘K global search — wraps cmdk |
+
+| Component        | Key variants                   | Notes                                         |
+| ---------------- | ------------------------------ | --------------------------------------------- |
+| `Modal`          | sm, md, lg, xl                 | Wraps Radix Dialog                            |
+| `Drawer`         | left, right                    | Wraps Radix Dialog with slide animation       |
+| `Popover`        | —                              | Wraps Radix Popover                           |
+| `Tooltip`        | —                              | Wraps Radix Tooltip                           |
+| `Toast`          | success, warning, danger, info | Via sonner                                    |
+| `AlertDialog`    | —                              | Wraps Radix AlertDialog — destructive confirm |
+| `DropdownMenu`   | —                              | Wraps Radix DropdownMenu                      |
+| `ContextMenu`    | —                              | Wraps Radix ContextMenu                       |
+| `CommandPalette` | —                              | ⌘K global search — wraps cmdk                 |
 
 ### Navigation
-| Component | Key variants | Notes |
-|-----------|-------------|-------|
-| `Sidebar` | — | Dashboard sidebar shell |
+
+| Component     | Key variants    | Notes                                 |
+| ------------- | --------------- | ------------------------------------- |
+| `Sidebar`     | —               | Dashboard sidebar shell               |
 | `SidebarItem` | default, active | Uses --module-active for active state |
-| `Tabs` | default, pills | Wraps Radix Tabs |
-| `Breadcrumb` | — | |
-| `Pagination` | — | |
-| `Stepper` | — | Multi-step flows (onboarding) |
+| `Tabs`        | default, pills  | Wraps Radix Tabs                      |
+| `Breadcrumb`  | —               |                                       |
+| `Pagination`  | —               |                                       |
+| `Stepper`     | —               | Multi-step flows (onboarding)         |
 
 ### Data Display
-| Component | Key variants | Notes |
-|-----------|-------------|-------|
-| `Table` | — | Wraps TanStack Table |
-| `Stat` | — | Metric card — see spec above |
-| `Timeline` | — | Activity feed, order history |
-| `EmptyState` | — | Consistent zero-state UI |
-| `Code` | — | Inline and block code |
-| `Tag` | — | Removable chip/tag for filters |
+
+| Component    | Key variants | Notes                          |
+| ------------ | ------------ | ------------------------------ |
+| `Table`      | —            | Wraps TanStack Table           |
+| `Stat`       | —            | Metric card — see spec above   |
+| `Timeline`   | —            | Activity feed, order history   |
+| `EmptyState` | —            | Consistent zero-state UI       |
+| `Code`       | —            | Inline and block code          |
+| `Tag`        | —            | Removable chip/tag for filters |
 
 ### Form
-| Component | Notes |
-|-----------|-------|
-| `Form` | Wraps React Hook Form + Zod |
-| `FormField` | Label + Input + Error message — composes primitives |
-| `DatePicker` | Calendar popover |
-| `FileUpload` | Drag-and-drop zone |
-| `ColorPicker` | For theme customization |
-| `RichTextEditor` | TipTap wrapper |
+
+| Component        | Notes                                               |
+| ---------------- | --------------------------------------------------- |
+| `Form`           | Wraps React Hook Form + Zod                         |
+| `FormField`      | Label + Input + Error message — composes primitives |
+| `DatePicker`     | Calendar popover                                    |
+| `FileUpload`     | Drag-and-drop zone                                  |
+| `ColorPicker`    | For theme customization                             |
+| `RichTextEditor` | TipTap wrapper                                      |
 
 ---
 
@@ -708,15 +707,16 @@ All components to build in `@sparx/ui`. Each follows the CVA pattern above.
 
 ```typescript
 // packages/ui/utils/cn.ts
-import { clsx, type ClassValue } from 'clsx'
-import { twMerge } from 'tailwind-merge'
+import { clsx, type ClassValue } from 'clsx';
+import { twMerge } from 'tailwind-merge';
 
 export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs))
+  return twMerge(clsx(inputs));
 }
 ```
 
 This is the only place class manipulation happens. It handles:
+
 - Conditional classes (`cn('base', isActive && 'active')`)
 - Tailwind class deduplication (`cn('px-4', 'px-6')` → `'px-6'`)
 - Array and object class syntax
@@ -749,6 +749,7 @@ npx shadcn@latest add dropdown-menu context-menu
 ```
 
 **Immediately after `shadcn init`:**
+
 1. Replace `globals.css` content with `tokens.css` content
 2. Update `tailwind.config.ts` with the token bridge above
 3. Gut the Shadcn color variables in the CSS — replace with our own
@@ -761,17 +762,20 @@ npx shadcn@latest add dropdown-menu context-menu
 ## 12. Naming Conventions
 
 ### Variants
+
 - **Semantic, not descriptive.** `variant="danger"` not `variant="red"`. `variant="module"` not `variant="teal"`.
 - **Three standard tiers:** `primary` (strong action), `secondary` (alternative action), `ghost` (tertiary/quiet).
 - **Module-aware:** Components that can adopt the active module color expose `variant="module"`.
 - **Status:** `success`, `warning`, `danger`, `info` for state communication.
 
 ### Sizes
+
 - Standard: `xs`, `sm`, `md`, `lg`, `xl`
 - Icon-only: `icon-sm`, `icon-md`, `icon-lg`
 - `md` is always the default.
 
 ### Props
+
 - Boolean props: `loading`, `disabled`, `readOnly`, `required` — never `isLoading`, `isDisabled`
 - Content props: `children`, `label`, `description`, `placeholder`
 - Icon props: `leftIcon`, `rightIcon`, `icon` (for icon-only)
@@ -787,11 +791,11 @@ npx shadcn@latest add dropdown-menu context-menu
 
 Three named breakpoints. They're declared in [tokens.css](../packages/ui/src/tokens.css) and reused everywhere — never hardcode pixel widths in `@media` queries inside feature components.
 
-| Name      | Range            | Typical device          |
-|-----------|------------------|-------------------------|
-| `mobile`  | ≤ 640px          | phones (portrait)       |
-| `tablet`  | 641px – 1024px   | tablets, small laptops  |
-| `desktop` | > 1024px         | laptops, monitors       |
+| Name      | Range          | Typical device         |
+| --------- | -------------- | ---------------------- |
+| `mobile`  | ≤ 640px        | phones (portrait)      |
+| `tablet`  | 641px – 1024px | tablets, small laptops |
+| `desktop` | > 1024px       | laptops, monitors      |
 
 ### Mechanism — two tools, in this order
 
@@ -807,7 +811,7 @@ Three named breakpoints. They're declared in [tokens.css](../packages/ui/src/tok
 
 This handles roughly half of all responsive concerns with zero per-component code.
 
-**2. Named layout classes in `marketing.css` / `app.css` (for structural changes).** Things `clamp()` can't fix — collapsing a 4-column grid to 1 column, hiding the desktop nav, stacking a side-by-side layout — get semantic class names in a small per-app stylesheet. Apply via `className`. The §1 rule bans raw *Tailwind utilities* in feature code; named layout primitives are fine.
+**2. Named layout classes in `marketing.css` / `app.css` (for structural changes).** Things `clamp()` can't fix — collapsing a 4-column grid to 1 column, hiding the desktop nav, stacking a side-by-side layout — get semantic class names in a small per-app stylesheet. Apply via `className`. The §1 rule bans raw _Tailwind utilities_ in feature code; named layout primitives are fine.
 
 ```css
 /* apps/web/app/marketing.css */
@@ -816,14 +820,35 @@ This handles roughly half of all responsive concerns with zero per-component cod
   grid-template-columns: repeat(4, 1fr);
   gap: 20px;
 }
-@media (max-width: 1024px) { .grid-4-2-1 { grid-template-columns: repeat(2, 1fr); } }
-@media (max-width: 640px)  { .grid-4-2-1 { grid-template-columns: 1fr; } }
+@media (max-width: 1024px) {
+  .grid-4-2-1 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (max-width: 640px) {
+  .grid-4-2-1 {
+    grid-template-columns: 1fr;
+  }
+}
 
-.stack-on-mobile { display: flex; gap: 32px; }
-@media (max-width: 768px) { .stack-on-mobile { flex-direction: column; } }
+.stack-on-mobile {
+  display: flex;
+  gap: 32px;
+}
+@media (max-width: 768px) {
+  .stack-on-mobile {
+    flex-direction: column;
+  }
+}
 
-.hide-on-mobile { display: initial; }
-@media (max-width: 640px) { .hide-on-mobile { display: none; } }
+.hide-on-mobile {
+  display: initial;
+}
+@media (max-width: 640px) {
+  .hide-on-mobile {
+    display: none;
+  }
+}
 ```
 
 ### Anti-patterns

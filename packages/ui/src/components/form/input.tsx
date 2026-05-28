@@ -17,10 +17,8 @@ const inputVariants = cva(
   {
     variants: {
       variant: {
-        default:
-          'border-[var(--color-border-default)] hover:border-[var(--color-border-strong)]',
-        error:
-          'border-[var(--color-danger)] focus-visible:ring-[var(--color-danger)]',
+        default: 'border-[var(--color-border-default)] hover:border-[var(--color-border-strong)]',
+        error: 'border-[var(--color-danger)] focus-visible:ring-[var(--color-danger)]',
       },
       size: {
         sm: 'h-8 px-2.5 py-1.5 text-xs',
@@ -35,7 +33,8 @@ const inputVariants = cva(
 // Native HTML <input> has a numeric `size` attribute — we omit it so our CVA
 // `size` variant ('sm' | 'md' | 'lg') takes precedence with no conflict.
 export interface InputProps
-  extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'size'>,
+  extends
+    Omit<React.InputHTMLAttributes<HTMLInputElement>, 'size'>,
     VariantProps<typeof inputVariants> {}
 
 export const Input = React.forwardRef<HTMLInputElement, InputProps>(

@@ -116,7 +116,8 @@ export const moduleType: ContentTypeDefinition = {
               { value: 'standalone', label: 'Standalone' },
               { value: 'additive', label: 'Additive (+)' },
             ],
-            helpText: 'Standalone for modules that can run alone; additive for modules that activate on top of Storefront.',
+            helpText:
+              'Standalone for modules that can run alone; additive for modules that activate on top of Storefront.',
           },
           {
             key: 'bundleNote',

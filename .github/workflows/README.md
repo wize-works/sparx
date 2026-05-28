@@ -1,20 +1,20 @@
 # Workflows
 
-| File | When it runs | What it does |
-|---|---|---|
-| [ci.yml](ci.yml) | every PR + push to `main` | pnpm lint / typecheck / test + Terraform fmt + validate |
+| File                                 | When it runs                      | What it does                                                                    |
+| ------------------------------------ | --------------------------------- | ------------------------------------------------------------------------------- |
+| [ci.yml](ci.yml)                     | every PR + push to `main`         | pnpm lint / typecheck / test + Terraform fmt + validate                         |
 | [build-images.yml](build-images.yml) | push to `main`, `v*` tags, manual | matrix-builds each service image, pushes to Artifact Registry, scans with Trivy |
-| [deploy-prod.yml](deploy-prod.yml) | `v*` tags, manual | runs the migration Job, rolls out new image tags to GKE, smoke-tests `/health` |
+| [deploy-prod.yml](deploy-prod.yml)   | `v*` tags, manual                 | runs the migration Job, rolls out new image tags to GKE, smoke-tests `/health`  |
 
 ## Required secrets
 
 Set these once at repo level. The first two are outputs of `terraform/bootstrap`:
 
-| Secret | Source |
-|---|---|
+| Secret                           | Source                                             |
+| -------------------------------- | -------------------------------------------------- |
 | `GCP_WORKLOAD_IDENTITY_PROVIDER` | `terraform output -raw workload_identity_provider` |
-| `GCP_DEPLOYER_SA_EMAIL` | `terraform output -raw deployer_sa_email` |
-| `GCP_PROJECT_ID` | The GCP project ID for sparx |
+| `GCP_DEPLOYER_SA_EMAIL`          | `terraform output -raw deployer_sa_email`          |
+| `GCP_PROJECT_ID`                 | The GCP project ID for sparx                       |
 
 No JSON key files. The `sparx-deployer` SA is impersonated via GitHub OIDC (Workload Identity Federation).
 

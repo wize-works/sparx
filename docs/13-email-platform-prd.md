@@ -50,25 +50,27 @@ Dedicated sending domains:
 
 ## 2. Email Types
 
-| Type | Triggered By | Example |
-|------|-------------|---------|
-| **Transactional** | Platform events | Order confirmation, shipping notification |
-| **Automated** | Rules engine | Cart abandonment (2hr), win-back (90 days) |
-| **Broadcast** | Merchant/AI action | "Send 10% off to all Utah customers" |
-| **B2B** | B2B events | Quote received, account approved, invoice due |
-| **System** | Platform | Password reset, staff invite, billing alert |
+| Type              | Triggered By       | Example                                       |
+| ----------------- | ------------------ | --------------------------------------------- |
+| **Transactional** | Platform events    | Order confirmation, shipping notification     |
+| **Automated**     | Rules engine       | Cart abandonment (2hr), win-back (90 days)    |
+| **Broadcast**     | Merchant/AI action | "Send 10% off to all Utah customers"          |
+| **B2B**           | B2B events         | Quote received, account approved, invoice due |
+| **System**        | Platform           | Password reset, staff invite, billing alert   |
 
 ---
 
 ## 3. Sending Domain Architecture
 
 ### Before Custom Domain Verification
+
 ```
 From: noreply@{slug}.sparx.zone
 Reply-To: merchant-configured address
 ```
 
 ### After Custom Domain Verification
+
 ```
 From: noreply@{merchant-domain.com}
 Reply-To: merchant-configured address
@@ -104,19 +106,19 @@ Value: v=DMARC1; p=quarantine; rua=mailto:dmarc@sparx.email
 
 All automations are live from the moment the Email module is activated. Zero configuration required.
 
-| Automation | Trigger | Delay | Can Disable |
-|-----------|---------|-------|-------------|
-| Order Confirmed | order.created + payment | Immediate | No |
-| Order Shipped | fulfillment.created | Immediate | Yes |
-| Order Delivered | fulfillment.delivered | Immediate | Yes |
-| Cart Abandoned | cart.abandoned | 2 hours | Yes |
-| Win-Back | No order in 90 days | Daily check | Yes |
-| B2B Account Approved | b2b.account.approved | Immediate | No |
-| Quote Received | quote.created | Immediate | No |
-| Invoice Due | payment terms due date | 3 days before | Yes |
-| Invoice Overdue | past due date | Day of + 7 days | Yes |
-| Welcome (new customer) | customer.created | Immediate | Yes |
-| Password Reset | user request | Immediate | No |
+| Automation             | Trigger                 | Delay           | Can Disable |
+| ---------------------- | ----------------------- | --------------- | ----------- |
+| Order Confirmed        | order.created + payment | Immediate       | No          |
+| Order Shipped          | fulfillment.created     | Immediate       | Yes         |
+| Order Delivered        | fulfillment.delivered   | Immediate       | Yes         |
+| Cart Abandoned         | cart.abandoned          | 2 hours         | Yes         |
+| Win-Back               | No order in 90 days     | Daily check     | Yes         |
+| B2B Account Approved   | b2b.account.approved    | Immediate       | No          |
+| Quote Received         | quote.created           | Immediate       | No          |
+| Invoice Due            | payment terms due date  | 3 days before   | Yes         |
+| Invoice Overdue        | past due date           | Day of + 7 days | Yes         |
+| Welcome (new customer) | customer.created        | Immediate       | Yes         |
+| Password Reset         | user request            | Immediate       | No          |
 
 ---
 
@@ -125,6 +127,7 @@ All automations are live from the moment the Email module is activated. Zero con
 Built with **React Email** — components render to HTML + text simultaneously.
 
 Template editor features:
+
 - WYSIWYG content editing (no code required)
 - HTML mode for advanced users
 - Variable picker with live preview
@@ -134,6 +137,7 @@ Template editor features:
 - Send test email to any address
 
 Template variables:
+
 ```
 {{customer.first_name}}     {{customer.email}}
 {{order.number}}            {{order.total}}
@@ -148,6 +152,7 @@ Template variables:
 ## 6. Automation Rules Engine
 
 Each automation:
+
 - **Trigger:** Platform event (order.created, cart.abandoned, etc.)
 - **Conditions:** Optional filters (customer.type = 'b2b', customer.total_spent > 500)
 - **Delay:** Immediate, or time-based (minutes, hours, days)
@@ -161,6 +166,7 @@ Visual flow: Linear steps (not complex diagram). Merchants build flows in plain 
 ## 7. Broadcast Emails
 
 ### Segment Options
+
 - All customers
 - Customers who purchased [product/collection]
 - Customers in [state/country]
@@ -171,6 +177,7 @@ Visual flow: Linear steps (not complex diagram). Merchants build flows in plain 
 - Custom segment (saved from CRM)
 
 ### Send Flow
+
 1. Pick segment — shows estimated recipient count
 2. Pick or compose template
 3. Set subject line
@@ -179,6 +186,7 @@ Visual flow: Linear steps (not complex diagram). Merchants build flows in plain 
 6. Confirm → Postal sends
 
 ### Unsubscribe Handling
+
 - One-click unsubscribe in every email (CAN-SPAM / GDPR required)
 - Suppression list maintained in Postal + mirrored in Sparx DB
 - Hard bounce → suppress immediately, log reason
@@ -190,13 +198,16 @@ Visual flow: Linear steps (not complex diagram). Merchants build flows in plain 
 ## 8. Deliverability Management
 
 ### Postal Health Monitoring
+
 - Bounce rate monitored per sending domain (alert if > 2%)
 - Spam complaint rate monitored (alert if > 0.1%)
 - IP reputation checked daily via MXToolbox / Google Postmaster Tools
 - DKIM/SPF/DMARC validation checked weekly per merchant domain
 
 ### Reputation Isolation
+
 Each merchant's sending reputation is isolated from others via:
+
 - Separate DKIM keys per tenant
 - Separate sending subdomains per tenant (before custom domain)
 - High-volume merchants on dedicated IP pools
@@ -207,6 +218,7 @@ Each merchant's sending reputation is isolated from others via:
 ## 9. Analytics
 
 Per automation and per broadcast:
+
 - **Sent** — emails dispatched by Postal
 - **Delivered** — confirmed by receiving server
 - **Opened** — open pixel fired (limited by Apple MPP)
@@ -234,6 +246,7 @@ get_unsubscribed_customers()
 ```
 
 Example AI interaction:
+
 > "Send a re-engagement email to all B2B accounts that haven't ordered in 60 days"
 > → MCP finds 23 accounts matching conditions
 > → "Found 23 B2B accounts. I'll use your 'B2B Win-Back' template. Confirm?"

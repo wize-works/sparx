@@ -70,10 +70,7 @@ export { Calendar, type CalendarProps } from './components/form/calendar';
 export { DatePicker, type DatePickerProps } from './components/form/date-picker';
 export { FileUpload, type FileUploadProps } from './components/form/file-upload';
 export { ColorPicker, type ColorPickerProps } from './components/form/color-picker';
-export {
-  RichTextEditor,
-  type RichTextEditorProps,
-} from './components/form/rich-text-editor';
+export { RichTextEditor, type RichTextEditorProps } from './components/form/rich-text-editor';
 
 // ── Overlay ───────────────────────────────────────────────
 export {

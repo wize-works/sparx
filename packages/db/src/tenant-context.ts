@@ -14,8 +14,7 @@ export interface TenantContext {
 // Postgres rejects parameter placeholders for `SET LOCAL`, so we validate the
 // id matches the UUID shape before interpolating it. This is the only place in
 // the codebase that should string-format a value into raw SQL.
-const UUID_PATTERN =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function assertUuid(value: string, field: string): void {
   if (!UUID_PATTERN.test(value)) {
@@ -39,10 +38,10 @@ function assertUuid(value: string, field: string): void {
  *     tx.order.findMany({ where: { status: 'pending' } })
  *   );
  */
-export async function withTenant<T>(
+export function withTenant<T>(
   context: TenantContext,
   fn: (tx: TxClient) => Promise<T>,
-  client: PrismaClient = defaultPrisma,
+  client: PrismaClient = defaultPrisma
 ): Promise<T> {
   assertUuid(context.tenantId, 'tenantId');
   if (context.userId !== undefined) {

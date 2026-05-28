@@ -41,7 +41,8 @@ export function Hero() {
             Commerce,
           </Display>
           <Display as="h1" size={120} lineHeight={104}>
-            ignited<Spark />
+            ignited
+            <Spark />
           </Display>
         </div>
 
@@ -64,8 +65,8 @@ export function Hero() {
               margin: 0,
             }}
           >
-            A modular commerce OS. Storefront, CRM, CMS, email, B2B, and AI — one platform, one bill,
-            one data layer. Pay only for what you use. Live in five minutes.
+            A modular commerce OS. Storefront, CRM, CMS, email, B2B, and AI — one platform, one
+            bill, one data layer. Pay only for what you use. Live in five minutes.
           </p>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
@@ -113,7 +114,10 @@ export function Hero() {
             style={{ gap: '40px', rowGap: '20px', justifyContent: 'flex-end' }}
           >
             {METRICS.map((m) => (
-              <div key={m.subtitle} style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <div
+                key={m.subtitle}
+                style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}
+              >
                 <span
                   style={{
                     fontFamily: 'var(--font-sans)',

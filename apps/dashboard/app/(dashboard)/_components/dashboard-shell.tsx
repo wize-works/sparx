@@ -45,9 +45,7 @@ interface NavLink {
   icon: React.ReactNode;
 }
 
-const PRIMARY_NAV: NavLink[] = [
-  { href: '/', label: 'Home', icon: <Home className="h-4 w-4" /> },
-];
+const PRIMARY_NAV: NavLink[] = [{ href: '/', label: 'Home', icon: <Home className="h-4 w-4" /> }];
 
 const MODULE_NAV: NavLink[] = [
   { href: '/sitebuilder', label: 'Sitebuilder', icon: <LayoutTemplate className="h-4 w-4" /> },
@@ -125,7 +123,7 @@ export function DashboardShell({ user, children }: DashboardShellProps) {
         <SidebarFooter>
           <Stack direction="row" align="center" gap={2} className="px-2 py-1.5">
             <Avatar size="sm" alt={displayName} />
-            <Stack gap={0} className="flex-1 min-w-0">
+            <Stack gap={0} className="min-w-0 flex-1">
               <Text size="xs" weight="medium" className="truncate">
                 {displayName}
               </Text>

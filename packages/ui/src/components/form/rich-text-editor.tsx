@@ -108,9 +108,9 @@ export function RichTextEditor({
           'min-h-[8rem] w-full px-3 py-2 text-sm text-[var(--color-text-primary)]',
           'focus:outline-none',
           'prose-headings:font-medium prose-headings:text-[var(--color-text-primary)]',
-          '[&_p]:my-2 [&_h2]:mt-4 [&_h3]:mt-3',
-          '[&_ul]:my-2 [&_ul]:pl-5 [&_ul]:list-disc',
-          '[&_ol]:my-2 [&_ol]:pl-5 [&_ol]:list-decimal',
+          '[&_h2]:mt-4 [&_h3]:mt-3 [&_p]:my-2',
+          '[&_ul]:my-2 [&_ul]:list-disc [&_ul]:pl-5',
+          '[&_ol]:my-2 [&_ol]:list-decimal [&_ol]:pl-5',
           '[&_blockquote]:my-2 [&_blockquote]:border-l-2 [&_blockquote]:border-[var(--color-border-default)] [&_blockquote]:pl-3 [&_blockquote]:text-[var(--color-text-secondary)]',
           '[&_code]:rounded [&_code]:bg-[var(--color-bg-subtle)] [&_code]:px-1 [&_code]:py-0.5 [&_code]:font-mono [&_code]:text-xs',
           '[&_pre]:my-2 [&_pre]:rounded-md [&_pre]:bg-[var(--color-bg-subtle)] [&_pre]:p-3 [&_pre]:text-xs'

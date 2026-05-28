@@ -5,7 +5,7 @@ import { Divider } from './divider';
 describe('Divider', () => {
   it('is decorative by default (role="none")', () => {
     const { container } = render(<Divider />);
-    expect((container.firstElementChild as HTMLElement)).toHaveAttribute('role', 'none');
+    expect(container.firstElementChild as HTMLElement).toHaveAttribute('role', 'none');
   });
 
   it('exposes role="separator" when decorative={false}', () => {

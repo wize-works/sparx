@@ -5,7 +5,8 @@ import { ComingSoon } from '@/components/marketing/coming-soon';
 
 export const metadata: Metadata = {
   title: 'Acceptable use policy — Sparx',
-  description: "What you can and can't do on Sparx — fraud, spam, illegal content, and prohibited industries.",
+  description:
+    "What you can and can't do on Sparx — fraud, spam, illegal content, and prohibited industries.",
   alternates: { canonical: '/legal/aup' },
   robots: { index: false },
 };

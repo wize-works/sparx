@@ -1,0 +1,96 @@
+# One-off: clear a failed-migration row from `_prisma_migrations` so the
+# next `db-migrate` Job can retry the corrected migration.
+#
+# Use this when `prisma migrate deploy` exits with P3009 ("found failed
+# migrations in the target database, new migrations will not be applied")
+# and the failure was in a migration whose contents have since been fixed
+# in the repo. The corresponding row is marked rolled-back; the next
+# deploy will re-execute the migration body.
+#
+# Operator flow:
+#   1. Push the migration fix → CI builds a new image tagged with that SHA.
+#   2. envsubst this file with IMAGE=<new sha image> RUN_ID=<unique>
+#      RESOLVE_MIGRATION=<failed migration directory name>, then kubectl
+#      apply.
+#   3. Wait for the Job to succeed (it only touches _prisma_migrations).
+#   4. Apply k8s/sparx-prod/db-migrate-job.yaml with the same IMAGE to run
+#      the corrected migrations.
+#
+# Pod spec mirrors db-migrate-job.yaml (same SA, same Cloud SQL sidecar,
+# same image) — only the container `command` is overridden to call the
+# resolve script instead of the default migration runner.
+
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: db-migrate-resolve-${RUN_ID}
+  namespace: sparx-prod
+  labels:
+    app.kubernetes.io/name: db-migrate-resolve
+    app.kubernetes.io/part-of: sparx
+    app.kubernetes.io/component: migration
+spec:
+  ttlSecondsAfterFinished: 3600
+  backoffLimit: 1
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: db-migrate-resolve
+    spec:
+      serviceAccountName: sparx-db-migrator
+      restartPolicy: Never
+      initContainers:
+        - name: cloud-sql-proxy
+          image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.21.3
+          restartPolicy: Always  # native sidecar (k8s 1.29+)
+          args:
+            - "--private-ip"
+            - "--port=5432"
+            - "sparxworks:us-central1:sparx-prod-pg-6b5d7d"
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+            seccompProfile:
+              type: RuntimeDefault
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "256Mi"
+      containers:
+        - name: resolve
+          image: ${IMAGE}
+          imagePullPolicy: IfNotPresent
+          # Override the image's default ENTRYPOINT (run-migrations.ts).
+          command: ["pnpm", "exec", "tsx", "scripts/resolve-migration.ts"]
+          env:
+            - name: GCP_PROJECT_ID
+              value: "sparxworks"
+            - name: PROXY_HOST
+              value: "127.0.0.1"
+            - name: PROXY_PORT
+              value: "5432"
+            - name: DB_NAME
+              value: "sparx"
+            - name: RESOLVE_MIGRATION
+              value: "${RESOLVE_MIGRATION}"
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            runAsGroup: 1000
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+            seccompProfile:
+              type: RuntimeDefault
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
