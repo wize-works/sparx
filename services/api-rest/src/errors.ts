@@ -8,6 +8,7 @@ export type ApiErrorCode =
   | 'UNAUTHORIZED'
   | 'FORBIDDEN'
   | 'NOT_FOUND'
+  | 'MODULE_DISABLED'
   | 'VALIDATION_ERROR'
   | 'CONFLICT'
   | 'PRECONDITION_FAILED'
@@ -19,7 +20,10 @@ const STATUS_BY_CODE: Record<ApiErrorCode, number> = {
   BAD_REQUEST: 400,
   UNAUTHORIZED: 401,
   FORBIDDEN: 403,
+  // Decision #6: a disabled module returns 404, not 403 — the URL space
+  // simply doesn't exist for tenants without that module subscription.
   NOT_FOUND: 404,
+  MODULE_DISABLED: 404,
   CONFLICT: 409,
   PRECONDITION_FAILED: 412,
   VALIDATION_ERROR: 422,
@@ -67,3 +71,6 @@ export const badRequest = (message: string, details?: unknown): ApiError =>
 
 export const preconditionFailed = (message: string, details?: unknown): ApiError =>
   new ApiError('PRECONDITION_FAILED', message, details);
+
+export const moduleDisabled = (module: string): ApiError =>
+  new ApiError('MODULE_DISABLED', `Module "${module}" is not active for this tenant.`, { module });

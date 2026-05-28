@@ -9,6 +9,11 @@ export * from './services/index';
 export * from './events';
 export * from './consumers/index';
 export * as crmMcp from './mcp';
+// Re-export the MCP tool array + types at the top level so transports can
+// `import { crmMcpTools, type McpScope } from '@sparx/crm'` without the
+// `crmMcp.` namespace prefix.
+export { crmMcpTools } from './mcp';
+export type { AnyMcpTool, McpScope, McpToolDefinition } from './mcp';
 export { WebhookFanoutPublisher, preconnectWebhookFanout } from './webhooks';
 export * as crmSchedulers from './schedulers';
 export type { ServiceContext, NotFoundError, ValidationError } from './errors';

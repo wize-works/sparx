@@ -6,6 +6,7 @@
 import type { FastifyError, FastifyPluginAsync } from 'fastify';
 import fp from 'fastify-plugin';
 import { ZodError } from 'zod';
+import { CrmConflictError, CrmNotFoundError, CrmValidationError } from '@sparx/crm';
 import { ApiError } from '../errors.js';
 
 interface ErrorEnvelope {
@@ -33,6 +34,48 @@ const errorsPlugin: FastifyPluginAsync = (app) => {
         },
       };
       return reply.code(err.statusCode).send(body);
+    }
+
+    // CRM service-layer errors share the platform vocabulary (NOT_FOUND /
+    // VALIDATION_ERROR / CONFLICT) — map them to the same envelope shape
+    // so REST callers don't have to special-case the CRM transport.
+    if (err instanceof CrmNotFoundError) {
+      const body: ErrorEnvelope = {
+        success: false,
+        error: {
+          code: 'NOT_FOUND',
+          message: err.message,
+          details: { entityType: err.entityType, entityId: err.entityId },
+          request_id: requestId,
+        },
+      };
+      return reply.code(404).send(body);
+    }
+
+    if (err instanceof CrmValidationError) {
+      const body: ErrorEnvelope = {
+        success: false,
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: err.message,
+          details: err.details,
+          request_id: requestId,
+        },
+      };
+      return reply.code(422).send(body);
+    }
+
+    if (err instanceof CrmConflictError) {
+      const body: ErrorEnvelope = {
+        success: false,
+        error: {
+          code: 'CONFLICT',
+          message: err.message,
+          ...(err.field !== undefined ? { details: { field: err.field } } : {}),
+          request_id: requestId,
+        },
+      };
+      return reply.code(409).send(body);
     }
 
     if (err instanceof ZodError) {
