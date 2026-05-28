@@ -71,6 +71,7 @@ jobs:
           # Update only the Deployments that currently exist. Skipping unknown
           # services keeps the workflow green during phased rollouts.
           for svc in web api-rest api-graphql api-mcp dashboard storefront \
+                     media-worker \
                      worker-email worker-domain worker-dropship worker-billing worker-webhook; do
             if kubectl get deployment "$svc" -n $NAMESPACE >/dev/null 2>&1; then
               echo "::group::Rolling out $svc"
