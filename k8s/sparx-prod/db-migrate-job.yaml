@@ -44,15 +44,14 @@ spec:
           args:
             - "--private-ip"
             - "--port=5432"
-            - "--health-check"
-            - "--http-port=9090"
             - "sparxworks:us-central1:sparx-prod-pg-6b5d7d"
-          startupProbe:
-            httpGet:
-              path: /startup
-              port: 9090
-            periodSeconds: 2
-            failureThreshold: 30
+          # No startupProbe / readinessProbe: the proxy's --health-check
+          # endpoint binds to localhost by default (and --http-address=0.0.0.0
+          # is the workaround), but the migrate container already polls
+          # 127.0.0.1:5432 via waitForProxy() in scripts/run-migrations.ts,
+          # so a kubelet probe is redundant. The k8s native sidecar pattern
+          # (initContainers + restartPolicy: Always) still guarantees the
+          # proxy container starts before the main container is allowed to.
           securityContext:
             runAsNonRoot: true
             allowPrivilegeEscalation: false
