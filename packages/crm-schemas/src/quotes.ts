@@ -38,7 +38,8 @@ export const CreateQuoteInput = QuoteAnchor.and(
     currency: Currency.default('USD'),
     shippingTotal: Money.default(0),
     discountTotal: Money.default(0),
-    taxTotal: Money.default(0).optional(), // derived if omitted
+    // If omitted, derived from per-line taxAmounts.
+    taxTotal: Money.optional(),
     paymentTerms: PaymentTerms.optional(),
     validUntil: z.string().datetime().optional(),
     customerNote: z.string().max(10_000).optional(),

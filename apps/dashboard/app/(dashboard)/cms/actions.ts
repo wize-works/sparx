@@ -42,6 +42,9 @@ const UpdateSchema = z.object({
   content: z.string().max(50_000).optional(),
   seoTitle: z.string().max(255).optional(),
   metaDescription: z.string().max(500).optional(),
+  canonical: z.string().max(2048).optional(),
+  robots: z.string().max(120).optional(),
+  ogImage: z.string().max(64).optional(),
 });
 
 const StatusSchema = z.enum(['draft', 'published']);
@@ -135,6 +138,9 @@ export async function updatePage(id: string, formData: FormData): Promise<Action
     content: readField(formData, 'content') || undefined,
     seoTitle: readField(formData, 'seoTitle') || undefined,
     metaDescription: readField(formData, 'metaDescription') || undefined,
+    canonical: readField(formData, 'canonical') || undefined,
+    robots: readField(formData, 'robots') || undefined,
+    ogImage: readField(formData, 'ogImage') || undefined,
   });
   if (!parsed.success) {
     return { ok: false, error: parsed.error.issues[0]?.message ?? 'Invalid input.' };
@@ -147,9 +153,15 @@ export async function updatePage(id: string, formData: FormData): Promise<Action
         title: parsed.data.title,
         body: parseDoc(parsed.data.content),
       },
+      // Only include keys the user actually set so api-rest's strict Zod
+      // schema (apps that pass `canonical: ""` would 422 on the .url()
+      // refinement) doesn't reject the request.
       seo: {
         ...(parsed.data.seoTitle ? { title: parsed.data.seoTitle } : {}),
         ...(parsed.data.metaDescription ? { description: parsed.data.metaDescription } : {}),
+        ...(parsed.data.canonical ? { canonical: parsed.data.canonical } : {}),
+        ...(parsed.data.robots ? { robots: parsed.data.robots } : {}),
+        ...(parsed.data.ogImage ? { ogImage: parsed.data.ogImage } : {}),
       },
     });
   } catch (err) {
@@ -193,10 +205,7 @@ export async function deletePage(id: string): Promise<ActionResult> {
 // Restore a previous revision onto the current entry. api-rest creates a
 // new revision rather than overwriting history (see
 // services/api-rest/src/routes/v1/content/revisions.ts).
-export async function restoreRevision(
-  id: string,
-  revisionNumber: number
-): Promise<ActionResult> {
+export async function restoreRevision(id: string, revisionNumber: number): Promise<ActionResult> {
   try {
     await api.post(`/v1/content/entries/${id}/revisions/${revisionNumber}/restore`);
   } catch (err) {
@@ -206,4 +215,20 @@ export async function restoreRevision(
   revalidatePath(`/cms/${id}`);
   revalidatePath(`/cms/${id}/revisions`);
   return { ok: true };
+}
+
+// Mint a preview token for an entry. The token is a short-lived JWT
+// (15 min) scoped to this entry only — apps/web and storefronts honor
+// `?sparxPreview=<token>` and render the draft for that one entry.
+export async function mintPreviewUrl(
+  id: string
+): Promise<ActionResult<{ token: string; expiresAt: string }>> {
+  try {
+    const data = await api.post<{ token: string; expires_at: string }>(
+      `/v1/content/entries/${id}/preview-tokens`
+    );
+    return { ok: true, data: { token: data.token, expiresAt: data.expires_at } };
+  } catch (err) {
+    return { ok: false, error: friendly(err) };
+  }
 }

@@ -15,12 +15,13 @@ import {
   Label,
   Stack,
   Text,
-  Textarea,
 } from '@sparx/ui';
 import { ContentBlockEditor, EMPTY_DOC, type CmsDoc } from '@sparx/cms-editor';
 import Link from 'next/link';
 import { History, Trash2 } from 'lucide-react';
 import { deletePage, setPageStatus, updatePage } from '../actions';
+import { SeoPanel, type SeoFields } from './seo-panel';
+import { PreviewButton } from './preview-button';
 
 // EditableTenantPage holds the dashboard's view of a page entry, with
 // `body` as a TipTap doc (JSON) so the block editor can round-trip it
@@ -28,15 +29,17 @@ import { deletePage, setPageStatus, updatePage } from '../actions';
 
 export interface EditableTenantPage {
   id: string;
+  typeKey: string;
   slug: string;
   title: string;
   status: string;
   body: CmsDoc;
-  seoTitle: string | null;
-  metaDescription: string | null;
+  seo: SeoFields;
   publishedAt: Date | null;
   updatedAt: Date;
 }
+
+const PREVIEW_ORIGIN = process.env.NEXT_PUBLIC_MARKETING_URL ?? 'https://sparx.works';
 
 export function EditPageForm({ page }: { page: EditableTenantPage }) {
   const router = useRouter();
@@ -44,14 +47,23 @@ export function EditPageForm({ page }: { page: EditableTenantPage }) {
   const [message, setMessage] = React.useState<string | null>(null);
   const [pending, startTransition] = React.useTransition();
   const [doc, setDoc] = React.useState<CmsDoc>(page.body ?? EMPTY_DOC);
+  const [title, setTitle] = React.useState(page.title);
+  const [slug, setSlug] = React.useState(page.slug);
+  const [seo, setSeo] = React.useState<SeoFields>(page.seo);
 
   function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
     setMessage(null);
     const formData = new FormData(e.currentTarget);
-    // Stringify the doc into the form field the action expects.
     formData.set('content', JSON.stringify(doc));
+    // SEO fields are component-state, not form-controlled, so write them
+    // through explicitly. Empty strings become "unset" on the server side.
+    formData.set('seoTitle', seo.title);
+    formData.set('metaDescription', seo.description);
+    formData.set('canonical', seo.canonical);
+    formData.set('robots', seo.robots);
+    formData.set('ogImage', seo.ogImage);
 
     startTransition(async () => {
       const result = await updatePage(page.id, formData);
@@ -97,64 +109,80 @@ export function EditPageForm({ page }: { page: EditableTenantPage }) {
   }
 
   return (
-    <Stack gap={6}>
-      <Card>
-        <CardHeader>
-          <Stack direction="row" align="center" justify="between">
-            <Stack direction="row" align="center" gap={2}>
-              <Heading level={3}>Status</Heading>
-              <Badge variant={page.status === 'published' ? 'success' : 'outline'}>
-                {page.status}
-              </Badge>
+    <form onSubmit={onSubmit} noValidate>
+      <Stack gap={6}>
+        <Card>
+          <CardHeader>
+            <Stack direction="row" align="center" justify="between">
+              <Stack direction="row" align="center" gap={2}>
+                <Heading level={3}>Status</Heading>
+                <Badge variant={page.status === 'published' ? 'success' : 'outline'}>
+                  {page.status}
+                </Badge>
+              </Stack>
+              <Stack direction="row" align="center" gap={2}>
+                <PreviewButton entryId={page.id} slug={page.slug} typeKey={page.typeKey} />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  asChild
+                  leftIcon={<History className="h-3.5 w-3.5" />}
+                >
+                  <Link href={`/cms/${page.id}/revisions`}>Revisions</Link>
+                </Button>
+                <Button
+                  type="button"
+                  variant={page.status === 'published' ? 'secondary' : 'module'}
+                  size="sm"
+                  onClick={onTogglePublish}
+                  disabled={pending}
+                >
+                  {page.status === 'published' ? 'Unpublish' : 'Publish'}
+                </Button>
+              </Stack>
             </Stack>
-            <Stack direction="row" align="center" gap={2}>
-              <Button
-                variant="ghost"
-                size="sm"
-                asChild
-                leftIcon={<History className="h-3.5 w-3.5" />}
-              >
-                <Link href={`/cms/${page.id}/revisions`}>Revisions</Link>
-              </Button>
-              <Button
-                variant={page.status === 'published' ? 'secondary' : 'module'}
-                size="sm"
-                onClick={onTogglePublish}
-                disabled={pending}
-              >
-                {page.status === 'published' ? 'Unpublish' : 'Publish'}
-              </Button>
-            </Stack>
-          </Stack>
-        </CardHeader>
-        {page.publishedAt && (
-          <CardContent>
-            <Text size="sm" variant="muted">
-              Last published {page.publishedAt.toLocaleString()}
-            </Text>
-          </CardContent>
-        )}
-      </Card>
+          </CardHeader>
+          {page.publishedAt && (
+            <CardContent>
+              <Text size="sm" variant="muted">
+                Last published {page.publishedAt.toLocaleString()}
+              </Text>
+            </CardContent>
+          )}
+        </Card>
 
-      <form onSubmit={onSubmit} noValidate>
         <Card>
           <CardHeader>
             <Heading level={3}>Content</Heading>
             <CardDescription>
-              Block editor — autosave + revisions land in the next pass.
+              Title, slug, and the body block editor. Autosaved every keystroke once autosave lands;
+              in the meantime use <strong>Save changes</strong> below.
             </CardDescription>
           </CardHeader>
           <CardContent>
             <Stack gap={4}>
               <Stack gap={2}>
                 <Label htmlFor="title">Title</Label>
-                <Input id="title" name="title" defaultValue={page.title} required />
+                <Input
+                  id="title"
+                  name="title"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  required
+                />
               </Stack>
               <Stack gap={2}>
                 <Label htmlFor="slug">Slug</Label>
-                <Input id="slug" name="slug" defaultValue={page.slug} required />
+                <Input
+                  id="slug"
+                  name="slug"
+                  value={slug}
+                  onChange={(e) => setSlug(e.target.value)}
+                  required
+                />
                 <Text size="xs" variant="muted">
-                  /{page.slug} is your storefront path.
+                  /{slug} is your storefront path.
                 </Text>
               </Stack>
               <Stack gap={2}>
@@ -166,26 +194,21 @@ export function EditPageForm({ page }: { page: EditableTenantPage }) {
                   ariaLabel="Page body editor"
                 />
               </Stack>
-              <Stack gap={2}>
-                <Label htmlFor="seoTitle">SEO title (optional)</Label>
-                <Input
-                  id="seoTitle"
-                  name="seoTitle"
-                  defaultValue={page.seoTitle ?? ''}
-                  maxLength={60}
-                />
-              </Stack>
-              <Stack gap={2}>
-                <Label htmlFor="metaDescription">Meta description (optional)</Label>
-                <Textarea
-                  id="metaDescription"
-                  name="metaDescription"
-                  rows={3}
-                  defaultValue={page.metaDescription ?? ''}
-                  maxLength={160}
-                />
-              </Stack>
+            </Stack>
+          </CardContent>
+        </Card>
 
+        <SeoPanel
+          value={seo}
+          onChange={setSeo}
+          previewOrigin={PREVIEW_ORIGIN}
+          slug={slug}
+          fallbackTitle={title}
+        />
+
+        <Card>
+          <CardContent>
+            <Stack gap={2}>
               {error && (
                 <Text size="sm" variant="danger" role="alert" aria-live="polite">
                   {error}
@@ -213,7 +236,7 @@ export function EditPageForm({ page }: { page: EditableTenantPage }) {
             </Button>
           </CardFooter>
         </Card>
-      </form>
-    </Stack>
+      </Stack>
+    </form>
   );
 }

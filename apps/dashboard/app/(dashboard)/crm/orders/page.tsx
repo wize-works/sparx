@@ -113,10 +113,7 @@ export default async function OrdersPage({ searchParams }: PageProps) {
                         </Link>
                       </TableCell>
                       <TableCell>
-                        <Badge
-                          variant={STATUS_VARIANT[o.status] ?? 'outline'}
-                          className="text-xs"
-                        >
+                        <Badge variant={STATUS_VARIANT[o.status] ?? 'outline'} className="text-xs">
                           {o.status}
                         </Badge>
                       </TableCell>

@@ -31,15 +31,23 @@ interface ErrorEnvelope {
   error: { code: string; message: string; request_id?: string };
 }
 
-async function publicGet<T>(path: string, query: Record<string, string | number>): Promise<T> {
+async function publicGet<T>(
+  path: string,
+  query: Record<string, string | number>,
+  options: { previewToken?: string } = {}
+): Promise<T> {
   const qs = new URLSearchParams({
     tenant: TENANT_SLUG,
     ...Object.fromEntries(Object.entries(query).map(([k, v]) => [k, String(v)])),
+    ...(options.previewToken ? { preview: options.previewToken } : {}),
   });
   const res = await fetch(`${BASE_URL}${path}?${qs.toString()}`, {
-    // Next.js automatic caching: 5-minute revalidate window. The publish
-    // webhook (Phase 4 extension) will invalidate via `revalidateTag`.
-    next: { revalidate: 300, tags: ['sparx-cms'] },
+    // Preview requests bypass the CDN cache — they're scoped to one
+    // editor staring at one draft entry, not the publicly-cached page.
+    // Published reads keep the 5-minute revalidate window invalidated by
+    // the publish webhook via `revalidateTag('sparx-cms')`.
+    next: options.previewToken ? { revalidate: 0 } : { revalidate: 300, tags: ['sparx-cms'] },
+    cache: options.previewToken ? 'no-store' : undefined,
   });
   const json = (await res.json()) as SuccessEnvelope<T> | ErrorEnvelope;
   if (!res.ok || 'error' in json) {
@@ -98,13 +106,17 @@ export async function listModules(): Promise<{ slug: string; meta: ModuleBody }[
     .map((e) => ({ slug: e.slug, meta: e.body }));
 }
 
-export async function getModule(slug: string): Promise<FetchedModule | null> {
+export async function getModule(
+  slug: string,
+  options: { previewToken?: string } = {}
+): Promise<FetchedModule | null> {
   let entry: ApiEntry<ModuleBody>;
   try {
-    entry = await publicGet<ApiEntry<ModuleBody>>('/v1/public/content/entries/by-slug', {
-      type: 'module',
-      slug,
-    });
+    entry = await publicGet<ApiEntry<ModuleBody>>(
+      '/v1/public/content/entries/by-slug',
+      { type: 'module', slug },
+      options
+    );
   } catch (err) {
     const code = (err as { code?: string }).code;
     if (code === 'NOT_FOUND') return null;
@@ -119,6 +131,9 @@ export async function getModule(slug: string): Promise<FetchedModule | null> {
   const features = await Promise.all(
     entry.body.features.map(async (id) => {
       try {
+        // Feature references aren't preview-token scoped — the token only
+        // unlocks the module entry it was issued for, so we fetch each
+        // feature as a normal published lookup.
         const feature = await publicGet<ApiEntry<ModuleFeatureBody>>(
           `/v1/public/content/entries/${id}`,
           {}

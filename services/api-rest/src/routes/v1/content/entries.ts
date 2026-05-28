@@ -37,9 +37,14 @@ const SeoSchema = z
   .object({
     title: z.string().max(255).optional(),
     description: z.string().max(500).optional(),
-    canonical: z.string().url().optional(),
+    // Canonical accepts any absolute or relative URL up to 2048 chars.
+    // Strict `.url()` would reject `/foo/bar` (relative), which is a
+    // legitimate canonical for same-origin de-duplication.
+    canonical: z.string().max(2048).optional(),
     robots: z.string().max(120).optional(),
-    ogImage: z.string().uuid().optional(),
+    // OG image lives as a MediaAsset UUID *or* an absolute URL (in case
+    // the merchant pastes a CDN URL from outside the media library).
+    ogImage: z.string().max(2048).optional(),
     jsonLdOverride: z.unknown().optional(),
   })
   .strict()

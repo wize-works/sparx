@@ -30,7 +30,9 @@ export const CreateOrderInput = z.object({
   currency: Currency.default('USD'),
   shippingTotal: Money.default(0),
   discountTotal: Money.default(0),
-  taxTotal: Money.default(0).optional(), // derived from items if omitted
+  // Header-level tax override. If omitted (undefined), the service sums
+  // line-level taxAmounts; if provided, this value wins.
+  taxTotal: Money.optional(),
 
   shippingAddress: AddressSnapshot.optional(),
   billingAddress: AddressSnapshot.optional(),

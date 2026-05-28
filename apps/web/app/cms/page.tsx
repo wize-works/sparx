@@ -15,9 +15,9 @@ import { getModule } from '@/lib/sparx-content';
 // of this file with slug='storefront', 'commerce', …) we delete MODULES
 // outright and the marketing site is fully headless.
 
-async function loadModule(): Promise<ModuleMeta> {
+async function loadModule(previewToken?: string): Promise<ModuleMeta> {
   try {
-    const fetched = await getModule('cms');
+    const fetched = await getModule('cms', previewToken ? { previewToken } : {});
     if (!fetched) return MODULES.cms;
     return {
       slug: fetched.slug,
@@ -46,8 +46,16 @@ async function loadModule(): Promise<ModuleMeta> {
   }
 }
 
-export async function generateMetadata(): Promise<Metadata> {
-  const meta = await loadModule();
+// Next.js 16 — searchParams is a Promise. We read `?sparxPreview=` here
+// and feed it into loadModule so the page renders the draft version for
+// the editor holding the token.
+interface PageProps {
+  searchParams?: Promise<{ sparxPreview?: string }>;
+}
+
+export async function generateMetadata({ searchParams }: PageProps = {}): Promise<Metadata> {
+  const token = (await searchParams)?.sparxPreview;
+  const meta = await loadModule(token);
   return {
     title: meta.title,
     description: meta.description,
@@ -67,8 +75,9 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-export default async function CmsPage() {
-  const meta = await loadModule();
+export default async function CmsPage({ searchParams }: PageProps = {}) {
+  const token = (await searchParams)?.sparxPreview;
+  const meta = await loadModule(token);
   if (!meta) notFound();
   return (
     <>

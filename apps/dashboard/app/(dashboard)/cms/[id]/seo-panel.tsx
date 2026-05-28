@@ -14,7 +14,18 @@
 // signal to spot truncation before publishing.
 
 import * as React from 'react';
-import { Card, CardContent, CardDescription, CardHeader, Heading, Input, Label, Stack, Text, Textarea } from '@sparx/ui';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  Heading,
+  Input,
+  Label,
+  Stack,
+  Text,
+  Textarea,
+} from '@sparx/ui';
 
 export interface SeoFields {
   title: string;
@@ -49,13 +60,7 @@ const ROBOTS_OPTIONS = [
 const TITLE_MAX = 60;
 const DESCRIPTION_MAX = 160;
 
-export function SeoPanel({
-  value,
-  onChange,
-  previewOrigin,
-  slug,
-  fallbackTitle,
-}: SeoPanelProps) {
+export function SeoPanel({ value, onChange, previewOrigin, slug, fallbackTitle }: SeoPanelProps) {
   const update = <K extends keyof SeoFields>(k: K, v: SeoFields[K]) => {
     onChange({ ...value, [k]: v });
   };
@@ -123,8 +128,8 @@ export function SeoPanel({
               placeholder="Pick from /cms/media — paste the UUID here."
             />
             <Text size="xs" variant="muted">
-              Used as the Open Graph image when this page is shared on Facebook, LinkedIn,
-              Slack, etc. Falls back to the merchant&apos;s default OG image when blank.
+              Used as the Open Graph image when this page is shared on Facebook, LinkedIn, Slack,
+              etc. Falls back to the merchant&apos;s default OG image when blank.
             </Text>
           </Stack>
 
@@ -170,7 +175,9 @@ export function SeoPanel({
 
 function CharCount({ value, max }: { value: string; max: number }) {
   const len = value.length;
-  const variant = len > max ? 'danger' : len > max * 0.9 ? 'warning' : 'muted';
+  // Text only supports danger | muted | subtle (no warning variant); fall
+  // back to danger when we're past the warning threshold too.
+  const variant: 'danger' | 'muted' = len > max * 0.9 ? 'danger' : 'muted';
   return (
     <Text size="xs" variant={variant}>
       {len} / {max}

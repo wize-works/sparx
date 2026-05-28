@@ -116,10 +116,7 @@ export default async function OrderDetailPage({ params }: PageProps) {
           </Card>
           <Card>
             <CardContent className="py-4">
-              <Stat
-                label="Placed"
-                value={order.placedAt?.toLocaleDateString() ?? '—'}
-              />
+              <Stat label="Placed" value={order.placedAt?.toLocaleDateString() ?? '—'} />
             </CardContent>
           </Card>
         </div>
@@ -270,9 +267,7 @@ export default async function OrderDetailPage({ params }: PageProps) {
                               {f.carrier}
                             </Text>
                           )}
-                          {f.trackingNumber && (
-                            <code className="text-xs">{f.trackingNumber}</code>
-                          )}
+                          {f.trackingNumber && <code className="text-xs">{f.trackingNumber}</code>}
                         </Stack>
                         <Text size="xs" variant="muted">
                           {f.shippedAt?.toLocaleDateString() ?? '—'}

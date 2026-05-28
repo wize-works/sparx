@@ -13,6 +13,7 @@ interface PageParams {
 
 interface ApiEntry {
   id: string;
+  type_key: string;
   slug: string | null;
   status: string;
   body: Record<string, unknown>;
@@ -37,14 +38,21 @@ export default async function EditCmsPage({ params }: PageParams) {
       ? (entry.body.body as Record<string, unknown>)
       : { type: 'doc', content: [] };
 
+  const seoVal = entry.seo ?? {};
   const editable: EditableTenantPage = {
     id: entry.id,
+    typeKey: entry.type_key,
     slug: entry.slug ?? '',
     title: typeof entry.body.title === 'string' ? entry.body.title : '',
     status: entry.status,
     body: docBody,
-    seoTitle: typeof entry.seo.title === 'string' ? entry.seo.title : null,
-    metaDescription: typeof entry.seo.description === 'string' ? entry.seo.description : null,
+    seo: {
+      title: typeof seoVal.title === 'string' ? seoVal.title : '',
+      description: typeof seoVal.description === 'string' ? seoVal.description : '',
+      canonical: typeof seoVal.canonical === 'string' ? seoVal.canonical : '',
+      robots: typeof seoVal.robots === 'string' ? seoVal.robots : '',
+      ogImage: typeof seoVal.ogImage === 'string' ? seoVal.ogImage : '',
+    },
     publishedAt: entry.published_at ? new Date(entry.published_at) : null,
     updatedAt: new Date(entry.updated_at),
   };

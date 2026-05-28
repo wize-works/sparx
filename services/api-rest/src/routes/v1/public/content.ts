@@ -21,6 +21,7 @@ import { prisma, withTenant } from '@sparx/db';
 import { ok, paged } from '../../../lib/envelope.js';
 import { notFound, badRequest } from '../../../errors.js';
 import { serializeEntry } from '../../../lib/entries.js';
+import { tryVerifyPreviewToken } from '../../../lib/preview.js';
 
 const ListQuery = z.object({
   tenant: z.string().min(1).max(63),
@@ -68,9 +69,20 @@ const publicContentRoutes: FastifyPluginAsync = (app) => {
   app.get('/v1/public/content/entries/by-slug', async (request) => {
     const q = BySlugQuery.parse(request.query);
     const tenantId = await resolveTenantBySlug(q.tenant);
+    const preview = await tryVerifyPreviewToken(app, request);
     const row = await withTenant({ tenantId }, (tx) =>
       tx.contentEntry.findFirst({
-        where: { typeKey: q.type, slug: q.slug, status: 'published', deletedAt: null },
+        where: {
+          typeKey: q.type,
+          slug: q.slug,
+          deletedAt: null,
+          // Preview token grants draft access only for the entry it's
+          // scoped to. For any other entry the default published-only
+          // filter applies.
+          ...(preview
+            ? { OR: [{ status: 'published' }, { id: preview.entryId }] }
+            : { status: 'published' }),
+        },
       })
     );
     if (!row) throw notFound(`${q.type}`, q.slug);
@@ -79,14 +91,19 @@ const publicContentRoutes: FastifyPluginAsync = (app) => {
 
   // Public lookup by id — used for `reference` field resolution where a
   // non-routable type (feature, faq_item) has slug=null and can't be fetched
-  // via /by-slug.
+  // via /by-slug. Honors preview tokens the same way.
   app.get('/v1/public/content/entries/:id', async (request) => {
     const { id } = ByIdParams.parse(request.params);
     const q = ByIdQuery.parse(request.query);
     const tenantId = await resolveTenantBySlug(q.tenant);
+    const preview = await tryVerifyPreviewToken(app, request);
     const row = await withTenant({ tenantId }, (tx) =>
       tx.contentEntry.findFirst({
-        where: { id, status: 'published', deletedAt: null },
+        where: {
+          id,
+          deletedAt: null,
+          ...(preview && preview.entryId === id ? {} : { status: 'published' }),
+        },
       })
     );
     if (!row) throw notFound('Entry', id);

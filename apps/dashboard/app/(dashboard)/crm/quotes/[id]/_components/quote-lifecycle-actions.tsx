@@ -29,7 +29,7 @@ export function QuoteLifecycleActions({ quoteId, status }: QuoteLifecycleActions
 
   function run(label: string, fn: () => Promise<{ ok: boolean; error?: { message: string } }>) {
     startTransition(async () => {
-      const result = (await fn()) as { ok: boolean; error?: { message: string } };
+      const result = await fn();
       if (!result.ok) {
         toast.error(result.error?.message ?? `Could not ${label}`);
         return;

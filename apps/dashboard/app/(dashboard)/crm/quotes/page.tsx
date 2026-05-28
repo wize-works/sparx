@@ -107,10 +107,7 @@ export default async function QuotesPage({ searchParams }: PageProps) {
                         </Link>
                       </TableCell>
                       <TableCell>
-                        <Badge
-                          variant={STATUS_VARIANT[q.status] ?? 'outline'}
-                          className="text-xs"
-                        >
+                        <Badge variant={STATUS_VARIANT[q.status] ?? 'outline'} className="text-xs">
                           {q.status}
                         </Badge>
                       </TableCell>

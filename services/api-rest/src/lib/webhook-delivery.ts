@@ -204,7 +204,7 @@ async function persistOutcome(tx: TxClient, row: PendingDelivery, outcome: Outco
         status: 'failed',
         attemptCount: nextAttempt,
         responseStatus: outcome.status,
-        responseBody: (outcome.body || outcome.error || '').slice(0, 4096),
+        responseBody: (outcome.body ?? outcome.error ?? '').slice(0, 4096),
         nextAttemptAt: null,
       },
     });
@@ -217,7 +217,7 @@ async function persistOutcome(tx: TxClient, row: PendingDelivery, outcome: Outco
       status: 'pending',
       attemptCount: nextAttempt,
       responseStatus: outcome.status,
-      responseBody: (outcome.body || outcome.error || '').slice(0, 4096),
+      responseBody: (outcome.body ?? outcome.error ?? '').slice(0, 4096),
       nextAttemptAt: new Date(Date.now() + backoffSec * 1000),
     },
   });
