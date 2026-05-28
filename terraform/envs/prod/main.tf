@@ -172,6 +172,12 @@ resource "google_service_account_iam_binding" "app_workload_identity" {
   role               = "roles/iam.workloadIdentityUser"
   members = [
     "serviceAccount:${var.project_id}.svc.id.goog[sparx-prod/sparx-app]",
+    # db-migrate Job (k8s/sparx-prod/db-migrate-job.yaml) needs the same
+    # Secret Manager + Cloud SQL access surface as app pods to bootstrap a
+    # release. Reusing the app GSA keeps the IAM footprint flat — the
+    # migrator only runs read-only against Secret Manager and connects to
+    # Cloud SQL via the Auth Proxy sidecar.
+    "serviceAccount:${var.project_id}.svc.id.goog[sparx-prod/sparx-db-migrator]",
   ]
 }
 
