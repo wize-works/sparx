@@ -18,7 +18,11 @@ describe('templates', () => {
     const rendered = await _renderTemplateForTest({
       template: 'password-reset',
       to: 'user@example.test',
-      props: { name: 'Brandon', resetUrl: 'https://app.sparx.works/reset?token=abc', expiresInMinutes: 30 },
+      props: {
+        name: 'Brandon',
+        resetUrl: 'https://app.sparx.works/reset?token=abc',
+        expiresInMinutes: 30,
+      },
     });
     expect(rendered.subject).toMatch(/reset your sparx password/i);
     expect(rendered.html).toContain('https://app.sparx.works/reset?token=abc');

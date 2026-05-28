@@ -151,7 +151,8 @@ export const getTodayTasks: McpToolDefinition = {
   scope: 'read:crm',
   confirmation: false,
   input: z.object({ userId: z.string().uuid() }),
-  run: (ctx, input) => taskService.getTodayForUser(ctx, (input as { userId: string }).userId),
+  run: (ctx, input) =>
+    taskService.getTodayForUser(ctx, { userId: (input as { userId: string }).userId }),
 };
 
 export const getSegments: McpToolDefinition = {
