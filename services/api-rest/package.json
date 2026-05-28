@@ -26,6 +26,7 @@
     "@sparx/db": "workspace:*",
     "fastify": "^5.6.1",
     "fastify-plugin": "^5.0.1",
+    "mercurius": "^16.0.0",
     "zod": "^4.4.3"
   },
   "devDependencies": {

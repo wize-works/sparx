@@ -12,7 +12,7 @@
 // Anything new here (filters, fields) belongs in shared lib code first.
 
 import type { FastifyPluginAsync, FastifyRequest } from 'fastify';
-import mercurius from 'mercurius';
+import mercurius, { type MercuriusContext } from 'mercurius';
 
 // Tell mercurius's IResolvers what shape our context factory returns. Without
 // this augmentation the resolver signatures don't satisfy IFieldResolver
@@ -22,7 +22,7 @@ declare module 'mercurius' {
     request: FastifyRequest;
   }
 }
-import type { Prisma } from '@sparx/db';
+import type { ContentEntry, Prisma } from '@sparx/db';
 import { withRequestTenant } from '../../lib/db.js';
 import { requireAuth, requireRole } from '../../plugins/auth.js';
 import { parseTypeSchema, resolveType, validateAndNormalizeBody } from '../../lib/content-types.js';
@@ -139,7 +139,7 @@ const sdl = /* GraphQL */ `
 
 // ─── helpers ──────────────────────────────────────────────────────────────
 
-function toEntryGql(row: import('@sparx/db').ContentEntry): Record<string, unknown> {
+function toEntryGql(row: ContentEntry): Record<string, unknown> {
   const wire = serializeEntry(row);
   return {
     id: row.id,
@@ -159,7 +159,7 @@ function toEntryGql(row: import('@sparx/db').ContentEntry): Record<string, unkno
   };
 }
 
-type GqlContext = import('mercurius').MercuriusContext;
+type GqlContext = MercuriusContext;
 
 // ─── resolvers ────────────────────────────────────────────────────────────
 
@@ -307,7 +307,7 @@ const resolvers = {
         const type = await resolveType(tx, input.typeKey);
         const schema = parseTypeSchema(type);
         const body = validateAndNormalizeBody(schema, input.body ?? {});
-        const seo = (input.seo ?? {}) as Record<string, unknown>;
+        const seo = (input.seo ?? {});
 
         const candidateBase = input.slug
           ? slugify(input.slug)
@@ -417,7 +417,7 @@ const resolvers = {
             : ((existing.body ?? {}) as Record<string, unknown>);
         const nextSeo =
           args.input.seo !== undefined
-            ? ((args.input.seo ?? {}) as Record<string, unknown>)
+            ? ((args.input.seo ?? {}))
             : ((existing.seoJson ?? {}) as Record<string, unknown>);
 
         let nextSlug = existing.slug;
@@ -495,7 +495,7 @@ const resolvers = {
         const after = await tx.contentEntry.update({
           where: { id: args.id },
           data: isScheduled
-            ? { status: 'scheduled', scheduledAt: new Date(args.scheduledAt as string) }
+            ? { status: 'scheduled', scheduledAt: new Date(args.scheduledAt!) }
             : { status: 'published', publishedAt: new Date(), scheduledAt: null },
         });
         await writeAudit(tx, ctx.request, auth, {
@@ -605,10 +605,11 @@ const graphqlRoutes: FastifyPluginAsync = async (app) => {
   // before resolvers run, so this throws UNAUTHORIZED for missing/invalid
   // tokens before any resolver receives the request. Public reads (the
   // by-slug-with-preview path) still live on the REST surface.
-  app.addHook('onRequest', async (request) => {
+  app.addHook('onRequest', (request, _reply, done) => {
     if (request.url.startsWith('/v1/graphql') && request.method !== 'GET') {
       requireAuth(request);
     }
+    done();
   });
 };
 

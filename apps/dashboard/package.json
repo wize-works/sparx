@@ -24,6 +24,7 @@
     "@sparx/crm": "workspace:*",
     "@sparx/crm-schemas": "workspace:*",
     "@sparx/db": "workspace:*",
+    "@sparx/email": "workspace:*",
     "@sparx/ui": "workspace:*",
     "@tanstack/react-table": "^8.21.3",
     "better-auth": "^1.6.11",

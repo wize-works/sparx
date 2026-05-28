@@ -75,7 +75,7 @@ const rssRoutes: FastifyPluginAsync = (app) => {
     }
     // The findFirst above already filtered out null patterns; this
     // assertion narrows for TypeScript.
-    const urlPattern = type.urlPattern as string;
+    const urlPattern = type.urlPattern!;
 
     const rows = await withTenant({ tenantId: tenant.id }, (tx) =>
       tx.contentEntry.findMany({

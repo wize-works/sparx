@@ -107,8 +107,19 @@ export async function signUpMerchant(input: SignUpMerchantInput): Promise<SignUp
         },
       });
     } catch (err) {
-      // eslint-disable-next-line no-console
-      console.error('[sign-up] welcome email failed:', err);
+      // Structured stdout JSON — GKE Cloud Logging parses `severity` + the
+      // rest as labels, so this is greppable in Logs Explorer without
+      // dragging pino into the Next.js server bundle for one log line.
+      process.stderr.write(
+        JSON.stringify({
+          severity: 'ERROR',
+          source: 'auth.sign-up',
+          message: 'welcome email failed',
+          tenantId,
+          userId,
+          err: err instanceof Error ? { name: err.name, message: err.message } : String(err),
+        }) + '\n'
+      );
     }
 
     return { ok: true, userId, tenantId };

@@ -10,6 +10,7 @@ export type ApiErrorCode =
   | 'NOT_FOUND'
   | 'VALIDATION_ERROR'
   | 'CONFLICT'
+  | 'PRECONDITION_FAILED'
   | 'RATE_LIMITED'
   | 'INTERNAL_ERROR'
   | 'BAD_REQUEST';
@@ -20,6 +21,7 @@ const STATUS_BY_CODE: Record<ApiErrorCode, number> = {
   FORBIDDEN: 403,
   NOT_FOUND: 404,
   CONFLICT: 409,
+  PRECONDITION_FAILED: 412,
   VALIDATION_ERROR: 422,
   RATE_LIMITED: 429,
   INTERNAL_ERROR: 500,
@@ -62,3 +64,6 @@ export const validationError = (message: string, details?: unknown): ApiError =>
 
 export const badRequest = (message: string, details?: unknown): ApiError =>
   new ApiError('BAD_REQUEST', message, details);
+
+export const preconditionFailed = (message: string, details?: unknown): ApiError =>
+  new ApiError('PRECONDITION_FAILED', message, details);
