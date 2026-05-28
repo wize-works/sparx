@@ -31,5 +31,12 @@ RUN cd packages/db && pnpm exec prisma generate
 
 WORKDIR /app/packages/db
 
+# Drop to the node:24-alpine image's built-in `node` user (uid 1000) so the
+# K8s pod's runAsNonRoot security context is satisfied. Done AFTER pnpm
+# install + prisma generate which need root to write into /app. chown the
+# tree so the entrypoint can read the generated client + node_modules.
+RUN chown -R node:node /app
+USER node
+
 # tini-style sane signal handling for K8s SIGTERM.
 ENTRYPOINT ["pnpm", "exec", "tsx", "scripts/run-migrations.ts"]

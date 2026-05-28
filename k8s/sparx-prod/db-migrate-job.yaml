@@ -54,9 +54,14 @@ spec:
           # proxy container starts before the main container is allowed to.
           securityContext:
             runAsNonRoot: true
+            # No runAsUser override: the cloud-sql-proxy Distroless image
+            # uses uid 65532 (nonroot) by default and that satisfies the
+            # GKE Autopilot policy without needing a specific uid here.
             allowPrivilegeEscalation: false
             capabilities:
               drop: ["ALL"]
+            seccompProfile:
+              type: RuntimeDefault
           resources:
             requests:
               cpu: "100m"
@@ -81,9 +86,13 @@ spec:
               value: "${RUN_SEED}"
           securityContext:
             runAsNonRoot: true
+            runAsUser: 1000
+            runAsGroup: 1000
             allowPrivilegeEscalation: false
             capabilities:
               drop: ["ALL"]
+            seccompProfile:
+              type: RuntimeDefault
           resources:
             requests:
               cpu: "200m"
