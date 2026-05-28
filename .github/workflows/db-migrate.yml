@@ -102,16 +102,40 @@ jobs:
       - name: Wait for Job + stream logs
         run: |
           set -euo pipefail
-          # Tail logs in the background; kubectl wait blocks until the Job
-          # transitions to Complete or Failed (or the timeout hits).
-          kubectl -n sparx-prod logs -f -l "batch.kubernetes.io/job-name=${JOB_NAME}" -c migrate --tail=-1 --ignore-errors=true &
-          LOG_PID=$!
-          if ! kubectl -n sparx-prod wait --for=condition=Complete --timeout=15m "job/${JOB_NAME}"; then
-            kill "$LOG_PID" 2>/dev/null || true
-            echo "Job did not complete successfully — final state:"
-            kubectl -n sparx-prod describe "job/${JOB_NAME}"
-            kubectl -n sparx-prod logs -l "batch.kubernetes.io/job-name=${JOB_NAME}" -c migrate --tail=-1 --ignore-errors=true
+          POD=""
+          # Wait up to 10 min for a pod to appear and reach a state where its
+          # logs are tail-able. PodScheduled isn't enough (container can still
+          # be PodInitializing); we wait until the migrate container is either
+          # Running OR Terminated (already finished). cluster-autoscaler /
+          # node-auto-provisioning can take several minutes on a cold cluster.
+          for _ in $(seq 1 120); do
+            POD=$(kubectl -n sparx-prod get pod -l "batch.kubernetes.io/job-name=${JOB_NAME}" -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || true)
+            if [ -n "$POD" ]; then
+              STATE=$(kubectl -n sparx-prod get pod "$POD" -o jsonpath='{.status.containerStatuses[?(@.name=="migrate")].state}' 2>/dev/null || true)
+              if echo "$STATE" | grep -qE 'running|terminated'; then
+                break
+              fi
+            fi
+            sleep 5
+          done
+
+          if [ -z "$POD" ]; then
+            echo "Pod never appeared for job/${JOB_NAME}"
+            kubectl -n sparx-prod describe "job/${JOB_NAME}" || true
             exit 1
           fi
-          kill "$LOG_PID" 2>/dev/null || true
+          echo "Streaming logs from pod $POD…"
+
+          # `kubectl logs -f` exits when the migrate container terminates.
+          # Run it in foreground; ignore-errors covers the empty-log edge case.
+          kubectl -n sparx-prod logs -f "$POD" -c migrate --tail=-1 --ignore-errors=true || true
+
+          # The Job's Complete condition flips a few seconds after the
+          # migrate container terminates; wait at most 5m for that.
+          if ! kubectl -n sparx-prod wait --for=condition=Complete --timeout=5m "job/${JOB_NAME}"; then
+            echo "Job did not complete successfully — final state:"
+            kubectl -n sparx-prod describe "job/${JOB_NAME}" || true
+            kubectl -n sparx-prod logs "$POD" -c migrate --tail=-1 --ignore-errors=true || true
+            exit 1
+          fi
           echo "Job completed successfully."
