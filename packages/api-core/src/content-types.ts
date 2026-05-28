@@ -18,7 +18,7 @@ import {
   bodyValidatorFor,
   type ContentTypeSchema as ContentTypeSchemaT,
 } from '@sparx/cms-schemas';
-import { notFound, validationError } from '../errors.js';
+import { notFound, validationError } from './errors.js';
 
 export async function resolveType(tx: TxClient, key: string): Promise<ContentType> {
   // Both the tenant-owned row and the platform-owned row are visible thanks

@@ -16,10 +16,10 @@ import { randomUUID } from 'node:crypto';
 import jwt from '@fastify/jwt';
 import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
-import { withRequestTenant } from '../../../lib/db.js';
-import { ok } from '../../../lib/envelope.js';
-import { requireRole } from '../../../plugins/auth.js';
-import { notFound } from '../../../errors.js';
+import { withRequestTenant } from '@sparx/api-core/db';
+import { ok } from '@sparx/api-core/envelope';
+import { requireRole } from '@sparx/api-core/auth';
+import { notFound } from '@sparx/api-core/errors';
 
 void jwt; // keep the import — type augmentations live in plugins/auth.ts
 

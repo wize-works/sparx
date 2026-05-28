@@ -8,7 +8,7 @@
 import crypto from 'node:crypto';
 import { prisma } from '@sparx/db';
 import type { FastifyInstance } from 'fastify';
-import type { StaffRole } from '../src/plugins/auth.js';
+import type { StaffRole } from '@sparx/api-core/auth';
 
 export interface TestTenant {
   tenantId: string;

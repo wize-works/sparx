@@ -7,10 +7,10 @@
 
 import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
-import { ok } from '../../../lib/envelope.js';
-import { withRequestTenant } from '../../../lib/db.js';
-import { requireAuth } from '../../../plugins/auth.js';
-import { notFound } from '../../../errors.js';
+import { ok } from '@sparx/api-core/envelope';
+import { withRequestTenant } from '@sparx/api-core/db';
+import { requireAuth } from '@sparx/api-core/auth';
+import { notFound } from '@sparx/api-core/errors';
 
 const ParamsSchema = z.object({ key: z.string().min(1).max(63) });
 

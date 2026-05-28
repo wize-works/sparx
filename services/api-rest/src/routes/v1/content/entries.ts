@@ -19,19 +19,19 @@ import type { Prisma } from '@sparx/db';
 // NormalizeBody` so we know they're JSON-safe; cast at the assign site.
 type Json = Prisma.InputJsonValue;
 import { z } from 'zod';
-import { withRequestTenant } from '../../../lib/db.js';
-import { ok, paged } from '../../../lib/envelope.js';
-import { requireRole } from '../../../plugins/auth.js';
+import { withRequestTenant } from '@sparx/api-core/db';
+import { ok, paged } from '@sparx/api-core/envelope';
+import { requireRole } from '@sparx/api-core/auth';
 import {
   parseTypeSchema,
   resolveType,
   validateAndNormalizeBody,
-} from '../../../lib/content-types.js';
-import { recordRevision, serializeEntry, syncReferences } from '../../../lib/entries.js';
-import { writeAudit } from '../../../lib/audit.js';
-import { publish } from '../../../lib/pubsub.js';
-import { slugify, uniqueSlug } from '../../../lib/slug.js';
-import { conflict, notFound } from '../../../errors.js';
+} from '@sparx/api-core/content-types';
+import { recordRevision, serializeEntry, syncReferences } from '@sparx/api-core/entries';
+import { writeAudit } from '@sparx/api-core/audit';
+import { publish } from '@sparx/api-core/pubsub';
+import { slugify, uniqueSlug } from '@sparx/api-core/slug';
+import { conflict, notFound } from '@sparx/api-core/errors';
 
 const SeoSchema = z
   .object({

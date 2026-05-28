@@ -10,7 +10,7 @@
 // against the current row's tag inside the same transaction that performs
 // the update, so the read + check + write happen with no race window.
 
-import { preconditionFailed } from '../errors.js';
+import { preconditionFailed } from './errors.js';
 
 export function computeEntryEtag(entry: { id: string; updatedAt: Date }): string {
   return `W/"${entry.id}.${entry.updatedAt.getTime().toString(36)}"`;

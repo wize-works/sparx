@@ -20,8 +20,8 @@
 
 import type { FastifyBaseLogger } from 'fastify';
 import { prisma, withTenant } from '@sparx/db';
-import { recordRevision } from './entries.js';
-import { publish } from './pubsub.js';
+import { recordRevision } from '@sparx/api-core/entries';
+import { publish } from '@sparx/api-core/pubsub';
 
 const SCHEDULED_PUBLISH_LOCK_KEY = 4242_4242;
 const DEFAULT_INTERVAL_MS = 60_000;

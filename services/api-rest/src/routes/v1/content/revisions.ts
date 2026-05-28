@@ -13,19 +13,19 @@ import type { Prisma } from '@sparx/db';
 import { z } from 'zod';
 
 type Json = Prisma.InputJsonValue;
-import { withRequestTenant } from '../../../lib/db.js';
-import { ok } from '../../../lib/envelope.js';
-import { requireRole } from '../../../plugins/auth.js';
-import { notFound } from '../../../errors.js';
-import { parseTypeSchema, resolveType } from '../../../lib/content-types.js';
+import { withRequestTenant } from '@sparx/api-core/db';
+import { ok } from '@sparx/api-core/envelope';
+import { requireRole } from '@sparx/api-core/auth';
+import { notFound } from '@sparx/api-core/errors';
+import { parseTypeSchema, resolveType } from '@sparx/api-core/content-types';
 import {
   recordRevision,
   serializeEntry,
   serializeRevisionFull,
   serializeRevisionMeta,
   syncReferences,
-} from '../../../lib/entries.js';
-import { writeAudit } from '../../../lib/audit.js';
+} from '@sparx/api-core/entries';
+import { writeAudit } from '@sparx/api-core/audit';
 
 const ListParams = z.object({ id: z.string().uuid() });
 const OneParams = z.object({

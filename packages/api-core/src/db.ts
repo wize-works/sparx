@@ -14,7 +14,7 @@
 import { withTenant, type TxClient } from '@sparx/db';
 import { PLATFORM_TENANT_ID } from '@sparx/cms-schemas';
 import type { FastifyRequest } from 'fastify';
-import { requireAuth } from '../plugins/auth.js';
+import { requireAuth } from './auth.js';
 
 export { PLATFORM_TENANT_ID };
 

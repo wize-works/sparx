@@ -18,9 +18,9 @@
 import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
 import { prisma, withTenant } from '@sparx/db';
-import { ok, paged } from '../../../lib/envelope.js';
-import { notFound, badRequest } from '../../../errors.js';
-import { serializeEntry } from '../../../lib/entries.js';
+import { ok, paged } from '@sparx/api-core/envelope';
+import { notFound, badRequest } from '@sparx/api-core/errors';
+import { serializeEntry } from '@sparx/api-core/entries';
 import { tryVerifyPreviewToken } from '../../../lib/preview.js';
 
 const ListQuery = z.object({

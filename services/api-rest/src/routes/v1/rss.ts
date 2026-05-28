@@ -14,7 +14,7 @@
 import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
 import { prisma, withTenant } from '@sparx/db';
-import { badRequest, notFound } from '../../errors.js';
+import { badRequest, notFound } from '@sparx/api-core/errors';
 
 const Query = z.object({
   tenant: z.string().min(1).max(63),

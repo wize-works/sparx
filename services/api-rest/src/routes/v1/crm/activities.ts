@@ -7,8 +7,8 @@
 
 import type { FastifyPluginAsync } from 'fastify';
 import { activityService } from '@sparx/crm';
-import { ok } from '../../../lib/envelope.js';
-import { requireRole } from '../../../plugins/auth.js';
+import { ok } from '@sparx/api-core/envelope';
+import { requireRole } from '@sparx/api-core/auth';
 import { requireCrmModule, toCrmContext } from '../../../lib/crm-context.js';
 
 const activityRoutes: FastifyPluginAsync = (app) => {

@@ -1,15 +1,15 @@
 // GraphQL endpoint at /v1/graphql.
 //
-// Mirrors the REST surface for content + media reads and the most common
-// content mutations. Same auth model (internal-trust JWT or API key resolved
-// in plugins/auth.ts), same tenant scoping (withRequestTenant). SDL is
+// Mirrors the REST surface for content reads and the common content
+// mutations. Same auth model (internal-trust JWT verified by
+// @sparx/api-core/auth), same tenant scoping (withRequestTenant). SDL is
 // hand-written rather than generated via Pothos — keeps the dependency
 // surface small, and our type set is narrow enough that a single SDL string
 // is easier to grep than a half-dozen builder calls.
 //
 // Resolvers are intentionally thin wrappers around the same service /
-// repository helpers the REST routes use, so we don't drift from REST.
-// Anything new here (filters, fields) belongs in shared lib code first.
+// repository helpers the REST routes use (everything imported here lives
+// in @sparx/api-core), so the two surfaces can't drift.
 
 import type { FastifyPluginAsync, FastifyRequest } from 'fastify';
 import mercurius, { type MercuriusContext } from 'mercurius';
@@ -23,15 +23,23 @@ declare module 'mercurius' {
   }
 }
 import type { ContentEntry, Prisma } from '@sparx/db';
-import { withRequestTenant } from '../../lib/db.js';
-import { requireAuth, requireRole } from '../../plugins/auth.js';
-import { parseTypeSchema, resolveType, validateAndNormalizeBody } from '../../lib/content-types.js';
-import { recordRevision, serializeEntry, syncReferences } from '../../lib/entries.js';
-import { writeAudit } from '../../lib/audit.js';
-import { publish } from '../../lib/pubsub.js';
-import { slugify, uniqueSlug } from '../../lib/slug.js';
-import { computeEntryEtag, assertIfMatch } from '../../lib/etag.js';
-import { conflict, notFound } from '../../errors.js';
+import { withRequestTenant } from '@sparx/api-core/db';
+import { requireAuth, requireRole } from '@sparx/api-core/auth';
+import {
+  parseTypeSchema,
+  resolveType,
+  validateAndNormalizeBody,
+} from '@sparx/api-core/content-types';
+import {
+  recordRevision,
+  serializeEntry,
+  syncReferences,
+} from '@sparx/api-core/entries';
+import { writeAudit } from '@sparx/api-core/audit';
+import { publish } from '@sparx/api-core/pubsub';
+import { slugify, uniqueSlug } from '@sparx/api-core/slug';
+import { computeEntryEtag, assertIfMatch } from '@sparx/api-core/etag';
+import { conflict, notFound } from '@sparx/api-core/errors';
 
 type Json = Prisma.InputJsonValue;
 
@@ -596,15 +604,12 @@ const graphqlRoutes: FastifyPluginAsync = async (app) => {
     // `reply.request`; the buildContext below normalizes it so resolvers
     // can read `ctx.request`. requireAuth on the request runs there.
     context: (request: FastifyRequest) => ({ request }),
-    // Surface validation + execution errors with our envelope shape would
-    // require a custom errorFormatter; the default leaks the GraphQL spec
-    // error shape, which is fine for now since GraphQL clients expect it.
   });
 
   // Force auth check for all GraphQL ops. mercurius applies onRequest hooks
   // before resolvers run, so this throws UNAUTHORIZED for missing/invalid
-  // tokens before any resolver receives the request. Public reads (the
-  // by-slug-with-preview path) still live on the REST surface.
+  // tokens before any resolver receives the request. GET (introspection)
+  // is exempt so the GraphiQL playground works in dev.
   app.addHook('onRequest', (request, _reply, done) => {
     if (request.url.startsWith('/v1/graphql') && request.method !== 'GET') {
       requireAuth(request);

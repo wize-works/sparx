@@ -18,7 +18,7 @@
 import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
 import { getStorage, variantKey } from '../../../lib/storage.js';
-import { notFound } from '../../../errors.js';
+import { notFound } from '@sparx/api-core/errors';
 
 // Filename pattern matches what variantKey() emits in storage.ts:
 //   `${format}-${width}.${ext}` → e.g. webp-800.webp, avif-1200.avif, jpeg-400.jpg

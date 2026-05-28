@@ -12,8 +12,8 @@
 import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
 import { dealService } from '@sparx/crm';
-import { ok, paged } from '../../../lib/envelope.js';
-import { requireRole } from '../../../plugins/auth.js';
+import { ok, paged } from '@sparx/api-core/envelope';
+import { requireRole } from '@sparx/api-core/auth';
 import { requireCrmModule, toCrmContext } from '../../../lib/crm-context.js';
 import dealAttachmentRoutes from './deal-attachments.js';
 

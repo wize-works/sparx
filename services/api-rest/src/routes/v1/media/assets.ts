@@ -11,13 +11,13 @@
 
 import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
-import { withRequestTenant } from '../../../lib/db.js';
-import { ok, paged } from '../../../lib/envelope.js';
-import { requireRole } from '../../../plugins/auth.js';
-import { writeAudit } from '../../../lib/audit.js';
-import { publish } from '../../../lib/pubsub.js';
+import { withRequestTenant } from '@sparx/api-core/db';
+import { ok, paged } from '@sparx/api-core/envelope';
+import { requireRole } from '@sparx/api-core/auth';
+import { writeAudit } from '@sparx/api-core/audit';
+import { publish } from '@sparx/api-core/pubsub';
 import { getStorage } from '../../../lib/storage.js';
-import { conflict, notFound } from '../../../errors.js';
+import { conflict, notFound } from '@sparx/api-core/errors';
 
 const ListQuery = z.object({
   q: z.string().max(255).optional(),

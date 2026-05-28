@@ -12,7 +12,7 @@
 import type { TxClient } from '@sparx/db';
 import { Prisma } from '@prisma/client';
 import type { FastifyRequest } from 'fastify';
-import type { AuthContext } from '../plugins/auth.js';
+import type { AuthContext } from './auth.js';
 
 export interface AuditEntry {
   action: string;

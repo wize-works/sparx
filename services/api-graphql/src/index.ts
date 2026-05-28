@@ -5,28 +5,23 @@ import { configurePubsub } from '@sparx/api-core/pubsub';
 import { startWebhookDeliveryLoop } from '@sparx/api-core/webhook-delivery';
 import { createApp } from './app.js';
 import { env } from './env.js';
-import { startScheduledPublishLoop } from './lib/scheduled-publish.js';
 
 async function main(): Promise<void> {
-  // Hand api-core its Pub/Sub config before any route handler can call
-  // publish(). Unset GCP_PROJECT_ID → stdout-logging stub.
+  // Hand api-core its Pub/Sub config before any resolver can call publish().
+  // Unset GCP_PROJECT_ID → stdout-logging stub.
   configurePubsub({ gcpProjectId: env.GCP_PROJECT_ID });
 
   const app = await createApp();
 
-  // Background tick that flips entries with status='scheduled' to
-  // 'published' once their `scheduled_at` has passed. Singleton across
-  // pods via Postgres advisory lock — see lib/scheduled-publish.ts.
-  const stopScheduledPublish = startScheduledPublishLoop(app.log);
-
   // Background tick that POSTs pending webhook deliveries to their
-  // subscriber URLs with HMAC-SHA256 signatures. Singleton across pods
-  // via a separate advisory lock — see @sparx/api-core/webhook-delivery.
+  // subscriber URLs with HMAC-SHA256 signatures. Singleton across pods via
+  // a Postgres advisory lock — see @sparx/api-core/webhook-delivery.
+  // api-rest runs the same loop; the advisory lock makes sure only one
+  // pod-of-any-service actually delivers at any given tick.
   const stopWebhookDelivery = startWebhookDeliveryLoop(app.log);
 
   const shutdown = (signal: NodeJS.Signals): void => {
     app.log.info({ signal }, 'shutdown received');
-    stopScheduledPublish();
     stopWebhookDelivery();
     void app
       .close()

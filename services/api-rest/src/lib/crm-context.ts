@@ -8,8 +8,8 @@
 import type { FastifyRequest } from 'fastify';
 import type { ServiceContext } from '@sparx/crm';
 import { isModuleEnabled } from '@sparx/auth';
-import { requireAuth } from '../plugins/auth.js';
-import { moduleDisabled } from '../errors.js';
+import { requireAuth } from '@sparx/api-core/auth';
+import { moduleDisabled } from '@sparx/api-core/errors';
 
 export function toCrmContext(request: FastifyRequest): ServiceContext {
   const auth = requireAuth(request);

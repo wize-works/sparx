@@ -11,8 +11,8 @@
 import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
 import { taskService } from '@sparx/crm';
-import { ok } from '../../../lib/envelope.js';
-import { requireRole, requireAuth } from '../../../plugins/auth.js';
+import { ok } from '@sparx/api-core/envelope';
+import { requireRole, requireAuth } from '@sparx/api-core/auth';
 import { requireCrmModule, toCrmContext } from '../../../lib/crm-context.js';
 
 const PathId = z.object({ id: z.string().uuid() });

@@ -9,13 +9,13 @@
 
 import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
-import { withRequestTenant } from '../../../lib/db.js';
-import { ok } from '../../../lib/envelope.js';
-import { requireRole } from '../../../plugins/auth.js';
-import { conflict, notFound } from '../../../errors.js';
-import { recordRevision, serializeEntry } from '../../../lib/entries.js';
-import { writeAudit } from '../../../lib/audit.js';
-import { publish } from '../../../lib/pubsub.js';
+import { withRequestTenant } from '@sparx/api-core/db';
+import { ok } from '@sparx/api-core/envelope';
+import { requireRole } from '@sparx/api-core/auth';
+import { conflict, notFound } from '@sparx/api-core/errors';
+import { recordRevision, serializeEntry } from '@sparx/api-core/entries';
+import { writeAudit } from '@sparx/api-core/audit';
+import { publish } from '@sparx/api-core/pubsub';
 
 const PathId = z.object({ id: z.string().uuid() });
 const PublishBody = z.object({

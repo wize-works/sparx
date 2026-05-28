@@ -1,12 +1,18 @@
 // Fastify factory. Tests import createApp() to spin up an in-memory instance
 // (no listen()); the bootstrap in index.ts wraps it with listen() + signal
 // handlers. Keeping the two split is a Fastify convention worth observing.
+//
+// Shared Fastify primitives (auth, error envelope, db helpers, audit,
+// pubsub, content-type validation) live in @sparx/api-core. This service
+// composes the factories with its own env config and stays focused on
+// REST-only route plumbing. GraphQL is a separate service (api-graphql).
 
 import { randomUUID } from 'node:crypto';
-import Fastify, { type FastifyInstance, type FastifyServerOptions } from 'fastify';
+import Fastify, { type FastifyInstance, type FastifyReply, type FastifyServerOptions } from 'fastify';
+import { CrmConflictError, CrmNotFoundError, CrmValidationError } from '@sparx/crm';
+import { createAuthPlugin } from '@sparx/api-core/auth';
+import { createErrorsPlugin, type ErrorEnvelope } from '@sparx/api-core/errors-plugin';
 import { env } from './env.js';
-import errorsPlugin from './plugins/errors.js';
-import authPlugin from './plugins/auth.js';
 import openapiPlugin from './plugins/openapi.js';
 import rateLimitPlugin from './plugins/rate-limit.js';
 import healthRoutes from './routes/health.js';
@@ -21,7 +27,6 @@ import redirectRoutes from './routes/v1/redirects/index.js';
 import webhookRoutes from './routes/v1/webhooks/subscriptions.js';
 import sitemapRoutes from './routes/v1/sitemap.js';
 import rssRoutes from './routes/v1/rss.js';
-import graphqlRoutes from './routes/v1/graphql.js';
 import publicContentRoutes from './routes/v1/public/content.js';
 import publicMediaRoutes from './routes/v1/public/media.js';
 import uploadRoutes from './routes/v1/media/uploads.js';
@@ -44,6 +49,50 @@ function loggerOptions(): FastifyServerOptions['logger'] {
     };
   }
   return { level: env.LOG_LEVEL };
+}
+
+// CRM service-layer errors share the platform vocabulary (NOT_FOUND /
+// VALIDATION_ERROR / CONFLICT) — register them as extra mappers so the
+// generic api-core plugin doesn't need to know CRM exists.
+function crmErrorMapper(err: unknown, request: { id: string }, reply: FastifyReply): FastifyReply | undefined {
+  const requestId = request.id;
+  if (err instanceof CrmNotFoundError) {
+    const body: ErrorEnvelope = {
+      success: false,
+      error: {
+        code: 'NOT_FOUND',
+        message: err.message,
+        details: { entityType: err.entityType, entityId: err.entityId },
+        request_id: requestId,
+      },
+    };
+    return reply.code(404).send(body);
+  }
+  if (err instanceof CrmValidationError) {
+    const body: ErrorEnvelope = {
+      success: false,
+      error: {
+        code: 'VALIDATION_ERROR',
+        message: err.message,
+        details: err.details,
+        request_id: requestId,
+      },
+    };
+    return reply.code(422).send(body);
+  }
+  if (err instanceof CrmConflictError) {
+    const body: ErrorEnvelope = {
+      success: false,
+      error: {
+        code: 'CONFLICT',
+        message: err.message,
+        ...(err.field !== undefined ? { details: { field: err.field } } : {}),
+        request_id: requestId,
+      },
+    };
+    return reply.code(409).send(body);
+  }
+  return undefined;
 }
 
 export async function createApp(): Promise<FastifyInstance> {
@@ -79,10 +128,23 @@ export async function createApp(): Promise<FastifyInstance> {
   // handler must be registered first so it catches anything that throws
   // from the others. OpenAPI must be initialised before routes register so
   // each route's schema is recorded.
-  await app.register(errorsPlugin);
+  await app.register(createErrorsPlugin({ extraMappers: [crmErrorMapper] }));
   await app.register(openapiPlugin);
   await app.register(rateLimitPlugin);
-  await app.register(authPlugin);
+  await app.register(
+    createAuthPlugin({
+      jwtSecret: env.SPARX_INTERNAL_JWT_SECRET,
+      publicPrefixes: [
+        '/v1/openapi.json',
+        '/v1/sitemap.xml',
+        '/v1/public/',
+        // Local-mode media upload endpoints — issued by `presignPut` and
+        // self-authorising via the in-URL object key. Skipping the Bearer
+        // check here mirrors the GCS signed-URL contract.
+        '/v1/media/_local/',
+      ],
+    })
+  );
 
   // Surface request_id on every response (success or failure) so callers
   // logging a 5xx have something to send back to support.
@@ -105,7 +167,6 @@ export async function createApp(): Promise<FastifyInstance> {
   await app.register(webhookRoutes);
   await app.register(sitemapRoutes);
   await app.register(rssRoutes);
-  await app.register(graphqlRoutes);
   await app.register(publicContentRoutes);
   await app.register(publicMediaRoutes);
   await app.register(uploadRoutes);

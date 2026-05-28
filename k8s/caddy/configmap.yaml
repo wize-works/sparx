@@ -37,7 +37,7 @@ data:
       tls {
         on_demand
       }
-      reverse_proxy api-graphql.sparx-prod.svc.cluster.local:3000
+      reverse_proxy api-graphql.sparx-prod.svc.cluster.local:3200
     }
 
     mcp.sparx.works {

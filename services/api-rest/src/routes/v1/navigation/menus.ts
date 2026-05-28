@@ -11,12 +11,12 @@
 
 import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
-import { withRequestTenant } from '../../../lib/db.js';
-import { ok } from '../../../lib/envelope.js';
-import { requireRole } from '../../../plugins/auth.js';
-import { badRequest, notFound } from '../../../errors.js';
-import { writeAudit } from '../../../lib/audit.js';
-import { publish } from '../../../lib/pubsub.js';
+import { withRequestTenant } from '@sparx/api-core/db';
+import { ok } from '@sparx/api-core/envelope';
+import { requireRole } from '@sparx/api-core/auth';
+import { badRequest, notFound } from '@sparx/api-core/errors';
+import { writeAudit } from '@sparx/api-core/audit';
+import { publish } from '@sparx/api-core/pubsub';
 
 const LocationParams = z.object({ location: z.string().min(1).max(63) });
 

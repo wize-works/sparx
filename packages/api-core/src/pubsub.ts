@@ -5,15 +5,18 @@
 // events they care about — no fan-out filtering inside worker code, no
 // wasted message deliveries, and per-topic IAM + DLQs are possible.
 //
-// In dev (`GCP_PROJECT_ID` unset) the publisher logs the event to the
-// Fastify logger and otherwise no-ops — useful for quick iteration without
-// standing up a Pub/Sub emulator.
+// In dev (`gcpProjectId` not configured) the publisher logs the event to
+// the Fastify logger and otherwise no-ops — useful for quick iteration
+// without standing up a Pub/Sub emulator.
+//
+// Service-agnostic: each consuming API service calls `configurePubsub`
+// once at boot with its env config; route handlers then call `publish` as
+// before.
 
 import type { Topic } from '@google-cloud/pubsub';
 import { PubSub } from '@google-cloud/pubsub';
 import type { FastifyBaseLogger } from 'fastify';
 import { withTenant } from '@sparx/db';
-import { env } from '../env.js';
 import { enqueueWebhookDeliveries } from './webhook-delivery.js';
 
 export type EventType =
@@ -89,21 +92,33 @@ class LoggingPublisher implements Publisher {
   }
 }
 
+export interface PubsubConfig {
+  // When set we use Google Cloud Pub/Sub; otherwise we fall back to a
+  // stdout-logging stub. Each service reads this from its own env.ts.
+  gcpProjectId?: string;
+}
+
+let config: PubsubConfig = {};
 let publisher: Publisher | null = null;
+
+export function configurePubsub(next: PubsubConfig): void {
+  config = next;
+  publisher = null;
+}
 
 export function getPublisher(logger: FastifyBaseLogger): Publisher {
   if (publisher) return publisher;
 
-  if (env.GCP_PROJECT_ID) {
-    const client = new PubSub({ projectId: env.GCP_PROJECT_ID });
+  if (config.gcpProjectId) {
+    const client = new PubSub({ projectId: config.gcpProjectId });
     publisher = new CloudPubSubPublisher(client);
     logger.info(
-      { project: env.GCP_PROJECT_ID },
+      { project: config.gcpProjectId },
       'pubsub: Google Cloud publisher initialised (per-topic, one topic per EventType)'
     );
   } else {
     publisher = new LoggingPublisher(logger);
-    logger.info('pubsub: GCP_PROJECT_ID unset — using stdout-logging stub');
+    logger.info('pubsub: gcpProjectId unset — using stdout-logging stub');
   }
   return publisher;
 }
