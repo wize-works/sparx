@@ -46,7 +46,7 @@ export default async function NewTaskPage({ searchParams }: PageProps) {
           <Heading level={1}>New task</Heading>
           <Text variant="muted">
             Assign a follow-up to yourself or a teammate. Tasks linked to a customer or deal show up
-            on that record's task list as well.
+            on that record&apos;s task list as well.
           </Text>
         </Stack>
 
@@ -60,9 +60,7 @@ export default async function NewTaskPage({ searchParams }: PageProps) {
             id: c.id,
             label:
               [c.firstName, c.lastName].filter(Boolean).join(' ') ||
-              c.company ||
-              c.email ||
-              c.id.slice(0, 8),
+              (c.company ?? c.email ?? c.id.slice(0, 8)),
           }))}
           preselectedCustomerId={stringParam(sp.customerId) ?? null}
           preselectedDealId={stringParam(sp.dealId) ?? null}
