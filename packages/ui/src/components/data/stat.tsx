@@ -14,10 +14,11 @@ export interface StatProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 't
   value: React.ReactNode;
   delta?: StatDelta;
   icon?: React.ReactNode;
+  hint?: React.ReactNode;
 }
 
 export const Stat = React.forwardRef<HTMLDivElement, StatProps>(
-  ({ className, label, value, delta, icon, ...props }, ref) => (
+  ({ className, label, value, delta, icon, hint, ...props }, ref) => (
     <div
       ref={ref}
       className={cn('rounded-lg bg-[var(--color-bg-subtle)] p-4', className)}
@@ -46,6 +47,7 @@ export const Stat = React.forwardRef<HTMLDivElement, StatProps>(
           {delta.value}
         </p>
       )}
+      {hint && !delta && <p className="mt-1 text-xs text-[var(--color-text-tertiary)]">{hint}</p>}
     </div>
   )
 );
