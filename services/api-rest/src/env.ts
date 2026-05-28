@@ -31,10 +31,8 @@ export type Env = z.infer<typeof EnvSchema>;
 function parseEnv(): Env {
   const result = EnvSchema.safeParse(process.env);
   if (!result.success) {
-     
     console.error('[api-rest] invalid environment:');
     for (const issue of result.error.issues) {
-       
       console.error(`  - ${issue.path.join('.')}: ${issue.message}`);
     }
     process.exit(78); // EX_CONFIG

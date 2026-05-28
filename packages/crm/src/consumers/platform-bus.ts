@@ -53,7 +53,6 @@ class InMemoryPlatformBus implements PlatformEventBus {
     const work = Promise.all(
       snapshot.map((h) =>
         h(event).catch((err: unknown) => {
-           
           console.error('[crm-consumer]', event.topic, err);
         })
       )

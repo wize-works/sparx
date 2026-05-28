@@ -86,9 +86,7 @@ export default async function CrmPage({ searchParams }: PageProps) {
     {
       take: 100,
       sortBy: sort,
-      ...(type === 'prospect' || type === 'retail' || type === 'b2b'
-        ? { type: type }
-        : {}),
+      ...(type === 'prospect' || type === 'retail' || type === 'b2b' ? { type: type } : {}),
       ...(tag ? { tag } : {}),
       ...(q ? { q } : {}),
     }

@@ -130,9 +130,7 @@ export async function update(
         ...(input.status !== undefined ? { status: input.status } : {}),
         ...(input.assignedRepId !== undefined ? { assignedRepId: input.assignedRepId } : {}),
         ...(input.fleetSize !== undefined ? { fleetSize: input.fleetSize } : {}),
-        ...(input.engineProfiles !== undefined
-          ? { engineProfiles: input.engineProfiles }
-          : {}),
+        ...(input.engineProfiles !== undefined ? { engineProfiles: input.engineProfiles } : {}),
         ...(input.notes !== undefined ? { notes: input.notes } : {}),
         ...(input.tags !== undefined ? { tags: input.tags } : {}),
       },
