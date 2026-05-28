@@ -54,7 +54,8 @@ export async function tryVerifyPreviewToken(
 
   let claims: PreviewClaims;
   try {
-    claims = await app.jwt.verify<PreviewClaims>(token);
+    // fastify-jwt's verify is synchronous for HS256 + no async secret provider.
+    claims = app.jwt.verify<PreviewClaims>(token);
   } catch {
     throw Object.assign(new Error('Invalid preview token.'), {
       statusCode: 401,
