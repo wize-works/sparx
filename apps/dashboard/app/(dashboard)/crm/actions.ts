@@ -17,3 +17,4 @@ export * from './order-fulfillment-actions';
 export * from './quote-actions';
 export * from './pipeline-actions';
 export * from './b2b-actions';
+export * from './segment-actions';
