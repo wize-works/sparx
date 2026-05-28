@@ -307,7 +307,7 @@ const resolvers = {
         const type = await resolveType(tx, input.typeKey);
         const schema = parseTypeSchema(type);
         const body = validateAndNormalizeBody(schema, input.body ?? {});
-        const seo = (input.seo ?? {});
+        const seo = input.seo ?? {};
 
         const candidateBase = input.slug
           ? slugify(input.slug)
@@ -417,7 +417,7 @@ const resolvers = {
             : ((existing.body ?? {}) as Record<string, unknown>);
         const nextSeo =
           args.input.seo !== undefined
-            ? ((args.input.seo ?? {}))
+            ? (args.input.seo ?? {})
             : ((existing.seoJson ?? {}) as Record<string, unknown>);
 
         let nextSlug = existing.slug;
