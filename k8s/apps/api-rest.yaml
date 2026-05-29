@@ -121,7 +121,7 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: api-rest
-  minReplicas: 2
+  minReplicas: 1 # TEMP: SSD_TOTAL_GB quota at 235/250GB blocks scale-up; restore to 2 after quota bump
   maxReplicas: 2
   metrics:
     - type: Resource
