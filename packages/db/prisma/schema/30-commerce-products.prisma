@@ -1,0 +1,114 @@
+// Commerce — Products.
+//
+// The wrapping row that variants hang off. A product carries the catalog-
+// level shape (title, description, SEO, fulfillment type, hazmat class,
+// shipping defaults); each Variant overrides for a purchasable SKU.
+//
+// Money columns store integer cents (matches @sparx/commerce-schemas
+// MoneyCents). CRM-side Decimal columns are kept for historical orders;
+// Commerce-side reads convert at the boundary.
+//
+// Hand-edited RLS lives in the migration SQL — Prisma does not generate
+// `ENABLE / FORCE ROW LEVEL SECURITY` (memory/feedback_sparx_db_rls_pattern).
+
+model Product {
+  id       String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId String @map("tenant_id") @db.Uuid
+
+  title       String  @db.VarChar(255)
+  handle      String  @db.VarChar(127)
+  description String? @db.Text // rich-text HTML allowed
+
+  status           String @default("draft") @db.VarChar(20) // draft | active | archived
+  productType      String? @map("product_type") @db.VarChar(127)
+  vendor           String? @db.VarChar(127)
+  tags             String[] @default([]) @db.VarChar(63)
+  fulfillmentType  String @default("physical") @map("fulfillment_type") @db.VarChar(20)
+  // ^ physical | digital | service | configurable | bundle | subscription
+
+  // Defaults inherited by variants when omitted.
+  weightGrams      Int?     @map("weight_grams")
+  lengthMm         Int?     @map("length_mm")
+  widthMm          Int?     @map("width_mm")
+  heightMm         Int?     @map("height_mm")
+  hazmatClass      String   @default("none") @map("hazmat_class") @db.VarChar(32)
+  requiresShipping Boolean  @default(true) @map("requires_shipping")
+  taxClass         String?  @map("tax_class") @db.VarChar(63)
+  originCountry    String?  @map("origin_country") @db.VarChar(2)
+  hsCode           String?  @map("hs_code") @db.VarChar(15)
+  metadata         Json     @default("{}")
+
+  // SEO.
+  seoTitle       String? @map("seo_title") @db.VarChar(255)
+  seoDescription String? @map("seo_description") @db.VarChar(512)
+  ogImageId      String? @map("og_image_id") @db.Uuid
+
+  // Default fulfillment warehouse — order picker falls back to this when
+  // a line item doesn't pin one explicitly.
+  defaultWarehouseId String? @map("default_warehouse_id") @db.Uuid
+
+  // Aggregated read columns updated by event consumers — never written
+  // inline. Drives storefront sort + low-stock badges.
+  priceMinCents    Int?     @map("price_min_cents")
+  priceMaxCents    Int?     @map("price_max_cents")
+  inStock          Boolean  @default(false) @map("in_stock")
+  bestSellerRank   Int?     @map("best_seller_rank")
+  averageRating    Float?   @map("average_rating")
+  reviewCount      Int      @default(0) @map("review_count")
+
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt   DateTime? @map("deleted_at") @db.Timestamptz
+  publishedAt DateTime? @map("published_at") @db.Timestamptz
+
+  tenant            Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  defaultWarehouse  Warehouse?         @relation("ProductDefaultWarehouse", fields: [defaultWarehouseId], references: [id], onDelete: SetNull)
+  options           ProductOption[]
+  variants          ProductVariant[]
+  images            VariantImage[]
+  fitments          ProductFitment[]
+  collectionLinks   CollectionProduct[]
+  categoryLinks     CategoryProduct[]
+  shippingProfileLinks ShippingProfileProduct[]
+  bundlesAsWrapper  Bundle[]           @relation("BundleWrapper")
+  bundleComponents  BundleComponent[]
+  configurationTemplates ConfigurationTemplate[]
+  reviews           ProductReview[]
+  questions         ProductQuestion[]
+  translations      ProductTranslation[]
+  orderItems        OrderItem[]
+
+  @@unique([tenantId, handle], map: "products_tenant_handle_unique")
+  @@index([tenantId, status])
+  @@index([tenantId, productType])
+  @@index([tenantId, vendor])
+  @@index([tenantId, updatedAt(sort: Desc)])
+  @@index([tenantId, deletedAt])
+  @@map("commerce_products")
+}
+
+// Localized title / description / SEO. Optional — Phase 1 ships en-US
+// only; the table is here so locale rollout is a row insert, not a
+// schema change.
+
+model ProductTranslation {
+  id        String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId  String @map("tenant_id") @db.Uuid
+  productId String @map("product_id") @db.Uuid
+  locale    String @db.VarChar(10) // en-US | es-MX | fr-CA | ...
+
+  title          String  @db.VarChar(255)
+  description    String? @db.Text
+  seoTitle       String? @map("seo_title") @db.VarChar(255)
+  seoDescription String? @map("seo_description") @db.VarChar(512)
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  tenant  Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, locale], map: "product_translations_locale_unique")
+  @@index([tenantId])
+  @@map("commerce_product_translations")
+}

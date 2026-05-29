@@ -1,0 +1,140 @@
+// Commerce — Inventory: warehouses, levels, adjustments, reservations.
+//
+// `inventoryService.reserve()` is the single entry point for stock holds —
+// cart soft (TTL 30m), order hard (until fulfillment), subscription
+// renewal hard (until charge). Dropship supplier feeds project a virtual
+// warehouse here; the platform sees one model regardless of who owns
+// the stock.
+
+model Warehouse {
+  id       String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId String @map("tenant_id") @db.Uuid
+  name     String @db.VarChar(127)
+  code     String @db.VarChar(15)
+  type     String @default("owned") @db.VarChar(20) // owned | 3pl | dropship | virtual
+
+  line1      String?  @db.VarChar(255)
+  line2      String?  @db.VarChar(255)
+  city       String?  @db.VarChar(120)
+  region     String?  @db.VarChar(120)
+  postalCode String?  @map("postal_code") @db.VarChar(32)
+  country    String?  @db.VarChar(2)
+  phone      String?  @db.VarChar(50)
+  latitude   Float?
+  longitude  Float?
+
+  // Per-channel default — when a line item lacks an explicit warehouse,
+  // the picker resolves through here. Stored as JSONB string[].
+  defaultForChannel Json    @default("[]") @map("default_for_channel")
+  hoursOfOperation  Json    @default("[]") @map("hours_of_operation")
+  metadata          Json    @default("{}")
+
+  isActive  Boolean   @default(true) @map("is_active")
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz
+
+  tenant       Tenant                  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  levels       InventoryLevel[]
+  adjustments  InventoryAdjustment[]
+  reservations InventoryReservation[]
+  lotBatches   LotBatch[]
+  serialUnits  SerialUnit[]
+  defaultForProducts Product[]         @relation("ProductDefaultWarehouse")
+
+  @@unique([tenantId, code], map: "warehouses_tenant_code_unique")
+  @@index([tenantId, isActive])
+  @@map("commerce_warehouses")
+}
+
+// (variant, warehouse) snapshot. onHand is authoritative; allocated +
+// available are derived (allocated = sum of active hard reservations;
+// available = onHand - allocated). reorderPoint / leadTimeDays drive
+// the low-stock report + inventory.low events.
+
+model InventoryLevel {
+  variantId   String @map("variant_id") @db.Uuid
+  warehouseId String @map("warehouse_id") @db.Uuid
+  tenantId    String @map("tenant_id") @db.Uuid
+
+  onHand    Int @default(0) @map("on_hand")
+  allocated Int @default(0) @map("allocated")
+
+  reorderPoint    Int? @map("reorder_point")
+  reorderQuantity Int? @map("reorder_quantity")
+  leadTimeDays    Int? @map("lead_time_days")
+  unitCostCents   Int? @map("unit_cost_cents")
+
+  asOf      DateTime @default(now()) @map("as_of") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  tenant    Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  variant   ProductVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  warehouse Warehouse      @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
+
+  @@id([variantId, warehouseId])
+  @@index([tenantId, warehouseId])
+  @@index([tenantId, onHand])
+  @@map("commerce_inventory_levels")
+}
+
+// Every onHand change writes a row here. Reason categorizes the source;
+// reference (Order, Return, Transfer, etc.) lets the dashboard surface
+// "who touched this stock and when".
+
+model InventoryAdjustment {
+  id            String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId      String @map("tenant_id") @db.Uuid
+  variantId     String @map("variant_id") @db.Uuid
+  warehouseId   String @map("warehouse_id") @db.Uuid
+
+  delta         Int    // signed
+  reason        String @db.VarChar(20)
+  // ^ sale | return | recount | loss | damage | transfer_in | transfer_out | receive | reserve | release | manual
+
+  referenceType String? @map("reference_type") @db.VarChar(63)
+  referenceId   String? @map("reference_id") @db.Uuid
+  actorUserId   String? @map("actor_user_id") @db.Uuid
+  note          String? @db.Text
+  unitCostCents Int?    @map("unit_cost_cents")
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  tenant    Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  variant   ProductVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  warehouse Warehouse      @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, variantId, createdAt(sort: Desc)])
+  @@index([tenantId, warehouseId, createdAt(sort: Desc)])
+  @@index([tenantId, referenceType, referenceId])
+  @@map("commerce_inventory_adjustments")
+}
+
+// Holds against future fulfillment. Cart reservations have a TTL
+// (`expiresAt`) and are released by a cleanup worker; order/subscription
+// reservations carry no TTL and are released only on fulfill / cancel.
+
+model InventoryReservation {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId    String   @map("tenant_id") @db.Uuid
+  variantId   String   @map("variant_id") @db.Uuid
+  warehouseId String   @map("warehouse_id") @db.Uuid
+
+  quantity   Int
+  holderType String @map("holder_type") @db.VarChar(20) // cart | order | subscription
+  holderId   String @map("holder_id") @db.Uuid
+
+  status     String   @default("active") @db.VarChar(20) // active | released | committed | expired
+  expiresAt  DateTime? @map("expires_at") @db.Timestamptz
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz
+  releasedAt DateTime? @map("released_at") @db.Timestamptz
+
+  tenant    Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  variant   ProductVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  warehouse Warehouse      @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, variantId, status])
+  @@index([tenantId, holderType, holderId])
+  @@index([status, expiresAt])
+  @@map("commerce_inventory_reservations")
+}

@@ -40,6 +40,12 @@ model B2BAccount {
   activities CrmActivity[]
   quotes     Quote[]
 
+  // Commerce module inverse relations
+  priceLists       PriceList[]
+  contractPrices   ContractPrice[]
+  checkoutSessions CheckoutSession[]
+  taxExemptions    TaxExemption[]
+
   @@index([tenantId, status])
   @@index([tenantId, assignedRepId])
   @@index([tenantId, updatedAt(sort: Desc)])

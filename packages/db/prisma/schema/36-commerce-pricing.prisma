@@ -1,0 +1,114 @@
+// Commerce — Pricing: price lists, bulk tiers, contract prices.
+// Discounts and gift cards are siblings in 37-commerce-discounts.
+//
+// Resolution order (pricingService.resolve):
+//   contract_price (B2B) → price_list → bulk_tier → variant.priceCents
+// Then layered: discounts → gift cards → store credit.
+
+model PriceList {
+  id          String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId    String  @map("tenant_id") @db.Uuid
+  name        String  @db.VarChar(127)
+  description String? @db.Text
+  currency    String  @db.VarChar(3)
+  channel     String? @db.VarChar(20) // null = any | storefront | b2b_portal | subscription
+  // Targeting — at most one of these is set; both null = default for channel.
+  customerSegmentId String? @map("customer_segment_id") @db.Uuid
+  b2bAccountId      String? @map("b2b_account_id") @db.Uuid
+  collectionId      String? @map("collection_id") @db.Uuid // restrict to one collection
+  priority   Int      @default(0)
+  validFrom  DateTime? @map("valid_from") @db.Timestamptz
+  validTo    DateTime? @map("valid_to") @db.Timestamptz
+  status     String   @default("draft") @db.VarChar(20) // draft | active | archived
+
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz
+
+  tenant     Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  b2bAccount B2BAccount?        @relation(fields: [b2bAccountId], references: [id], onDelete: Cascade)
+  collection ProductCollection? @relation(fields: [collectionId], references: [id], onDelete: SetNull)
+  entries    PriceListEntry[]
+  bulkTiers  BulkPriceTier[]
+
+  @@index([tenantId, status])
+  @@index([tenantId, channel])
+  @@index([tenantId, b2bAccountId])
+  @@map("commerce_price_lists")
+}
+
+// Per-variant override on a price list. Either fixed price OR percent-
+// off-list — service-layer Zod enforces XOR; the DB stores both columns
+// nullable so the row can be partially edited in the dashboard.
+
+model PriceListEntry {
+  id             String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId       String  @map("tenant_id") @db.Uuid
+  priceListId    String  @map("price_list_id") @db.Uuid
+  variantId      String  @map("variant_id") @db.Uuid
+  fixedPriceCents Int?   @map("fixed_price_cents")
+  percentOffList Float?  @map("percent_off_list")
+  minQuantity    Int     @default(1) @map("min_quantity")
+  maxQuantity    Int?    @map("max_quantity")
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  tenant    Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  priceList PriceList      @relation(fields: [priceListId], references: [id], onDelete: Cascade)
+  variant   ProductVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
+
+  @@unique([priceListId, variantId, minQuantity], map: "price_list_entries_unique")
+  @@index([tenantId, variantId])
+  @@map("commerce_price_list_entries")
+}
+
+// "10+ at $5 off each" without writing a discount. Lives on a variant
+// (storefront-wide) or scoped to a price list (B2B-specific tiering).
+
+model BulkPriceTier {
+  id              String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId        String  @map("tenant_id") @db.Uuid
+  variantId       String? @map("variant_id") @db.Uuid
+  priceListId     String? @map("price_list_id") @db.Uuid
+  minQuantity     Int     @map("min_quantity")
+  unitPriceCents  Int     @map("unit_price_cents")
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  tenant    Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  variant   ProductVariant? @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  priceList PriceList?      @relation(fields: [priceListId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, variantId, minQuantity])
+  @@index([tenantId, priceListId, minQuantity])
+  @@map("commerce_bulk_price_tiers")
+}
+
+// B2B contract price — negotiated, optionally with a signed agreement
+// PDF attached as a media asset. Highest-priority pricing tier.
+
+model ContractPrice {
+  id                       String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId                 String   @map("tenant_id") @db.Uuid
+  b2bAccountId             String   @map("b2b_account_id") @db.Uuid
+  variantId                String   @map("variant_id") @db.Uuid
+  priceCents               Int      @map("price_cents")
+  validFrom                DateTime @map("valid_from") @db.Timestamptz
+  validTo                  DateTime? @map("valid_to") @db.Timestamptz
+  signedAgreementMediaId   String?  @map("signed_agreement_media_id") @db.Uuid
+  notes                    String?  @db.Text
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  tenant     Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  b2bAccount B2BAccount     @relation(fields: [b2bAccountId], references: [id], onDelete: Cascade)
+  variant    ProductVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
+
+  @@unique([b2bAccountId, variantId, validFrom], map: "contract_prices_unique")
+  @@index([tenantId, b2bAccountId])
+  @@index([tenantId, variantId])
+  @@map("commerce_contract_prices")
+}

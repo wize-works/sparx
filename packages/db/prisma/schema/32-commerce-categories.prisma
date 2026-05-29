@@ -1,0 +1,109 @@
+// Commerce — Categories (nested tree) and Collections (manual + rules).
+//
+// Distinct concepts: a category is the organizational tree (Auto Parts >
+// Engine > Fuel Injection); a collection is a merchandising surface
+// ("Featured", "New for Spring"). A product has zero-or-one canonical
+// category and zero-or-many collections.
+
+model ProductCategory {
+  id          String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId    String  @map("tenant_id") @db.Uuid
+  parentId    String? @map("parent_id") @db.Uuid
+  // Materialized path used for fast subtree queries — store as text and
+  // populate in a trigger / service after each move. Ltree extension can
+  // upgrade this column later without migrating data.
+  path        String  @db.VarChar(2000)
+  name        String  @db.VarChar(127)
+  handle      String  @db.VarChar(127)
+  description String? @db.Text
+  position    Int     @default(0)
+  featured    Boolean @default(false)
+  iconMediaId String? @map("icon_media_id") @db.Uuid
+  heroMediaId String? @map("hero_media_id") @db.Uuid
+
+  seoTitle       String? @map("seo_title") @db.VarChar(255)
+  seoDescription String? @map("seo_description") @db.VarChar(512)
+  ogImageId      String? @map("og_image_id") @db.Uuid
+
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz
+
+  tenant   Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  parent   ProductCategory?  @relation("CategoryTree", fields: [parentId], references: [id], onDelete: SetNull)
+  children ProductCategory[] @relation("CategoryTree")
+  products CategoryProduct[]
+
+  @@unique([tenantId, handle], map: "product_categories_tenant_handle_unique")
+  @@index([tenantId, parentId])
+  @@index([tenantId, path])
+  @@map("commerce_product_categories")
+}
+
+// Join — a product can sit in many categories (its primary plus
+// cross-referenced ones).
+
+model CategoryProduct {
+  categoryId String @map("category_id") @db.Uuid
+  productId  String @map("product_id") @db.Uuid
+  isPrimary  Boolean @default(false) @map("is_primary")
+  position   Int    @default(0)
+
+  category ProductCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  product  Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@id([categoryId, productId])
+  @@index([productId])
+  @@map("commerce_category_products")
+}
+
+model ProductCollection {
+  id          String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId    String  @map("tenant_id") @db.Uuid
+  name        String  @db.VarChar(127)
+  handle      String  @db.VarChar(127)
+  description String? @db.Text
+  type        String  @default("manual") @db.VarChar(20) // manual | rules
+  // When type=rules, ruleSet drives membership; commerce-indexer worker
+  // re-projects to CollectionProduct on each change.
+  ruleSet     Json    @default("{}") @map("rule_set")
+  heroMediaId String? @map("hero_media_id") @db.Uuid
+  featured    Boolean @default(false)
+
+  seoTitle       String? @map("seo_title") @db.VarChar(255)
+  seoDescription String? @map("seo_description") @db.VarChar(512)
+  ogImageId      String? @map("og_image_id") @db.Uuid
+
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz
+
+  tenant     Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  products   CollectionProduct[]
+  priceLists PriceList[]
+  discounts  Discount[]
+  shippingProfileLinks ShippingProfileCollection[]
+
+  @@unique([tenantId, handle], map: "product_collections_tenant_handle_unique")
+  @@index([tenantId, type])
+  @@index([tenantId, updatedAt(sort: Desc)])
+  @@map("commerce_product_collections")
+}
+
+// Join — populated for both manual and rules-driven collections (rules
+// resolution materializes here so storefront reads stay one indexed
+// query, not a rule re-evaluation).
+
+model CollectionProduct {
+  collectionId String @map("collection_id") @db.Uuid
+  productId    String @map("product_id") @db.Uuid
+  position     Int    @default(0)
+  addedBy      String @default("manual") @map("added_by") @db.VarChar(20) // manual | rule
+
+  collection ProductCollection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  product    Product           @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@id([collectionId, productId])
+  @@index([productId])
+  @@map("commerce_collection_products")
+}

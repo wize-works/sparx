@@ -76,5 +76,95 @@ model Tenant {
   segmentMembers SegmentMember[]
   savedViews     SavedView[]
 
+  // Commerce module — catalog
+  products            Product[]
+  productTranslations ProductTranslation[]
+  productOptions      ProductOption[]
+  productOptionValues ProductOptionValue[]
+  productVariants     ProductVariant[]
+  variantImages       VariantImage[]
+  productCategories   ProductCategory[]
+  productCollections  ProductCollection[]
+
+  // Commerce module — fitment
+  vehicleMakes    VehicleMake[]
+  vehicleModels   VehicleModel[]
+  vehicleEngines  VehicleEngine[]
+  productFitments ProductFitment[]
+
+  // Commerce module — inventory + lots
+  warehouses            Warehouse[]
+  inventoryLevels       InventoryLevel[]
+  inventoryAdjustments  InventoryAdjustment[]
+  inventoryReservations InventoryReservation[]
+  lotBatches            LotBatch[]
+  serialUnits           SerialUnit[]
+
+  // Commerce module — pricing + discounts
+  priceLists              PriceList[]
+  priceListEntries        PriceListEntry[]
+  bulkPriceTiers          BulkPriceTier[]
+  contractPrices          ContractPrice[]
+  discounts               Discount[]
+  discountUsages          DiscountUsage[]
+  giftCards               GiftCard[]
+  giftCardTransactions    GiftCardTransaction[]
+  storeCredits            StoreCredit[]
+  storeCreditTransactions StoreCreditTransaction[]
+
+  // Commerce module — bundles + configurator
+  bundles                Bundle[]
+  bundleComponents       BundleComponent[]
+  configurationTemplates ConfigurationTemplate[]
+  configurationOptions   ConfigurationOption[]
+  configurationRules     ConfigurationRule[]
+  configurationAddOns    ConfigurationAddOn[]
+
+  // Commerce module — cart + checkout
+  carts            Cart[]
+  cartItems        CartItem[]
+  cartDiscounts    CartDiscount[]
+  checkoutSessions CheckoutSession[]
+
+  // Commerce module — subscriptions
+  subscriptions      Subscription[]
+  subscriptionItems  SubscriptionItem[]
+  subscriptionEvents SubscriptionEvent[]
+  dunningAttempts    DunningAttempt[]
+
+  // Commerce module — reviews + Q&A + wishlists
+  productReviews      ProductReview[]
+  reviewMedia         ReviewMedia[]
+  reviewHelpfulVotes  ReviewHelpfulVote[]
+  reviewModerationLog ReviewModerationLog[]
+  productQuestions    ProductQuestion[]
+  productAnswers      ProductAnswer[]
+  wishlists           Wishlist[]
+  wishlistItems       WishlistItem[]
+
+  // Commerce module — returns
+  returnRequests    ReturnRequest[]
+  returnLineItems   ReturnLineItem[]
+  returnInspections ReturnInspection[]
+  returnLabels      ReturnLabel[]
+
+  // Commerce module — shipping
+  shippingZones    ShippingZone[]
+  shippingProfiles ShippingProfile[]
+  shippingRates    ShippingRate[]
+
+  // Commerce module — tax
+  taxZones      TaxZone[]
+  taxRates      TaxRate[]
+  taxExemptions TaxExemption[]
+
+  // Commerce module — provider marketplace
+  providerInstallations ProviderInstallation[]
+  providerWebhookEvents ProviderWebhookEvent[]
+
+  // Commerce module — storefront defaults + theme
+  storefrontSettings StorefrontSettings?
+  storefrontTheme    StorefrontTheme?
+
   @@map("tenants")
 }

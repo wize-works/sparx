@@ -1,0 +1,76 @@
+// Commerce — Lot batches + per-unit serial numbers.
+//
+// Beauty products carry lot + expiry; auto parts carry serial numbers
+// for traceability; food/supplements (dogfood, additives) need recall-
+// ready batch identification. One model serves all three.
+//
+// `LotBatch.quantity` is the as-shipped batch count; runtime stock at
+// the variant+warehouse level lives in commerce_inventory_levels and is
+// the authoritative source for availability checks.
+
+model LotBatch {
+  id          String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId    String @map("tenant_id") @db.Uuid
+  variantId   String @map("variant_id") @db.Uuid
+  warehouseId String @map("warehouse_id") @db.Uuid
+
+  lotNumber          String    @map("lot_number") @db.VarChar(63)
+  manufacturedAt     DateTime? @map("manufactured_at") @db.Timestamptz
+  expiresAt          DateTime? @map("expires_at") @db.Timestamptz
+  quantity           Int       @default(0)
+  hazmatClass        String    @default("none") @map("hazmat_class") @db.VarChar(32)
+  supplierBatchRef   String?   @map("supplier_batch_ref") @db.VarChar(127)
+  certificateOfAnalysisMediaId String? @map("coa_media_id") @db.Uuid
+
+  recallStatus  String?  @map("recall_status") @db.VarChar(20)
+  // ^ null | pending | active | cleared
+  recallReason  String?  @map("recall_reason") @db.Text
+  recalledAt    DateTime? @map("recalled_at") @db.Timestamptz
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  tenant      Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  variant     ProductVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  warehouse   Warehouse      @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
+  serialUnits SerialUnit[]
+
+  @@unique([variantId, lotNumber], map: "lot_batches_variant_lot_unique")
+  @@index([tenantId, expiresAt])
+  @@index([tenantId, recallStatus])
+  @@map("commerce_lot_batches")
+}
+
+// One row per physical unit. For variants tracked at the unit level
+// (high-value auto parts, regulated products), the serial is sold +
+// pinned to an order item so the merchant can answer "where did this
+// specific unit go?".
+
+model SerialUnit {
+  id          String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId    String  @map("tenant_id") @db.Uuid
+  variantId   String  @map("variant_id") @db.Uuid
+  warehouseId String  @map("warehouse_id") @db.Uuid
+  lotBatchId  String? @map("lot_batch_id") @db.Uuid
+
+  serial String @db.VarChar(127)
+  status String @default("in_stock") @db.VarChar(20)
+  // ^ in_stock | reserved | sold | returned | scrapped | lost
+
+  soldOnOrderItemId String?  @map("sold_on_order_item_id") @db.Uuid
+  soldAt            DateTime? @map("sold_at") @db.Timestamptz
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  tenant    Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  variant   ProductVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  warehouse Warehouse      @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
+  lotBatch  LotBatch?      @relation(fields: [lotBatchId], references: [id], onDelete: SetNull)
+
+  @@unique([variantId, serial], map: "serial_units_variant_serial_unique")
+  @@index([tenantId, status])
+  @@index([tenantId, lotBatchId])
+  @@index([soldOnOrderItemId])
+  @@map("commerce_serial_units")
+}

@@ -59,6 +59,16 @@ model Customer {
   orders         Order[]
   quotes         Quote[]
 
+  // Commerce module inverse relations
+  carts            Cart[]
+  checkoutSessions CheckoutSession[]
+  storeCredits     StoreCredit[]
+  subscriptions    Subscription[]
+  reviews          ProductReview[]
+  productQuestions ProductQuestion[]
+  wishlists        Wishlist[]
+  taxExemptions    TaxExemption[]
+
   @@unique([tenantId, email], map: "customers_tenant_email_unique")
   @@index([tenantId, type])
   @@index([tenantId, assignedRepId])

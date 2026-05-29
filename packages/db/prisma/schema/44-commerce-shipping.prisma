@@ -1,0 +1,120 @@
+// Commerce — Shipping zones, profiles, manual rates. Real-time carrier
+// rates and label purchases delegate to the ShippingProvider plug-in
+// chosen at checkout time.
+
+model ShippingZone {
+  id       String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId String @map("tenant_id") @db.Uuid
+  name     String @db.VarChar(127)
+  priority Int    @default(0)
+
+  // Targeting payload — countries[], regions[], postalCodeRanges[]
+  // (ISO codes + ranges). Service-layer Zod validates the shape.
+  targeting Json @default("{}")
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  tenant Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  rates  ShippingRate[]
+
+  @@index([tenantId, priority])
+  @@map("commerce_shipping_zones")
+}
+
+model ShippingProfile {
+  id          String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId    String  @map("tenant_id") @db.Uuid
+  name        String  @db.VarChar(127)
+  description String? @db.Text
+
+  // Carrier service slugs the profile allows. Empty array = any.
+  allowedCarrierServices Json @default("[]") @map("allowed_carrier_services")
+  // Hazmat classes allowed on this profile; items above these route to
+  // a different profile (or freight).
+  hazmatClassesAllowed Json @default("[\"none\"]") @map("hazmat_classes_allowed")
+  requiresSignature    Boolean @default(false) @map("requires_signature")
+  requiresFreight      Boolean @default(false) @map("requires_freight")
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  tenant         Tenant                       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  rates          ShippingRate[]
+  productLinks   ShippingProfileProduct[]
+  variantLinks   ShippingProfileVariant[]
+  collectionLinks ShippingProfileCollection[]
+
+  @@index([tenantId])
+  @@map("commerce_shipping_profiles")
+}
+
+// Merchant-defined fallback rates. Real-time provider rates always win
+// when a ShippingProvider installation is active.
+
+model ShippingRate {
+  id          String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId    String  @map("tenant_id") @db.Uuid
+  zoneId      String  @map("zone_id") @db.Uuid
+  profileId   String  @map("profile_id") @db.Uuid
+  name        String  @db.VarChar(127)
+  type        String  @db.VarChar(30)
+  // ^ flat | by_weight | by_price | by_item_count | free_above_threshold
+
+  amountCents     Int?   @map("amount_cents")
+  freeAboveCents  Int?   @map("free_above_cents")
+  bands           Json?  // for by_weight / by_price / by_item_count
+
+  currency               String  @db.VarChar(3)
+  carrier                String? @db.VarChar(63)
+  estimatedDeliveryDays  Int?    @map("estimated_delivery_days")
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  tenant  Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  zone    ShippingZone    @relation(fields: [zoneId], references: [id], onDelete: Cascade)
+  profile ShippingProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, zoneId])
+  @@index([tenantId, profileId])
+  @@map("commerce_shipping_rates")
+}
+
+// ─── Profile attachment joins ─────────────────────────────────────────
+
+model ShippingProfileProduct {
+  profileId String @map("profile_id") @db.Uuid
+  productId String @map("product_id") @db.Uuid
+
+  profile ShippingProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  product Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@id([profileId, productId])
+  @@index([productId])
+  @@map("commerce_shipping_profile_products")
+}
+
+model ShippingProfileVariant {
+  profileId String @map("profile_id") @db.Uuid
+  variantId String @map("variant_id") @db.Uuid
+
+  profile ShippingProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  variant ProductVariant  @relation(fields: [variantId], references: [id], onDelete: Cascade)
+
+  @@id([profileId, variantId])
+  @@index([variantId])
+  @@map("commerce_shipping_profile_variants")
+}
+
+model ShippingProfileCollection {
+  profileId    String @map("profile_id") @db.Uuid
+  collectionId String @map("collection_id") @db.Uuid
+
+  profile    ShippingProfile   @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  collection ProductCollection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+
+  @@id([profileId, collectionId])
+  @@index([collectionId])
+  @@map("commerce_shipping_profile_collections")
+}

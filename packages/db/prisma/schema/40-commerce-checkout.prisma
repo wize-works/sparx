@@ -1,0 +1,74 @@
+// Commerce — Checkout sessions. Multi-step state machine driving cart →
+// order. The session captures the chosen provider refs (payment intent,
+// shipping rate, tax breakdown) so the flow is idempotent across page
+// reloads.
+
+model CheckoutSession {
+  id       String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId String @map("tenant_id") @db.Uuid
+  cartId   String @map("cart_id") @db.Uuid
+
+  step String @default("cart_review") @db.VarChar(20)
+  // ^ cart_review | contact | shipping | payment | review | completed | expired
+
+  channel  String @db.VarChar(20)
+  currency String @db.VarChar(3)
+
+  customerId    String? @map("customer_id") @db.Uuid
+  b2bAccountId  String? @map("b2b_account_id") @db.Uuid
+  customerEmail String? @map("customer_email") @db.VarChar(255)
+  customerPhone String? @map("customer_phone") @db.VarChar(50)
+  acceptsMarketing Boolean @default(false) @map("accepts_marketing")
+
+  // Address snapshots persisted on the session so the storefront can
+  // replay them between steps without re-fetching from CustomerAddress.
+  shippingAddress Json? @map("shipping_address")
+  billingAddress  Json? @map("billing_address")
+
+  // Provider refs captured at each step.
+  shippingProviderSlug String? @map("shipping_provider_slug") @db.VarChar(63)
+  shippingRateRef      String? @map("shipping_rate_ref") @db.VarChar(255)
+  shippingDescription  String? @map("shipping_description") @db.VarChar(255)
+  paymentProviderSlug  String? @map("payment_provider_slug") @db.VarChar(63)
+  paymentRef           String? @map("payment_ref") @db.VarChar(255)
+  taxProviderSlug      String? @map("tax_provider_slug") @db.VarChar(63)
+  taxBreakdownRef      String? @map("tax_breakdown_ref") @db.VarChar(255)
+  taxBreakdown         Json?   @map("tax_breakdown")
+
+  // B2B-only inputs surfaced during net-terms checkout.
+  poNumber               String? @map("po_number") @db.VarChar(63)
+  paymentTermsRequested  String? @map("payment_terms_requested") @db.VarChar(20)
+
+  // Cached totals at session-completion time. After complete() runs,
+  // these mirror the Order's totals so refund flows can find the
+  // numbers without joining back to CRM.
+  subtotalCents          Int @default(0) @map("subtotal_cents")
+  discountTotalCents     Int @default(0) @map("discount_total_cents")
+  shippingTotalCents     Int @default(0) @map("shipping_total_cents")
+  taxTotalCents          Int @default(0) @map("tax_total_cents")
+  giftCardAppliedCents   Int @default(0) @map("gift_card_applied_cents")
+  storeCreditAppliedCents Int @default(0) @map("store_credit_applied_cents")
+  totalCents             Int @default(0) @map("total_cents")
+
+  // Idempotency on complete(). The same key always resolves to the same
+  // resulting orderId, even on retry.
+  idempotencyKey String? @map("idempotency_key") @db.VarChar(127)
+  resultOrderId  String? @map("result_order_id") @db.Uuid
+
+  expiresAt   DateTime  @map("expires_at") @db.Timestamptz
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+  completedAt DateTime? @map("completed_at") @db.Timestamptz
+
+  tenant     Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  cart       Cart        @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  customer   Customer?   @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  b2bAccount B2BAccount? @relation(fields: [b2bAccountId], references: [id], onDelete: SetNull)
+
+  @@unique([tenantId, idempotencyKey], map: "checkout_sessions_idempotency_unique")
+  @@index([tenantId, cartId])
+  @@index([tenantId, customerId])
+  @@index([tenantId, step])
+  @@index([tenantId, expiresAt])
+  @@map("commerce_checkout_sessions")
+}

@@ -22,6 +22,8 @@
     "@sparx/auth": "workspace:*",
     "@sparx/cms-editor": "workspace:*",
     "@sparx/cms-schemas": "workspace:*",
+    "@sparx/commerce": "workspace:*",
+    "@sparx/commerce-schemas": "workspace:*",
     "@sparx/crm": "workspace:*",
     "@sparx/crm-schemas": "workspace:*",
     "@sparx/db": "workspace:*",

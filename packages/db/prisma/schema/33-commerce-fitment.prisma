@@ -1,0 +1,101 @@
+// Commerce — Fitment data. Vehicle reference (make/model/engine) plus
+// per-product applicability. Drives auto-parts / diesel-service catalog
+// filtering (Gillett Diesel reference case). Reference tables are seeded
+// from a one-time CSV import for US auto/diesel; merchants can extend
+// (custom modifications, racing builds).
+
+model VehicleMake {
+  id              String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId        String? @map("tenant_id") @db.Uuid // null = platform-seeded
+  name            String  @db.VarChar(63)
+  slug            String  @db.VarChar(63)
+  countryOfOrigin String? @map("country_of_origin") @db.VarChar(2)
+  logoMediaId     String? @map("logo_media_id") @db.Uuid
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  tenant   Tenant?         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  models   VehicleModel[]
+  fitments ProductFitment[]
+
+  @@unique([tenantId, slug], map: "vehicle_makes_tenant_slug_unique")
+  @@index([tenantId])
+  @@map("commerce_vehicle_makes")
+}
+
+model VehicleModel {
+  id        String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId  String? @map("tenant_id") @db.Uuid
+  makeId    String  @map("make_id") @db.Uuid
+  name      String  @db.VarChar(127)
+  slug      String  @db.VarChar(127)
+  bodyStyle String? @map("body_style") @db.VarChar(63)
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  tenant   Tenant?         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  make     VehicleMake     @relation(fields: [makeId], references: [id], onDelete: Cascade)
+  engines  VehicleEngine[]
+  fitments ProductFitment[]
+
+  @@unique([makeId, slug], map: "vehicle_models_make_slug_unique")
+  @@index([tenantId])
+  @@map("commerce_vehicle_models")
+}
+
+model VehicleEngine {
+  id             String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId       String? @map("tenant_id") @db.Uuid
+  modelId        String  @map("model_id") @db.Uuid
+  name           String  @db.VarChar(127)
+  displacementCc Int?    @map("displacement_cc")
+  cylinders      Int?
+  fuelType       String? @map("fuel_type") @db.VarChar(20)
+  // ^ gasoline | diesel | hybrid | electric | flex_fuel | cng | lpg
+  aspiration     String? @db.VarChar(20)
+  // ^ natural | turbocharged | supercharged | twin_turbo
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  tenant   Tenant?         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  model    VehicleModel    @relation(fields: [modelId], references: [id], onDelete: Cascade)
+  fitments ProductFitment[]
+
+  @@index([tenantId, modelId])
+  @@map("commerce_vehicle_engines")
+}
+
+// A single fitment row = one applicability rule. A product can carry
+// many (fits both 6.0L and 6.7L Power Stroke 2003-2010 + the 7.3L
+// 1999-2003). All narrower filters are optional; absent = wildcard.
+
+model ProductFitment {
+  id        String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId  String  @map("tenant_id") @db.Uuid
+  productId String  @map("product_id") @db.Uuid
+  makeId    String  @map("make_id") @db.Uuid
+  modelId   String? @map("model_id") @db.Uuid
+  engineId  String? @map("engine_id") @db.Uuid
+  yearMin   Int?    @map("year_min")
+  yearMax   Int?    @map("year_max")
+  notes     String? @db.Text
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  tenant  Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  product Product        @relation(fields: [productId], references: [id], onDelete: Cascade)
+  make    VehicleMake    @relation(fields: [makeId], references: [id], onDelete: Restrict)
+  model   VehicleModel?  @relation(fields: [modelId], references: [id], onDelete: SetNull)
+  engine  VehicleEngine? @relation(fields: [engineId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, productId])
+  @@index([tenantId, makeId])
+  @@index([tenantId, modelId])
+  @@index([tenantId, engineId])
+  @@index([tenantId, yearMin, yearMax])
+  @@map("commerce_product_fitments")
+}

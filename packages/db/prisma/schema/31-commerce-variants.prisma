@@ -1,0 +1,163 @@
+// Commerce — Variants, options, option values, and per-variant image
+// bindings. A purchasable SKU = one ProductVariant row.
+
+model ProductOption {
+  id          String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId    String @map("tenant_id") @db.Uuid
+  productId   String @map("product_id") @db.Uuid
+  name        String @db.VarChar(63) // Color, Size, Material, ...
+  displayType String @default("dropdown") @map("display_type") @db.VarChar(20)
+  // ^ dropdown | swatch | image_swatch | radio | segmented
+  position    Int    @default(0)
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  tenant  Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  product Product              @relation(fields: [productId], references: [id], onDelete: Cascade)
+  values  ProductOptionValue[]
+
+  @@unique([productId, name], map: "product_options_name_unique")
+  @@index([tenantId, productId])
+  @@map("commerce_product_options")
+}
+
+model ProductOptionValue {
+  id            String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId      String  @map("tenant_id") @db.Uuid
+  optionId      String  @map("option_id") @db.Uuid
+  value         String  @db.VarChar(127)
+  swatchHex     String? @map("swatch_hex") @db.VarChar(7)
+  swatchImageId String? @map("swatch_image_id") @db.Uuid
+  position      Int     @default(0)
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  tenant            Tenant                    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  option            ProductOption             @relation(fields: [optionId], references: [id], onDelete: Cascade)
+  variantAssignments ProductVariantOptionValue[]
+  imageBindings     VariantImageOptionValue[]
+
+  @@unique([optionId, value], map: "product_option_values_value_unique")
+  @@index([tenantId, optionId])
+  @@map("commerce_product_option_values")
+}
+
+model ProductVariant {
+  id        String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId  String @map("tenant_id") @db.Uuid
+  productId String @map("product_id") @db.Uuid
+
+  sku     String  @db.VarChar(127)
+  barcode String? @db.VarChar(14)
+  title   String? @db.VarChar(255) // computed from options when omitted
+
+  priceCents          Int  @map("price_cents")
+  compareAtPriceCents Int? @map("compare_at_price_cents")
+  costCents           Int? @map("cost_cents")
+  currency            String @db.VarChar(3)
+
+  weightGrams Int? @map("weight_grams")
+  lengthMm    Int? @map("length_mm")
+  widthMm     Int? @map("width_mm")
+  heightMm    Int? @map("height_mm")
+
+  inventoryPolicy   String  @default("deny") @map("inventory_policy") @db.VarChar(20)
+  // ^ deny | continue | preorder
+  requiresShipping  Boolean @default(true) @map("requires_shipping")
+  fulfillmentType   String? @map("fulfillment_type") @db.VarChar(20) // overrides product-level when set
+  dropshipSourceId  String? @map("dropship_source_id") @db.Uuid
+
+  isDefault Boolean @default(false) @map("is_default")
+  position  Int     @default(0)
+  metadata  Json    @default("{}")
+
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz
+
+  tenant            Tenant                       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  product           Product                      @relation(fields: [productId], references: [id], onDelete: Cascade)
+  optionAssignments ProductVariantOptionValue[]
+  images            VariantImage[]
+  inventoryLevels   InventoryLevel[]
+  inventoryAdjustments InventoryAdjustment[]
+  inventoryReservations InventoryReservation[]
+  lotBatches        LotBatch[]
+  serialUnits       SerialUnit[]
+  priceListEntries  PriceListEntry[]
+  bulkPriceTiers    BulkPriceTier[]
+  contractPrices    ContractPrice[]
+  bundleComponents  BundleComponent[]
+  cartItems         CartItem[]
+  subscriptionItems SubscriptionItem[]
+  reviews           ProductReview[]
+  shippingProfileLinks ShippingProfileVariant[]
+  orderItems        OrderItem[]
+
+  @@unique([tenantId, sku], map: "product_variants_sku_unique")
+  @@index([tenantId, productId])
+  @@index([tenantId, dropshipSourceId])
+  @@index([tenantId, deletedAt])
+  @@map("commerce_product_variants")
+}
+
+// Join — pins a variant onto an option-value lattice point. The full
+// (variant, option, value) triple is unique so a variant can't have two
+// values for the same option.
+
+model ProductVariantOptionValue {
+  variantId     String @map("variant_id") @db.Uuid
+  optionValueId String @map("option_value_id") @db.Uuid
+
+  variant     ProductVariant     @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  optionValue ProductOptionValue @relation(fields: [optionValueId], references: [id], onDelete: Cascade)
+
+  @@id([variantId, optionValueId])
+  @@index([optionValueId])
+  @@map("commerce_product_variant_option_values")
+}
+
+// Per-variant image — solves the per-color-image case PRD §3 flagged as
+// TBD. mediaAssetId references the shared @sparx/db MediaAsset row from
+// the CMS module; images live in the shared media library, not a
+// commerce-specific table.
+
+model VariantImage {
+  id           String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId     String  @map("tenant_id") @db.Uuid
+  productId    String  @map("product_id") @db.Uuid
+  variantId    String? @map("variant_id") @db.Uuid // null = product-level
+  mediaAssetId String  @map("media_asset_id") @db.Uuid
+  position     Int     @default(0)
+  alt          String? @db.VarChar(512)
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  tenant            Tenant                    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  product           Product                   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  variant           ProductVariant?           @relation(fields: [variantId], references: [id], onDelete: SetNull)
+  optionValueLinks  VariantImageOptionValue[]
+
+  @@index([tenantId, productId])
+  @@index([tenantId, variantId])
+  @@index([mediaAssetId])
+  @@map("commerce_variant_images")
+}
+
+// Many-to-many: an image can be pinned to a set of option values. When
+// the storefront resolves "show me the gallery for Color=Red", it picks
+// images whose option-value set is a superset of the active selection.
+
+model VariantImageOptionValue {
+  variantImageId String @map("variant_image_id") @db.Uuid
+  optionValueId  String @map("option_value_id") @db.Uuid
+
+  variantImage VariantImage       @relation(fields: [variantImageId], references: [id], onDelete: Cascade)
+  optionValue  ProductOptionValue @relation(fields: [optionValueId], references: [id], onDelete: Cascade)
+
+  @@id([variantImageId, optionValueId])
+  @@index([optionValueId])
+  @@map("commerce_variant_image_option_values")
+}
