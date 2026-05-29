@@ -1,11 +1,13 @@
 import { renderModuleOgImage, OG_SIZE } from '@/lib/og-module';
 import { MODULES } from '@/lib/modules';
+import { loadModuleData } from '@/lib/load-module-data';
 
-export const runtime = 'edge';
+export const runtime = 'nodejs';
 export const size = OG_SIZE;
 export const contentType = 'image/png';
 export const alt = MODULES.ai.title;
 
-export default function Image() {
-  return renderModuleOgImage(MODULES.ai);
+export default async function Image() {
+  const meta = await loadModuleData('ai');
+  return renderModuleOgImage(meta);
 }

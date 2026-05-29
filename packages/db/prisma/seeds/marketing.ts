@@ -10,7 +10,7 @@
 // adding a cross-workspace path. If the marketing page copy changes,
 // re-running the seed brings the DB into line.
 
-import type { PrismaClient } from '@prisma/client';
+import type { Prisma, PrismaClient } from '@prisma/client';
 
 const MARKETING_TENANT_SLUG = 'sparx-marketing';
 
@@ -443,6 +443,74 @@ const MODULES: ModuleSeed[] = [
   },
 ];
 
+interface FaqSeed {
+  question: string;
+  answer: string;
+  order: number;
+}
+
+// Mirrors apps/web/components/marketing/faq.tsx. Plain-text answers — the
+// styled `<span>` highlight in the original gets flattened into prose.
+const FAQ_ITEMS: FaqSeed[] = [
+  {
+    order: 10,
+    question: 'Can I really get a live store in five minutes?',
+    answer:
+      'Yes — that’s the design target the entire platform is built around. Sign up, pick a theme, activate the modules you need, add a product, take an order. We measure new-merchant time-to-first-order and that number is the north star metric. If it takes longer for you, something is broken and we want to know.',
+  },
+  {
+    order: 20,
+    question: 'What happens if I turn a module off?',
+    answer:
+      'Billing stops on the next cycle. Your data stays exactly where it was. The module’s UI becomes inactive — but if you turn it back on a year later, every order, customer, and configuration is still there. We never charge for storage on inactive modules and we never delete your data without your explicit request.',
+  },
+  {
+    order: 30,
+    question: 'How does the MCP integration actually work?',
+    answer:
+      'You enable the AI module, copy your MCP endpoint URL and a scoped API key, and paste them into Claude Desktop, ChatGPT, Cursor, or any MCP-compatible client. The client now sees your tenant’s tools — read products, search customers, draft emails, create orders, etc. Every call is scoped to your tenant, signed with your key, and logged. Revoke the key in one click.',
+  },
+  {
+    order: 40,
+    question: 'Where does my data live? Who owns it?',
+    answer:
+      'You own your data. Sparx runs on Google Kubernetes Engine in us-central1 with Postgres backed up nightly. Multi-tenancy is enforced at the database level with row-level security — your data is isolated from every other tenant. Full export to JSON or SQL is available in the dashboard at any time, no support ticket required.',
+  },
+  {
+    order: 50,
+    question: 'Do you offer custom domains and SSL?',
+    answer:
+      'Yes, on every plan. Add a domain, point your DNS, and we provision a Let’s Encrypt certificate automatically. Custom email-sending domains use Postal on sparx.email with auto-configured SPF, DKIM, and DMARC. No additional cost, no third-party DNS service required.',
+  },
+  {
+    order: 60,
+    question: 'Can I migrate from Shopify or HubSpot?',
+    answer:
+      'Yes. We ship native importers for Shopify (products, customers, orders, themes), HubSpot (contacts, deals, lists), Mailchimp (audiences, automations), and WordPress (posts, media, redirects). The Gillett Diesel migration from Shopify + HubSpot took 14 days end-to-end including custom checkout work — most SMB migrations take under a week.',
+  },
+  {
+    order: 70,
+    question: 'What about uptime, SLAs, and support?',
+    answer:
+      '99.95% uptime target on all plans. Status page at status.sparx.works. Pro and above get 24-hour email response; Business gets 4-hour; Enterprise gets phone, dedicated Slack, and a 99.99% SLA with credits. Managed hosting clients ($750/mo) get on-call infrastructure support included.',
+  },
+];
+
+// Minimal TipTap doc — single paragraph holding the answer text. Matches
+// the shape the cms-editor serializer expects, so consumers can render
+// these through the same pipeline as authored rich text.
+function textToTipTapDoc(text: string): Prisma.InputJsonValue {
+  return {
+    type: 'doc',
+    content: [
+      {
+        type: 'paragraph',
+        content: [{ type: 'text', text }],
+      },
+    ],
+  };
+}
+
 async function ensureTenant(prisma: PrismaClient): Promise<string> {
   const existing = await prisma.tenant.findUnique({ where: { slug: MARKETING_TENANT_SLUG } });
   if (existing) return existing.id;
@@ -541,6 +609,44 @@ export async function seedMarketingContent(prisma: PrismaClient): Promise<void> 
       }
     }
 
-    console.log(`Marketing seed: tenant=${tenantId} modules=${MODULES.length}`);
+    for (const faq of FAQ_ITEMS) {
+      // FAQ entries are non-routable (slug stays null); we key them by an
+      // order-prefixed marker stored in body so the seed can find the
+      // existing row to upsert.
+      const body = {
+        question: faq.question,
+        answer: textToTipTapDoc(faq.answer),
+        order: faq.order,
+      };
+      const existing = await tx.contentEntry.findFirst({
+        where: {
+          typeKey: 'faq_item',
+          // jsonb path equality — match the question to identify the row.
+          body: { path: ['question'], equals: faq.question },
+        },
+        select: { id: true },
+      });
+      if (existing) {
+        await tx.contentEntry.update({
+          where: { id: existing.id },
+          data: { body, status: 'published', publishedAt: new Date() },
+        });
+      } else {
+        await tx.contentEntry.create({
+          data: {
+            tenantId,
+            typeKey: 'faq_item',
+            status: 'published',
+            publishedAt: new Date(),
+            body,
+            seoJson: {},
+          },
+        });
+      }
+    }
+
+    console.log(
+      `Marketing seed: tenant=${tenantId} modules=${MODULES.length} faq=${FAQ_ITEMS.length}`
+    );
   });
 }

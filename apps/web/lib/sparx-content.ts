@@ -106,6 +106,54 @@ export async function listModules(): Promise<{ slug: string; meta: ModuleBody }[
     .map((e) => ({ slug: e.slug, meta: e.body }));
 }
 
+// FAQ items — non-routable. Sorted client-side by `order` so the seed and
+// dashboard can reorder without an explicit API sort param.
+
+export interface FaqItemBody {
+  question: string;
+  // TipTap doc — flattened to plain text via flattenTipTap below. Anything
+  // richer joins by paragraph. The marketing FAQ component renders plain
+  // text; the dashboard editor handles authoring with full block fidelity.
+  answer: {
+    type: string;
+    content?: { type: string; content?: { type: string; text?: string }[] }[];
+  };
+  category?: string;
+  order?: number;
+}
+
+export interface FetchedFaqItem {
+  id: string;
+  question: string;
+  answer: string;
+  category?: string;
+  order: number;
+}
+
+function flattenTipTap(doc: FaqItemBody['answer']): string {
+  if (!doc?.content) return '';
+  return doc.content
+    .map((node) => (node.content ?? []).map((leaf) => leaf.text ?? '').join(''))
+    .filter((line) => line.length)
+    .join('\n\n');
+}
+
+export async function listFaqItems(): Promise<FetchedFaqItem[]> {
+  const entries = await publicGet<ApiEntry<FaqItemBody>[]>(`/v1/public/content/entries`, {
+    type: 'faq_item',
+    limit: 100,
+  });
+  return entries
+    .map((e) => ({
+      id: e.id,
+      question: e.body.question,
+      answer: flattenTipTap(e.body.answer),
+      ...(e.body.category ? { category: e.body.category } : {}),
+      order: typeof e.body.order === 'number' ? e.body.order : Number.MAX_SAFE_INTEGER,
+    }))
+    .sort((a, b) => a.order - b.order);
+}
+
 export async function getModule(
   slug: string,
   options: { previewToken?: string } = {}

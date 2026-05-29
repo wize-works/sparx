@@ -16,42 +16,17 @@ import { Nav } from '@/components/marketing/nav';
 import { Footer } from '@/components/marketing/footer';
 import { ModulePage } from '@/components/marketing/module-page';
 import type { MarketingModule } from '@/components/marketing/primitives';
-import { MODULES, type ModuleMeta } from '@/lib/modules';
+import type { ModuleMeta } from '@/lib/modules';
+import { loadModuleData } from '@/lib/load-module-data';
 
 type ModuleKey = MarketingModule;
-import { getModule } from '@/lib/sparx-content';
 
 export interface MarketingPageProps {
   searchParams?: Promise<{ sparxPreview?: string }>;
 }
 
 export async function loadModuleMeta(slug: ModuleKey, previewToken?: string): Promise<ModuleMeta> {
-  try {
-    const fetched = await getModule(slug, previewToken ? { previewToken } : {});
-    if (!fetched) return MODULES[slug];
-    return {
-      slug: fetched.slug,
-      module: slug,
-      label: fetched.meta.label,
-      headlinePrimary: fetched.meta.headlinePrimary,
-      headlineSecondary: fetched.meta.headlineSecondary,
-      title: fetched.meta.title,
-      description: fetched.meta.description,
-      lede: fetched.meta.lede,
-      features: fetched.features,
-      pricing: {
-        price: fetched.meta.pricing.price,
-        period: fetched.meta.pricing.period,
-        modifier: fetched.meta.pricing.modifier === 'additive' ? '+' : '',
-        bundleNote: fetched.meta.pricing.bundleNote,
-      },
-      ...(fetched.meta.marketingDomain
-        ? { marketingDomain: fetched.meta.marketingDomain.replace(/^https?:\/\//, '') }
-        : {}),
-    };
-  } catch {
-    return MODULES[slug];
-  }
+  return loadModuleData(slug, previewToken);
 }
 
 export function makeMetadata(slug: ModuleKey) {
