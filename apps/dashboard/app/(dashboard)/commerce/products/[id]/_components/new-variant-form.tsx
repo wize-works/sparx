@@ -40,12 +40,12 @@ export function NewVariantForm({ productId, options, onCreated, onCancel }: Prop
     setFieldErrors({});
 
     const form = new FormData(e.currentTarget);
-    const sku = form.get('sku')?.toString().trim() ?? '';
-    const priceCentsRaw = form.get('priceCents')?.toString().trim() ?? '';
+    const sku = stringField(form.get('sku')).trim();
+    const priceCentsRaw = stringField(form.get('priceCents')).trim();
     const priceCents = Number.parseInt(priceCentsRaw, 10);
-    const inventoryPolicy = form.get('inventoryPolicy')?.toString() ?? 'deny';
+    const inventoryPolicy = stringField(form.get('inventoryPolicy'), 'deny');
     const isDefault = form.get('isDefault') === 'on';
-    const barcode = form.get('barcode')?.toString().trim();
+    const barcode = stringField(form.get('barcode')).trim();
 
     if (!sku) {
       setFieldErrors({ sku: 'SKU is required.' });
@@ -200,4 +200,12 @@ export function NewVariantForm({ productId, options, onCreated, onCancel }: Prop
       </Stack>
     </form>
   );
+}
+
+// FormData.get() returns string | File | null. We only ever submit text
+// fields here, but the union forces a guard before .trim() — otherwise
+// typescript-eslint's no-base-to-string flags it. This helper centralizes
+// the narrowing.
+function stringField(value: FormDataEntryValue | null, fallback = ''): string {
+  return typeof value === 'string' ? value : fallback;
 }

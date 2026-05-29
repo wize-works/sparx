@@ -11,7 +11,7 @@ import {
   Stack,
   Text,
 } from '@sparx/ui';
-import { Pencil, UserPlus } from 'lucide-react';
+import { Pencil } from 'lucide-react';
 import { api } from '@/lib/api-rest-client';
 import { CmsTabs } from '../_components/cms-tabs';
 import { AuthorCreateForm } from './author-create-form';
