@@ -261,11 +261,11 @@ resource "cloudflare_record" "sparx_email_spf" {
   zone_id         = data.cloudflare_zone.sparx_email[0].id
   name            = "@"
   type            = "TXT"
-  content         = "v=spf1 a mx ~all"
+  content         = "v=spf1 a mx include:spf.sparx.email ~all"
   ttl             = 1
   proxied         = false
   allow_overwrite = true
-  comment         = "SPF — sparx.email apex"
+  comment         = "SPF — sparx.email apex (includes Postal's auto-managed spf.sparx.email)"
 }
 
 # DKIM placeholder — Postal generates the signing key at first
@@ -281,13 +281,13 @@ resource "cloudflare_record" "sparx_email_spf" {
 resource "cloudflare_record" "sparx_email_dkim" {
   count           = var.cloudflare_enabled ? 1 : 0
   zone_id         = data.cloudflare_zone.sparx_email[0].id
-  name            = "postal._domainkey"
+  name            = "${var.sparx_email_dkim_selector}._domainkey"
   type            = "TXT"
   content         = var.sparx_email_dkim_value
   ttl             = 1
   proxied         = false
   allow_overwrite = true
-  comment         = "DKIM — placeholder until Postal generates the signing key"
+  comment         = "DKIM — per-server selector from Postal admin UI"
 }
 
 # DMARC — start in `none` mode for first 2 weeks of sending so we can

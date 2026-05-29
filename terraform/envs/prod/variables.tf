@@ -38,5 +38,15 @@ variable "ops_email" {
 variable "sparx_email_dkim_value" {
   type        = string
   default     = "v=DKIM1; k=rsa; p=PENDING_POSTAL_BOOTSTRAP"
-  description = "DKIM TXT value for postal._domainkey.sparx.email. Populate after first Postal bootstrap."
+  description = "DKIM TXT value for <selector>._domainkey.sparx.email. Populate after first Postal bootstrap."
+}
+
+# Postal v3 puts a unique selector on each Server (DNS-safe random
+# suffix like `postal-fID0Sm`). Both the selector and the value come
+# from the Postal admin UI: Server -> Domains -> DNS Setup. Bump both
+# together when a Server is rotated.
+variable "sparx_email_dkim_selector" {
+  type        = string
+  default     = "postal"
+  description = "DKIM selector chunk that prefixes ._domainkey for the per-server record (e.g. 'postal-fID0Sm')."
 }
