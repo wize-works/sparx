@@ -1,0 +1,36 @@
+{
+  "name": "@sparx/integration-framework",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Provider plug-in SDK for Sparx Commerce. Defines the PaymentProvider, TaxProvider, ShippingProvider, SubscriptionBilling, and DropshipProvider interfaces that concrete provider packages implement, plus the registry, tenant-config loader, webhook router, OAuth helper, and credential-vault accessor that the platform wires them through.",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    },
+    "./testing": {
+      "types": "./src/testing/index.ts",
+      "default": "./src/testing/index.ts"
+    }
+  },
+  "files": [
+    "src"
+  ],
+  "scripts": {
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --passWithNoTests",
+    "test:watch": "vitest",
+    "clean": "rm -rf .turbo dist *.tsbuildinfo"
+  },
+  "dependencies": {
+    "@sparx/commerce-schemas": "workspace:*",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "^25.9.1",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.7"
+  }
+}

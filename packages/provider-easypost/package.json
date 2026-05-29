@@ -1,0 +1,32 @@
+{
+  "name": "@sparx/provider-easypost",
+  "version": "0.0.0",
+  "private": true,
+  "description": "EasyPost provider for Sparx Commerce — implements ShippingProvider with deep multi-carrier coverage including freight/LTL for oversized items (play structures, industrial parts).",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "files": [
+    "src"
+  ],
+  "scripts": {
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --passWithNoTests",
+    "clean": "rm -rf .turbo dist *.tsbuildinfo"
+  },
+  "dependencies": {
+    "@sparx/commerce-schemas": "workspace:*",
+    "@sparx/integration-framework": "workspace:*",
+    "@easypost/api": "^7.4.0"
+  },
+  "devDependencies": {
+    "@types/node": "^25.9.1",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.7"
+  }
+}

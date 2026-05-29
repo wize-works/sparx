@@ -1,0 +1,32 @@
+{
+  "name": "@sparx/provider-stripe",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Stripe provider for Sparx Commerce — implements PaymentProvider, TaxProvider (Stripe Tax), and SubscriptionBilling. Powers the default Sparx Pay white-label as well as the explicit Stripe install in the marketplace.",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "files": [
+    "src"
+  ],
+  "scripts": {
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --passWithNoTests",
+    "clean": "rm -rf .turbo dist *.tsbuildinfo"
+  },
+  "dependencies": {
+    "@sparx/commerce-schemas": "workspace:*",
+    "@sparx/integration-framework": "workspace:*",
+    "stripe": "^17.7.0"
+  },
+  "devDependencies": {
+    "@types/node": "^25.9.1",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.7"
+  }
+}

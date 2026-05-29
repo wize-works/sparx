@@ -29,7 +29,64 @@ export type EventType =
   | 'email.domain.verified'
   // Webhooks / redirects
   | 'redirect.added'
-  | 'redirect.removed';
+  | 'redirect.removed'
+  // ─── Commerce ───────────────────────────────────────────────────────
+  // Catalog
+  | 'product.created'
+  | 'product.updated'
+  | 'product.deleted'
+  | 'variant.created'
+  | 'variant.updated'
+  | 'variant.deleted'
+  // Inventory
+  | 'inventory.adjusted'
+  | 'inventory.low'
+  | 'inventory.depleted'
+  // Cart + checkout
+  | 'cart.created'
+  | 'cart.updated'
+  | 'cart.abandoned'
+  | 'cart.recovered'
+  | 'checkout.started'
+  | 'checkout.completed'
+  | 'checkout.expired'
+  // Orders (Commerce-side fan-out; CRM still owns the row)
+  | 'order.placed'
+  | 'order.paid'
+  | 'order.fulfilled'
+  | 'order.delivered'
+  | 'order.cancelled'
+  | 'order.refunded'
+  | 'order.payment_failed'
+  // Subscriptions
+  | 'subscription.created'
+  | 'subscription.renewed'
+  | 'subscription.payment_failed'
+  | 'subscription.paused'
+  | 'subscription.resumed'
+  | 'subscription.cancelled'
+  // Returns / RMA
+  | 'return.requested'
+  | 'return.approved'
+  | 'return.received'
+  | 'return.refunded'
+  // Reviews + Q&A
+  | 'review.submitted'
+  | 'review.published'
+  | 'review.flagged'
+  // Provider marketplace
+  | 'provider.installed'
+  | 'provider.uninstalled'
+  | 'provider.health_changed'
+  // Gift cards + store credit
+  | 'giftcard.issued'
+  | 'giftcard.redeemed'
+  | 'storecredit.granted'
+  | 'storecredit.spent'
+  // Configurator
+  | 'configuration.requested'
+  | 'configuration.quoted'
+  | 'configuration.accepted';
 
 export interface SparxEvent<T = unknown> {
   type: EventType;

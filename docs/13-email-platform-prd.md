@@ -30,12 +30,12 @@ What we gain by going Mailgun-direct:
 
 Cost trajectory:
 
-| Phase | Volume | Mailgun tier | $/mo |
-| --- | --- | --- | --- |
-| Now (platform only) | <100/day | **Free** | $0 |
-| First merchant custom domain | <10k/mo | **Foundation** | $35 |
-| 50–500 merchants | <50k/mo | **Foundation** | $35 |
-| 1,000+ merchants | 100k+/mo | **Scale** | $90+ |
+| Phase                        | Volume   | Mailgun tier   | $/mo |
+| ---------------------------- | -------- | -------------- | ---- |
+| Now (platform only)          | <100/day | **Free**       | $0   |
+| First merchant custom domain | <10k/mo  | **Foundation** | $35  |
+| 50–500 merchants             | <50k/mo  | **Foundation** | $35  |
+| 1,000+ merchants             | 100k+/mo | **Scale**      | $90+ |
 
 If we hit scale where Mailgun's per-email cost becomes meaningful, the natural revisit is migrating outbound to AWS SES ($0.10/1k emails, ~$10/mo at 100k/mo). At that point the `email-worker` swaps providers; the rest of the platform doesn't notice.
 
