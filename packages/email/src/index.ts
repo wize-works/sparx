@@ -1,9 +1,10 @@
 // @sparx/email — typed templates, render path, and provider.
 //
-// Two ways callers reach Postal:
+// Two ways callers reach the email pipeline:
 //
 //   1. (Default) Publish 'email.send' to Pub/Sub. email-worker pulls the
-//      event, calls renderTemplate(), and hands the result to the provider.
+//      event, calls renderTemplate(), and hands the result to the active
+//      provider (Mailgun in prod, console in dev/test).
 //
 //   2. (Escape hatch) Call sendTemplate() directly. Only for OTP / 2FA
 //      and other synchronous-required flows — see CLAUDE.md.
@@ -14,6 +15,8 @@ export {
   consoleProvider,
   lastConsoleSend,
   resetConsoleProvider,
+  createMailgunProvider,
+  MailgunParameterError,
   createPostalProvider,
   PostalParameterError,
   getEmailProvider,

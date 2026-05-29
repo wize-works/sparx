@@ -53,7 +53,7 @@ resource "google_vpc_access_connector" "workers" {
 resource "google_service_account" "email_worker" {
   account_id   = "sparx-email-worker"
   display_name = "Sparx email-worker (Cloud Run)"
-  description  = "Runtime SA for the email-worker Cloud Run service. Reads Postal API key + DB URL from Secret Manager."
+  description  = "Runtime SA for the email-worker Cloud Run service. Reads Mailgun API key + DB URL from Secret Manager."
 }
 
 resource "google_project_iam_member" "email_worker_roles" {
@@ -154,8 +154,9 @@ module "email_worker_cloudrun" {
     SERVICE_NAME         = "email-worker"
     LOG_LEVEL            = "info"
     PUBSUB_INVOKER_SA    = google_service_account.pubsub_invoker.email
-    SPARX_EMAIL_PROVIDER = "postal"
-    SPARX_POSTAL_URL     = "https://postal.sparx.email"
+    SPARX_EMAIL_PROVIDER = "mailgun"
+    SPARX_MAILGUN_DOMAIN = "sparx.email"
+    SPARX_MAILGUN_REGION = "us"
     SPARX_EMAIL_FROM     = "Sparx <noreply@sparx.email>"
   }
 
@@ -165,8 +166,8 @@ module "email_worker_cloudrun" {
       secret_id = "database-url"
     },
     {
-      name      = "SPARX_POSTAL_API_KEY"
-      secret_id = "postal-api-key"
+      name      = "SPARX_MAILGUN_API_KEY"
+      secret_id = "mailgun-api-key"
     },
   ]
 

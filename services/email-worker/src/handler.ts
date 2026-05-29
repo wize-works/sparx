@@ -18,7 +18,12 @@
 
 import type { Logger } from 'pino';
 import { z } from 'zod';
-import { getEmailProvider, PostalParameterError, renderTemplate } from '@sparx/email';
+import {
+  getEmailProvider,
+  MailgunParameterError,
+  PostalParameterError,
+  renderTemplate,
+} from '@sparx/email';
 
 const TemplateSendSchema = z.discriminatedUnion('template', [
   z.object({
@@ -98,9 +103,9 @@ export async function handle(event: EmailSendEvent, logger: Logger): Promise<Han
 }
 
 function isPermanent(err: unknown): boolean {
-  // Postal's typed parameter-error class — retrying won't help. Console
+  // Provider-typed parameter-error classes — retrying won't help. Console
   // provider can't fail with anything that isn't a code bug (which we
-  // WANT to surface, not silently ack), so only Postal's explicit
-  // rejection counts as permanent here.
-  return err instanceof PostalParameterError;
+  // WANT to surface, not silently ack), so only explicit provider
+  // rejections count as permanent here.
+  return err instanceof MailgunParameterError || err instanceof PostalParameterError;
 }
