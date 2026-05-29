@@ -1,6 +1,8 @@
-# api-graphql runtime image. Same shape as services/api-rest/Dockerfile but
-# with a narrower workspace context — GraphQL only touches the content
-# slice, so we skip CRM/email/auth packages here.
+# api-graphql runtime image. Same shape as services/api-rest/Dockerfile.
+#
+# CRM resolvers depend on @sparx/crm → @sparx/auth → @sparx/email +
+# @sparx/events, so all four must be COPY'd into the image even though the
+# GraphQL surface itself doesn't import them directly.
 #
 # Built by GitHub Actions, pushed to
 # us-central1-docker.pkg.dev/sparxworks/sparx/api-graphql:<sha>.
@@ -17,6 +19,10 @@ COPY tsconfig.base.json ./
 COPY packages/db ./packages/db
 COPY packages/api-core ./packages/api-core
 COPY packages/cms-schemas ./packages/cms-schemas
+COPY packages/events ./packages/events
+COPY packages/email ./packages/email
+COPY packages/auth ./packages/auth
+COPY packages/crm ./packages/crm
 COPY services/api-graphql ./services/api-graphql
 
 # Install only what api-graphql needs (and transitive workspace deps).
