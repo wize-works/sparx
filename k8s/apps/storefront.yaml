@@ -72,21 +72,15 @@ spec:
               memory: '512Mi'
           livenessProbe:
             httpGet:
-              path: /
+              path: /api/health
               port: 3000
-              httpHeaders:
-                - name: Host
-                  value: 'health.sparx.zone'
             initialDelaySeconds: 15
             periodSeconds: 30
             failureThreshold: 3
           readinessProbe:
             httpGet:
-              path: /
+              path: /api/health
               port: 3000
-              httpHeaders:
-                - name: Host
-                  value: 'health.sparx.zone'
             initialDelaySeconds: 5
             periodSeconds: 10
             failureThreshold: 3
