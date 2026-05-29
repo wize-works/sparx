@@ -35,9 +35,15 @@ const PLATFORM_HOSTNAMES = new Set<string>([
   // `domains` table in Phase 2)
   'sparx.zone',
   'www.sparx.zone',
-  // sparx.email
+  // sparx.email — apex + Postal infra hostnames. `postal.sparx.email`
+  // is the admin UI (Caddy → postal-web ClusterIP). `mail.sparx.email`
+  // is the SMTP banner hostname Postal advertises; Caddy doesn't
+  // terminate TLS for it (Postal speaks STARTTLS on :25 directly) but
+  // we keep it in the list in case future tooling lands behind Caddy.
   'sparx.email',
   'www.sparx.email',
+  'postal.sparx.email',
+  'mail.sparx.email',
   // module marketing
   'sparxcms.com',
   'www.sparxcms.com',
