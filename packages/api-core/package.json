@@ -67,7 +67,7 @@
     "clean": "rm -rf .turbo dist *.tsbuildinfo"
   },
   "dependencies": {
-    "@fastify/jwt": "^9.0.4",
+    "@fastify/jwt": "^10.1.0",
     "@google-cloud/pubsub": "^5.3.0",
     "@prisma/client": "^6.19.3",
     "@sparx/cms-schemas": "workspace:*",
