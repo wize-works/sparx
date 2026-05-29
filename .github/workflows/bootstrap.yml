@@ -234,11 +234,12 @@ jobs:
           }
           MARIADB_ROOT_PASSWORD=$(fetch postal-mariadb-root-password)
           MARIADB_PASSWORD=$(fetch postal-db-password)
-          RABBITMQ_PASSWORD=$(fetch postal-rabbitmq-password)
           RAILS_SECRET_KEY=$(fetch postal-rails-secret-key)
           SIGNING_KEY=$(fetch postal-signing-key)
+          # postal-rabbitmq-password is intentionally not fetched — Postal v3
+          # has no rabbitmq dependency. Leave the SM secret as historical.
 
-          for name in MARIADB_ROOT_PASSWORD MARIADB_PASSWORD RABBITMQ_PASSWORD RAILS_SECRET_KEY; do
+          for name in MARIADB_ROOT_PASSWORD MARIADB_PASSWORD RAILS_SECRET_KEY; do
             if [ -z "${!name}" ]; then
               echo "::error::$name source secret is missing in Secret Manager; aborting Postal bootstrap."
               echo "::error::Create the postal-* secrets first — see k8s/postal/README.md."
@@ -256,23 +257,27 @@ jobs:
             --from-literal=MARIADB_USER=postal \
             --from-literal=MARIADB_PASSWORD="$MARIADB_PASSWORD" \
             --dry-run=client -o yaml | kubectl apply -f -
-          kubectl create secret generic rabbitmq-credentials -n "$POSTAL_NS" \
-            --from-literal=RABBITMQ_DEFAULT_USER=postal \
-            --from-literal=RABBITMQ_DEFAULT_PASS="$RABBITMQ_PASSWORD" \
-            --dry-run=client -o yaml | kubectl apply -f -
+          # postal-secrets uses Konfig-derived env var names — no POSTAL_
+          # prefix because :main_db / :message_db / :rails are top-level
+          # Konfig groups parallel to :postal (see k8s/postal/config.yaml
+          # header for the full schema-path → env-var rule). These env
+          # vars override the legacy YAML values at Postal startup.
+          #
+          # Postal v3 dropped RabbitMQ — no rabbitmq-credentials needed
+          # and POSTAL_RABBITMQ_PASSWORD isn't read by any code path.
           kubectl create secret generic postal-secrets -n "$POSTAL_NS" \
-            --from-literal=POSTAL_DB_PASSWORD="$MARIADB_PASSWORD" \
-            --from-literal=POSTAL_RABBITMQ_PASSWORD="$RABBITMQ_PASSWORD" \
-            --from-literal=POSTAL_RAILS_SECRET_KEY="$RAILS_SECRET_KEY" \
-            --from-literal=POSTAL_SIGNING_KEY="$SIGNING_KEY" \
+            --from-literal=MAIN_DB_PASSWORD="$MARIADB_PASSWORD" \
+            --from-literal=MESSAGE_DB_PASSWORD="$MARIADB_PASSWORD" \
+            --from-literal=RAILS_SECRET_KEY="$RAILS_SECRET_KEY" \
+            --from-literal=SIGNING_KEY="$SIGNING_KEY" \
             --dry-run=client -o yaml | kubectl apply -f -
 
-          # Stage 3: MariaDB + RabbitMQ. Wait Ready before progressing —
-          # the bootstrap Job needs the DB to accept connections.
+          # Stage 3: MariaDB. Wait Ready before progressing — the
+          # bootstrap Job needs the DB to accept connections. RabbitMQ
+          # was dropped in Postal v3, so we skip rabbitmq.yaml; the
+          # StatefulSet manifest stays in-tree until we delete it.
           kubectl apply -f k8s/postal/mariadb.yaml
-          kubectl apply -f k8s/postal/rabbitmq.yaml
           kubectl rollout status statefulset/mariadb -n "$POSTAL_NS" --timeout=5m
-          kubectl rollout status statefulset/rabbitmq -n "$POSTAL_NS" --timeout=5m
 
           # Stage 4: config + schema-migrate Job.
           kubectl apply -f k8s/postal/config.yaml

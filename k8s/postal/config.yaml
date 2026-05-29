@@ -2,9 +2,18 @@
 # /config/postal.yml. Schema reference:
 #   https://docs.postalserver.io/getting-started/configuration
 #
-# Secrets (DB passwords, RabbitMQ password, app secret_key, signing key)
-# are loaded from `postal-secrets` Secret as env vars below — Postal
-# supports ${ENV_VAR} interpolation in its YAML.
+# IMPORTANT: Postal's legacy YAML format does NOT support shell-style
+# `${VAR}` interpolation, NOR ERB tags. Anything that looks like one is
+# read as a literal string. Secrets must be supplied via env vars that
+# Konfig converts from the schema path:
+#   schema [:main_db, :password]    → env MAIN_DB_PASSWORD
+#   schema [:message_db, :password] → env MESSAGE_DB_PASSWORD
+#   schema [:rails, :secret_key]    → env RAILS_SECRET_KEY
+# Note: NO `POSTAL_` prefix — `:main_db` is a top-level Konfig group
+# parallel to `:postal`, not nested under it. Env wins over YAML.
+#
+# postal-secrets carries these env names; we leave password fields out
+# of the YAML entirely and let the env source provide them.
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -39,26 +48,25 @@ data:
       - host: postal-smtp.postal.svc.cluster.local
         port: 25
 
+    # main_db / message_db: password comes from env (MAIN_DB_PASSWORD /
+    # MESSAGE_DB_PASSWORD via postal-secrets). Do NOT put the password
+    # here — Postal would read it literally. Host/username/database stay
+    # here so they're version-controlled config, not opaque env state.
     main_db:
       host: mariadb.postal.svc.cluster.local
       port: 3306
       username: postal
-      password: <%= ENV['POSTAL_DB_PASSWORD'] %>
       database: postal
 
     message_db:
       host: mariadb.postal.svc.cluster.local
       port: 3306
       username: postal
-      password: <%= ENV['POSTAL_DB_PASSWORD'] %>
       prefix: postal
 
-    rabbitmq:
-      host: rabbitmq.postal.svc.cluster.local
-      port: 5672
-      username: postal
-      password: <%= ENV['POSTAL_RABBITMQ_PASSWORD'] %>
-      vhost: /postal
+    # Postal v3 dropped RabbitMQ entirely (see docs/upgrade-to-v3). We
+    # leave the StatefulSet definitions in this dir for now but they're
+    # vestigial; remove once we're confident nothing references them.
 
     dns:
       mx_records:
@@ -80,7 +88,7 @@ data:
 
     rails:
       environment: production
-      secret_key: <%= ENV['POSTAL_RAILS_SECRET_KEY'] %>
+      # secret_key comes from env RAILS_SECRET_KEY via postal-secrets
 
     fast_server:
       enabled: false # we don't terminate inbound HTTP at Postal; Caddy handles TLS

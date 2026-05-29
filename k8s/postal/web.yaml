@@ -53,6 +53,12 @@ spec:
           ports:
             - name: http
               containerPort: 5000
+          env:
+            # Puma defaults to 127.0.0.1 — must bind on all interfaces
+            # so the kube Service can route to the pod. Konfig path
+            # [:web_server, :default_bind_address] → env name below.
+            - name: WEB_SERVER_DEFAULT_BIND_ADDRESS
+              value: '0.0.0.0'
           envFrom:
             - secretRef:
                 name: postal-secrets
@@ -67,16 +73,19 @@ spec:
             limits:
               cpu: '1000m'
               memory: '1Gi'
+          # Postal's /login returns 403 (no CSRF token in probe request),
+          # which kube treats as failure. Use a TCP probe instead — the
+          # Puma socket being open is a sufficient liveness signal at
+          # this stage. We can swap to /assets/* or a real health
+          # endpoint when Postal adds one.
           livenessProbe:
-            httpGet:
-              path: /login
+            tcpSocket:
               port: 5000
             initialDelaySeconds: 60
             periodSeconds: 30
             failureThreshold: 3
           readinessProbe:
-            httpGet:
-              path: /login
+            tcpSocket:
               port: 5000
             initialDelaySeconds: 15
             periodSeconds: 10

@@ -99,3 +99,7 @@ spec:
               port: 25
             initialDelaySeconds: 10
             periodSeconds: 10
+      volumes:
+        - name: config
+          configMap:
+            name: postal-config
