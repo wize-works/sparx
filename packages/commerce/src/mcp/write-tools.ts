@@ -58,7 +58,7 @@ const bulkUpdateProductStatus: McpToolDefinition = {
   scope: 'write:commerce_bulk',
   confirmation: true,
   input: BulkUpdateProductStatusInput,
-  run: (ctx, input) => productService.bulkUpdateStatus(ctx, input as never),
+  run: (ctx, input) => productService.bulkUpdateStatus(ctx, input),
 };
 
 const issueGiftCard: McpToolDefinition = {

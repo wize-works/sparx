@@ -18,6 +18,8 @@ const TABS: { section: CmsSection; href: string; label: string }[] = [
   { section: 'pages', href: '/cms', label: 'Pages' },
   { section: 'types', href: '/cms/types', label: 'Content types' },
   { section: 'media', href: '/cms/media', label: 'Media' },
+  { section: 'redirects', href: '/cms/redirects', label: 'Redirects' },
+  { section: 'webhooks', href: '/cms/webhooks', label: 'Webhooks' },
 ];
 
 export function CmsTabs({ current }: CmsTabsProps) {

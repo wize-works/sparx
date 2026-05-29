@@ -122,6 +122,13 @@ export {
   AlertDialogCancel,
 } from './components/overlay/alert-dialog';
 export {
+  ProductTour,
+  useProductTour,
+  type ProductTourStep,
+  type ProductTourOptions,
+  type ProductTourProps,
+} from './components/overlay/product-tour';
+export {
   DropdownMenu,
   DropdownMenuTrigger,
   DropdownMenuContent,

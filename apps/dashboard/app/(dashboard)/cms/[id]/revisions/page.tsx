@@ -12,7 +12,7 @@ import {
   Stack,
   Text,
 } from '@sparx/ui';
-import { ArrowLeft, History } from 'lucide-react';
+import { ArrowLeft, GitCompare, History } from 'lucide-react';
 import { api, type ApiRestError } from '@/lib/api-rest-client';
 import { RestoreButton } from './restore-button';
 
@@ -98,7 +98,18 @@ export default async function RevisionsPage({ params }: { params: Promise<{ id: 
                         {r.status}
                       </Badge>
                     </Stack>
-                    <RestoreButton entryId={id} revisionNumber={r.revision_number} />
+                    <Stack direction="row" align="center" gap={2}>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        asChild
+                        leftIcon={<GitCompare className="h-3.5 w-3.5" />}
+                      >
+                        <Link href={`/cms/${id}/revisions/${r.revision_number}`}>Compare</Link>
+                      </Button>
+                      <RestoreButton entryId={id} revisionNumber={r.revision_number} />
+                    </Stack>
                   </Stack>
                   <CardDescription>
                     {r.summary ?? 'Autosaved'} —{' '}

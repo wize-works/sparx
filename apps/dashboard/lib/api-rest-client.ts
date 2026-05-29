@@ -146,8 +146,7 @@ export const api = {
     path: string,
     body?: unknown,
     options?: CallOptions
-  ): Promise<ResponseEnvelope<T>> =>
-    withSession((s) => call<T>(s, 'PATCH', path, body, options)),
+  ): Promise<ResponseEnvelope<T>> => withSession((s) => call<T>(s, 'PATCH', path, body, options)),
   delete: async <T>(path: string): Promise<T> =>
     withSession(async (s) => (await call<T>(s, 'DELETE', path)).data),
 };

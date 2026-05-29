@@ -49,6 +49,10 @@ const UpdateSchema = z.object({
 
 const StatusSchema = z.enum(['draft', 'published']);
 
+const ScheduleSchema = z.object({
+  scheduledAt: z.string().datetime({ offset: true }),
+});
+
 export interface ActionResult<T = void> {
   ok: boolean;
   data?: T;
@@ -184,6 +188,35 @@ export async function setPageStatus(id: string, rawStatus: string): Promise<Acti
     } else {
       await api.post(`/v1/content/entries/${id}/unpublish`);
     }
+  } catch (err) {
+    return { ok: false, error: friendly(err) };
+  }
+  revalidatePath('/cms');
+  revalidatePath(`/cms/${id}`);
+  return { ok: true };
+}
+
+// Schedule a publish for a future ISO timestamp. api-rest's publish route
+// flips status to 'scheduled' (status='scheduled', scheduledAt set) when
+// the supplied timestamp is in the future. The scheduled-publish worker
+// in api-rest's bootstrap loop picks it up on the next ≤60s tick after
+// the timestamp passes and emits content.entry.published.
+export async function schedulePagePublish(
+  id: string,
+  isoScheduledAt: string
+): Promise<ActionResult> {
+  const parsed = ScheduleSchema.safeParse({ scheduledAt: isoScheduledAt });
+  if (!parsed.success) {
+    return { ok: false, error: 'Pick a valid future date/time.' };
+  }
+  const when = new Date(parsed.data.scheduledAt);
+  if (when.getTime() <= Date.now() + 60_000) {
+    return { ok: false, error: 'Scheduled time must be at least one minute in the future.' };
+  }
+  try {
+    await api.post(`/v1/content/entries/${id}/publish`, {
+      scheduled_at: parsed.data.scheduledAt,
+    });
   } catch (err) {
     return { ok: false, error: friendly(err) };
   }

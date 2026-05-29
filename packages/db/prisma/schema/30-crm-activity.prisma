@@ -2,17 +2,22 @@
 //
 // Append-only. Never UPDATE. Editing a note inserts a `note` row with
 // `correctsActivityId` pointing at the original; the original stays for
-// audit. Native Postgres RANGE partition by month on `occurredAt` lands in
-// Phase 5 with a partition-rollover scheduler — until then, a single table
-// is sufficient and the append-only contract is enforced at the service
-// layer (activityService never issues UPDATE).
+// audit.
+//
+// Native Postgres RANGE-partitioned by month on `occurredAt`. The
+// partition key must be part of the primary key, so PK is the composite
+// (id, occurredAt). `id` is still a UUID and unique in practice; the
+// composite is a Postgres requirement, not a logical change. No code path
+// uses `findUnique({ id })` — every read is filtered by tenant first and
+// is happy with `findFirst({ where: { id } })` if a single-row fetch ever
+// becomes necessary.
 //
 // `linkedEntityType` / `linkedEntityId` carries the soft reference to the
 // originating record (order, email, quote, …) without a hard FK because
 // those tables span modules and lifecycles.
 
 model CrmActivity {
-  id           String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id           String  @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   tenantId     String  @map("tenant_id") @db.Uuid
   customerId   String? @map("customer_id") @db.Uuid
   dealId       String? @map("deal_id") @db.Uuid
@@ -38,6 +43,7 @@ model CrmActivity {
   deal       Deal?       @relation(fields: [dealId], references: [id], onDelete: SetNull)
   b2bAccount B2BAccount? @relation(fields: [b2bAccountId], references: [id], onDelete: SetNull)
 
+  @@id([id, occurredAt], map: "crm_activities_pkey")
   @@index([tenantId, customerId, occurredAt(sort: Desc)])
   @@index([tenantId, dealId, occurredAt(sort: Desc)])
   @@index([tenantId, b2bAccountId, occurredAt(sort: Desc)])

@@ -1,0 +1,66 @@
+# Nightly segment-membership safety net. The Pub/Sub segment-evaluator
+# consumer keeps segment_members live during the day; this job
+# reconciles drift if events were dropped.
+#
+# Runs after the other CRM jobs because it's the heaviest (O(customers ×
+# segments × projection-build) per active tenant) and we'd rather have
+# it slow on a quiet box than racing the others.
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: crm-segment-recompute
+  namespace: sparx-prod
+  labels:
+    app: crm-cron
+    job: segment-recompute
+spec:
+  schedule: '0 5 * * *' # 05:00 UTC daily
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  startingDeadlineSeconds: 600
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      ttlSecondsAfterFinished: 86400
+      template:
+        metadata:
+          labels:
+            app: crm-cron
+            job: segment-recompute
+        spec:
+          serviceAccountName: sparx-app
+          restartPolicy: OnFailure
+          containers:
+            - name: curl
+              image: curlimages/curl:8.10.1
+              command: ['sh', '-c']
+              args:
+                - >
+                  curl --fail-with-body --silent --show-error
+                  --max-time 1800
+                  -X POST
+                  -H "X-Sparx-Internal-Cron-Token: $SPARX_INTERNAL_CRON_TOKEN"
+                  http://api-rest.sparx-prod.svc.cluster.local:3000/internal/crm/segment-recompute
+              env:
+                - name: SPARX_INTERNAL_CRON_TOKEN
+                  valueFrom:
+                    secretKeyRef:
+                      name: sparx-app-secrets
+                      key: SPARX_INTERNAL_CRON_TOKEN
+              resources:
+                requests:
+                  cpu: '50m'
+                  memory: '32Mi'
+                limits:
+                  cpu: '200m'
+                  memory: '64Mi'
+              securityContext:
+                runAsNonRoot: true
+                runAsUser: 1000
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop: ['ALL']
+                seccompProfile:
+                  type: RuntimeDefault

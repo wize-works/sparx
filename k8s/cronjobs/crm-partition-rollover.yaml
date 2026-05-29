@@ -1,0 +1,62 @@
+# Ensures crm_activities partitions exist for current + next month.
+# Idempotent — running twice the same day is a no-op for partitions that
+# already exist (CREATE TABLE IF NOT EXISTS at the SQL layer).
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: crm-partition-rollover
+  namespace: sparx-prod
+  labels:
+    app: crm-cron
+    job: partition-rollover
+spec:
+  schedule: '0 2 * * *' # 02:00 UTC daily
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  startingDeadlineSeconds: 600
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      ttlSecondsAfterFinished: 86400
+      template:
+        metadata:
+          labels:
+            app: crm-cron
+            job: partition-rollover
+        spec:
+          serviceAccountName: sparx-app
+          restartPolicy: OnFailure
+          containers:
+            - name: curl
+              image: curlimages/curl:8.10.1
+              command: ['sh', '-c']
+              args:
+                - >
+                  curl --fail-with-body --silent --show-error
+                  --max-time 90
+                  -X POST
+                  -H "X-Sparx-Internal-Cron-Token: $SPARX_INTERNAL_CRON_TOKEN"
+                  http://api-rest.sparx-prod.svc.cluster.local:3000/internal/crm/partition-rollover
+              env:
+                - name: SPARX_INTERNAL_CRON_TOKEN
+                  valueFrom:
+                    secretKeyRef:
+                      name: sparx-app-secrets
+                      key: SPARX_INTERNAL_CRON_TOKEN
+              resources:
+                requests:
+                  cpu: '50m'
+                  memory: '32Mi'
+                limits:
+                  cpu: '200m'
+                  memory: '64Mi'
+              securityContext:
+                runAsNonRoot: true
+                runAsUser: 1000
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop: ['ALL']
+                seccompProfile:
+                  type: RuntimeDefault

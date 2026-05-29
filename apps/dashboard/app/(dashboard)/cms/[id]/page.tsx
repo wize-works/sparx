@@ -21,6 +21,7 @@ interface ApiEntry {
   body: Record<string, unknown>;
   seo: Record<string, unknown>;
   published_at: string | null;
+  scheduled_at: string | null;
   updated_at: string;
 }
 
@@ -66,6 +67,7 @@ export default async function EditCmsPage({ params }: PageParams) {
       ogImage: typeof seoVal.ogImage === 'string' ? seoVal.ogImage : '',
     },
     publishedAt: entry.published_at ? new Date(entry.published_at) : null,
+    scheduledAt: entry.scheduled_at ? new Date(entry.scheduled_at) : null,
     updatedAt: new Date(entry.updated_at),
   };
 
@@ -82,11 +84,7 @@ export default async function EditCmsPage({ params }: PageParams) {
           <Heading level={1}>Edit page</Heading>
         </Stack>
 
-        <EditPageForm
-          page={editable}
-          tenantSlug={tenant?.slug ?? null}
-          initialEtag={initialEtag}
-        />
+        <EditPageForm page={editable} tenantSlug={tenant?.slug ?? null} initialEtag={initialEtag} />
       </Stack>
     </Container>
   );

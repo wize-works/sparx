@@ -84,7 +84,9 @@ const crmCronRoutes: FastifyPluginAsync = (app) => {
 
   app.post('/internal/crm/overdue-reminders', async (request) => {
     authorize(request);
-    const summary = await forEachActiveTenant((tenantId) => crmSchedulers.emitOverdueTaskReminders({ tenantId }));
+    const summary = await forEachActiveTenant((tenantId) =>
+      crmSchedulers.emitOverdueTaskReminders({ tenantId })
+    );
     return { success: true, data: summary };
   });
 

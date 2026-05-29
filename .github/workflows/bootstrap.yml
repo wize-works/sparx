@@ -33,6 +33,7 @@ on:
           - apps
           - workers
           - workers-prune
+          - cronjobs
           # Postal was deprecated 2026-05-29 (Postal's smtp_relays can't
           # auth to Mailgun by design — config_schema.rb:79 drops
           # uri.user/uri.password — and GCP blocks outbound :25, so
@@ -212,6 +213,16 @@ jobs:
         run: |
           set -euo pipefail
           kubectl apply -k k8s/workers/
+
+      # CRM scheduled jobs — k8s CronJobs that POST to api-rest's
+      # /internal/crm/* endpoints with the shared secret. See
+      # k8s/cronjobs/README.md for the four jobs and their schedules.
+      # Idempotent — `kubectl apply -k` updates existing schedules in place.
+      - name: Apply CRM CronJobs
+        if: ${{ inputs.components == 'all-platform' || inputs.components == 'cronjobs' }}
+        run: |
+          set -euo pipefail
+          kubectl apply -k k8s/cronjobs/
 
       # One-shot tear-down for workers that have migrated to Cloud Run.
       # `kubectl apply -k` does not prune resources that were removed from
