@@ -1,13 +1,35 @@
 version: 2
+
+# Dependabot policy — tuned 2026-05-29 after a major-version batch (PR #19,
+# typescript-tooling) wedged `main` on lint + format-check until pinned back.
+#
+# Rules of the road:
+#   1. Groups only batch MINOR + PATCH. Majors always come through one at a
+#      time so the blast radius is identifiable when something breaks.
+#   2. High-risk majors (ORM, design tokens, CI action providers) are listed
+#      under `ignore` — dependabot will skip them. Re-evaluate by removing
+#      from the ignore list deliberately, not on dependabot's schedule.
+#   3. open-pull-requests-limit kept tight so the queue can't pile up like
+#      it did in late May (13 simultaneous majors).
+#
+# Anti-pattern this config avoids: "let dependabot raise everything weekly
+# and we'll triage". With major bumps that approach produces a backlog
+# nobody has time to review, which then gets merged in panic batches.
+
 updates:
+  # ── npm ────────────────────────────────────────────────────────────────
   - package-ecosystem: npm
     directory: '/'
     schedule:
       interval: weekly
       day: tuesday
-    open-pull-requests-limit: 10
+    open-pull-requests-limit: 5
+
+    # Groups apply ONLY to non-major bumps. A major in any of these
+    # packages will come through as its own PR.
     groups:
       typescript-tooling:
+        update-types: ['minor', 'patch']
         patterns:
           - 'typescript'
           - 'typescript-eslint'
@@ -15,34 +37,90 @@ updates:
           - 'eslint*'
           - 'prettier*'
       react:
+        update-types: ['minor', 'patch']
         patterns:
           - 'react'
           - 'react-dom'
           - '@types/react*'
       next:
+        update-types: ['minor', 'patch']
         patterns:
           - 'next'
           - '@next/*'
       tailwind:
+        update-types: ['minor', 'patch']
         patterns:
           - 'tailwind*'
           - '@tailwindcss/*'
       radix:
+        update-types: ['minor', 'patch']
         patterns:
           - '@radix-ui/*'
 
+    # Packages whose major bumps require deliberate planning. Re-enable by
+    # removing the entry here, then re-running dependabot, when you're
+    # ready to do the upgrade.
+    ignore:
+      # Major ORM upgrade — schema generation, client API, query semantics
+      # all may shift. Plan as a dedicated PR with migration + perf test.
+      - dependency-name: 'prisma'
+        update-types: ['version-update:semver-major']
+      - dependency-name: '@prisma/client'
+        update-types: ['version-update:semver-major']
+
+      # Design-system primitives — visible UI churn risk. Coordinate with
+      # the @sparx/ui component pass.
+      - dependency-name: 'tailwind-merge'
+        update-types: ['version-update:semver-major']
+      - dependency-name: 'lucide-react'
+        update-types: ['version-update:semver-major']
+
+      # Auth + logger + secrets — runtime behavior change risk. Read the
+      # changelog and test before allowing a major in.
+      - dependency-name: '@fastify/jwt'
+        update-types: ['version-update:semver-major']
+      - dependency-name: 'pino'
+        update-types: ['version-update:semver-major']
+      - dependency-name: '@google-cloud/secret-manager'
+        update-types: ['version-update:semver-major']
+      - dependency-name: 'dotenv'
+        update-types: ['version-update:semver-major']
+
+  # ── GitHub Actions ─────────────────────────────────────────────────────
   - package-ecosystem: github-actions
     directory: '/'
     schedule:
       interval: weekly
       day: tuesday
+    open-pull-requests-limit: 3
 
+    # Block major bumps on actions used by the platform-critical workflows
+    # (deploy-prod, build-images, bootstrap). A breaking change here can
+    # take production-deploy offline; gate manually.
+    ignore:
+      - dependency-name: 'google-github-actions/auth'
+        update-types: ['version-update:semver-major']
+      - dependency-name: 'google-github-actions/setup-gcloud'
+        update-types: ['version-update:semver-major']
+      - dependency-name: 'google-github-actions/get-gke-credentials'
+        update-types: ['version-update:semver-major']
+      - dependency-name: 'hashicorp/setup-terraform'
+        update-types: ['version-update:semver-major']
+      - dependency-name: 'docker/build-push-action'
+        update-types: ['version-update:semver-major']
+      - dependency-name: 'pnpm/action-setup'
+        update-types: ['version-update:semver-major']
+
+  # ── Terraform ──────────────────────────────────────────────────────────
   - package-ecosystem: terraform
     directory: '/terraform'
     schedule:
       interval: monthly
+    open-pull-requests-limit: 3
 
+  # ── Docker (k8s base images) ───────────────────────────────────────────
   - package-ecosystem: docker
     directory: '/k8s'
     schedule:
       interval: monthly
+    open-pull-requests-limit: 3
