@@ -121,7 +121,7 @@ export function ContentEntryForm({
             value={body[field.key]}
             onChange={(next) => updateField(field.key, next)}
             pathPrefix={field.key}
-            disabled={disabled || submitting}
+            disabled={Boolean(disabled) || submitting}
           />
         ))}
 
@@ -140,7 +140,7 @@ export function ContentEntryForm({
           <Button
             type="submit"
             variant="module"
-            disabled={disabled || submitting}
+            disabled={Boolean(disabled) || submitting}
             leftIcon={<Save className="h-4 w-4" />}
           >
             {submitting ? 'Saving…' : submitLabel}

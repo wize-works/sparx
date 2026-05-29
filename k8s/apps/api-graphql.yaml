@@ -19,7 +19,7 @@ metadata:
     app: api-graphql
     tier: api
 spec:
-  replicas: 2
+  replicas: 1 # TEMP: SSD_TOTAL_GB quota at 235/250GB blocks scale-up; restore to 2 after quota bump
   revisionHistoryLimit: 5
   strategy:
     type: RollingUpdate

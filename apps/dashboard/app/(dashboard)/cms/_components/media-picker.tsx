@@ -38,7 +38,7 @@ interface ApiAsset {
   mime_type: string;
   alt_text: string | null;
   caption: string | null;
-  variants?: Array<{ format: string; width: number; url: string }>;
+  variants?: { format: string; width: number; url: string }[];
 }
 
 interface ApiResponse {
@@ -161,7 +161,6 @@ export function MediaPicker({ open, onOpenChange, onPick, accept }: MediaPickerP
                     aria-label={`Pick ${a.original_filename}`}
                   >
                     {thumb ? (
-                      // eslint-disable-next-line @next/next/no-img-element
                       <img
                         src={thumb}
                         alt={a.alt_text ?? a.original_filename}

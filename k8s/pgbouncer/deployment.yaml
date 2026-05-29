@@ -6,7 +6,7 @@ metadata:
   labels:
     app: pgbouncer
 spec:
-  replicas: 2
+  replicas: 1 # TEMP: SSD_TOTAL_GB quota at 235/250GB blocks scale-up; restore to 2 after quota bump
   selector:
     matchLabels:
       app: pgbouncer

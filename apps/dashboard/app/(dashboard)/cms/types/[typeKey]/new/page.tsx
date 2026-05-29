@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation';
+import type { FieldDef } from '@sparx/cms-schemas';
 import { Container, Heading, Stack, Text } from '@sparx/ui';
 import { api } from '@/lib/api-rest-client';
 import { CmsTabs } from '../../../_components/cms-tabs';
@@ -40,7 +41,7 @@ export default async function NewEntryPage({ params }: PageProps) {
         <NewEntryForm
           typeKey={type.key}
           urlPattern={type.url_pattern}
-          schema={type.schema as { fields: import('@sparx/cms-schemas').FieldDef[] }}
+          schema={type.schema as { fields: FieldDef[] }}
         />
       </Stack>
     </Container>

@@ -9,7 +9,7 @@ interface MediaAsset {
   mime_type: string;
   alt_text: string | null;
   caption: string | null;
-  variants?: Array<{ format: string; width: number; url: string }>;
+  variants?: { format: string; width: number; url: string }[];
 }
 
 export async function GET(req: NextRequest): Promise<NextResponse> {

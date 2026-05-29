@@ -550,7 +550,6 @@ function AssetFieldR({
             className="relative h-20 w-20 overflow-hidden rounded-md border border-[var(--color-border-default)] bg-[var(--color-bg-subtle)]"
           >
             {r.src ? (
-              // eslint-disable-next-line @next/next/no-img-element
               <img src={r.src} alt={r.alt} className="h-full w-full object-cover" />
             ) : (
               <div className="flex h-full w-full items-center justify-center text-xs text-[var(--color-text-tertiary)]">

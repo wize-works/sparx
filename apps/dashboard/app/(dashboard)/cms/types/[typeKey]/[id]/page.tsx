@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import type { FieldDef } from '@sparx/cms-schemas';
 import { Badge, Button, Container, Heading, Stack, Text } from '@sparx/ui';
 import { ArrowLeft } from 'lucide-react';
 import { api } from '@/lib/api-rest-client';
@@ -71,7 +72,7 @@ export default async function EditEntryPage({ params }: PageProps) {
           id={entry.id}
           typeKey={type.key}
           urlPattern={type.url_pattern}
-          schema={type.schema as { fields: import('@sparx/cms-schemas').FieldDef[] }}
+          schema={type.schema as { fields: FieldDef[] }}
           initialBody={entry.body}
           initialStatus={entry.status}
         />

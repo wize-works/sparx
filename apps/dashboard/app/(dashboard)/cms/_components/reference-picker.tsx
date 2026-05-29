@@ -107,12 +107,16 @@ export function ReferencePicker({ open, onOpenChange, onPick, typeKey }: Referen
                     onPick({
                       entryId: r.id,
                       typeKey: r.typeKey,
+                      // Empty-string fallthrough — `??` would only catch
+                      // null/undefined so `||` is the right semantic here.
+                      // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
                       label: r.title || r.slug || r.id,
                     })
                   }
                   className="rounded-md border border-[var(--color-border-default)] px-3 py-2 text-left hover:bg-[var(--color-bg-subtle)] focus:outline-none focus:ring-2 focus:ring-[var(--color-border-focus)]"
                 >
                   <Stack gap={0}>
+                    {/* eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing */}
                     <Text size="sm">{r.title || r.slug || r.id}</Text>
                     <Text size="xs" variant="muted">
                       {r.typeKey}
