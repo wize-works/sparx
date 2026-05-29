@@ -258,6 +258,8 @@ jobs:
           MARIADB_PASSWORD=$(fetch postal-db-password)
           RAILS_SECRET_KEY=$(fetch postal-rails-secret-key)
           SIGNING_KEY=$(fetch postal-signing-key)
+          MAILGUN_SMTP_USERNAME=$(fetch mailgun-smtp-username)
+          MAILGUN_SMTP_PASSWORD=$(fetch mailgun-smtp-password)
           # postal-rabbitmq-password is intentionally not fetched — Postal v3
           # has no rabbitmq dependency. Leave the SM secret as historical.
 
@@ -271,6 +273,23 @@ jobs:
           if [ -z "$SIGNING_KEY" ]; then
             echo "::warning::postal-signing-key not set — Postal will generate one during initialize."
             echo "::warning::After this run, export the key from the running pod and push it to Secret Manager."
+          fi
+
+          # Mailgun smarthost. POSTAL_SMTP_RELAYS is a JSON array of URIs
+          # (Postal v3, see doc/config/environment-variables.md). User and
+          # password go in URI userinfo and MUST be percent-encoded — the
+          # username is `postmaster@sparx.email` which has an `@` that
+          # would otherwise terminate userinfo prematurely.
+          #
+          # We relay through Mailgun because GCP blocks outbound TCP/25 at
+          # the network edge; :587 with STARTTLS + SMTP AUTH is allowed.
+          POSTAL_SMTP_RELAYS=""
+          if [ -n "$MAILGUN_SMTP_USERNAME" ] && [ -n "$MAILGUN_SMTP_PASSWORD" ]; then
+            enc_user=$(python3 -c 'import urllib.parse,sys;print(urllib.parse.quote(sys.argv[1], safe=""))' "$MAILGUN_SMTP_USERNAME")
+            enc_pass=$(python3 -c 'import urllib.parse,sys;print(urllib.parse.quote(sys.argv[1], safe=""))' "$MAILGUN_SMTP_PASSWORD")
+            POSTAL_SMTP_RELAYS="[\"smtp://${enc_user}:${enc_pass}@smtp.mailgun.org:587?ssl_mode=STARTTLS\"]"
+          else
+            echo "::warning::mailgun-smtp-username/password missing in Secret Manager — Postal will fall back to direct outbound, which GCP blocks. Add these secrets to enable Mailgun smarthost."
           fi
 
           kubectl create secret generic mariadb-credentials -n "$POSTAL_NS" \
@@ -292,6 +311,7 @@ jobs:
             --from-literal=MESSAGE_DB_PASSWORD="$MARIADB_PASSWORD" \
             --from-literal=RAILS_SECRET_KEY="$RAILS_SECRET_KEY" \
             --from-literal=SIGNING_KEY="$SIGNING_KEY" \
+            --from-literal=POSTAL_SMTP_RELAYS="$POSTAL_SMTP_RELAYS" \
             --dry-run=client -o yaml | kubectl apply -f -
 
           # Stage 3: MariaDB. Wait Ready before progressing — the
@@ -313,6 +333,16 @@ jobs:
           kubectl apply -f k8s/postal/smtp.yaml
           kubectl apply -f k8s/postal/web.yaml
           kubectl apply -f k8s/postal/worker.yaml
+
+          # postal-secrets is consumed via envFrom; k8s does NOT auto-restart
+          # pods when a referenced Secret changes. Force a rollout so each
+          # Deployment re-reads the env (Mailgun creds, etc.). Idempotent —
+          # if the spec didn't actually change pods stay running, k8s just
+          # bumps the rollout revision counter.
+          kubectl rollout restart deployment/postal-web -n "$POSTAL_NS"
+          kubectl rollout restart deployment/postal-smtp -n "$POSTAL_NS"
+          kubectl rollout restart deployment/postal-worker -n "$POSTAL_NS"
+
           kubectl rollout status deployment/postal-web -n "$POSTAL_NS" --timeout=5m
           kubectl rollout status deployment/postal-smtp -n "$POSTAL_NS" --timeout=5m
           kubectl rollout status deployment/postal-worker -n "$POSTAL_NS" --timeout=5m

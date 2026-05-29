@@ -43,3 +43,7 @@ pnpm-debug.log*
 
 # Misc
 .cache/
+
+# MCP / browser-automation scratch
+.playwright-mcp/
+postal-*.png
