@@ -53,6 +53,20 @@ export async function signUpMerchant(input: SignUpMerchantInput): Promise<SignUp
     throw new SignUpError('SLUG_TAKEN', `Store URL "${slug}" is already taken.`);
   }
 
+  // Email must be globally unique — Better Auth's sign-in queries by email
+  // alone, so duplicates produce ambiguous lookups (and historically caused
+  // "Invalid password hash" failures when sign-in matched an older row with
+  // a stale hash format). The DB also enforces this via the unique
+  // constraint on users.email, but pre-checking gives the caller a clean
+  // typed error instead of a P2002.
+  const existingUser = await authPrisma.user.findFirst({
+    where: { email },
+    select: { id: true },
+  });
+  if (existingUser) {
+    throw new SignUpError('EMAIL_TAKEN', 'An account with that email already exists.');
+  }
+
   // Better Auth's password hasher (scrypt by default; configurable to Argon2).
   // Going through $context keeps us aligned with whatever the auth instance
   // is configured to use — no risk of mismatched hashes at sign-in time.

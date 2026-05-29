@@ -6,7 +6,13 @@
 
 model User {
   id            String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  email         String  @db.VarChar(255)
+  // Globally unique — Better Auth's sign-in flow keys on email alone, and
+  // signUpMerchant creates a fresh tenant per registration, so the older
+  // @@unique([tenantId, email]) compound never fired in practice. The
+  // CITEXT-equivalent normalisation lives at the app layer (signUpMerchant
+  // lowercases before insert); the migration adds a case-insensitive
+  // expression index as a backstop.
+  email         String  @unique @db.VarChar(255)
   emailVerified Boolean @default(false) @map("email_verified")
   name          String? @db.VarChar(255)
   image         String? @db.Text
@@ -32,7 +38,6 @@ model User {
   completedTasks      Task[]       @relation("TaskCompletedBy")
   createdQuotes       Quote[]      @relation("QuoteCreatedBy")
 
-  @@unique([tenantId, email])
   @@index([tenantId])
   @@map("users")
 }
