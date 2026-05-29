@@ -32,6 +32,7 @@ on:
           - app-secrets
           - apps
           - workers
+          - workers-prune
           - postal
           - postal-make-user
 
@@ -194,6 +195,26 @@ jobs:
         run: |
           set -euo pipefail
           kubectl apply -k k8s/workers/
+
+      # One-shot tear-down for workers that have migrated to Cloud Run.
+      # `kubectl apply -k` does not prune resources that were removed from
+      # the kustomization, so the in-cluster Deployment + PDB linger after
+      # the manifest is commented out. This step deletes them explicitly.
+      #
+      # WHEN TO RUN: after the Cloud Run service for the same worker is
+      # live AND its push subscription has been verified end-to-end —
+      # running this earlier strands the topic with no consumer.
+      #
+      # Idempotent: --ignore-not-found means re-running is a no-op.
+      # NOT wired into all-platform; this is a deliberate human-gated lever.
+      - name: Prune workers migrated to Cloud Run
+        if: ${{ inputs.components == 'workers-prune' }}
+        run: |
+          set -euo pipefail
+          for w in email-worker media-worker; do
+            kubectl delete deployment "$w" -n "$NAMESPACE" --ignore-not-found
+            kubectl delete pdb "$w" -n "$NAMESPACE" --ignore-not-found
+          done
 
       # Postal — self-hosted email server in its own namespace. Lives
       # outside `sparx-prod` so it can be re-deployed independently and
