@@ -26,6 +26,10 @@ COPY packages/email/package.json packages/email/
 COPY packages/events/package.json packages/events/
 COPY packages/crm/package.json packages/crm/
 COPY packages/crm-schemas/package.json packages/crm-schemas/
+COPY packages/commerce/package.json packages/commerce/
+COPY packages/commerce-schemas/package.json packages/commerce-schemas/
+COPY packages/integration-framework/package.json packages/integration-framework/
+COPY packages/search/package.json packages/search/
 COPY packages/cms-editor/package.json packages/cms-editor/
 COPY packages/cms-schemas/package.json packages/cms-schemas/
 # Root postinstall runs `pnpm --filter @sparx/db db:generate`, which needs
@@ -46,6 +50,10 @@ COPY packages/email packages/email
 COPY packages/events packages/events
 COPY packages/crm packages/crm
 COPY packages/crm-schemas packages/crm-schemas
+COPY packages/commerce packages/commerce
+COPY packages/commerce-schemas packages/commerce-schemas
+COPY packages/integration-framework packages/integration-framework
+COPY packages/search packages/search
 COPY packages/cms-editor packages/cms-editor
 COPY packages/cms-schemas packages/cms-schemas
 COPY apps/dashboard apps/dashboard

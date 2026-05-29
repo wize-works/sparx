@@ -23,9 +23,24 @@
 -- the constraint name `crm_activities_pkey` is free for the new
 -- partitioned table to claim. Without this rename, the CREATE TABLE
 -- below trips a "relation crm_activities_pkey already exists" error.
+--
+-- Indexes also need explicit renames: Postgres does NOT rename indexes
+-- when their parent table is renamed (index names live in pg_class at
+-- schema scope), so without these the CREATE INDEX statements below
+-- trip "relation crm_activities_*_idx already exists".
 ALTER TABLE "crm_activities" RENAME TO "crm_activities_legacy";
 ALTER TABLE "crm_activities_legacy"
     RENAME CONSTRAINT "crm_activities_pkey" TO "crm_activities_legacy_pkey";
+ALTER INDEX "crm_activities_tenant_id_customer_id_occurred_at_idx"
+    RENAME TO "crm_activities_legacy_tenant_id_customer_id_occurred_at_idx";
+ALTER INDEX "crm_activities_tenant_id_deal_id_occurred_at_idx"
+    RENAME TO "crm_activities_legacy_tenant_id_deal_id_occurred_at_idx";
+ALTER INDEX "crm_activities_tenant_id_b2b_account_id_occurred_at_idx"
+    RENAME TO "crm_activities_legacy_tenant_id_b2b_account_id_occurred_at_idx";
+ALTER INDEX "crm_activities_tenant_id_type_occurred_at_idx"
+    RENAME TO "crm_activities_legacy_tenant_id_type_occurred_at_idx";
+ALTER INDEX "crm_activities_tenant_id_occurred_at_idx"
+    RENAME TO "crm_activities_legacy_tenant_id_occurred_at_idx";
 
 -- 2. Recreate as partitioned. The PK must include the partition key.
 CREATE TABLE "crm_activities" (

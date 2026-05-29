@@ -127,6 +127,39 @@ async function reconcileMigrationRenames(connectionUrl: string): Promise<void> {
   }
 }
 
+// Postgres DDL is transactional, and Prisma wraps every migration file in
+// an implicit transaction. A migration that errors mid-flight is therefore
+// fully rolled back at the DB level — but Prisma still records a row in
+// `_prisma_migrations` with `finished_at = NULL`, which causes every
+// subsequent `migrate deploy` to refuse to run until an operator clears
+// it (normally via `prisma migrate resolve --rolled-back <name>`).
+//
+// Since we know the row represents work that did NOT commit, it is safe
+// for us to delete it automatically so the next deploy re-attempts the
+// (presumably-now-fixed) migration. This is equivalent to running
+// `prisma migrate resolve --rolled-back` for every failed entry.
+async function clearFailedMigrations(connectionUrl: string): Promise<void> {
+  const client = new PgClient({ connectionString: connectionUrl });
+  await client.connect();
+  try {
+    const { rows } = await client.query<{ migration_name: string }>(
+      'SELECT migration_name FROM _prisma_migrations WHERE finished_at IS NULL AND rolled_back_at IS NULL'
+    );
+    if (rows.length === 0) {
+      console.log('[migrate] no failed migration rows to clear.');
+      return;
+    }
+    for (const r of rows) {
+      console.log(`[migrate] clearing failed migration row: ${r.migration_name}`);
+    }
+    await client.query(
+      'DELETE FROM _prisma_migrations WHERE finished_at IS NULL AND rolled_back_at IS NULL'
+    );
+  } finally {
+    await client.end();
+  }
+}
+
 async function main(): Promise<void> {
   console.log(`[migrate] fetching secrets from project ${PROJECT_ID}…`);
   const [appPassword, ownerPassword] = await Promise.all([
@@ -165,6 +198,9 @@ async function main(): Promise<void> {
 
   console.log('[migrate] reconciling known migration renames…');
   await reconcileMigrationRenames(migrationUrl);
+
+  console.log('[migrate] clearing rolled-back failed migration rows…');
+  await clearFailedMigrations(migrationUrl);
 
   console.log('[migrate] running prisma migrate deploy…');
   await run('pnpm', ['exec', 'prisma', 'migrate', 'deploy'], baseEnv);
