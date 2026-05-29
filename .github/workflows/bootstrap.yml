@@ -33,8 +33,17 @@ on:
           - apps
           - workers
           - workers-prune
+          # Postal was deprecated 2026-05-29 (Postal's smtp_relays can't
+          # auth to Mailgun by design — config_schema.rb:79 drops
+          # uri.user/uri.password — and GCP blocks outbound :25, so
+          # Postal couldn't deliver from our cluster at all). email-worker
+          # now POSTs directly to Mailgun's HTTP API. The Postal apply
+          # path is kept (gated only on `postal`, NOT all-platform) so
+          # we can resurrect it if we ever revisit self-hosting. Run
+          # `postal-teardown` once to drop the namespace + free quota.
           - postal
           - postal-make-user
+          - postal-teardown
 
 permissions:
   contents: read
@@ -234,7 +243,10 @@ jobs:
       # Secret Manager, then re-run components=app-secrets to wire
       # SPARX_POSTAL_API_KEY through to email-worker).
       - name: Apply Postal
-        if: ${{ inputs.components == 'all-platform' || inputs.components == 'postal' }}
+        # NOTE: no longer included in all-platform (Postal was decommissioned
+        # 2026-05-29 — see option-list comment). Still callable explicitly
+        # via components=postal in case we need to resurrect the stack.
+        if: ${{ inputs.components == 'postal' }}
         env:
           POSTAL_NS: postal
         run: |
@@ -421,6 +433,22 @@ jobs:
             echo "::error::postal make-user failed unexpectedly (exit $EXIT_CODE)."
             exit $EXIT_CODE
           fi
+
+      # One-shot decommission for the Postal stack. Deletes the entire
+      # `postal` namespace, which cascades to all Deployments, Services,
+      # the MariaDB StatefulSet, its PVC (~20GB SSD reclaimed), the
+      # Secrets/ConfigMap, and the SA. Idempotent via --ignore-not-found.
+      # Run once via `gh workflow run bootstrap.yml -f components=postal-teardown`.
+      - name: Tear down Postal
+        if: ${{ inputs.components == 'postal-teardown' }}
+        run: |
+          set -euo pipefail
+          echo "Pre-teardown state:"
+          kubectl get all,pvc -n postal 2>/dev/null || echo "(namespace already gone)"
+          echo ""
+          echo "Deleting namespace 'postal' (cascades to all child resources)..."
+          kubectl delete namespace postal --ignore-not-found --wait=true --timeout=5m
+          echo "Done. Quota freed: ~20GB SSD (mariadb PVC) + ~1.5 vCPU / 2Gi memory across web/smtp/worker."
 
       - name: Show cluster state
         if: always()
