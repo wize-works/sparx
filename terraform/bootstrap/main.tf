@@ -75,6 +75,11 @@ resource "google_project_iam_member" "deployer_roles" {
     # workflow uses to reach the private control plane).
     "roles/gkehub.gatewayEditor",
     "roles/gkehub.viewer",
+    # Cloud Run worker rollouts: deploy-prod.yml runs `gcloud run services
+    # describe` + `update --image` on email-worker / media-worker (they
+    # moved off GKE Deployments to Cloud Run). run.admin covers both ops
+    # against the project's services.
+    "roles/run.admin",
   ])
   project = var.project_id
   role    = each.value
