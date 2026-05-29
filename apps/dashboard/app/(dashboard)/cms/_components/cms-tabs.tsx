@@ -8,7 +8,7 @@ import Link from 'next/link';
 import { Badge, Stack } from '@sparx/ui';
 import { cn } from '@sparx/ui';
 
-export type CmsSection = 'pages' | 'media' | 'redirects' | 'webhooks';
+export type CmsSection = 'pages' | 'types' | 'media' | 'redirects' | 'webhooks';
 
 interface CmsTabsProps {
   current: CmsSection;
@@ -16,6 +16,7 @@ interface CmsTabsProps {
 
 const TABS: { section: CmsSection; href: string; label: string }[] = [
   { section: 'pages', href: '/cms', label: 'Pages' },
+  { section: 'types', href: '/cms/types', label: 'Content types' },
   { section: 'media', href: '/cms/media', label: 'Media' },
 ];
 

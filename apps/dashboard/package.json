@@ -21,6 +21,7 @@
     "@hookform/resolvers": "^5.4.0",
     "@sparx/auth": "workspace:*",
     "@sparx/cms-editor": "workspace:*",
+    "@sparx/cms-schemas": "workspace:*",
     "@sparx/crm": "workspace:*",
     "@sparx/crm-schemas": "workspace:*",
     "@sparx/db": "workspace:*",
