@@ -1,50 +1,79 @@
 # Sparx Platform — Email Platform PRD
 
-**Version:** 2.0
+**Version:** 3.0
 **Author:** Brandon Korous
-**Last Updated:** 2026-05-27
+**Last Updated:** 2026-05-29
 
 ---
 
 ## 1. Overview
 
-The Sparx Email Platform is a fully integrated transactional and marketing email system powered by **Postal** — a self-hosted, open-source mail delivery platform. Sparx owns the entire email stack: no Resend, no SendGrid, no third-party dependency.
+The Sparx Email Platform is a fully integrated transactional and marketing email system. Outbound delivery runs through **Mailgun**'s HTTP API, called directly from the `email-worker` Cloud Run service. Sparx owns templates, events, queue, and analytics surface; Mailgun owns the egress, reputation, and bounce/complaint handling.
 
-Every email sent through Sparx originates from the merchant's own domain, is triggered by real platform events, and feeds results back into the CRM. The email module is independently activatable at $29/month.
+Every email sent through Sparx originates from the merchant's own domain (once verified), is triggered by real platform events, and feeds results back into the CRM. The email module is independently activatable at $29/month.
 
-### Why Postal Over Resend/SendGrid
+### Why Mailgun (and not self-hosted Postal)
 
-- **No per-email cost** — at scale, per-email pricing ($0.001/email) becomes significant. Postal is infrastructure cost only.
-- **Full white-label** — merchants and their customers never see a third-party email service name anywhere
-- **Complete deliverability control** — dedicated IP pools, reputation management, bounce handling, feedback loops — all owned by Sparx
-- **Open source and auditable** — no black-box deliverability decisions
-- **MX ownership** — `sparx.email` is the dedicated Postal sending domain, purpose-built for this
+The original plan (v1–v2 of this PRD) was self-hosted Postal in our GKE cluster, on the rationale of cost control + sovereignty. We attempted that and pivoted on 2026-05-29 because of two hard infrastructure constraints:
 
-### Postal Infrastructure
+1. **GCP blocks outbound TCP/25 platform-wide.** Cloud egress to recipient MX servers is permanently blocked at the network edge across every GCP product — Compute Engine, GKE, Cloud Run, Cloud Functions. Self-hosted Postal cannot deliver direct from our cluster, ever.
+2. **Postal v3's `smtp_relays` config does not support SMTP AUTH.** Its source (`config_schema.rb:79`) parses relay URIs to host/port/ssl_mode only — `uri.user` and `uri.password` are dropped, and `Net::SMTP#authenticate` is never called. Postal cannot bridge to authenticated public SMTP gateways (Mailgun, SES, Postmark) by design — it's built for trusted unauthenticated internal relays.
+
+Combining (1) and (2) means self-hosted Postal would require running our own Postfix-on-VPS bridge with port 25 egress just to authenticate to a third-party relay — adding infrastructure, IP reputation work, and ongoing ops to get back to where Mailgun starts.
+
+What we gain by going Mailgun-direct:
+
+- **Zero infrastructure for outbound** — no GKE pods, no MariaDB, no PVC, no admin UI to keep secure. The `email-worker` Cloud Run service makes a `POST /v3/{domain}/messages` call and Mailgun handles everything downstream.
+- **Multi-tenant by API** — Mailgun supports up to 1,000 verified sending domains per account (Foundation tier). Per-merchant domain provisioning is a `POST /v4/domains` + `PUT /v4/domains/{name}/verify` flow.
+- **Reputation is theirs** — clean IPs, established warmup, ongoing blocklist monitoring, FBL registration with major ISPs, Google Postmaster Tools / Microsoft SNDS. None of which we have to operate.
+- **Templates stay ours** — React Email components render inside `@sparx/email` and we pass the rendered HTML/text to Mailgun. No vendor lock-in on content.
+
+Cost trajectory:
+
+| Phase                        | Volume   | Mailgun tier   | $/mo |
+| ---------------------------- | -------- | -------------- | ---- |
+| Now (platform only)          | <100/day | **Free**       | $0   |
+| First merchant custom domain | <10k/mo  | **Foundation** | $35  |
+| 50–500 merchants             | <50k/mo  | **Foundation** | $35  |
+| 1,000+ merchants             | 100k+/mo | **Scale**      | $90+ |
+
+If we hit scale where Mailgun's per-email cost becomes meaningful, the natural revisit is migrating outbound to AWS SES ($0.10/1k emails, ~$10/mo at 100k/mo). At that point the `email-worker` swaps providers; the rest of the platform doesn't notice.
+
+### Outbound Architecture
 
 ```
-Postal Server (GKE deployment)
-├── Web interface (internal, staff only)
-├── SMTP server (receives from application)
-├── HTTP API (application sends via API)
-├── Click/open tracking
-└── Bounce/complaint processing
+Better Auth / Commerce / CRM / Billing
+        │ (publishes 'email.send' to Pub/Sub)
+        ▼
+Pub/Sub topic: email.send
+        │ (push subscription with OIDC)
+        ▼
+Cloud Run: email-worker
+  ├── renders React Email template via @sparx/email
+  ├── selects merchant sending domain
+  └── POST https://api.mailgun.net/v3/{domain}/messages
+        │
+        ▼
+Mailgun (US region)
+  ├── queue + retry + suppression
+  ├── DKIM signing (per-domain key)
+  ├── delivery to recipient MX
+  └── webhook events → email-worker (deferred)
 
-Dedicated sending domains:
-├── sparx.email          — Platform infrastructure domain
-│   ├── noreply@sparx.email     (system emails)
-│   └── bounce@sparx.email      (bounce processing)
-└── merchant's own domain (after DNS verification)
-    ├── noreply@theirdomain.com
-    └── orders@theirdomain.com
+Sending domains:
+  sparx.email                — Platform infrastructure (verified)
+  acme.com                   — Merchant domain (after DNS verification)
+  └── noreply@..., orders@..., etc. — sender addresses
 ```
 
-### IP Pool Strategy
+### Reputation Strategy
 
-- **Shared pool** — New merchants start here while warming their domain reputation
-- **Dedicated pool** — Available for Pro/Business merchants with high volume (>50K/mo)
-- **IP warming** — New IPs ramped over 4-6 weeks: 100 → 500 → 2K → 10K → unlimited/day
-- **Feedback loops** — Registered with major ISPs (Gmail, Yahoo, Outlook) for complaint data
+Mailgun owns the IP pool and warming — we don't operate this. Per-tenant reputation is isolated by:
+
+- Independent DKIM keys per sending domain (Mailgun generates on `POST /v4/domains`).
+- Independent SPF / DMARC posture per merchant (records live on the merchant's DNS).
+- Mailgun handles bounce throttling and complaint suppression automatically per domain.
+- High-volume merchants can be moved to Mailgun's dedicated IP add-on later if reputation requires.
 
 ---
 
@@ -82,23 +111,28 @@ The transition is invisible to merchants — the platform handles it automatical
 
 When a merchant adds a custom domain, Sparx automatically:
 
-1. Generates a 2048-bit DKIM keypair per tenant (private key in Google Secret Manager)
-2. Displays three DNS records in dashboard:
+1. Calls `POST /v4/domains` with the merchant's domain (Mailgun generates the DKIM keypair on their side; we never see the private key)
+2. Reads `sending_dns_records[]` from the response and displays them in the merchant dashboard:
 
 ```
-Type: TXT  Name: @
-Value: v=spf1 include:_spf.sparx.email ~all
+Type: TXT     Name: @
+Value: v=spf1 include:mailgun.org ~all
 
-Type: TXT  Name: sparx._domainkey
-Value: v=DKIM1; k=rsa; p={generated-public-key}
+Type: TXT     Name: {mailgun-selector}._domainkey
+Value: k=rsa; p={generated-public-key}
 
-Type: TXT  Name: _dmarc
+Type: CNAME   Name: email
+Value: mailgun.org    (open/click tracking — optional but recommended)
+
+Type: TXT     Name: _dmarc
 Value: v=DMARC1; p=quarantine; rua=mailto:dmarc@sparx.email
 ```
 
-3. Validates all three records via polling worker
-4. On validation: Postal configured to sign outbound emails with merchant's DKIM key
-5. Emails sent as merchant's domain with full authentication
+3. Polls `PUT /v4/domains/{name}/verify` on a worker until Mailgun reports all records valid
+4. On verification: merchant is flagged send-enabled; outbound mail uses `POST /v3/{their-domain}/messages` with their DKIM signature
+5. Mailgun signs every outbound message with the per-domain DKIM key automatically
+
+> **SPF gotcha (2026-05-29):** Mailgun's verifier requires the SPF TXT to be EXACTLY `v=spf1 include:mailgun.org ~all`. Adding extra mechanisms like `a mx include:spf.sparx.email` causes verification to fail even though the record is technically valid SPF. Always use the minimal canonical form.
 
 ---
 
@@ -183,12 +217,12 @@ Visual flow: Linear steps (not complex diagram). Merchants build flows in plain 
 3. Set subject line
 4. Preview (renders for first customer in segment)
 5. Schedule (now or future date/time)
-6. Confirm → Postal sends
+6. Confirm → Mailgun sends
 
 ### Unsubscribe Handling
 
 - One-click unsubscribe in every email (CAN-SPAM / GDPR required)
-- Suppression list maintained in Postal + mirrored in Sparx DB
+- Suppression list maintained in Mailgun + mirrored in Sparx DB via webhook events
 - Hard bounce → suppress immediately, log reason
 - Soft bounce → retry 3x over 72 hours, then suppress
 - Spam complaint → suppress immediately, reduce sending score for that domain
@@ -197,7 +231,7 @@ Visual flow: Linear steps (not complex diagram). Merchants build flows in plain 
 
 ## 8. Deliverability Management
 
-### Postal Health Monitoring
+### Mailgun Health Monitoring
 
 - Bounce rate monitored per sending domain (alert if > 2%)
 - Spam complaint rate monitored (alert if > 0.1%)
@@ -219,10 +253,10 @@ Each merchant's sending reputation is isolated from others via:
 
 Per automation and per broadcast:
 
-- **Sent** — emails dispatched by Postal
+- **Sent** — emails accepted by Mailgun
 - **Delivered** — confirmed by receiving server
 - **Opened** — open pixel fired (limited by Apple MPP)
-- **Clicked** — link click tracked via Postal redirect
+- **Clicked** — link click tracked via Mailgun's tracking CNAME
 - **Unsubscribed** — opted out
 - **Bounced** — hard and soft counts with reasons
 - **Spam complaints** — feedback loop data
@@ -250,4 +284,4 @@ Example AI interaction:
 > "Send a re-engagement email to all B2B accounts that haven't ordered in 60 days"
 > → MCP finds 23 accounts matching conditions
 > → "Found 23 B2B accounts. I'll use your 'B2B Win-Back' template. Confirm?"
-> → On confirm: Postal sends batch
+> → On confirm: Mailgun sends batch
