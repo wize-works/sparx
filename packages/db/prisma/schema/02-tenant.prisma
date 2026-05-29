@@ -23,6 +23,7 @@ model Tenant {
   // Auth + audit
   users     User[]
   auditLogs AuditLog[]
+  apiKeys   ApiKey[]
 
   // CMS module
   pages                Page[]

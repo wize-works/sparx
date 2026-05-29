@@ -18,3 +18,13 @@ export {
   ModuleDisabledError,
   type ModuleSlug,
 } from './module-gate';
+export {
+  issueApiKey,
+  verifyApiKey,
+  listApiKeys,
+  revokeApiKey,
+  type IssueArgs,
+  type IssuedKey,
+  type VerifiedKey,
+  type ApiKeySummary,
+} from './api-keys';

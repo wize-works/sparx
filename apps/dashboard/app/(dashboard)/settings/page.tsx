@@ -63,10 +63,10 @@ const GROUPS: SettingsGroup[] = [
   },
   {
     icon: <KeyRound className="h-4 w-4" />,
-    title: 'API keys',
-    description: 'Issue scoped keys for integrations and MCP.',
-    href: '/settings',
-    ready: false,
+    title: 'AI Integrations',
+    description: 'Issue scoped API keys for Claude, ChatGPT, and Copilot.',
+    href: '/settings/ai-integrations',
+    ready: true,
   },
   {
     icon: <Plug className="h-4 w-4" />,

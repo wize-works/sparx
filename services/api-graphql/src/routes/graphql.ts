@@ -36,6 +36,7 @@ import { publish } from '@sparx/api-core/pubsub';
 import { slugify, uniqueSlug } from '@sparx/api-core/slug';
 import { computeEntryEtag, assertIfMatch } from '@sparx/api-core/etag';
 import { conflict, notFound } from '@sparx/api-core/errors';
+import { crmResolvers, crmSdl } from './crm/index.js';
 
 type Json = Prisma.InputJsonValue;
 
@@ -589,8 +590,14 @@ const resolvers = {
 
 const graphqlRoutes: FastifyPluginAsync = async (app) => {
   await app.register(mercurius, {
-    schema: sdl,
-    resolvers,
+    // CMS SDL declares scalars + root Query/Mutation types; CRM SDL extends
+    // the same Query/Mutation via `extend type` so a single mercurius
+    // instance serves both surfaces (locked decision #7).
+    schema: sdl + crmSdl,
+    resolvers: {
+      Query: { ...resolvers.Query, ...crmResolvers.Query },
+      Mutation: { ...resolvers.Mutation, ...crmResolvers.Mutation },
+    },
     path: '/v1/graphql',
     // GraphiQL UI in dev only — production exposes the endpoint without
     // the playground so we don't ship a "make any query" surface
@@ -602,11 +609,11 @@ const graphqlRoutes: FastifyPluginAsync = async (app) => {
     context: (request: FastifyRequest) => ({ request }),
   });
 
-  // Force auth check for all GraphQL ops. mercurius applies onRequest hooks
-  // before resolvers run, so this throws UNAUTHORIZED for missing/invalid
-  // tokens before any resolver receives the request. GET (introspection)
-  // is exempt so the GraphiQL playground works in dev.
-  app.addHook('onRequest', (request, _reply, done) => {
+  // Force auth check for all GraphQL POSTs. Has to be a preHandler — the
+  // auth plugin populates request.auth in its own preHandler, and onRequest
+  // hooks fire before preHandler, so onRequest here would always see auth=null.
+  // GET (introspection) stays exempt so GraphiQL works in dev.
+  app.addHook('preHandler', (request, _reply, done) => {
     if (request.url.startsWith('/v1/graphql') && request.method !== 'GET') {
       requireAuth(request);
     }

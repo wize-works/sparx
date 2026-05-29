@@ -58,10 +58,13 @@ export async function createApp(): Promise<FastifyInstance> {
   await app.register(
     createAuthPlugin({
       jwtSecret: env.SPARX_INTERNAL_JWT_SECRET,
-      // GraphiQL UI (dev only) issues GETs; we'd block introspection if we
-      // required Bearer on the GET path. The onRequest hook inside
-      // graphqlRoutes enforces auth on POST instead.
-      publicPrefixes: ['/v1/graphql'],
+      // No publicPrefixes for /v1/graphql — the auth preHandler is already
+      // permissive (skips verification when no Bearer header is present, so
+      // GraphiQL introspection GETs pass), and it populates request.auth
+      // for valid tokens. Listing it as a public prefix made the preHandler
+      // short-circuit BEFORE jwt.verify, leaving authenticated POSTs with a
+      // null auth context. The onRequest hook in graphqlRoutes still
+      // enforces auth-required for POSTs.
     })
   );
 

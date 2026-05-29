@@ -33,6 +33,28 @@ data:
       reverse_proxy api-rest.sparx-prod.svc.cluster.local:3000
     }
 
+    # media.sparx.works — public CDN domain for transcoded media variants.
+    # Cloudflare caches everything for a year; the origin only sees a sliver
+    # of traffic, and merchants get fast TTFB worldwide. The path under it
+    # is identical to api.sparx.works so MEDIA_PUBLIC_URL is a single env
+    # swap. Only the /v1/public/media/* routes serve here — anything else
+    # 404s by virtue of the api-rest route map.
+    media.sparx.works {
+      tls {
+        on_demand
+      }
+      header {
+        # Belt + suspenders: Cloudflare already adds these but origin-side
+        # headers survive a CF bypass. `immutable` is critical — the URL
+        # encodes width + format, so the bytes never change.
+        Cache-Control "public, max-age=31536000, immutable"
+        # Strip any cookies merchant proxies might forward — the CDN
+        # variants are pure content.
+        -Set-Cookie
+      }
+      reverse_proxy api-rest.sparx-prod.svc.cluster.local:3000
+    }
+
     graphql.sparx.works {
       tls {
         on_demand

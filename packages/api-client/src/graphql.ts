@@ -28,8 +28,8 @@ export interface GraphQLOperation<TVariables = Record<string, unknown>> {
 
 export interface GraphQLError {
   message: string;
-  locations?: Array<{ line: number; column: number }>;
-  path?: Array<string | number>;
+  locations?: { line: number; column: number }[];
+  path?: (string | number)[];
   extensions?: Record<string, unknown>;
 }
 

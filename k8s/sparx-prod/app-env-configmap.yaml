@@ -31,13 +31,15 @@ data:
   # api.sparx.works caches the response indefinitely (Cache-Control:
   # public, immutable, max-age=1yr).
   #
-  # MEDIA_PUBLIC_URL is the externally-reachable api-rest origin used to
-  # mint variant URLs (`{MEDIA_PUBLIC_URL}/v1/public/media/variants/...`).
-  # When a dedicated CDN domain like `media.sparx.works` lands, repoint
-  # MEDIA_PUBLIC_URL there — the path under it stays the same.
+  # MEDIA_PUBLIC_URL is the externally-reachable origin used to mint
+  # variant URLs (`{MEDIA_PUBLIC_URL}/v1/public/media/variants/...`).
+  # media.sparx.works is a Caddy host-match that proxies to api-rest, but
+  # CF caches it for a year so the origin only sees a sliver of traffic.
+  # The route handler is identical to api.sparx.works, so the path stays
+  # the same — only the externally-minted URL prefix changes.
   GCS_MEDIA_BUCKET: sparxworks-sparx-prod-media
   GCS_MEDIA_PUBLIC_BUCKET: sparxworks-sparx-prod-media-public
-  MEDIA_PUBLIC_URL: https://api.sparx.works
+  MEDIA_PUBLIC_URL: https://media.sparx.works
   # Outbound email — email-worker reads SPARX_EMAIL_PROVIDER and either
   # logs (console) or POSTs to Postal (postal). Flip to "postal" once
   # the postal-api-key secret in sparx-app-secrets is populated.

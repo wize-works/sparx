@@ -92,6 +92,39 @@ resource "cloudflare_record" "sparx_works_mcp" {
   allow_overwrite = true
 }
 
+resource "cloudflare_record" "sparx_works_graphql" {
+  count           = var.cloudflare_enabled ? 1 : 0
+  zone_id         = data.cloudflare_zone.sparx_works[0].id
+  name            = "graphql"
+  type            = "A"
+  content         = google_compute_address.ingress.address
+  ttl             = 1
+  proxied         = true
+  allow_overwrite = true
+  comment         = "GraphQL endpoint (api-graphql service)"
+}
+
+# media.sparx.works — public CDN domain for transcoded media variants.
+# Same ingress IP as api/app, but Caddy host-matches the request and Cloudflare
+# caches it at the edge for a year (Cache-Control headers from Caddy enforce
+# the same on origin). Splitting media off api means:
+#   - Cookie-isolated: any session cookies on api.sparx.works don't reach
+#     the asset surface
+#   - Future-friendly: when traffic justifies, we can repoint media to a
+#     dedicated origin (or a CDN with origin-shield) without touching apps
+#     that have already adopted MEDIA_PUBLIC_URL
+resource "cloudflare_record" "sparx_works_media" {
+  count           = var.cloudflare_enabled ? 1 : 0
+  zone_id         = data.cloudflare_zone.sparx_works[0].id
+  name            = "media"
+  type            = "A"
+  content         = google_compute_address.ingress.address
+  ttl             = 1
+  proxied         = true
+  allow_overwrite = true
+  comment         = "Public CDN — transcoded media variants (Caddy → api-rest)"
+}
+
 # NOTE: Tenant subdomain storefronts moved to sparx.zone (Shopify-style split).
 # No wildcard or customers records on sparx.works anymore — see sparx.zone block below.
 
