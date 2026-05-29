@@ -253,12 +253,12 @@ resource "cloudflare_record" "sparx_email_mx" {
   allow_overwrite = true
 }
 
-# SPF — Mailgun is the only outbound path. Postal queues + signs + tracks
-# but does not deliver directly (GCP blocks outbound TCP/25); it hands
-# every message off to Mailgun via SMTP AUTH on :587, so Mailgun's IPs
-# are the only ones that should ever appear as the SMTP source for
-# sparx.email mail. Dropping `a mx include:spf.sparx.email` keeps the
-# record honest — those would falsely claim Postal sends direct.
+# SPF — Mailgun is our sole outbound path. email-worker (Cloud Run) POSTs
+# to Mailgun's HTTP API and Mailgun delivers from its own IPs, so the
+# SPF authorises only Mailgun's range. The exact string must be
+# `v=spf1 include:mailgun.org ~all` — Mailgun's verifier rejects any
+# other shape (extra `a mx` / additional includes fail their check even
+# when SPF is technically correct).
 #
 # ~all is soft-fail (recommended over -all until reputation is established).
 resource "cloudflare_record" "sparx_email_spf" {
@@ -270,7 +270,7 @@ resource "cloudflare_record" "sparx_email_spf" {
   ttl             = 1
   proxied         = false
   allow_overwrite = true
-  comment         = "SPF — Mailgun-only egress (Postal relays through it)"
+  comment         = "SPF — Mailgun-only egress (HTTP API direct from email-worker)"
 }
 
 # Mailgun tracking CNAME. Mailgun rewrites links in outgoing mail to
