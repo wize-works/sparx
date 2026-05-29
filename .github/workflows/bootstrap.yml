@@ -33,6 +33,7 @@ on:
           - apps
           - workers
           - postal
+          - postal-make-user
 
 permissions:
   contents: read
@@ -286,15 +287,71 @@ jobs:
           kubectl wait --for=condition=complete job/postal-initialize \
             -n "$POSTAL_NS" --timeout=5m
 
-          # Stage 5: app Deployments.
+          # Stage 5: app Deployments. Postal v3 dropped postal-cron;
+          # scheduled tasks live in the worker.
           kubectl apply -f k8s/postal/smtp.yaml
           kubectl apply -f k8s/postal/web.yaml
           kubectl apply -f k8s/postal/worker.yaml
-          kubectl apply -f k8s/postal/cron.yaml
           kubectl rollout status deployment/postal-web -n "$POSTAL_NS" --timeout=5m
           kubectl rollout status deployment/postal-smtp -n "$POSTAL_NS" --timeout=5m
           kubectl rollout status deployment/postal-worker -n "$POSTAL_NS" --timeout=5m
-          kubectl rollout status deployment/postal-cron -n "$POSTAL_NS" --timeout=5m
+
+      # Idempotent first-boot admin-user creation. `postal make-user` is
+      # an interactive CLI — we pipe email + name + password via stdin.
+      # Postal returns non-zero if the user already exists; we swallow
+      # that so reruns are no-ops. Credentials live in Secret Manager:
+      #   postal-admin-email / postal-admin-name / postal-admin-password
+      - name: Create Postal admin user
+        if: ${{ inputs.components == 'all-platform' || inputs.components == 'postal-make-user' }}
+        env:
+          POSTAL_NS: postal
+        run: |
+          set -euo pipefail
+          fetch() {
+            gcloud secrets versions access latest --secret="$1" --project="$PROJECT_ID" 2>/dev/null || echo ""
+          }
+          ADMIN_EMAIL=$(fetch postal-admin-email)
+          ADMIN_NAME=$(fetch postal-admin-name)
+          ADMIN_PASSWORD=$(fetch postal-admin-password)
+          for name in ADMIN_EMAIL ADMIN_NAME ADMIN_PASSWORD; do
+            if [ -z "${!name}" ]; then
+              echo "::error::$name source secret is missing in Secret Manager; create postal-admin-{email,name,password} first."
+              exit 1
+            fi
+          done
+
+          POD=$(kubectl get pod -n "$POSTAL_NS" -l app=postal-web -o jsonpath='{.items[0].metadata.name}')
+          if [ -z "$POD" ]; then
+            echo "::error::no postal-web pod found in $POSTAL_NS; run components=postal first."
+            exit 1
+          fi
+          echo "Using pod: $POD"
+
+          # `postal make-user` reads email/first-name/last-name/password/confirm
+          # from stdin (one per line). It exits non-zero on duplicate email —
+          # treat that as success since the desired state is "user exists".
+          # Split "$ADMIN_NAME" into first + last (first space splits; rest
+          # becomes last name). If no space, last name is empty.
+          FIRST_NAME=$(printf '%s' "$ADMIN_NAME" | cut -d' ' -f1)
+          LAST_NAME=$(printf '%s' "$ADMIN_NAME" | cut -d' ' -f2-)
+          if [ "$LAST_NAME" = "$FIRST_NAME" ]; then LAST_NAME=""; fi
+
+          # Pipe stdin via printf rather than a heredoc — heredoc closing
+          # markers can't be re-indented inside YAML run blocks.
+          STDIN=$(printf '%s\n%s\n%s\n%s\n' "$ADMIN_EMAIL" "$FIRST_NAME" "$LAST_NAME" "$ADMIN_PASSWORD")
+          set +e
+          OUTPUT=$(printf '%s' "$STDIN" | kubectl exec -i -n "$POSTAL_NS" "$POD" -- postal make-user 2>&1)
+          EXIT_CODE=$?
+          set -e
+          echo "$OUTPUT"
+          if [ $EXIT_CODE -eq 0 ]; then
+            echo "::notice::Postal admin user created."
+          elif echo "$OUTPUT" | grep -qi "already.*exist\|taken\|duplicate"; then
+            echo "::notice::Postal admin user already exists — skipping (idempotent)."
+          else
+            echo "::error::postal make-user failed unexpectedly (exit $EXIT_CODE)."
+            exit $EXIT_CODE
+          fi
 
       - name: Show cluster state
         if: always()
