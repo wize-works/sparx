@@ -43,21 +43,21 @@ data:
       host: mariadb.postal.svc.cluster.local
       port: 3306
       username: postal
-      password: ${POSTAL_DB_PASSWORD}
+      password: <%= ENV['POSTAL_DB_PASSWORD'] %>
       database: postal
 
     message_db:
       host: mariadb.postal.svc.cluster.local
       port: 3306
       username: postal
-      password: ${POSTAL_DB_PASSWORD}
+      password: <%= ENV['POSTAL_DB_PASSWORD'] %>
       prefix: postal
 
     rabbitmq:
       host: rabbitmq.postal.svc.cluster.local
       port: 5672
       username: postal
-      password: ${POSTAL_RABBITMQ_PASSWORD}
+      password: <%= ENV['POSTAL_RABBITMQ_PASSWORD'] %>
       vhost: /postal
 
     dns:
@@ -80,7 +80,7 @@ data:
 
     rails:
       environment: production
-      secret_key: ${POSTAL_RAILS_SECRET_KEY}
+      secret_key: <%= ENV['POSTAL_RAILS_SECRET_KEY'] %>
 
     fast_server:
       enabled: false # we don't terminate inbound HTTP at Postal; Caddy handles TLS
