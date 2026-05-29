@@ -85,6 +85,29 @@ jobs:
             fi
           done
 
+      # Cloud Run services live outside the cluster — they don't show up in
+      # `kubectl get deployment`. Roll their image with `gcloud run services
+      # update`. TF's cloud-run-worker module sets lifecycle.ignore_changes
+      # on image, so this drift is expected and won't be reverted on the
+      # next `terraform apply`. Skips silently if the service doesn't exist
+      # yet (Cloud Run returns non-zero, we tolerate it).
+      - name: Rollout image to each Cloud Run service
+        run: |
+          IMAGE_BASE="$REGION-docker.pkg.dev/${{ env.PROJECT_ID }}/$AR_REPO"
+          for svc in email-worker media-worker; do
+            if gcloud run services describe "$svc" --region="$REGION" --project="${{ env.PROJECT_ID }}" >/dev/null 2>&1; then
+              echo "::group::Rolling out $svc (Cloud Run)"
+              gcloud run services update "$svc" \
+                --region="$REGION" \
+                --project="${{ env.PROJECT_ID }}" \
+                --image="$IMAGE_BASE/$svc:${{ steps.tag.outputs.tag }}" \
+                --quiet
+              echo "::endgroup::"
+            else
+              echo "::notice::Skipping $svc — Cloud Run service not present yet."
+            fi
+          done
+
       - name: Smoke test
         run: |
           # Hit /health on the public endpoints. Will only succeed once
