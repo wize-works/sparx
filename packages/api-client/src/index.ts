@@ -24,16 +24,33 @@
 import { SparxClient, type SparxClientOptions } from './client.js';
 import { CmsApi } from './cms.js';
 import { MediaApi } from './media.js';
+import { GraphQLClient } from './graphql.js';
+
+export interface SparxOptions extends SparxClientOptions {
+  /**
+   * Override the base URL used for GraphQL operations. Defaults to the
+   * same `baseUrl` REST uses (Caddy host-routes /v1/graphql to api-graphql).
+   * Set this to `https://graphql.sparx.works` if you want the dedicated
+   * GraphQL hostname directly.
+   */
+  graphqlBaseUrl?: string;
+}
 
 export class Sparx {
   public readonly client: SparxClient;
   public readonly cms: CmsApi;
   public readonly media: MediaApi;
+  public readonly graphql: GraphQLClient;
 
-  constructor(opts: SparxClientOptions) {
+  constructor(opts: SparxOptions) {
     this.client = new SparxClient(opts);
     this.cms = new CmsApi(this.client);
     this.media = new MediaApi(this.client);
+    this.graphql = new GraphQLClient({
+      baseUrl: opts.graphqlBaseUrl ?? opts.baseUrl,
+      token: opts.token,
+      fetch: opts.fetch,
+    });
   }
 }
 
@@ -55,6 +72,13 @@ export type {
 } from './types.js';
 export { CmsApi } from './cms.js';
 export { MediaApi } from './media.js';
+export {
+  GraphQLClient,
+  type GraphQLClientOptions,
+  type GraphQLOperation,
+  type GraphQLError,
+  type GraphQLResponse,
+} from './graphql.js';
 export type {
   CreateEntryInput,
   ListEntriesQuery,
