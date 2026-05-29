@@ -17,7 +17,7 @@
   "dependencies": {
     "@fastify/jwt": "^9.0.4",
     "@modelcontextprotocol/sdk": "^1.0.4",
-    "@prisma/client": "^6.19.3",
+    "@prisma/client": "^7.8.0",
     "@sparx/auth": "workspace:*",
     "@sparx/crm": "workspace:*",
     "@sparx/db": "workspace:*",

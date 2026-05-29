@@ -33,7 +33,7 @@
     "clean": "rm -rf .turbo dist *.tsbuildinfo"
   },
   "dependencies": {
-    "@prisma/client": "^6.2.0",
+    "@prisma/client": "^7.8.0",
     "@node-rs/argon2": "^2.0.2",
     "@google-cloud/secret-manager": "^5.6.0",
     "pg": "^8.13.1"

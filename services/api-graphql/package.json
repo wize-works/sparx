@@ -17,7 +17,7 @@
   "dependencies": {
     "@fastify/jwt": "^9.0.4",
     "@google-cloud/pubsub": "^5.3.0",
-    "@prisma/client": "^6.19.3",
+    "@prisma/client": "^7.8.0",
     "@sparx/api-core": "workspace:*",
     "@sparx/auth": "workspace:*",
     "@sparx/cms-schemas": "workspace:*",

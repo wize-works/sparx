@@ -16,7 +16,7 @@
   },
   "dependencies": {
     "@google-cloud/storage": "^7.16.0",
-    "@prisma/client": "^6.19.3",
+    "@prisma/client": "^7.8.0",
     "@sparx/db": "workspace:*",
     "blurhash": "^2.0.5",
     "pino": "^9.5.0",
