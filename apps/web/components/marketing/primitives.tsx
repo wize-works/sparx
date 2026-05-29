@@ -44,7 +44,7 @@ export function Wordmark({ size = 22 }: { size?: number }) {
         lineHeight: 1,
       }}
     >
-      Spar<span style={{ color: 'var(--sparx-primary)' }}>x</span>
+      Spar<span style={{ color: 'var(--sparx-primary)', fontWeight: 800 }}>x</span>
     </span>
   );
 }
