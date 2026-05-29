@@ -809,9 +809,6 @@ importers:
 
   services/email-worker:
     dependencies:
-      '@google-cloud/pubsub':
-        specifier: ^4.10.0
-        version: 4.11.0
       '@prisma/client':
         specifier: ^6.19.3
         version: 6.19.3(prisma@6.19.3(typescript@5.9.3))(typescript@5.9.3)
@@ -846,9 +843,6 @@ importers:
 
   services/media-worker:
     dependencies:
-      '@google-cloud/pubsub':
-        specifier: ^4.10.0
-        version: 4.11.0
       '@google-cloud/storage':
         specifier: ^7.16.0
         version: 7.19.0

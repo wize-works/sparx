@@ -7,7 +7,11 @@ import { Storage } from '@google-cloud/storage';
 import { Readable } from 'node:stream';
 import { env } from './env.js';
 
-const client = new Storage({ projectId: env.GCP_PROJECT_ID });
+// On Cloud Run the Storage client auto-detects the project from the
+// ambient GOOGLE_CLOUD_PROJECT env var; in tests/dev it picks up
+// gcloud's application-default credentials. No need to thread an
+// explicit projectId.
+const client = new Storage();
 // Private bucket — holds originals. Read-only from here; uploads come via
 // presigned URLs from the dashboard through api-rest.
 const originalsBucket = client.bucket(env.GCS_MEDIA_BUCKET);

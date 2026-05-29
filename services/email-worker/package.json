@@ -2,7 +2,7 @@
   "name": "@sparx/email-worker",
   "version": "0.0.0",
   "private": true,
-  "description": "Sparx email worker. Pulls email.send events from Pub/Sub, renders React Email templates from @sparx/email, and hands the rendered payload to that package's provider (console in dev, Postal in prod). Falls back to console transport when POSTAL_API_KEY is unset so the worker is usable end-to-end before Postal is deployed.",
+  "description": "Sparx email worker. Receives email.send events via Pub/Sub push (Cloud Run HTTP entrypoint), renders React Email templates from @sparx/email, and hands the rendered payload to that package's provider (console in dev, Postal in prod). Falls back to console transport when POSTAL_API_KEY is unset so the worker is usable end-to-end before Postal is deployed.",
   "type": "module",
   "main": "src/index.ts",
   "scripts": {
@@ -15,7 +15,6 @@
     "clean": "rm -rf .turbo dist *.tsbuildinfo"
   },
   "dependencies": {
-    "@google-cloud/pubsub": "^4.10.0",
     "@prisma/client": "^6.19.3",
     "@sparx/db": "workspace:*",
     "@sparx/email": "workspace:*",

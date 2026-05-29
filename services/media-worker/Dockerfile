@@ -2,6 +2,9 @@
 # but with the additional libvips system deps that `sharp` links against
 # at runtime. node:24-alpine ships an Alpine 3.20 base which has
 # vips-dev as a regular apk package.
+#
+# Cloud Run Pub/Sub push entrypoint — exposes :8080 (Cloud Run injects
+# PORT; defaults to 8080).
 
 FROM node:24-alpine
 
@@ -35,7 +38,9 @@ WORKDIR /app/services/media-worker
 RUN chown -R node:node /app
 USER node
 
+EXPOSE 8080
+
 # dumb-init forwards SIGTERM to the worker's graceful-shutdown hook so a
-# pod eviction during processing finishes the current message before
-# exiting.
+# Cloud Run revision swap during processing finishes the current request
+# before exiting.
 ENTRYPOINT ["dumb-init", "--", "pnpm", "exec", "tsx", "src/index.ts"]
