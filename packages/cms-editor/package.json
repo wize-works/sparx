@@ -48,7 +48,7 @@
     "@tiptap/starter-kit": "^3.23.6",
     "@tiptap/suggestion": "^3.23.6",
     "lowlight": "^3.3.0",
-    "lucide-react": "^0.469.0",
+    "lucide-react": "^1.17.0",
     "tippy.js": "^6.3.7"
   },
   "peerDependencies": {
