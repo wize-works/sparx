@@ -17,11 +17,19 @@
 // `domains` where `status = 'verified'` AND the tenant is active. Replace
 // the static list (or supplement it).
 //
+// Tenant subdomain authorization (Phase 1.5): `*.sparx.zone` subdomains are
+// authorized by looking up the slug in the `tenants` table. This is what
+// powers preview URLs from the dashboard (<tenant>.sparx.zone) and any
+// merchant landing on their own storefront before custom domains exist.
+//
 // Not in OpenAPI, no auth, no rate-limit interference — this is an internal
 // ClusterIP-only endpoint. Caddy hits it at most every 2 minutes per host
 // (the Caddyfile `interval`), so there's nothing to throttle here.
 
 import type { FastifyPluginAsync } from 'fastify';
+import { prisma } from '@sparx/db';
+
+const TENANT_ZONE_SUFFIX = '.sparx.zone';
 
 const PLATFORM_HOSTNAMES = new Set<string>([
   // sparx.works
@@ -85,10 +93,27 @@ const domainCheckRoutes: FastifyPluginAsync = (app) => {
         return reply.code(200).send({ allowed: true, source: 'platform' });
       }
 
+      // *.sparx.zone tenant subdomains: extract slug, look up the tenant.
+      // Single-level only — foo.bar.sparx.zone is rejected.
+      if (host.endsWith(TENANT_ZONE_SUFFIX)) {
+        const slug = host.slice(0, -TENANT_ZONE_SUFFIX.length);
+        if (slug.length > 0 && !slug.includes('.')) {
+          const tenant = await prisma.tenant.findUnique({
+            where: { slug },
+            select: { id: true, status: true },
+          });
+          if (tenant?.status === 'active') {
+            return reply
+              .code(200)
+              .send({ allowed: true, source: 'tenant_subdomain', tenantId: tenant.id });
+          }
+        }
+      }
+
       // Phase 2 hook: when the `domains` table exists, look up `host`
-      // here and authorize tenant/custom domains.
+      // here and authorize custom domains.
       //   const row = await db.domain.findFirst({ where: { domain: host, status: 'verified' } });
-      //   if (row) return reply.code(200).send({ allowed: true, source: 'tenant', domainId: row.id });
+      //   if (row) return reply.code(200).send({ allowed: true, source: 'custom_domain', domainId: row.id });
 
       return reply.code(403).send({ allowed: false, reason: 'unknown_host' });
     }
