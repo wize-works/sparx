@@ -2,12 +2,12 @@
 # schema. Idempotent — re-running on an already-initialised DB is a
 # no-op per Postal docs.
 #
-# This must complete BEFORE the Postal Web / Worker / SMTP / Cron
-# Deployments start handling traffic. Run order:
+# This must complete BEFORE the Postal Web / Worker / SMTP Deployments
+# start handling traffic. Run order:
 #
-#   1. Apply mariadb + rabbitmq (StatefulSets — wait for Ready)
+#   1. Apply mariadb (StatefulSet — wait for Ready)
 #   2. Apply this Job → wait Complete
-#   3. Apply postal-web / -worker / -smtp / -cron
+#   3. Apply postal-web / -worker / -smtp
 #
 # bootstrap.yml enforces this ordering when components=postal.
 #
@@ -39,12 +39,18 @@ spec:
           image: ghcr.io/postalserver/postal:3.3.4
           imagePullPolicy: IfNotPresent
           command: ['postal', 'initialize']
+          env:
+            - name: POSTAL_SIGNING_KEY_PATH
+              value: /signing-key/signing.key
           envFrom:
             - secretRef:
                 name: postal-secrets
           volumeMounts:
             - name: config
               mountPath: /config
+              readOnly: true
+            - name: signing-key
+              mountPath: /signing-key
               readOnly: true
           resources:
             requests:
@@ -57,3 +63,10 @@ spec:
         - name: config
           configMap:
             name: postal-config
+        - name: signing-key
+          secret:
+            secretName: postal-secrets
+            items:
+              - key: SIGNING_KEY
+                path: signing.key
+            defaultMode: 0o444 # postal runs as uid 999, secret files default to root:root

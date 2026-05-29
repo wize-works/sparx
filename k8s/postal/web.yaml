@@ -59,12 +59,20 @@ spec:
             # [:web_server, :default_bind_address] → env name below.
             - name: WEB_SERVER_DEFAULT_BIND_ADDRESS
               value: '0.0.0.0'
+            # Tell Postal where the DKIM signing key lives. We mount it
+            # from postal-secrets (key SIGNING_KEY → file signing.key)
+            # at /signing-key. Konfig path [:postal, :signing_key_path].
+            - name: POSTAL_SIGNING_KEY_PATH
+              value: /signing-key/signing.key
           envFrom:
             - secretRef:
                 name: postal-secrets
           volumeMounts:
             - name: config
               mountPath: /config
+              readOnly: true
+            - name: signing-key
+              mountPath: /signing-key
               readOnly: true
           resources:
             requests:
@@ -94,6 +102,13 @@ spec:
         - name: config
           configMap:
             name: postal-config
+        - name: signing-key
+          secret:
+            secretName: postal-secrets
+            items:
+              - key: SIGNING_KEY
+                path: signing.key
+            defaultMode: 0o444 # postal runs as uid 999, secret files default to root:root
 ---
 apiVersion: policy/v1
 kind: PodDisruptionBudget

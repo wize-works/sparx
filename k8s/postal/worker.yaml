@@ -1,10 +1,10 @@
-# Postal Worker — background queue consumer. Pulls jobs from RabbitMQ
-# and drives the actual SMTP outbound delivery (DNS lookup of recipient
-# MX, TLS handshake, send, retry on transient failure).
+# Postal Worker — background queue consumer. Drives the actual SMTP
+# outbound delivery (DNS lookup of recipient MX, TLS handshake, send,
+# retry on transient failure). In Postal v3 it also runs scheduled
+# tasks that used to live in postal-cron.
 #
 # Single replica in Phase 1. Postal can scale horizontally on workers,
-# but at our send volume one worker keeps up easily. HPA can be added
-# later off RabbitMQ queue depth via custom metrics.
+# but at our send volume one worker keeps up easily.
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -40,12 +40,18 @@ spec:
           image: ghcr.io/postalserver/postal:3.3.4
           imagePullPolicy: IfNotPresent
           command: ['postal', 'worker']
+          env:
+            - name: POSTAL_SIGNING_KEY_PATH
+              value: /signing-key/signing.key
           envFrom:
             - secretRef:
                 name: postal-secrets
           volumeMounts:
             - name: config
               mountPath: /config
+              readOnly: true
+            - name: signing-key
+              mountPath: /signing-key
               readOnly: true
           resources:
             requests:
@@ -58,3 +64,10 @@ spec:
         - name: config
           configMap:
             name: postal-config
+        - name: signing-key
+          secret:
+            secretName: postal-secrets
+            items:
+              - key: SIGNING_KEY
+                path: signing.key
+            defaultMode: 0o444 # postal runs as uid 999, secret files default to root:root

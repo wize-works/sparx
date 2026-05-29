@@ -301,6 +301,16 @@ jobs:
       # Postal returns non-zero if the user already exists; we swallow
       # that so reruns are no-ops. Credentials live in Secret Manager:
       #   postal-admin-email / postal-admin-name / postal-admin-password
+      #
+      # KNOWN LIMITATION: Connect Gateway (the path the runner uses to
+      # reach the cluster) does not reliably stream stdin through
+      # `kubectl exec -i` — it returns Google's branded "400 Bad
+      # Request" HTML. The first time you bootstrap, run this step
+      # locally instead (same script body, your local kubectl context
+      # talks to Connect Gateway with auth that proxies stdin
+      # correctly). After the user exists, reruns of this step from
+      # the runner will succeed by hitting the "already exists"
+      # idempotent path. See feedback_connect_gateway_stdin.md.
       - name: Create Postal admin user
         if: ${{ inputs.components == 'all-platform' || inputs.components == 'postal-make-user' }}
         env:
