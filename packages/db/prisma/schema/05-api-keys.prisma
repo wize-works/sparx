@@ -1,0 +1,58 @@
+// External API keys (docs/07 §5).
+//
+// Issued by the dashboard's AI Integrations settings page. Each key is
+// hashed with Argon2id on insert; the plaintext is shown ONCE in the modal
+// and never persisted. Verification reads the row by `keyPrefix` (the first
+// 12 visible characters: `sk_live_xxxx`) then Argon2-verifies the suffix
+// against `keyHash`.
+//
+// Scopes carry the same vocabulary as the MCP tool registry —
+// `read:crm`, `write:crm`, `write:crm_bulk`, plus per-module additions as
+// they ship. Empty array = no permissions (still a valid key for a
+// future "lookup-only" flow).
+
+model ApiKey {
+  id        String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId  String @map("tenant_id") @db.Uuid
+
+  // Human-readable label set by the merchant in the dashboard.
+  name      String @db.VarChar(120)
+
+  // First 12 chars of the displayed key — `sk_live_<8 random>`. Stored
+  // separately from the hash so the dashboard can render a recognizable
+  // truncated form ("sk_live_ab12…") next to last-used timestamps.
+  keyPrefix String @map("key_prefix") @db.VarChar(16)
+
+  // Argon2id hash of the full key minus the prefix. Verification:
+  // `argon2.verify(keyHash, request_full_key.slice(prefix.length))`.
+  keyHash   String @map("key_hash") @db.Text
+
+  // Whitelisted scopes. Stored as a Postgres TEXT[] for cheap `&&` overlap
+  // checks during MCP tool dispatch.
+  scopes    String[] @db.Text
+
+  // Optional expiry the merchant sets at issuance; null = no expiry.
+  expiresAt DateTime? @map("expires_at") @db.Timestamptz
+
+  // Bumped each time the key successfully authenticates. The dashboard
+  // shows this so a merchant can confidently revoke a stale key.
+  lastUsedAt DateTime? @map("last_used_at") @db.Timestamptz
+
+  // Soft-delete: revocation sets `revokedAt`; verification rejects revoked
+  // keys without deleting the row so the audit trail survives.
+  revokedAt DateTime? @map("revoked_at") @db.Timestamptz
+
+  // The staff member who issued the key — needed for the audit-log actor
+  // on tool calls made with this key.
+  createdByUserId String? @map("created_by_user_id") @db.Uuid
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([keyPrefix]) // collisions vanishingly unlikely (8 random chars) but enforced
+  @@index([tenantId])
+  @@index([tenantId, revokedAt])
+  @@map("api_keys")
+}
