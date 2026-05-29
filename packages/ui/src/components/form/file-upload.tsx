@@ -109,7 +109,7 @@ export const FileUpload = React.forwardRef<HTMLDivElement, FileUploadProps>(
             'flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed',
             'px-6 py-8 text-center text-sm',
             'transition-colors duration-150',
-            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)]',
+            'focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:outline-none',
             isDragging
               ? 'border-[var(--module-active)] bg-[var(--module-active-tint)] text-[var(--module-active-text)]'
               : 'border-[var(--color-border-default)] bg-[var(--color-bg-subtle)] text-[var(--color-text-secondary)] hover:border-[var(--color-border-strong)]',

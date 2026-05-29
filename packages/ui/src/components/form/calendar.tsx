@@ -31,7 +31,7 @@ export function Calendar({
           'border border-[var(--color-border-default)] bg-[var(--color-bg-surface)]',
           'text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-subtle)] hover:text-[var(--color-text-primary)]',
           'transition-colors duration-150',
-          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)]',
+          'focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:outline-none',
           'disabled:pointer-events-none disabled:opacity-40'
         ),
         button_next: cn(
@@ -39,7 +39,7 @@ export function Calendar({
           'border border-[var(--color-border-default)] bg-[var(--color-bg-surface)]',
           'text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-subtle)] hover:text-[var(--color-text-primary)]',
           'transition-colors duration-150',
-          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)]',
+          'focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:outline-none',
           'disabled:pointer-events-none disabled:opacity-40'
         ),
         month_grid: 'w-full border-collapse',
@@ -56,7 +56,7 @@ export function Calendar({
           'text-[var(--color-text-primary)]',
           'transition-colors duration-150',
           'hover:bg-[var(--color-bg-subtle)]',
-          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)]'
+          'focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:outline-none'
         ),
         selected:
           '[&_button]:bg-[var(--module-active)] [&_button]:text-white [&_button]:hover:bg-[var(--module-active)]',

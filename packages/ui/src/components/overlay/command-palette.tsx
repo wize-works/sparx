@@ -80,7 +80,7 @@ export const CommandGroup = React.forwardRef<
       'overflow-hidden text-[var(--color-text-primary)]',
       '[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1.5',
       '[&_[cmdk-group-heading]]:text-xs [&_[cmdk-group-heading]]:font-medium',
-      '[&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-wider',
+      '[&_[cmdk-group-heading]]:tracking-wider [&_[cmdk-group-heading]]:uppercase',
       '[&_[cmdk-group-heading]]:text-[var(--color-text-tertiary)]',
       className
     )}
@@ -108,7 +108,7 @@ export const CommandItem = React.forwardRef<
   <CommandPrimitive.Item
     ref={ref}
     className={cn(
-      'relative flex cursor-pointer select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none',
+      'relative flex cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none select-none',
       'text-[var(--color-text-primary)]',
       'transition-colors duration-100',
       'data-[selected=true]:bg-[var(--color-bg-subtle)]',

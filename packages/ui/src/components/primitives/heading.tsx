@@ -14,7 +14,7 @@ const headingVariants = cva('font-medium tracking-tight text-[var(--color-text-p
       3: 'text-xl leading-snug',
       4: 'text-lg leading-snug',
       5: 'text-base',
-      6: 'text-sm uppercase tracking-wider text-[var(--color-text-secondary)]',
+      6: 'text-sm tracking-wider text-[var(--color-text-secondary)] uppercase',
     },
   },
   defaultVariants: { level: 2 },

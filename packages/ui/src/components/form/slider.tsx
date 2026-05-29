@@ -20,7 +20,7 @@ export const Slider = React.forwardRef<
     <SliderPrimitive.Root
       ref={ref}
       className={cn(
-        'relative flex w-full touch-none select-none items-center',
+        'relative flex w-full touch-none items-center select-none',
         'data-[disabled]:opacity-50',
         className
       )}
@@ -35,7 +35,7 @@ export const Slider = React.forwardRef<
           className={cn(
             'block h-4 w-4 rounded-full border-2 border-[var(--module-active)] bg-[var(--color-bg-surface)]',
             'transition-colors duration-150',
-            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:ring-offset-2',
+            'focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:ring-offset-2 focus-visible:outline-none',
             'disabled:pointer-events-none disabled:opacity-50'
           )}
         />

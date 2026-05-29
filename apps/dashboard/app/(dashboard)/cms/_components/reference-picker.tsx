@@ -113,7 +113,7 @@ export function ReferencePicker({ open, onOpenChange, onPick, typeKey }: Referen
                       label: r.title || r.slug || r.id,
                     })
                   }
-                  className="rounded-md border border-[var(--color-border-default)] px-3 py-2 text-left hover:bg-[var(--color-bg-subtle)] focus:outline-none focus:ring-2 focus:ring-[var(--color-border-focus)]"
+                  className="rounded-md border border-[var(--color-border-default)] px-3 py-2 text-left hover:bg-[var(--color-bg-subtle)] focus:ring-2 focus:ring-[var(--color-border-focus)] focus:outline-none"
                 >
                   <Stack gap={0}>
                     {/* eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing */}

@@ -33,7 +33,7 @@ ModalOverlay.displayName = DialogPrimitive.Overlay.displayName;
 
 const modalContentVariants = cva(
   [
-    'fixed left-1/2 top-1/2 z-50 -translate-x-1/2 -translate-y-1/2',
+    'fixed top-1/2 left-1/2 z-50 -translate-x-1/2 -translate-y-1/2',
     'max-h-[85vh] w-full overflow-y-auto',
     'rounded-lg border border-[var(--color-border-default)] bg-[var(--color-bg-surface)]',
     'p-6 shadow-md',
@@ -77,10 +77,10 @@ export const ModalContent = React.forwardRef<
         <DialogPrimitive.Close
           aria-label="Close"
           className={cn(
-            'absolute right-3 top-3 rounded-md p-1',
+            'absolute top-3 right-3 rounded-md p-1',
             'text-[var(--color-text-tertiary)] hover:bg-[var(--color-bg-subtle)] hover:text-[var(--color-text-primary)]',
             'transition-colors duration-150',
-            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)]'
+            'focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:outline-none'
           )}
         >
           <X className="h-4 w-4" />
@@ -113,7 +113,7 @@ export const ModalTitle = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <DialogPrimitive.Title
     ref={ref}
-    className={cn('text-lg font-medium leading-tight text-[var(--color-text-primary)]', className)}
+    className={cn('text-lg leading-tight font-medium text-[var(--color-text-primary)]', className)}
     {...props}
   />
 ));

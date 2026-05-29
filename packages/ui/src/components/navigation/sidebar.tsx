@@ -24,7 +24,7 @@ export const Sidebar = React.forwardRef<HTMLElement, React.HTMLAttributes<HTMLEl
 Sidebar.displayName = 'Sidebar';
 
 export const SidebarHeader = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
-  <div className={cn('px-2 pb-3 pt-1', className)} {...props} />
+  <div className={cn('px-2 pt-1 pb-3', className)} {...props} />
 );
 SidebarHeader.displayName = 'SidebarHeader';
 
@@ -39,7 +39,7 @@ export const SidebarSectionLabel = ({
 }: React.HTMLAttributes<HTMLDivElement>) => (
   <div
     className={cn(
-      'px-2 pb-1 text-xs font-medium uppercase tracking-wider text-[var(--color-text-tertiary)]',
+      'px-2 pb-1 text-xs font-medium tracking-wider text-[var(--color-text-tertiary)] uppercase',
       className
     )}
     {...props}
@@ -59,7 +59,7 @@ const sidebarItemVariants = cva(
   [
     'group flex items-center gap-2 rounded-md px-2 py-1.5 text-sm font-medium',
     'transition-colors duration-150',
-    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)]',
+    'focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:outline-none',
     'disabled:pointer-events-none disabled:opacity-40',
   ],
   {

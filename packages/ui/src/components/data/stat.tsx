@@ -25,7 +25,7 @@ export const Stat = React.forwardRef<HTMLDivElement, StatProps>(
       {...props}
     >
       <div className="mb-2 flex items-center justify-between">
-        <p className="text-xs font-medium uppercase tracking-wider text-[var(--color-text-tertiary)]">
+        <p className="text-xs font-medium tracking-wider text-[var(--color-text-tertiary)] uppercase">
           {label}
         </p>
         {icon && (

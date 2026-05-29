@@ -561,7 +561,7 @@ function AssetFieldR({
               onClick={() => removeRef(r.assetId)}
               aria-label="Remove asset"
               disabled={disabled}
-              className="absolute right-0.5 top-0.5 rounded bg-black/60 p-0.5 text-white"
+              className="absolute top-0.5 right-0.5 rounded bg-black/60 p-0.5 text-white"
             >
               <Trash2 className="h-3 w-3" />
             </button>

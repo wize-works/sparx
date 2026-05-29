@@ -55,7 +55,7 @@ export function IssueKeyForm() {
           Key issued. Copy it now — you won&apos;t see this again.
         </Text>
         <Stack direction="row" align="center" gap={2}>
-          <code className="flex-1 select-all break-all rounded bg-[var(--color-surface-default)] p-2 font-mono text-xs">
+          <code className="flex-1 rounded bg-[var(--color-surface-default)] p-2 font-mono text-xs break-all select-all">
             {issued.plaintext}
           </code>
           <Button type="button" variant="secondary" size="sm" onClick={copyKey}>

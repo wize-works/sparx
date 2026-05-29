@@ -500,7 +500,7 @@ The `module` variant is the 3px stripe pattern. It applies automatically when `v
 
 ```typescript
 const badgeVariants = cva(
-  'inline-flex items-center gap-1 whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-medium',
+  'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium whitespace-nowrap',
   {
     variants: {
       variant: {
@@ -527,7 +527,7 @@ const inputVariants = cva(
     'text-sm text-[var(--color-text-primary)]',
     'placeholder:text-[var(--color-text-tertiary)]',
     'transition-colors duration-150',
-    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)]',
+    'focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:outline-none',
     'disabled:cursor-not-allowed disabled:opacity-50',
     'file:border-0 file:bg-transparent file:text-sm file:font-medium',
   ],

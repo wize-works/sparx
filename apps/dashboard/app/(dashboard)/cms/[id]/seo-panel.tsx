@@ -155,7 +155,7 @@ export function SeoPanel({ value, onChange, previewOrigin, slug, fallbackTitle }
               name="robots"
               value={value.robots}
               onChange={(e) => update('robots', e.target.value)}
-              className="h-9 w-full rounded-md border border-[var(--color-border-default)] bg-[var(--color-bg-surface)] px-3 text-sm text-[var(--color-text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)]"
+              className="h-9 w-full rounded-md border border-[var(--color-border-default)] bg-[var(--color-bg-surface)] px-3 text-sm text-[var(--color-text-primary)] focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:outline-none"
             >
               {ROBOTS_OPTIONS.map((o) => (
                 <option key={o.value || 'default'} value={o.value}>

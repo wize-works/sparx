@@ -3,7 +3,7 @@
 
 /* Tailwind v4 needs to see @sparx/ui sources so utility classes used inside the
    library are emitted in this app's CSS bundle. */
-@source "../../../packages/ui/src/**/*.{ts,tsx}";
+@source '../../../packages/ui/src/**/*.{ts,tsx}';
 
 @theme {
   --color-primary: var(--sparx-primary);

@@ -31,7 +31,7 @@ export function CmsTabs({ current }: CmsTabsProps) {
             href={tab.href}
             className={cn(
               'inline-flex items-center gap-2 rounded-t-md px-3 py-1.5 text-sm font-medium transition-colors',
-              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)]',
+              'focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:outline-none',
               active
                 ? 'border-b-2 border-[var(--module-active)] text-[var(--color-text-primary)]'
                 : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]'

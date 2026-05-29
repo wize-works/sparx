@@ -3,7 +3,7 @@
 
 /* Tell Tailwind to scan @sparx/ui sources so utility classes used inside the
    component library are emitted in this app's CSS bundle. */
-@source "../../../packages/ui/src/**/*.{ts,tsx}";
+@source '../../../packages/ui/src/**/*.{ts,tsx}';
 
 /* Bridge a small set of Sparx tokens into the Tailwind v4 theme so apps can
    write `bg-primary` / `text-foreground` if they ever need to. Components

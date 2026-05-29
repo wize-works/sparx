@@ -79,9 +79,9 @@ export function DataTable<TData, TValue>({
                           type="button"
                           onClick={header.column.getToggleSortingHandler()}
                           className={cn(
-                            'inline-flex items-center gap-1 text-xs font-medium uppercase tracking-wider',
+                            'inline-flex items-center gap-1 text-xs font-medium tracking-wider uppercase',
                             'transition-colors duration-150 hover:text-[var(--color-text-primary)]',
-                            'focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)]',
+                            'focus-visible:rounded-sm focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:outline-none',
                             sortDir
                               ? 'text-[var(--color-text-primary)]'
                               : 'text-[var(--color-text-tertiary)]'
@@ -178,7 +178,7 @@ function DataTablePager({
             'rounded-sm border border-[var(--color-border-default)] px-2 py-1',
             'transition-colors duration-150',
             'hover:bg-[var(--color-bg-subtle)]',
-            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)]',
+            'focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:outline-none',
             'disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent'
           )}
         >
@@ -192,7 +192,7 @@ function DataTablePager({
             'rounded-sm border border-[var(--color-border-default)] px-2 py-1',
             'transition-colors duration-150',
             'hover:bg-[var(--color-bg-subtle)]',
-            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)]',
+            'focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:outline-none',
             'disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent'
           )}
         >
