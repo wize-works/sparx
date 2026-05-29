@@ -150,13 +150,13 @@ module "email_worker_cloudrun" {
   timeout_seconds       = 300
 
   env_vars = {
-    NODE_ENV          = "production"
-    SERVICE_NAME      = "email-worker"
-    LOG_LEVEL         = "info"
-    PUBSUB_INVOKER_SA = google_service_account.pubsub_invoker.email
-    # Provider selection — leave SPARX_EMAIL_PROVIDER absent (or "console")
-    # until Postal is reachable from Cloud Run via the VPC connector.
-    # Switch to "postal" + populate the secrets below once verified.
+    NODE_ENV             = "production"
+    SERVICE_NAME         = "email-worker"
+    LOG_LEVEL            = "info"
+    PUBSUB_INVOKER_SA    = google_service_account.pubsub_invoker.email
+    SPARX_EMAIL_PROVIDER = "postal"
+    SPARX_POSTAL_URL     = "https://postal.sparx.email"
+    SPARX_EMAIL_FROM     = "Sparx <noreply@sparx.email>"
   }
 
   secrets = [
