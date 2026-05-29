@@ -67,12 +67,14 @@ export const Embed = Node.create({
         default: 'unknown' as EmbedProvider,
         parseHTML: (el): EmbedProvider =>
           (el.getAttribute('data-provider') as EmbedProvider) ?? 'unknown',
-        renderHTML: (attrs) => ({ 'data-provider': attrs.provider }),
+        renderHTML: (attrs: { provider?: EmbedProvider }) => ({
+          'data-provider': attrs.provider ?? 'unknown',
+        }),
       },
       url: {
         default: '',
         parseHTML: (el) => el.getAttribute('data-url') ?? '',
-        renderHTML: (attrs) => ({ 'data-url': attrs.url }),
+        renderHTML: (attrs: { url?: string }) => ({ 'data-url': attrs.url ?? '' }),
       },
       html: {
         default: null as string | null,

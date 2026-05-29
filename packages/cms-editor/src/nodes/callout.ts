@@ -13,7 +13,7 @@ import { Node, mergeAttributes } from '@tiptap/core';
 
 export type CalloutVariant = 'info' | 'success' | 'warning' | 'danger';
 
-const VARIANTS: ReadonlyArray<CalloutVariant> = ['info', 'success', 'warning', 'danger'];
+const VARIANTS: readonly CalloutVariant[] = ['info', 'success', 'warning', 'danger'];
 
 declare module '@tiptap/core' {
   interface Commands<ReturnType> {
@@ -43,7 +43,9 @@ export const Callout = Node.create({
           const v = el.getAttribute('data-variant');
           return VARIANTS.includes(v as CalloutVariant) ? (v as CalloutVariant) : 'info';
         },
-        renderHTML: (attrs) => ({ 'data-variant': attrs.variant }),
+        renderHTML: (attrs: { variant?: CalloutVariant }) => ({
+          'data-variant': attrs.variant ?? 'info',
+        }),
       },
     };
   },

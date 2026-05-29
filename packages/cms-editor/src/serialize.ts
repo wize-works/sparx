@@ -322,14 +322,13 @@ function renderNode(node: Node, ctx: SerializeContext): string {
     case 'image': {
       const src = safeImgSrc(node.attrs?.src);
       if (!src) return '';
-      const alt = typeof node.attrs?.alt === 'string' ? escapeHtml(node.attrs.alt as string) : '';
-      const caption =
-        typeof node.attrs?.caption === 'string' ? escapeHtml(node.attrs.caption as string) : '';
+      const alt = typeof node.attrs?.alt === 'string' ? escapeHtml(node.attrs.alt) : '';
+      const caption = typeof node.attrs?.caption === 'string' ? escapeHtml(node.attrs.caption) : '';
       const focalX = clamp01(node.attrs?.focalPointX ?? 0.5);
       const focalY = clamp01(node.attrs?.focalPointY ?? 0.5);
       const assetId =
         typeof node.attrs?.assetId === 'string'
-          ? ` data-asset-id="${escapeHtml(node.attrs.assetId as string)}"`
+          ? ` data-asset-id="${escapeHtml(node.attrs.assetId)}"`
           : '';
       const figureClass = 'sparx-image';
       const imgEl =
