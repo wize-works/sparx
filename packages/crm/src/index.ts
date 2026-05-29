@@ -14,7 +14,11 @@ export * as crmMcp from './mcp';
 // `crmMcp.` namespace prefix.
 export { crmMcpTools } from './mcp';
 export type { AnyMcpTool, McpScope, McpToolDefinition } from './mcp';
-export { WebhookFanoutPublisher, preconnectWebhookFanout } from './webhooks';
+export {
+  WebhookFanoutPublisher,
+  preconnectWebhookFanout,
+  installCrmWebhookFanout,
+} from './webhooks';
 export * as crmSchedulers from './schedulers';
 export type { ServiceContext, NotFoundError, ValidationError } from './errors';
 export { CrmNotFoundError, CrmValidationError, CrmConflictError } from './errors';

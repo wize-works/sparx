@@ -75,25 +75,40 @@ interface ErrorEnvelope {
   };
 }
 
+export interface CallOptions {
+  ifMatch?: string;
+}
+
+export interface ResponseEnvelope<T> {
+  data: T;
+  etag: string | null;
+}
+
 async function call<T>(
   session: SparxSession,
   method: string,
   path: string,
-  body?: unknown
-): Promise<T> {
+  body?: unknown,
+  options: CallOptions = {}
+): Promise<ResponseEnvelope<T>> {
   const token = await signToken(session);
+  const headers: Record<string, string> = {
+    authorization: `Bearer ${token}`,
+  };
+  if (body !== undefined) headers['content-type'] = 'application/json';
+  if (options.ifMatch) headers['if-match'] = options.ifMatch;
+
   const res = await fetch(`${BASE_URL}${path}`, {
     method,
-    headers: {
-      authorization: `Bearer ${token}`,
-      ...(body !== undefined ? { 'content-type': 'application/json' } : {}),
-    },
+    headers,
     body: body !== undefined ? JSON.stringify(body) : undefined,
     cache: 'no-store',
   });
 
+  const etag = res.headers.get('etag');
+
   if (res.status === 204) {
-    return undefined as T;
+    return { data: undefined as T, etag };
   }
 
   const json = (await res.json()) as SuccessEnvelope<T> | ErrorEnvelope;
@@ -110,7 +125,7 @@ async function call<T>(
     }
     throw makeError(res.status, 'UNKNOWN', `api-rest ${res.status}`);
   }
-  return (json as SuccessEnvelope<T>).data;
+  return { data: (json as SuccessEnvelope<T>).data, etag };
 }
 
 async function withSession<T>(fn: (session: SparxSession) => Promise<T>): Promise<T> {
@@ -119,10 +134,20 @@ async function withSession<T>(fn: (session: SparxSession) => Promise<T>): Promis
 }
 
 export const api = {
-  get: async <T>(path: string): Promise<T> => withSession((s) => call<T>(s, 'GET', path)),
+  get: async <T>(path: string): Promise<T> =>
+    withSession(async (s) => (await call<T>(s, 'GET', path)).data),
+  getWithEtag: async <T>(path: string): Promise<ResponseEnvelope<T>> =>
+    withSession((s) => call<T>(s, 'GET', path)),
   post: async <T>(path: string, body?: unknown): Promise<T> =>
-    withSession((s) => call<T>(s, 'POST', path, body)),
-  patch: async <T>(path: string, body?: unknown): Promise<T> =>
-    withSession((s) => call<T>(s, 'PATCH', path, body)),
-  delete: async <T>(path: string): Promise<T> => withSession((s) => call<T>(s, 'DELETE', path)),
+    withSession(async (s) => (await call<T>(s, 'POST', path, body)).data),
+  patch: async <T>(path: string, body?: unknown, options?: CallOptions): Promise<T> =>
+    withSession(async (s) => (await call<T>(s, 'PATCH', path, body, options)).data),
+  patchWithEtag: async <T>(
+    path: string,
+    body?: unknown,
+    options?: CallOptions
+  ): Promise<ResponseEnvelope<T>> =>
+    withSession((s) => call<T>(s, 'PATCH', path, body, options)),
+  delete: async <T>(path: string): Promise<T> =>
+    withSession(async (s) => (await call<T>(s, 'DELETE', path)).data),
 };

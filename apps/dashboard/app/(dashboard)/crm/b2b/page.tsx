@@ -21,6 +21,8 @@ import {
   Text,
 } from '@sparx/ui';
 
+import { CrmTabs } from '../_components/crm-tabs';
+
 export const dynamic = 'force-dynamic';
 
 interface PageProps {
@@ -55,6 +57,7 @@ export default async function B2bAccountsPage({ searchParams }: PageProps) {
   return (
     <Container size="xl">
       <Stack gap={6} className="py-10">
+        <CrmTabs current="b2b" />
         <Stack direction="row" align="end" justify="between" wrap>
           <Stack gap={2}>
             <Stack direction="row" align="center" gap={2}>

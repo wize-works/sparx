@@ -22,6 +22,7 @@ import {
 } from '@sparx/ui';
 
 import { ModuleStub } from '../../../components/module-stub';
+import { CrmTabs } from './_components/crm-tabs';
 import { CustomerFiltersBar } from './_components/customer-filters-bar';
 
 // CRM landing — customer list with filter bar.
@@ -95,6 +96,7 @@ export default async function CrmPage({ searchParams }: PageProps) {
   return (
     <Container size="xl">
       <Stack gap={6} className="py-10">
+        <CrmTabs current="customers" />
         <Stack direction="row" align="end" justify="between" wrap>
           <Stack gap={2}>
             <Stack direction="row" align="center" gap={2}>

@@ -1,12 +1,10 @@
-import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import { ArrowLeft, Users } from 'lucide-react';
+import { Users } from 'lucide-react';
 
 import { requireSession, isModuleEnabled } from '@sparx/auth';
 import { customerService } from '@sparx/crm';
 import {
   Badge,
-  Button,
   Card,
   CardContent,
   CardHeader,
@@ -18,6 +16,7 @@ import {
   Text,
 } from '@sparx/ui';
 
+import { CrmTabs } from '../_components/crm-tabs';
 import { MergeCandidatesGroup } from './_components/merge-candidates-group';
 
 // Find-duplicates landing — surfaces groups of customers that share an email
@@ -43,13 +42,8 @@ export default async function DuplicatesPage() {
   return (
     <Container size="xl">
       <Stack gap={6} className="py-10">
+        <CrmTabs current="duplicates" />
         <Stack gap={2}>
-          <Button variant="link" size="sm" asChild>
-            <Link href="/crm">
-              <ArrowLeft className="h-3.5 w-3.5" />
-              Back to CRM
-            </Link>
-          </Button>
           <Stack direction="row" align="center" gap={3}>
             <Heading level={1}>Find duplicates</Heading>
             <Badge variant="module">

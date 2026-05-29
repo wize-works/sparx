@@ -94,6 +94,12 @@ export function setPublisher(publisher: Publisher): void {
   activePublisher = publisher;
 }
 
+/** Read the active publisher. Used by `installCrmWebhookFanout` to wrap
+ *  whatever was already installed without dropping it. */
+export function getPublisher(): Publisher {
+  return activePublisher;
+}
+
 /** Publish an event through the active publisher. Service-layer functions
  *  call this after their DB write commits (in practice: after the
  *  `withTenant` callback returns) so we never emit an event for a write

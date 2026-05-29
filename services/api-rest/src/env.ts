@@ -23,6 +23,11 @@ const EnvSchema = z
     // to sign + verify short-lived internal-trust JWTs that carry the staff
     // session's {tenantId, userId, role} from the dashboard to api-rest.
     SPARX_INTERNAL_JWT_SECRET: z.string().min(32),
+    // Shared secret for the CRM scheduled-job CronJobs. k8s CronJobs POST
+    // to /internal/crm/* with this in the X-Sparx-Internal-Cron-Token
+    // header. Optional in dev so a fresh checkout boots; missing-in-prod
+    // is the operator's responsibility to provision via Secret Manager.
+    SPARX_INTERNAL_CRON_TOKEN: z.string().min(16).optional(),
     // Optional: when set, the Pub/Sub publisher uses Google Cloud Pub/Sub;
     // otherwise it logs to stdout and is a no-op (dev default). The publisher
     // resolves a topic per `EventType` (topic name == event type) — there is

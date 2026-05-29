@@ -14,7 +14,7 @@
 import { prisma, withTenant } from '@sparx/db';
 import type { Prisma } from '@sparx/db';
 
-import type { CrmEvent, Publisher } from './events';
+import { getPublisher, setPublisher, type CrmEvent, type Publisher } from './events';
 
 /** Publisher that enqueues a WebhookDelivery row per matching
  *  WebhookSubscription before delegating to the inner publisher. */
@@ -65,4 +65,16 @@ export class WebhookFanoutPublisher implements Publisher {
  *  enqueue isn't paying connection-startup cost. */
 export async function preconnectWebhookFanout(): Promise<void> {
   await prisma.$queryRaw`SELECT 1`;
+}
+
+/** Wrap the currently-active publisher with the fan-out. Each Sparx
+ *  process that emits CRM events (api-rest, api-graphql, api-mcp,
+ *  dashboard Server Actions) calls this once at startup. Idempotent —
+ *  detects a previous wrap by marker so a second call is a no-op. */
+export function installCrmWebhookFanout(): void {
+  const current = getPublisher();
+  if ((current as { __isWebhookFanout?: boolean }).__isWebhookFanout) return;
+  const wrapped = new WebhookFanoutPublisher(current);
+  (wrapped as unknown as { __isWebhookFanout: boolean }).__isWebhookFanout = true;
+  setPublisher(wrapped);
 }

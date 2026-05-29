@@ -3,6 +3,7 @@ import { KanbanSquare, ArrowRight, Archive, Plus, Settings } from 'lucide-react'
 
 import { requireSession } from '@sparx/auth';
 import { pipelineService } from '@sparx/crm';
+import { CrmTabs } from '../_components/crm-tabs';
 import {
   Badge,
   Button,
@@ -43,6 +44,7 @@ export default async function PipelinesPage({ searchParams }: PageProps) {
   return (
     <Container size="xl">
       <Stack gap={6} className="py-10">
+        <CrmTabs current="pipelines" />
         <Stack direction="row" align="end" justify="between" wrap>
           <Stack gap={2}>
             <Stack direction="row" align="center" gap={2}>

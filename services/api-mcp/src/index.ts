@@ -1,5 +1,6 @@
 // Entry point. Boots the Fastify app and listens.
 
+import { installCrmWebhookFanout, preconnectWebhookFanout } from '@sparx/crm';
 import { env } from './env.js';
 import { createApp } from './app.js';
 import { preconnectAudit } from './audit.js';
@@ -7,6 +8,10 @@ import { preconnectAudit } from './audit.js';
 async function main(): Promise<void> {
   const app = await createApp();
   await preconnectAudit();
+  // Wrap CRM publisher so write tools (create_deal, move_deal_stage, ...)
+  // enqueue webhook deliveries through the same fan-out as REST + GraphQL.
+  installCrmWebhookFanout();
+  await preconnectWebhookFanout();
   await app.listen({ host: env.HOST, port: env.PORT });
 
   const shutdown = (signal: NodeJS.Signals): void => {

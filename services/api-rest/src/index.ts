@@ -3,6 +3,7 @@
 
 import { configurePubsub } from '@sparx/api-core/pubsub';
 import { startWebhookDeliveryLoop } from '@sparx/api-core/webhook-delivery';
+import { installCrmWebhookFanout, preconnectWebhookFanout } from '@sparx/crm';
 import { createApp } from './app.js';
 import { env } from './env.js';
 import { startScheduledPublishLoop } from './lib/scheduled-publish.js';
@@ -11,6 +12,12 @@ async function main(): Promise<void> {
   // Hand api-core its Pub/Sub config before any route handler can call
   // publish(). Unset GCP_PROJECT_ID → stdout-logging stub.
   configurePubsub({ gcpProjectId: env.GCP_PROJECT_ID });
+
+  // Wrap the CRM publisher so every publishCrmEvent() also enqueues a
+  // WebhookDelivery row per matching tenant subscription. Pre-warm the
+  // DB connection so the first event doesn't pay startup latency.
+  installCrmWebhookFanout();
+  await preconnectWebhookFanout();
 
   const app = await createApp();
 

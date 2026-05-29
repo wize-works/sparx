@@ -21,6 +21,7 @@ import openapiPlugin from './plugins/openapi.js';
 import rateLimitPlugin from './plugins/rate-limit.js';
 import healthRoutes from './routes/health.js';
 import domainCheckRoutes from './routes/internal/domain-check.js';
+import crmCronRoutes from './routes/internal/crm-cron.js';
 import contentTypeRoutes from './routes/v1/content/types.js';
 import entryRoutes from './routes/v1/content/entries.js';
 import publishRoutes from './routes/v1/content/publish.js';
@@ -162,6 +163,7 @@ export async function createApp(): Promise<FastifyInstance> {
 
   await app.register(healthRoutes);
   await app.register(domainCheckRoutes);
+  await app.register(crmCronRoutes);
 
   // v1 surface. Each route file owns its own URL prefix so this central
   // map is easy to skim. Adding a new route group is a one-line registration.

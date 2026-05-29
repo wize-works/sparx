@@ -28,10 +28,10 @@ export default async function EditCmsPage({ params }: PageParams) {
   const { id } = await params;
   const { user } = await requireSession();
 
-  const [entry, tenant] = await Promise.all([
+  const [entryResult, tenant] = await Promise.all([
     (async () => {
       try {
-        return await api.get<ApiEntry>(`/v1/content/entries/${id}`);
+        return await api.getWithEtag<ApiEntry>(`/v1/content/entries/${id}`);
       } catch (err) {
         const e = err as ApiRestError;
         if (e?.status === 404) notFound();
@@ -42,6 +42,8 @@ export default async function EditCmsPage({ params }: PageParams) {
       tx.tenant.findUnique({ where: { id: user.tenantId }, select: { slug: true } })
     ),
   ]);
+  const entry = entryResult.data;
+  const initialEtag = entryResult.etag;
 
   const docBody =
     entry.body.body && typeof entry.body.body === 'object'
@@ -80,7 +82,11 @@ export default async function EditCmsPage({ params }: PageParams) {
           <Heading level={1}>Edit page</Heading>
         </Stack>
 
-        <EditPageForm page={editable} tenantSlug={tenant?.slug ?? null} />
+        <EditPageForm
+          page={editable}
+          tenantSlug={tenant?.slug ?? null}
+          initialEtag={initialEtag}
+        />
       </Stack>
     </Container>
   );

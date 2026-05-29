@@ -5,4 +5,5 @@
 process.env.NODE_ENV = 'test';
 process.env.LOG_LEVEL ??= 'silent';
 process.env.SPARX_INTERNAL_JWT_SECRET ??= 'dev-only-internal-jwt-secret-change-me-32chars';
+process.env.SPARX_INTERNAL_CRON_TOKEN ??= 'test-cron-token-1234567890abcdef';
 process.env.PORT ??= '0';

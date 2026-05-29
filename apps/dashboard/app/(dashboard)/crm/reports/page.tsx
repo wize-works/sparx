@@ -22,6 +22,7 @@ import {
   Text,
 } from '@sparx/ui';
 
+import { CrmTabs } from '../_components/crm-tabs';
 import { stageColor } from '../pipelines/[id]/_components/kanban-types';
 
 // CRM reports landing — tenant snapshot + funnel for the default pipeline
@@ -51,6 +52,7 @@ export default async function ReportsPage() {
   return (
     <Container size="xl">
       <Stack gap={6} className="py-10">
+        <CrmTabs current="reports" />
         <Stack gap={2}>
           <Stack direction="row" align="center" gap={2}>
             <BarChart3 className="h-5 w-5" />

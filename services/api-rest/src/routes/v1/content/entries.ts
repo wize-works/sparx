@@ -32,6 +32,7 @@ import { writeAudit } from '@sparx/api-core/audit';
 import { publish } from '@sparx/api-core/pubsub';
 import { slugify, uniqueSlug } from '@sparx/api-core/slug';
 import { conflict, notFound } from '@sparx/api-core/errors';
+import { assertIfMatch, computeEntryEtag } from '@sparx/api-core/etag';
 
 const SeoSchema = z
   .object({
@@ -132,13 +133,14 @@ const entryRoutes: FastifyPluginAsync = (app) => {
   // GET ONE
   // ──────────────────────────────────────────────────────────────────────
 
-  app.get('/v1/content/entries/:id', async (request) => {
+  app.get('/v1/content/entries/:id', async (request, reply) => {
     requireRole(request, 'viewer');
     const { id } = PathId.parse(request.params);
     const row = await withRequestTenant(request, (tx) =>
       tx.contentEntry.findFirst({ where: { id, deletedAt: null } })
     );
     if (!row) throw notFound('Entry', id);
+    void reply.header('ETag', computeEntryEtag(row));
     return ok(serializeEntry(row));
   });
 
@@ -234,6 +236,7 @@ const entryRoutes: FastifyPluginAsync = (app) => {
     });
 
     reply.code(201);
+    void reply.header('ETag', computeEntryEtag(created));
     return ok(serializeEntry(created));
   });
 
@@ -241,14 +244,20 @@ const entryRoutes: FastifyPluginAsync = (app) => {
   // UPDATE
   // ──────────────────────────────────────────────────────────────────────
 
-  app.patch('/v1/content/entries/:id', async (request) => {
+  app.patch('/v1/content/entries/:id', async (request, reply) => {
     const auth = requireRole(request, 'editor');
     const { id } = PathId.parse(request.params);
     const input = UpdateBody.parse(request.body);
+    const ifMatch = request.headers['if-match'];
 
     const updated = await withRequestTenant(request, async (tx) => {
       const existing = await tx.contentEntry.findFirst({ where: { id, deletedAt: null } });
       if (!existing) throw notFound('Entry', id);
+
+      // Optimistic-concurrency guard. The dashboard form sends the etag it
+      // received on GET; if anyone else PATCHes the entry in between, the
+      // tags won't match and we throw 412 so the form can offer "reload".
+      assertIfMatch(typeof ifMatch === 'string' ? ifMatch : undefined, computeEntryEtag(existing));
 
       const type = await resolveType(tx, existing.typeKey);
       const schema = parseTypeSchema(type);
@@ -315,6 +324,7 @@ const entryRoutes: FastifyPluginAsync = (app) => {
       typeKey: updated.typeKey,
     });
 
+    void reply.header('ETag', computeEntryEtag(updated));
     return ok(serializeEntry(updated));
   });
 

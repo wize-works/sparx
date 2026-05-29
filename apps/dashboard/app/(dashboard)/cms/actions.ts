@@ -217,6 +217,75 @@ export async function restoreRevision(id: string, revisionNumber: number): Promi
   return { ok: true };
 }
 
+// Autosave PATCH — body-only, debounced from the form. Returns the new
+// ETag so the form can keep its If-Match cursor advanced. Returns a
+// structured CONFLICT result when If-Match fails (412 Precondition
+// Failed) so the form can render a "someone else just saved — reload"
+// CTA without bouncing through a try/catch in the React component.
+//
+// We accept fields one-shot rather than reading FormData because the
+// browser-side debounce builds a plain object and we want autosave to
+// skip Zod re-parsing on every keystroke — the form validates locally.
+
+export interface SeoPayload {
+  title?: string;
+  description?: string;
+  canonical?: string;
+  robots?: string;
+  ogImage?: string;
+}
+
+export interface AutosaveInput {
+  title: string;
+  slug: string;
+  content: Record<string, unknown>;
+  seo: SeoPayload;
+}
+
+export async function autosavePage(
+  id: string,
+  input: AutosaveInput,
+  ifMatch: string | null
+): Promise<ActionResult<{ etag: string | null; updatedAt: string }>> {
+  if (!input.title.trim()) {
+    return { ok: false, error: 'Title cannot be empty.' };
+  }
+  if (!/^[a-z0-9-]+$/.test(input.slug)) {
+    return { ok: false, error: 'Slug must be lowercase letters, numbers, and dashes.' };
+  }
+
+  try {
+    const result = await api.patchWithEtag<ApiEntry>(
+      `/v1/content/entries/${id}`,
+      {
+        slug: input.slug,
+        body: { title: input.title, body: input.content },
+        seo: {
+          ...(input.seo.title ? { title: input.seo.title } : {}),
+          ...(input.seo.description ? { description: input.seo.description } : {}),
+          ...(input.seo.canonical ? { canonical: input.seo.canonical } : {}),
+          ...(input.seo.robots ? { robots: input.seo.robots } : {}),
+          ...(input.seo.ogImage ? { ogImage: input.seo.ogImage } : {}),
+        },
+      },
+      ifMatch ? { ifMatch } : {}
+    );
+    // No revalidatePath here — autosave fires every keystroke; we don't
+    // want to bust the CMS list page cache on every PATCH. The explicit
+    // Save button still revalidates.
+    return {
+      ok: true,
+      data: { etag: result.etag, updatedAt: result.data.updated_at },
+    };
+  } catch (err) {
+    const e = err as ApiRestError;
+    if (e?.code === 'PRECONDITION_FAILED') {
+      return { ok: false, error: 'CONFLICT' };
+    }
+    return { ok: false, error: friendly(err) };
+  }
+}
+
 // Mint a preview token for an entry. The token is a short-lived JWT
 // (15 min) scoped to this entry only — apps/web and storefronts honor
 // `?sparxPreview=<token>` and render the draft for that one entry.
