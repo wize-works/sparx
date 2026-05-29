@@ -56,7 +56,7 @@ function ToolButton({ onClick, active, disabled, label, children }: ToolButtonPr
       className={cn(
         'inline-flex h-7 w-7 items-center justify-center rounded-md',
         'transition-colors duration-150',
-        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)]',
+        'focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:outline-none',
         'disabled:pointer-events-none disabled:opacity-40',
         active
           ? 'bg-[var(--module-active-tint)] text-[var(--module-active-text)]'

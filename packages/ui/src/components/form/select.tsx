@@ -19,7 +19,7 @@ const selectTriggerVariants = cva(
     'text-sm text-[var(--color-text-primary)]',
     'placeholder:text-[var(--color-text-tertiary)]',
     'transition-colors duration-150',
-    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:ring-offset-2',
+    'focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:ring-offset-2 focus-visible:outline-none',
     'disabled:cursor-not-allowed disabled:opacity-50',
     '[&>span]:line-clamp-1',
   ],
@@ -130,7 +130,7 @@ export const SelectLabel = React.forwardRef<
   <SelectPrimitive.Label
     ref={ref}
     className={cn(
-      'px-2 py-1.5 text-xs font-medium uppercase tracking-wide text-[var(--color-text-tertiary)]',
+      'px-2 py-1.5 text-xs font-medium tracking-wide text-[var(--color-text-tertiary)] uppercase',
       className
     )}
     {...props}
@@ -145,7 +145,7 @@ export const SelectItem = React.forwardRef<
   <SelectPrimitive.Item
     ref={ref}
     className={cn(
-      'relative flex w-full cursor-pointer select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none',
+      'relative flex w-full cursor-pointer items-center rounded-sm py-1.5 pr-2 pl-8 text-sm outline-none select-none',
       'text-[var(--color-text-primary)]',
       'focus:bg-[var(--color-bg-subtle)]',
       'data-[disabled]:pointer-events-none data-[disabled]:opacity-40',

@@ -75,10 +75,10 @@ export const DrawerContent = React.forwardRef<
         <DialogPrimitive.Close
           aria-label="Close"
           className={cn(
-            'absolute right-3 top-3 rounded-md p-1',
+            'absolute top-3 right-3 rounded-md p-1',
             'text-[var(--color-text-tertiary)] hover:bg-[var(--color-bg-subtle)] hover:text-[var(--color-text-primary)]',
             'transition-colors duration-150',
-            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)]'
+            'focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:outline-none'
           )}
         >
           <X className="h-4 w-4" />
@@ -122,7 +122,7 @@ export const DrawerTitle = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <DialogPrimitive.Title
     ref={ref}
-    className={cn('text-lg font-medium leading-tight text-[var(--color-text-primary)]', className)}
+    className={cn('text-lg leading-tight font-medium text-[var(--color-text-primary)]', className)}
     {...props}
   />
 ));

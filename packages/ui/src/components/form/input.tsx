@@ -10,7 +10,7 @@ const inputVariants = cva(
     'text-sm text-[var(--color-text-primary)]',
     'placeholder:text-[var(--color-text-tertiary)]',
     'transition-colors duration-150',
-    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)]',
+    'focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:outline-none',
     'disabled:cursor-not-allowed disabled:opacity-50',
     'file:border-0 file:bg-transparent file:text-sm file:font-medium',
   ],

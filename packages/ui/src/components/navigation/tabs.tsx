@@ -50,7 +50,7 @@ const triggerByVariant: Record<TabsListVariant, string> = {
     'relative -mb-px inline-flex h-9 items-center px-3 text-sm font-medium',
     'text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]',
     'border-b-2 border-transparent transition-colors duration-150',
-    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)]',
+    'focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:outline-none',
     'disabled:pointer-events-none disabled:opacity-40',
     'data-[state=active]:border-[var(--module-active)] data-[state=active]:text-[var(--module-active-text)]'
   ),
@@ -58,7 +58,7 @@ const triggerByVariant: Record<TabsListVariant, string> = {
     'inline-flex h-7 items-center rounded-sm px-3 text-sm font-medium',
     'text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]',
     'transition-colors duration-150',
-    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)]',
+    'focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:outline-none',
     'disabled:pointer-events-none disabled:opacity-40',
     'data-[state=active]:bg-[var(--color-bg-surface)] data-[state=active]:text-[var(--color-text-primary)] data-[state=active]:shadow-sm'
   ),
@@ -86,7 +86,7 @@ export const TabsContent = React.forwardRef<
   <TabsPrimitive.Content
     ref={ref}
     className={cn(
-      'mt-4 focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)]',
+      'mt-4 focus-visible:rounded-sm focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:outline-none',
       className
     )}
     {...props}

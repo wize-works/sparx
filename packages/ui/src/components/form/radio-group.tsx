@@ -26,7 +26,7 @@ export const RadioGroupItem = React.forwardRef<
       'aspect-square h-4 w-4 rounded-full border',
       'border-[var(--color-border-strong)] bg-[var(--color-bg-surface)]',
       'transition-colors duration-150',
-      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:ring-offset-2',
+      'focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:ring-offset-2 focus-visible:outline-none',
       'disabled:cursor-not-allowed disabled:opacity-50',
       'data-[state=checked]:border-[var(--sparx-primary)] data-[state=checked]:text-[var(--sparx-primary)]',
       className

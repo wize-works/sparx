@@ -109,7 +109,7 @@ function MediaCard({ asset }: { asset: MediaAsset }) {
           {asset.status !== 'ready' && (
             <Badge
               variant={asset.status === 'failed' ? 'danger' : 'outline'}
-              className="absolute right-2 top-2"
+              className="absolute top-2 right-2"
             >
               {asset.status}
             </Badge>

@@ -157,7 +157,7 @@ export function MediaPicker({ open, onOpenChange, onPick, accept }: MediaPickerP
                         assetId: a.id,
                       })
                     }
-                    className="group relative aspect-square overflow-hidden rounded-md border border-[var(--color-border-default)] bg-[var(--color-bg-subtle)] focus:outline-none focus:ring-2 focus:ring-[var(--color-border-focus)]"
+                    className="group relative aspect-square overflow-hidden rounded-md border border-[var(--color-border-default)] bg-[var(--color-bg-subtle)] focus:ring-2 focus:ring-[var(--color-border-focus)] focus:outline-none"
                     aria-label={`Pick ${a.original_filename}`}
                   >
                     {thumb ? (

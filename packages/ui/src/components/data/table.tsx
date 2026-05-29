@@ -33,7 +33,7 @@ export const TableBody = React.forwardRef<
   <tbody
     ref={ref}
     className={cn(
-      '[&_tr:last-child]:border-0 [&_tr]:border-b [&_tr]:border-[var(--color-border-default)]',
+      '[&_tr]:border-b [&_tr]:border-[var(--color-border-default)] [&_tr:last-child]:border-0',
       className
     )}
     {...props}
@@ -78,7 +78,7 @@ export const TableHead = React.forwardRef<
   <th
     ref={ref}
     className={cn(
-      'h-9 px-3 text-left align-middle text-xs font-medium uppercase tracking-wider text-[var(--color-text-tertiary)]',
+      'h-9 px-3 text-left align-middle text-xs font-medium tracking-wider text-[var(--color-text-tertiary)] uppercase',
       '[&:has([role=checkbox])]:pr-0',
       className
     )}

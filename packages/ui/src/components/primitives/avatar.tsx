@@ -5,7 +5,7 @@ import { cva, type VariantProps } from '../../utils/cva';
 import { cn } from '../../utils/cn';
 
 const avatarVariants = cva(
-  'relative inline-flex shrink-0 select-none items-center justify-center overflow-hidden rounded-full bg-[var(--color-bg-subtle)] text-[var(--color-text-secondary)]',
+  'relative inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-[var(--color-bg-subtle)] text-[var(--color-text-secondary)] select-none',
   {
     variants: {
       size: {

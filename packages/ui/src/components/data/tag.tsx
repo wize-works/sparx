@@ -43,7 +43,7 @@ export const Tag = React.forwardRef<HTMLSpanElement, TagProps>(
           className={cn(
             'ml-0.5 inline-flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-sm',
             'opacity-70 hover:opacity-100',
-            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)]'
+            'focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:outline-none'
           )}
         >
           <X className="h-3 w-3" />

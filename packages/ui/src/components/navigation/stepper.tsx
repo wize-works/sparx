@@ -67,7 +67,7 @@ export const Stepper = React.forwardRef<HTMLOListElement, StepperProps>(
             <div className="pr-2">
               <p
                 className={cn(
-                  'text-xs font-medium leading-tight',
+                  'text-xs leading-tight font-medium',
                   status === 'current'
                     ? 'text-[var(--color-text-primary)]'
                     : 'text-[var(--color-text-secondary)]'
