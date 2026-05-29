@@ -196,6 +196,14 @@ jobs:
         run: |
           set -euo pipefail
           kubectl apply -k k8s/apps/
+          # PARKED — 2026-05-29. api-mcp is scaled to 0 until the
+          # SSD_TOTAL_GB quota is bumped (see k8s/apps/api-mcp.yaml header).
+          # The manifest no longer ships an HPA or PDB for api-mcp; this
+          # delete is what makes `kubectl apply -k` semantically prune
+          # them, since apply itself is non-pruning. Drop this block when
+          # the manifest restores HPA + PDB on quota bump.
+          kubectl delete hpa api-mcp -n "$NAMESPACE" --ignore-not-found
+          kubectl delete pdb api-mcp -n "$NAMESPACE" --ignore-not-found
 
       # Worker Deployments (Pub/Sub consumers). Same pattern as apps —
       # deploy-prod only rolls images; this step creates the Deployments.
