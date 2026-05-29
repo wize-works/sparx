@@ -12,6 +12,7 @@ import { Uuid } from '@sparx/crm-schemas';
 
 import {
   Barcode,
+  Currency,
   Dimensions,
   FulfillmentType,
   Handle,
@@ -69,13 +70,15 @@ export type VariantImageBinding = z.infer<typeof VariantImageBinding>;
 export const CreateVariantInput = z.object({
   sku: Sku,
   barcode: Barcode.optional(),
-  // Maps the variant onto the option lattice. Keys are option IDs;
-  // values are option-value IDs. Service validates against the parent
-  // product's option set.
+  title: z.string().max(255).optional(), // computed from options when omitted
+  // Maps the variant onto the option lattice. Each entry is an
+  // existing ProductOptionValue id on the parent product. The service
+  // validates that the set spans every option exactly once.
   optionValueIds: z.array(Uuid).max(8).default([]),
   priceCents: MoneyCents,
   compareAtPriceCents: MoneyCents.optional(),
   costCents: MoneyCents.optional(),
+  currency: Currency.default('USD'),
   weight: WeightGrams.optional(),
   dimensions: Dimensions.optional(),
   inventoryPolicy: InventoryPolicy.default('deny'),
@@ -84,11 +87,67 @@ export const CreateVariantInput = z.object({
   dropshipSourceId: Uuid.optional(),
   isDefault: z.boolean().default(false),
   position: z.number().int().nonnegative().default(0),
+  metadata: z.record(z.string(), z.unknown()).optional(),
 });
 export type CreateVariantInput = z.infer<typeof CreateVariantInput>;
 
-export const UpdateVariantInput = CreateVariantInput.partial();
+// Update is partial — except `sku` and `optionValueIds`, which require
+// dedicated endpoints because they have unique-constraint and lattice-
+// consistency implications respectively.
+export const UpdateVariantInput = CreateVariantInput.partial().omit({
+  sku: true,
+  optionValueIds: true,
+});
 export type UpdateVariantInput = z.infer<typeof UpdateVariantInput>;
+
+// SKU change — separate so the conflict path can return a CONFLICT
+// error with the existing variant's id for "merge or rename" UX.
+export const RenameVariantSkuInput = z.object({
+  sku: Sku,
+});
+export type RenameVariantSkuInput = z.infer<typeof RenameVariantSkuInput>;
+
+// ─── Option lattice ──────────────────────────────────────────────────
+// Replaces the full option set for a product in one transaction. Existing
+// options + values + variant option-value assignments are dropped before
+// the new set is inserted; existing ProductVariant rows are NOT touched
+// (the merchant must rebind them via `assignVariantOptionValues` once the
+// new lattice exists). The dashboard variants tab orchestrates the two
+// calls when the matrix is restructured.
+
+export const SetProductOptionsInput = z.object({
+  options: z.array(ProductOptionInput).max(8).default([]),
+});
+export type SetProductOptionsInput = z.infer<typeof SetProductOptionsInput>;
+
+export const AssignVariantOptionValuesInput = z.object({
+  variantId: Uuid,
+  optionValueIds: z.array(Uuid).max(8).default([]),
+});
+export type AssignVariantOptionValuesInput = z.infer<typeof AssignVariantOptionValuesInput>;
+
+// ─── Variant image bindings ──────────────────────────────────────────
+// Pin a VariantImage to a set of option-value ids. Empty = product-level
+// image (always shown). Non-empty = "show when the selection includes
+// every listed option value" (the storefront treats it as a superset
+// match so a Color=Red, Size=M pin still shows when only Color=Red is
+// selected).
+
+export const SetVariantImageBindingsInput = z.object({
+  variantImageId: Uuid,
+  optionValueIds: z.array(Uuid).max(8).default([]),
+});
+export type SetVariantImageBindingsInput = z.infer<typeof SetVariantImageBindingsInput>;
+
+export const CreateVariantImageInput = z.object({
+  productId: Uuid,
+  variantId: Uuid.optional(), // null = product-level
+  mediaAssetId: Uuid,
+  position: z.number().int().nonnegative().default(0),
+  alt: z.string().max(512).optional(),
+  optionValueIds: z.array(Uuid).max(8).default([]),
+});
+export type CreateVariantImageInput = z.infer<typeof CreateVariantImageInput>;
 
 // ─── Product ─────────────────────────────────────────────────────────
 

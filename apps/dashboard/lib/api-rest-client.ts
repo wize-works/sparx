@@ -142,6 +142,8 @@ export const api = {
     withSession(async (s) => (await call<T>(s, 'POST', path, body)).data),
   patch: async <T>(path: string, body?: unknown, options?: CallOptions): Promise<T> =>
     withSession(async (s) => (await call<T>(s, 'PATCH', path, body, options)).data),
+  put: async <T>(path: string, body?: unknown): Promise<T> =>
+    withSession(async (s) => (await call<T>(s, 'PUT', path, body)).data),
   patchWithEtag: async <T>(
     path: string,
     body?: unknown,

@@ -29,6 +29,8 @@ import revisionRoutes from './routes/v1/content/revisions.js';
 import previewTokenRoutes from './routes/v1/content/preview-tokens.js';
 import navigationRoutes from './routes/v1/navigation/menus.js';
 import redirectRoutes from './routes/v1/redirects/index.js';
+import authorRoutes from './routes/v1/authors/index.js';
+import taxonomyRoutes from './routes/v1/taxonomies/index.js';
 import webhookRoutes from './routes/v1/webhooks/subscriptions.js';
 import sitemapRoutes from './routes/v1/sitemap.js';
 import rssRoutes from './routes/v1/rss.js';
@@ -174,6 +176,8 @@ export async function createApp(): Promise<FastifyInstance> {
   await app.register(previewTokenRoutes);
   await app.register(navigationRoutes);
   await app.register(redirectRoutes);
+  await app.register(authorRoutes);
+  await app.register(taxonomyRoutes);
   await app.register(webhookRoutes);
   await app.register(sitemapRoutes);
   await app.register(rssRoutes);

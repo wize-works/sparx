@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation';
 import { ArrowLeft, ExternalLink, PackageOpen } from 'lucide-react';
 
 import { isModuleEnabled, requireSession } from '@sparx/auth';
-import { CommerceNotFoundError, productService } from '@sparx/commerce';
+import { CommerceNotFoundError, productService, variantService } from '@sparx/commerce';
 import {
   Badge,
   Card,
@@ -23,6 +23,7 @@ import { ModuleStub } from '../../../../../components/module-stub';
 
 import { ProductEditForm } from './_components/product-edit-form';
 import { ProductStatusBar } from './_components/product-status-bar';
+import { VariantsPanel } from './_components/variants-panel';
 
 // Product detail. Phase 1.1 surfaces:
 //   • header (title, handle, status badge, publish/archive controls)
@@ -69,6 +70,12 @@ export default async function ProductDetailPage({ params }: PageProps) {
     if (err instanceof CommerceNotFoundError) notFound();
     throw err;
   }
+
+  // Variants tab data — fan out the two reads; both are tenant-scoped.
+  const [options, variants] = await Promise.all([
+    variantService.listOptions(ctx, id),
+    variantService.listForProduct(ctx, id, { includeArchived: true }),
+  ]);
 
   return (
     <Container size="xl">
@@ -144,9 +151,11 @@ export default async function ProductDetailPage({ params }: PageProps) {
           </TabsContent>
 
           <TabsContent value="variants">
-            <PhaseStub
-              title="Variants — Phase 1.2"
-              description="Option matrix (Color × Size × Material), per-color image pinning, SKU / barcode / price / weight per row, inventory policy, dropship sourcing."
+            <VariantsPanel
+              productId={product.id}
+              productTitle={product.title}
+              options={options}
+              variants={variants}
             />
           </TabsContent>
 

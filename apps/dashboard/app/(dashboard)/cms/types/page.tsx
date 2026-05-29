@@ -20,7 +20,7 @@ import {
   Stack,
   Text,
 } from '@sparx/ui';
-import { Database, ArrowRight } from 'lucide-react';
+import { Database, ArrowRight, Plus, Settings } from 'lucide-react';
 import { api } from '@/lib/api-rest-client';
 import { CmsTabs } from '../_components/cms-tabs';
 
@@ -66,6 +66,9 @@ export default async function ContentTypesPage() {
               merchant type. Pages have a dedicated tab; this view covers everything else.
             </Text>
           </Stack>
+          <Button asChild variant="module" leftIcon={<Plus className="h-4 w-4" />}>
+            <Link href="/cms/types/new">New custom type</Link>
+          </Button>
         </Stack>
 
         <Grid cols={1} mdCols={2} lgCols={3} gap={4}>
@@ -97,14 +100,26 @@ export default async function ContentTypesPage() {
                     </Stack>
                   </CardContent>
                   <CardFooter>
-                    <Button
-                      asChild
-                      variant="module-outline"
-                      size="sm"
-                      rightIcon={<ArrowRight className="h-3 w-3" />}
-                    >
-                      <Link href={`/cms/types/${t.key}`}>Manage</Link>
-                    </Button>
+                    <Stack direction="row" gap={2}>
+                      <Button
+                        asChild
+                        variant="module-outline"
+                        size="sm"
+                        rightIcon={<ArrowRight className="h-3 w-3" />}
+                      >
+                        <Link href={`/cms/types/${t.key}`}>Manage</Link>
+                      </Button>
+                      {!t.is_built_in && (
+                        <Button
+                          asChild
+                          variant="ghost"
+                          size="sm"
+                          leftIcon={<Settings className="h-3 w-3" />}
+                        >
+                          <Link href={`/cms/types/${t.key}/schema`}>Schema</Link>
+                        </Button>
+                      )}
+                    </Stack>
                   </CardFooter>
                 </Card>
               );
