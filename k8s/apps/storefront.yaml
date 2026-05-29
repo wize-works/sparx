@@ -1,0 +1,154 @@
+# apps/storefront — multi-tenant Next.js storefront. Resolves the tenant
+# from Host (e.g. acme.sparx.zone → tenant slug `acme`) and renders the
+# requested page from that tenant's CMS via api-rest's /v1/public/content.
+#
+# Same shape as api-graphql.yaml — Guaranteed QoS, HPA + PDB. Caddy host-
+# matches *.sparx.zone and any merchant primary domain onto this Service.
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: storefront
+  namespace: sparx-prod
+  labels:
+    app: storefront
+    tier: web
+spec:
+  replicas: 1 # TEMP: SSD_TOTAL_GB quota constrained; bump to 2 after quota
+  revisionHistoryLimit: 5
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: storefront
+  template:
+    metadata:
+      labels:
+        app: storefront
+        tier: web
+    spec:
+      serviceAccountName: sparx-app
+      containers:
+        - name: storefront
+          image: us-central1-docker.pkg.dev/sparxworks/sparx/storefront:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 3000
+          envFrom:
+            - configMapRef:
+                name: sparx-app-env
+          env:
+            - name: NODE_ENV
+              value: production
+            - name: SERVICE_NAME
+              value: storefront
+            - name: PORT
+              value: '3000'
+            - name: HOSTNAME
+              value: '0.0.0.0'
+            - name: SPARX_API_REST_URL
+              value: 'http://api-rest.sparx-prod.svc.cluster.local:3000'
+            - name: SPARX_ZONE_DOMAIN
+              value: 'sparx.zone'
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1001
+            runAsGroup: 1001
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ['ALL']
+            seccompProfile:
+              type: RuntimeDefault
+          resources:
+            requests:
+              cpu: '100m'
+              memory: '512Mi'
+            limits:
+              cpu: '1000m'
+              memory: '512Mi'
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 3000
+              httpHeaders:
+                - name: Host
+                  value: 'health.sparx.zone'
+            initialDelaySeconds: 15
+            periodSeconds: 30
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 3000
+              httpHeaders:
+                - name: Host
+                  value: 'health.sparx.zone'
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            failureThreshold: 3
+          lifecycle:
+            preStop:
+              exec:
+                command: ['/bin/sh', '-c', 'sleep 10']
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: storefront
+  namespace: sparx-prod
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 3000
+      targetPort: 3000
+  selector:
+    app: storefront
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: storefront
+  namespace: sparx-prod
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: storefront
+  minReplicas: 1
+  maxReplicas: 1 # TEMP: clamped while SSD/CPU quota tight
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+        - type: Percent
+          value: 50
+          periodSeconds: 60
+    scaleUp:
+      stabilizationWindowSeconds: 0
+      policies:
+        - type: Percent
+          value: 100
+          periodSeconds: 30
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: storefront
+  namespace: sparx-prod
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: storefront

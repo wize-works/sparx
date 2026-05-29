@@ -39,9 +39,21 @@ export interface EditableTenantPage {
   updatedAt: Date;
 }
 
-const PREVIEW_ORIGIN = process.env.NEXT_PUBLIC_MARKETING_URL ?? 'https://sparx.works';
+const ZONE_DOMAIN = process.env.NEXT_PUBLIC_SPARX_ZONE_DOMAIN ?? 'sparx.zone';
 
-export function EditPageForm({ page }: { page: EditableTenantPage }) {
+function storefrontOrigin(tenantSlug: string | null): string {
+  if (tenantSlug) return `https://${tenantSlug}.${ZONE_DOMAIN}`;
+  return process.env.NEXT_PUBLIC_MARKETING_URL ?? 'https://sparx.works';
+}
+
+export function EditPageForm({
+  page,
+  tenantSlug,
+}: {
+  page: EditableTenantPage;
+  tenantSlug: string | null;
+}) {
+  const previewOrigin = storefrontOrigin(tenantSlug);
   const router = useRouter();
   const [error, setError] = React.useState<string | null>(null);
   const [message, setMessage] = React.useState<string | null>(null);
@@ -121,7 +133,12 @@ export function EditPageForm({ page }: { page: EditableTenantPage }) {
                 </Badge>
               </Stack>
               <Stack direction="row" align="center" gap={2}>
-                <PreviewButton entryId={page.id} slug={page.slug} typeKey={page.typeKey} />
+                <PreviewButton
+                  entryId={page.id}
+                  slug={page.slug}
+                  typeKey={page.typeKey}
+                  tenantSlug={tenantSlug}
+                />
                 <Button
                   type="button"
                   variant="ghost"
@@ -201,7 +218,7 @@ export function EditPageForm({ page }: { page: EditableTenantPage }) {
         <SeoPanel
           value={seo}
           onChange={setSeo}
-          previewOrigin={PREVIEW_ORIGIN}
+          previewOrigin={previewOrigin}
           slug={slug}
           fallbackTitle={title}
         />

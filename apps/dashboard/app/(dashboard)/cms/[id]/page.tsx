@@ -1,5 +1,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { requireSession } from '@sparx/auth';
+import { withTenant } from '@sparx/db';
 import { Button, Container, Heading, Stack } from '@sparx/ui';
 import { ArrowLeft } from 'lucide-react';
 import { api, type ApiRestError } from '@/lib/api-rest-client';
@@ -24,14 +26,22 @@ interface ApiEntry {
 
 export default async function EditCmsPage({ params }: PageParams) {
   const { id } = await params;
-  let entry: ApiEntry;
-  try {
-    entry = await api.get<ApiEntry>(`/v1/content/entries/${id}`);
-  } catch (err) {
-    const e = err as ApiRestError;
-    if (e?.status === 404) notFound();
-    throw err;
-  }
+  const { user } = await requireSession();
+
+  const [entry, tenant] = await Promise.all([
+    (async () => {
+      try {
+        return await api.get<ApiEntry>(`/v1/content/entries/${id}`);
+      } catch (err) {
+        const e = err as ApiRestError;
+        if (e?.status === 404) notFound();
+        throw err;
+      }
+    })(),
+    withTenant({ tenantId: user.tenantId }, (tx) =>
+      tx.tenant.findUnique({ where: { id: user.tenantId }, select: { slug: true } })
+    ),
+  ]);
 
   const docBody =
     entry.body.body && typeof entry.body.body === 'object'
@@ -70,7 +80,7 @@ export default async function EditCmsPage({ params }: PageParams) {
           <Heading level={1}>Edit page</Heading>
         </Stack>
 
-        <EditPageForm page={editable} />
+        <EditPageForm page={editable} tenantSlug={tenant?.slug ?? null} />
       </Stack>
     </Container>
   );
