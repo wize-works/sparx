@@ -22,6 +22,7 @@ COPY packages/cms-schemas ./packages/cms-schemas
 COPY packages/events ./packages/events
 COPY packages/email ./packages/email
 COPY packages/auth ./packages/auth
+COPY packages/crm-schemas ./packages/crm-schemas
 COPY packages/crm ./packages/crm
 COPY services/api-graphql ./services/api-graphql
 
