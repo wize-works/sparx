@@ -253,19 +253,59 @@ resource "cloudflare_record" "sparx_email_mx" {
   allow_overwrite = true
 }
 
-# SPF — declare that mail.sparx.email is the only authorised sender.
-# Using +a/mx lets any A/MX record on the apex pass; ~all is soft-fail
-# (recommended over -all until reputation is established).
+# SPF — Mailgun is the only outbound path. Postal queues + signs + tracks
+# but does not deliver directly (GCP blocks outbound TCP/25); it hands
+# every message off to Mailgun via SMTP AUTH on :587, so Mailgun's IPs
+# are the only ones that should ever appear as the SMTP source for
+# sparx.email mail. Dropping `a mx include:spf.sparx.email` keeps the
+# record honest — those would falsely claim Postal sends direct.
+#
+# ~all is soft-fail (recommended over -all until reputation is established).
 resource "cloudflare_record" "sparx_email_spf" {
   count           = var.cloudflare_enabled ? 1 : 0
   zone_id         = data.cloudflare_zone.sparx_email[0].id
   name            = "@"
   type            = "TXT"
-  content         = "v=spf1 a mx include:spf.sparx.email ~all"
+  content         = "v=spf1 include:mailgun.org ~all"
   ttl             = 1
   proxied         = false
   allow_overwrite = true
-  comment         = "SPF — sparx.email apex (includes Postal's auto-managed spf.sparx.email)"
+  comment         = "SPF — Mailgun-only egress (Postal relays through it)"
+}
+
+# Mailgun tracking CNAME. Mailgun rewrites links in outgoing mail to
+# go through this hostname so they can record open/click events. Not
+# strictly required for delivery, but expected by their dashboard.
+resource "cloudflare_record" "sparx_email_mailgun_tracking" {
+  count           = var.cloudflare_enabled ? 1 : 0
+  zone_id         = data.cloudflare_zone.sparx_email[0].id
+  name            = "email"
+  type            = "CNAME"
+  content         = "mailgun.org"
+  ttl             = 1
+  proxied         = false
+  allow_overwrite = true
+  comment         = "Mailgun open/click tracking CNAME"
+}
+
+# Mailgun DKIM. Mailgun signs outbound mail with this key (selector
+# 'smtp') as it relays. Postal's own DKIM signature also travels
+# through (different selector — see sparx_email_dkim above), so
+# recipients see two valid signatures, either of which passes.
+#
+# Mailgun omits the leading `v=DKIM1;` (which is RFC-optional). To
+# rotate: regenerate in Mailgun dashboard → Sending → Domain settings
+# → DKIM, then paste the new public key here and `terraform apply`.
+resource "cloudflare_record" "sparx_email_mailgun_dkim" {
+  count           = var.cloudflare_enabled ? 1 : 0
+  zone_id         = data.cloudflare_zone.sparx_email[0].id
+  name            = "smtp._domainkey"
+  type            = "TXT"
+  content         = "k=rsa; p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDT5lbXUjuFHVevoB0GC2+T9mwVD8j4LT5NUIFe6e4E3mn71EeBrWba8vgRzG7jpXpoGAy/4/MhyNTeEs5WU9LSVXjnfpMfKI5M8oY20Kgvq7SY6P+nsQUDjMhWhraIdGcBOVENmeaYEiCt4i/8HsagVw22Cl77rs03UMktpb+fiQIDAQAB"
+  ttl             = 1
+  proxied         = false
+  allow_overwrite = true
+  comment         = "Mailgun DKIM (selector 'smtp') — relay signing key"
 }
 
 # DKIM placeholder — Postal generates the signing key at first
@@ -293,16 +333,23 @@ resource "cloudflare_record" "sparx_email_dkim" {
 # DMARC — start in `none` mode for first 2 weeks of sending so we can
 # see reports without rejecting legitimate mail; bump to quarantine
 # (then reject) once aggregate reports look clean.
+#
+# Report aggregators (rua/ruf):
+#   - bef10f10@dmarc.mailgun.org — Mailgun's DMARC dashboard
+#   - 85c257bc@inbox.ondmarc.com — OnDMARC (Red Sift) analyzer
+#   - dmarc-reports@sparx.email   — our own mailbox (not yet wired,
+#                                   reports will silently drop until
+#                                   we set up an inbox)
 resource "cloudflare_record" "sparx_email_dmarc" {
   count           = var.cloudflare_enabled ? 1 : 0
   zone_id         = data.cloudflare_zone.sparx_email[0].id
   name            = "_dmarc"
   type            = "TXT"
-  content         = "v=DMARC1; p=none; rua=mailto:dmarc-reports@sparx.email; ruf=mailto:dmarc-reports@sparx.email; fo=1; aspf=r; adkim=r"
+  content         = "v=DMARC1; p=none; pct=100; fo=1; ri=3600; adkim=r; aspf=r; rua=mailto:bef10f10@dmarc.mailgun.org,mailto:85c257bc@inbox.ondmarc.com,mailto:dmarc-reports@sparx.email; ruf=mailto:bef10f10@dmarc.mailgun.org,mailto:85c257bc@inbox.ondmarc.com,mailto:dmarc-reports@sparx.email;"
   ttl             = 1
   proxied         = false
   allow_overwrite = true
-  comment         = "DMARC — start at p=none, escalate after 2 weeks of clean reports"
+  comment         = "DMARC — p=none, reports to Mailgun + OnDMARC + sparx mailbox"
 }
 
 # =========================================================================

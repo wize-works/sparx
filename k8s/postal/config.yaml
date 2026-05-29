@@ -40,13 +40,18 @@ data:
       proxy_protocol: false
       log_connect: false
 
-    # Postal Worker dispatches to this internal SMTP relay, which then
-    # handles the actual outbound delivery to recipient MX hosts. In k8s
-    # the loopback default doesn't work cross-pod, so point at the
-    # postal-smtp Service.
-    smtp_relays:
-      - host: postal-smtp.postal.svc.cluster.local
-        port: 25
+    # NOTE: postal.smtp_relays (the outbound smarthost list) is NOT
+    # configured here. v3 takes it as a JSON array of URI strings via the
+    # POSTAL_SMTP_RELAYS env var, and the URI embeds the SMTP AUTH user
+    # and password — putting it in this ConfigMap would commit creds to
+    # git. bootstrap.yml fetches mailgun-smtp-username + mailgun-smtp-password
+    # from Secret Manager, URL-encodes them, and assembles
+    #   POSTAL_SMTP_RELAYS=["smtp://user:pass@smtp.mailgun.org:587?ssl_mode=STARTTLS"]
+    # into the postal-secrets Secret. See bootstrap.yml `Apply Postal` step.
+    #
+    # We relay through Mailgun because GCP blocks outbound TCP/25 at the
+    # network edge — Postal cannot deliver direct to recipient MX hosts
+    # from a GKE pod. Mailgun's :587 with SMTP AUTH is allowed.
 
     # main_db / message_db: password comes from env (MAIN_DB_PASSWORD /
     # MESSAGE_DB_PASSWORD via postal-secrets). Do NOT put the password
