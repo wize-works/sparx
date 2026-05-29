@@ -49,7 +49,7 @@ jobs:
           - billing-worker
           - webhook-worker
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Locate Dockerfile
         id: dockerfile

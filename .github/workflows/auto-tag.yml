@@ -46,7 +46,7 @@ jobs:
     outputs:
       new_tag: ${{ steps.tag.outputs.new_tag || steps.tag_forced.outputs.new_tag }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0 # need full history for conventional-commit analysis
 
@@ -85,7 +85,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Trigger downstream workflows on new tag
         env:
