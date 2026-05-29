@@ -1,85 +1,101 @@
-# Media transcode worker — pulls media.uploaded events from Pub/Sub,
-# generates AVIF/WebP/JPEG variants with sharp, and persists them under
-# the per-tenant /variants/ prefix in the media bucket.
+# media-worker has moved to Cloud Run.
 #
-# Authoring conventions follow worker.example.yaml. CPU + memory
-# limits are higher because sharp/libvips needs headroom for 2000px AVIF
-# encodes; lifecycle is otherwise identical to the other Pub/Sub workers.
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: media-worker
-  namespace: sparx-prod
-  labels:
-    app: media-worker
-    tier: worker
-spec:
-  replicas: 1
-  revisionHistoryLimit: 3
-  strategy:
-    type: RollingUpdate
-    rollingUpdate:
-      maxSurge: 1
-      maxUnavailable: 0
-  selector:
-    matchLabels:
-      app: media-worker
-  template:
-    metadata:
-      labels:
-        app: media-worker
-        tier: worker
-    spec:
-      serviceAccountName: sparx-app
-      terminationGracePeriodSeconds: 120 # libvips encodes finish in <60s; this is the SIGTERM budget
-      containers:
-        - name: media-worker
-          image: us-central1-docker.pkg.dev/sparxworks/sparx/media-worker:latest
-          imagePullPolicy: IfNotPresent
-          envFrom:
-            - configMapRef:
-                name: sparx-app-env
-            - secretRef:
-                name: sparx-app-secrets
-          env:
-            - name: NODE_ENV
-              value: production
-            - name: SERVICE_NAME
-              value: media-worker
-            - name: PUBSUB_SUBSCRIPTION
-              value: media.uploaded.media-worker
-            - name: GCS_MEDIA_BUCKET
-              valueFrom:
-                configMapKeyRef:
-                  name: sparx-app-env
-                  key: GCS_MEDIA_BUCKET
-            - name: MAX_CONCURRENT
-              value: '2'
-          resources:
-            requests:
-              cpu: '200m'
-              memory: '512Mi'
-            limits:
-              cpu: '1500m' # sharp can saturate a vCPU during AVIF encodes
-              memory: '1Gi'
-          securityContext:
-            runAsNonRoot: true
-            runAsUser: 1000
-            runAsGroup: 1000
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop: ['ALL']
-            seccompProfile:
-              type: RuntimeDefault
----
-apiVersion: policy/v1
-kind: PodDisruptionBudget
-metadata:
-  name: media-worker
-  namespace: sparx-prod
-spec:
-  maxUnavailable: 1
-  selector:
-    matchLabels:
-      app: media-worker
+# The service is now provisioned by terraform/envs/prod/serverless.tf via
+# the cloud-run-worker module, and Pub/Sub delivers messages via the push
+# subscription `media.uploaded.media-worker-cloudrun`. The old pull
+# subscription `media.uploaded.media-worker` is left in place during the
+# cutover; the in-cluster Deployment below is preserved (commented) as
+# the rollback path.
+#
+# To roll back:
+#   1. Uncomment this manifest
+#   2. Re-add `media-worker.yaml` to k8s/workers/kustomization.yaml
+#   3. Apply via the deploy workflow
+#   4. Cloud Run scales to zero on its own; the push subscription can be
+#      left running or deleted in a follow-up Terraform apply.
+#
+# A follow-up PR after a stable week on Cloud Run will:
+#   - Delete this file
+#   - Remove the entry from kustomization.yaml
+#   - Drop `media-worker` from the topics map in terraform/envs/prod/main.tf
+#
+# ─── Preserved manifest ───────────────────────────────────────────────────
+#
+# ---
+# apiVersion: apps/v1
+# kind: Deployment
+# metadata:
+#   name: media-worker
+#   namespace: sparx-prod
+#   labels:
+#     app: media-worker
+#     tier: worker
+# spec:
+#   replicas: 1
+#   revisionHistoryLimit: 3
+#   strategy:
+#     type: RollingUpdate
+#     rollingUpdate:
+#       maxSurge: 1
+#       maxUnavailable: 0
+#   selector:
+#     matchLabels:
+#       app: media-worker
+#   template:
+#     metadata:
+#       labels:
+#         app: media-worker
+#         tier: worker
+#     spec:
+#       serviceAccountName: sparx-app
+#       terminationGracePeriodSeconds: 120
+#       containers:
+#         - name: media-worker
+#           image: us-central1-docker.pkg.dev/sparxworks/sparx/media-worker:latest
+#           imagePullPolicy: IfNotPresent
+#           envFrom:
+#             - configMapRef:
+#                 name: sparx-app-env
+#             - secretRef:
+#                 name: sparx-app-secrets
+#           env:
+#             - name: NODE_ENV
+#               value: production
+#             - name: SERVICE_NAME
+#               value: media-worker
+#             - name: PUBSUB_SUBSCRIPTION
+#               value: media.uploaded.media-worker
+#             - name: GCS_MEDIA_BUCKET
+#               valueFrom:
+#                 configMapKeyRef:
+#                   name: sparx-app-env
+#                   key: GCS_MEDIA_BUCKET
+#             - name: MAX_CONCURRENT
+#               value: '2'
+#           resources:
+#             requests:
+#               cpu: '200m'
+#               memory: '512Mi'
+#             limits:
+#               cpu: '1500m'
+#               memory: '1Gi'
+#           securityContext:
+#             runAsNonRoot: true
+#             runAsUser: 1000
+#             runAsGroup: 1000
+#             allowPrivilegeEscalation: false
+#             capabilities:
+#               drop: ['ALL']
+#             seccompProfile:
+#               type: RuntimeDefault
+# ---
+# apiVersion: policy/v1
+# kind: PodDisruptionBudget
+# metadata:
+#   name: media-worker
+#   namespace: sparx-prod
+# spec:
+#   maxUnavailable: 1
+#   selector:
+#     matchLabels:
+#       app: media-worker

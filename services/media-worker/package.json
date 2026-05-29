@@ -2,7 +2,7 @@
   "name": "@sparx/media-worker",
   "version": "0.0.0",
   "private": true,
-  "description": "Sparx media transcoder. Pulls media.uploaded events from Pub/Sub, generates AVIF/WebP/JPEG variants with sharp, computes blurhash + dominant color, and updates MediaAsset + MediaVariant rows (docs/12 §3, plan Phase 3).",
+  "description": "Sparx media transcoder. Receives media.uploaded events via Pub/Sub push (Cloud Run HTTP entrypoint), generates AVIF/WebP/JPEG variants with sharp, computes blurhash + dominant color, and updates MediaAsset + MediaVariant rows (docs/12 §3, plan Phase 3).",
   "type": "module",
   "main": "src/index.ts",
   "scripts": {
@@ -15,7 +15,6 @@
     "clean": "rm -rf .turbo dist *.tsbuildinfo"
   },
   "dependencies": {
-    "@google-cloud/pubsub": "^4.10.0",
     "@google-cloud/storage": "^7.16.0",
     "@prisma/client": "^6.19.3",
     "@sparx/db": "workspace:*",

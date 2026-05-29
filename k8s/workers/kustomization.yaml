@@ -1,9 +1,10 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: sparx-prod
-resources:
-  - media-worker.yaml
-  - email-worker.yaml
+# email-worker and media-worker have moved to Cloud Run — their manifests
+# are preserved (commented) in *-worker.yaml as a rollback path. See
+# terraform/envs/prod/serverless.tf for the live config.
+resources: []
 # Example once images exist:
 #   - domain-worker.yaml
 #   - dropship-worker.yaml

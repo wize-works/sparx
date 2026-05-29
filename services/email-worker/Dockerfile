@@ -1,6 +1,8 @@
 # email-worker runtime image. Same shape as services/media-worker/Dockerfile.
 #
-# No native deps required — React Email renders pure JS strings.
+# Cloud Run Pub/Sub push entrypoint — exposes :8080 (Cloud Run injects
+# PORT; defaults to 8080). No native deps required — React Email renders
+# pure JS strings.
 
 FROM node:24-alpine
 
@@ -32,6 +34,9 @@ WORKDIR /app/services/email-worker
 RUN chown -R node:node /app
 USER node
 
+EXPOSE 8080
+
 # dumb-init forwards SIGTERM to the worker's graceful-shutdown hook so a
-# pod eviction mid-send finishes in-flight messages before exiting.
+# Cloud Run revision swap mid-send finishes in-flight requests before
+# exiting.
 ENTRYPOINT ["dumb-init", "--", "pnpm", "exec", "tsx", "src/index.ts"]

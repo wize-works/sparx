@@ -34,11 +34,13 @@ locals {
     "logging.googleapis.com",
     "monitoring.googleapis.com",
     "pubsub.googleapis.com",
+    "run.googleapis.com",
     "secretmanager.googleapis.com",
     "servicenetworking.googleapis.com",
     "sqladmin.googleapis.com",
     "storage.googleapis.com",
     "sts.googleapis.com",
+    "vpcaccess.googleapis.com",
   ]
 }
 
