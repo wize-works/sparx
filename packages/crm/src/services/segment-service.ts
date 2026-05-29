@@ -9,6 +9,7 @@
 // before the evaluator exists.
 
 import { CreateSegmentInput, UpdateSegmentInput } from '@sparx/crm-schemas';
+import { BUILT_IN_SEGMENT_TEMPLATES } from '@sparx/crm-schemas/builtins';
 import { withTenant } from '@sparx/db';
 import type { Customer, Segment, SegmentMember } from '@sparx/db';
 
@@ -175,3 +176,48 @@ export async function memberCount(ctx: ServiceContext, segmentId: string): Promi
 // file (see ./segment-evaluation.ts for the math). Re-exported here so the
 // segmentService namespace looks complete to callers.
 export { previewCount, recomputeFull } from './segment-evaluation';
+
+// ─────────────────────────────────────────────────────────────────────────
+// Bootstrap — seed BUILT_IN_SEGMENT_TEMPLATES for a tenant.
+// Called on `module.activated` for crm. Idempotent — checks per-slug, so
+// a second call (or a later template addition) is a safe additive op.
+// ─────────────────────────────────────────────────────────────────────────
+
+export async function bootstrapBuiltInSegments(ctx: ServiceContext): Promise<Segment[]> {
+  return withTenant(ctx, async (tx) => {
+    const seeded: Segment[] = [];
+    for (const t of BUILT_IN_SEGMENT_TEMPLATES) {
+      const existing = await tx.segment.findUnique({
+        where: { tenantId_slug: { tenantId: ctx.tenantId, slug: t.slug } },
+      });
+      if (existing) {
+        seeded.push(existing);
+        continue;
+      }
+      const created = await tx.segment.create({
+        data: {
+          tenantId: ctx.tenantId,
+          name: t.name,
+          slug: t.slug,
+          description: t.description,
+          color: t.color,
+          rules: t.rules,
+          isSystem: true,
+          isBuiltIn: true,
+        },
+      });
+      await writeAuditLog({
+        tx,
+        tenantId: ctx.tenantId,
+        actorId: ctx.userId ?? null,
+        actorType: 'system',
+        action: 'crm.segment.bootstrapped',
+        entityType: 'Segment',
+        entityId: created.id,
+        diff: { after: { slug: created.slug } },
+      });
+      seeded.push(created);
+    }
+    return seeded;
+  });
+}

@@ -22,6 +22,7 @@ import { registerEmailEventConsumers } from './email-events';
 import { registerQuoteEventConsumers } from './quote-events';
 import { registerAuthEventConsumers } from './auth-events';
 import { registerSegmentEvaluatorConsumers } from './segment-evaluator';
+import { registerModuleActivationConsumers } from './module-activation';
 
 export interface RegisterOptions {
   /** Override the active bus — tests pass a fresh in-memory bus. */
@@ -46,16 +47,10 @@ export function registerCrmConsumers(opts: RegisterOptions = {}): ConsumerRegist
   teardowns.push(...registerQuoteEventConsumers(ctx));
   teardowns.push(...registerAuthEventConsumers(ctx));
   teardowns.push(...registerSegmentEvaluatorConsumers(ctx));
-
-  // Cache invalidation — when a tenant activates/deactivates CRM at runtime,
-  // we drop the module-gate cache so the next event reflects the new state.
-  teardowns.push(
-    bus.subscribe('module.activated', (event) => {
-      const slug = (event.payload as { module?: string } | null)?.module;
-      if (slug === 'crm') invalidateModuleCache(event.tenantId, 'crm');
-      return Promise.resolve();
-    })
-  );
+  // Activation runs the per-tenant bootstrap (default pipeline + built-in
+  // segments) AND invalidates the module-gate cache. Deactivation only
+  // needs to drop the cache so downstream consumers see the change.
+  teardowns.push(...registerModuleActivationConsumers(ctx));
   teardowns.push(
     bus.subscribe('module.deactivated', (event) => {
       const slug = (event.payload as { module?: string } | null)?.module;

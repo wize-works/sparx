@@ -75,9 +75,7 @@ async function main(): Promise<void> {
     await tx.$executeRawUnsafe(`SET LOCAL app.tenant_id = '${tenant.id}'`);
 
     const owner = await tx.user.upsert({
-      where: {
-        tenantId_email: { tenantId: tenant.id, email: STAFF_EMAIL },
-      },
+      where: { email: STAFF_EMAIL },
       update: {},
       create: {
         tenantId: tenant.id,

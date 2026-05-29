@@ -45,6 +45,11 @@ const openapiPlugin: FastifyPluginAsync = async (app) => {
         { name: 'webhooks', description: 'Subscription management for content + media events' },
         { name: 'sitemap', description: 'Public sitemap.xml' },
         { name: 'system', description: 'Health probes, readiness' },
+        {
+          name: 'crm',
+          description:
+            'Customers, deals, pipelines, B2B accounts, activities, tasks, segments, reports (docs/11)',
+        },
       ],
       components: {
         securitySchemes: {

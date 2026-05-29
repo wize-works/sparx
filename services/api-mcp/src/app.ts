@@ -15,6 +15,8 @@ import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/
 import { env } from './env.js';
 import authPlugin, { AuthError, authenticate } from './auth.js';
 import { buildServerForRequest } from './server.js';
+import { enforceRateLimit, RateLimitError } from './rate-limit.js';
+import { isWriteToolCall } from './tool-registry.js';
 
 function loggerOptions(): FastifyServerOptions['logger'] {
   if (env.NODE_ENV === 'test') return false;
@@ -47,6 +49,25 @@ export async function createApp(): Promise<FastifyInstance> {
         error: { code: 'UNAUTHORIZED', message: err.message, request_id: request.id },
       });
     }
+    if (err instanceof RateLimitError) {
+      if (err.retryAfterSeconds > 0) {
+        reply.header('retry-after', String(err.retryAfterSeconds));
+      }
+      return reply.code(429).send({
+        success: false,
+        error: {
+          code: 'RATE_LIMITED',
+          message: err.message,
+          details: {
+            scope: err.scope,
+            window: err.window,
+            limit: err.limit,
+            retry_after_seconds: err.retryAfterSeconds,
+          },
+          request_id: request.id,
+        },
+      });
+    }
     request.log.error({ err }, 'unhandled mcp error');
     return reply.code(500).send({
       success: false,
@@ -71,6 +92,15 @@ export async function createApp(): Promise<FastifyInstance> {
     url: '/v1/mcp',
     handler: async (request, reply) => {
       const auth = await authenticate(request);
+      // POST is the only method that carries a JSON-RPC body — GET opens the
+      // SSE channel and DELETE terminates. Only count POST against the
+      // tenant's quota; GET/DELETE are framing, not work.
+      if (request.method === 'POST') {
+        await enforceRateLimit({
+          auth,
+          isWriteCall: isWriteToolCall(request.body),
+        });
+      }
       const server = buildServerForRequest(auth);
       // Stateless mode — no session id, every request stands alone.
       const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined });

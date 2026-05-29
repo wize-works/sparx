@@ -6,7 +6,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import crypto from 'node:crypto';
 import type { FastifyInstance } from 'fastify';
 import { prisma } from '@sparx/db';
-import { invalidateModuleCache } from '@sparx/auth';
+import { invalidateModuleCache, issueApiKey, revokeApiKey } from '@sparx/auth';
 import { createApp } from '../src/app.js';
 
 interface TestTenant {
@@ -108,6 +108,54 @@ describe('mcp-server smoke', () => {
     });
     expect(res.statusCode).toBe(401);
     expect(res.json().error.code).toBe('UNAUTHORIZED');
+  });
+
+  it('accepts an external API key and rejects after revocation', async () => {
+    const issued = await issueApiKey({
+      tenantId: tenant.tenantId,
+      name: 'smoke-test key',
+      scopes: ['read:crm'],
+      createdByUserId: tenant.userId,
+    });
+
+    // 1. live key + read:crm scope → tool call succeeds (200, empty result)
+    const call = await postMcp(
+      app,
+      issued.plaintext,
+      jsonRpc('tools/call', { name: 'get_customers', arguments: {} }, 11)
+    );
+    expect(call.statusCode).toBeLessThan(400);
+    expect(call.body).toContain('\\"items\\":[]');
+
+    // 2. revoke → next call is rejected with UNAUTHORIZED
+    await revokeApiKey(tenant.tenantId, issued.id);
+    const after = await postMcp(
+      app,
+      issued.plaintext,
+      jsonRpc('tools/call', { name: 'get_customers', arguments: {} }, 12)
+    );
+    expect(after.statusCode).toBe(401);
+    expect(JSON.parse(after.body).error.code).toBe('UNAUTHORIZED');
+  });
+
+  it('rejects an API key whose scopes do not cover the requested tool', async () => {
+    // No scopes at all → even a read tool is denied with FORBIDDEN.
+    const issued = await issueApiKey({
+      tenantId: tenant.tenantId,
+      name: 'no-scope key',
+      scopes: [],
+      createdByUserId: tenant.userId,
+    });
+    const res = await postMcp(
+      app,
+      issued.plaintext,
+      jsonRpc('tools/call', { name: 'get_customers', arguments: {} }, 21)
+    );
+    // SDK lifts tool-handler throws into the JSON-RPC error envelope; the
+    // HTTP status stays 200 but the body contains the forbidden message.
+    expect(res.statusCode).toBeLessThan(500);
+    expect(res.body.toLowerCase()).toContain('scope');
+    await revokeApiKey(tenant.tenantId, issued.id);
   });
 
   it('lists tools then dispatches get_customers', async () => {
