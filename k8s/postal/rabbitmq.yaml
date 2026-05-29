@@ -85,23 +85,34 @@ spec:
               value: 'sparx-postal-cookie' # single-node — cookie is just for management
           resources:
             requests:
-              cpu: '100m'
+              cpu: '200m'
               memory: '384Mi'
             limits:
               cpu: '500m'
               memory: '768Mi'
+          # startupProbe gives the Erlang VM up to 5 min to fully boot before
+          # liveness/readiness take over. Without it the 60s initialDelay was
+          # firing mid-boot and liveness kill-looped before Mnesia recovery
+          # finished. rabbitmq-diagnostics is also CPU-heavy — bumped the
+          # timeout from 10s to 20s to ride out probe contention.
+          startupProbe:
+            exec:
+              command: ['rabbitmq-diagnostics', '-q', 'ping']
+            periodSeconds: 10
+            timeoutSeconds: 20
+            failureThreshold: 30
           livenessProbe:
             exec:
               command: ['rabbitmq-diagnostics', '-q', 'ping']
-            initialDelaySeconds: 60
             periodSeconds: 30
-            timeoutSeconds: 10
+            timeoutSeconds: 20
+            failureThreshold: 3
           readinessProbe:
             exec:
               command: ['rabbitmq-diagnostics', '-q', 'check_running']
-            initialDelaySeconds: 30
-            periodSeconds: 10
-            timeoutSeconds: 10
+            periodSeconds: 15
+            timeoutSeconds: 20
+            failureThreshold: 3
           volumeMounts:
             - name: data
               mountPath: /var/lib/rabbitmq
