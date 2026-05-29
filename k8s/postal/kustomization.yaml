@@ -8,11 +8,12 @@ namespace: postal
 resources:
   - namespace.yaml
   - mariadb.yaml
-  - rabbitmq.yaml
   - secrets.yaml
   - config.yaml
   - bootstrap-job.yaml
   - smtp.yaml
   - web.yaml
   - worker.yaml
-  - cron.yaml
+  # rabbitmq.yaml + cron.yaml dropped: Postal v3 has no RabbitMQ and no
+  # `postal cron` command; both were vestigial. See
+  # feedback_postal_config_gotchas.md.
