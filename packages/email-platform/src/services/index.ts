@@ -6,8 +6,8 @@
 //   P2 — settingsService, domainService          (done)
 //   P3 — suppressionService, webhookService       (done)
 //   P4 — templateService                          (done)
-//   P5 — automationService, dispatchService
-//   P6 — broadcastService
+//   P5 — automationService                         (done)
+//   P6 — broadcastService                          (done)
 //   P7 — analyticsService
 
 export * as settingsService from './settings-service';
@@ -17,6 +17,7 @@ export * as webhookService from './webhook-service';
 export * as brandService from './brand-service';
 export * as templateService from './template-service';
 export * as automationService from './automation-service';
+export * as broadcastService from './broadcast-service';
 
 export { BUILTIN_TEMPLATES, getBuiltinTemplate, type BuiltinTemplate } from '../builtin-templates';
 export {

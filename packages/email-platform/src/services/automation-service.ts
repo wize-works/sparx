@@ -176,6 +176,7 @@ export async function evaluateTrigger(
               template: templateKey,
               props: event.data,
               automationKey: automation.key,
+              ...(automation.key ? { variables: { automation_key: automation.key } } : {}),
             } as Prisma.InputJsonValue,
             dueAt,
             status: 'pending',
