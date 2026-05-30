@@ -58,6 +58,35 @@ export interface AutomationRow {
   status: string;
 }
 
+export interface BroadcastRow {
+  id: string;
+  name: string;
+  subject: string;
+  status: 'draft' | 'scheduled' | 'sending' | 'sent' | 'cancelled' | 'failed';
+  preheader: string | null;
+  templateId: string | null;
+  segmentId: string | null;
+  recipientCount: number;
+  scheduledAt: string | null;
+  sentAt: string | null;
+  createdAt: string;
+}
+
+export interface BroadcastStats {
+  accepted: number;
+  delivered: number;
+  opened: number;
+  clicked: number;
+  bounced: number;
+  complained: number;
+  unsubscribed: number;
+}
+
+export interface SegmentOption {
+  id: string;
+  name: string;
+}
+
 export interface EmailSettingsView {
   tenantId: string;
   fromName: string | null;

@@ -188,10 +188,28 @@ export const CreateProductInput = z.object({
 });
 export type CreateProductInput = z.infer<typeof CreateProductInput>;
 
-export const UpdateProductInput = CreateProductInput.partial().omit({
-  options: true,
-  variants: true,
-});
+export const UpdateProductInput = CreateProductInput.partial()
+  .omit({
+    options: true,
+    variants: true,
+  })
+  .extend({
+    // These fields are nullable in the DB — the update form sends null to clear them.
+    // .partial() alone only allows undefined, so we extend with .nullish() here.
+    description: z.string().max(50_000).nullish(),
+    productType: z.string().max(127).nullish(),
+    vendor: z.string().max(127).nullish(),
+    taxClass: z.string().max(63).nullish(),
+    originCountry: z
+      .string()
+      .length(2)
+      .regex(/^[A-Z]{2}$/)
+      .nullish(),
+    hsCode: z.string().max(15).nullish(),
+    ogImageId: Uuid.nullish(),
+    seoTitle: z.string().max(255).nullish(),
+    seoDescription: z.string().max(512).nullish(),
+  });
 export type UpdateProductInput = z.infer<typeof UpdateProductInput>;
 
 // Bulk operations — backed by Pub/Sub fan-out workers so a 10k-row CSV

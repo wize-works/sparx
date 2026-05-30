@@ -12,6 +12,7 @@ import emailDomainRoutes from './domains.js';
 import emailSuppressionRoutes from './suppressions.js';
 import emailTemplateRoutes from './templates.js';
 import emailAutomationRoutes from './automations.js';
+import emailBroadcastRoutes from './broadcasts.js';
 import { toEmailContext } from '../../../lib/email-context.js';
 
 const emailRoutes: FastifyPluginAsync = async (app) => {
@@ -20,6 +21,7 @@ const emailRoutes: FastifyPluginAsync = async (app) => {
   await app.register(emailSuppressionRoutes);
   await app.register(emailTemplateRoutes);
   await app.register(emailAutomationRoutes);
+  await app.register(emailBroadcastRoutes);
 
   // Idempotent seed for a freshly-activated email module — provisions the
   // default automations. Mirrors /v1/crm/bootstrap; no module gate (it fires

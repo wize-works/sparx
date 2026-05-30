@@ -9,7 +9,7 @@
 // webhook stamps back.
 
 import { withTenant } from '@sparx/db';
-import type { Broadcast, EmailTemplate, Prisma } from '@sparx/db';
+import type { Broadcast, EmailTemplate } from '@sparx/db';
 import { renderAuthoredEmail } from '@sparx/email';
 import { renderDocToHtml, type CmsDoc } from '@sparx/cms-editor';
 
