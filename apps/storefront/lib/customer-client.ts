@@ -80,6 +80,29 @@ export async function logout(tenantSlug: string): Promise<void> {
   await fetch(url('/v1/public/commerce/account/logout', tenantSlug), { method: 'POST' });
 }
 
+/** Always resolves (enumeration-safe): the server 200s whether or not the
+ *  email exists, only sending mail when it does. */
+export async function requestPasswordReset(tenantSlug: string, email: string): Promise<void> {
+  await fetch(url('/v1/public/commerce/account/password/forgot', tenantSlug), {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ email }),
+  });
+}
+
+export async function resetPassword(
+  tenantSlug: string,
+  token: string,
+  password: string
+): Promise<void> {
+  const res = await fetch(url('/v1/public/commerce/account/password/reset', tenantSlug), {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ token, password }),
+  });
+  await parse<{ ok: true }>(res);
+}
+
 /** Returns the current customer, or null if not signed in (401). */
 export async function getMe(tenantSlug: string): Promise<Customer | null> {
   const res = await fetch(url('/v1/public/commerce/account/me', tenantSlug), {

@@ -4,6 +4,7 @@
 // CustomerProvider's login/register and, on success, redirects to the
 // `redirect` query param (e.g. back to checkout) or the account dashboard.
 
+import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useState } from 'react';
 
@@ -144,7 +145,15 @@ export function AuthPanel({ initial = 'signin' }: { initial?: Mode }) {
             <span className="sf-muted" style={{ fontSize: '0.8rem' }}>
               At least 8 characters.
             </span>
-          ) : null}
+          ) : (
+            <Link
+              href="/account/forgot"
+              className="sf-muted"
+              style={{ fontSize: '0.8rem', alignSelf: 'flex-start' }}
+            >
+              Forgot your password?
+            </Link>
+          )}
         </label>
 
         {error ? (
