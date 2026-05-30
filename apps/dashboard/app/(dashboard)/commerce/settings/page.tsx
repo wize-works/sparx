@@ -66,8 +66,8 @@ export default async function StorefrontSettingsPage() {
           </Stack>
           <Text variant="muted">
             Tenant-wide commerce defaults. Sitebuilder owns layout — settings here govern currency,
-            channel toggles, abandonment thresholds, and per-checkout guardrails. The storefront
-            and B2B portal read these values at request time.
+            channel toggles, abandonment thresholds, and per-checkout guardrails. The storefront and
+            B2B portal read these values at request time.
           </Text>
         </Stack>
 

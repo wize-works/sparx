@@ -110,9 +110,7 @@ export async function topProducts(
       take: limit,
     });
 
-    const productIds = groups
-      .map((g) => g.productId)
-      .filter((id): id is string => id !== null);
+    const productIds = groups.map((g) => g.productId).filter((id): id is string => id !== null);
     if (productIds.length === 0) return [];
 
     const products = await tx.product.findMany({

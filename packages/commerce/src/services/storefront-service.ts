@@ -7,10 +7,7 @@
 // primary key) so reads and upserts are point lookups. RLS enforces
 // per-tenant isolation regardless.
 
-import {
-  UpdateStorefrontSettingsInput,
-  UpdateStorefrontThemeInput,
-} from '@sparx/commerce-schemas';
+import { UpdateStorefrontSettingsInput, UpdateStorefrontThemeInput } from '@sparx/commerce-schemas';
 import { withTenant } from '@sparx/db';
 
 import { writeAuditLog } from '../audit';
@@ -59,10 +56,7 @@ export async function getSettings(ctx: ServiceContext): Promise<StorefrontSettin
   });
 }
 
-export async function updateSettings(
-  ctx: ServiceContext,
-  rawInput: unknown
-): Promise<void> {
+export async function updateSettings(ctx: ServiceContext, rawInput: unknown): Promise<void> {
   const input = UpdateStorefrontSettingsInput.parse(rawInput);
 
   await withTenant(ctx, async (tx) => {
@@ -100,7 +94,9 @@ export async function updateSettings(
       tenantId: ctx.tenantId,
       actorId: ctx.userId ?? null,
       actorType: ctx.userId ? 'user' : 'system',
-      action: before ? 'commerce.storefront.settings.updated' : 'commerce.storefront.settings.created',
+      action: before
+        ? 'commerce.storefront.settings.updated'
+        : 'commerce.storefront.settings.created',
       entityType: 'StorefrontSettings',
       entityId: ctx.tenantId,
       diff: { before: before as Record<string, unknown> | null, after: input },

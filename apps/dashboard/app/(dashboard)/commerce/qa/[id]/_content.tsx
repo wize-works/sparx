@@ -3,7 +3,16 @@ import { PackageOpen } from 'lucide-react';
 
 import { isModuleEnabled, requireSession } from '@sparx/auth';
 import { withTenant } from '@sparx/db';
-import { Badge, Card, CardContent, CardDescription, CardHeader, Heading, Stack, Text } from '@sparx/ui';
+import {
+  Badge,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  Heading,
+  Stack,
+  Text,
+} from '@sparx/ui';
 
 import { ModuleStub } from '../../../../../components/module-stub';
 

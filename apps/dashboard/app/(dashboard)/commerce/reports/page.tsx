@@ -90,10 +90,7 @@ export default async function ReportsPage({
 
         <Stack direction="row" gap={3} wrap>
           <Kpi label="Orders" value={revenue.ordersCount.toLocaleString()} />
-          <Kpi
-            label="Gross revenue"
-            value={fmt(revenue.grossRevenueCents, revenue.currency)}
-          />
+          <Kpi label="Gross revenue" value={fmt(revenue.grossRevenueCents, revenue.currency)} />
           <Kpi label="Net revenue" value={fmt(revenue.netRevenueCents, revenue.currency)} />
           <Kpi label="AOV" value={fmt(revenue.averageOrderValueCents, revenue.currency)} />
           <Kpi label="Refunded" value={fmt(revenue.refundedCents, revenue.currency)} />
@@ -121,11 +118,7 @@ export default async function ReportsPage({
                   label="Orders placed"
                   value={`${funnel.ordersPlaced.toLocaleString()} (${pct(funnel.checkoutToOrderRate)})`}
                 />
-                <Row
-                  label="Cart → order"
-                  value={pct(funnel.overallConversion)}
-                  bold
-                />
+                <Row label="Cart → order" value={pct(funnel.overallConversion)} bold />
               </Stack>
             </CardContent>
           </Card>
@@ -135,21 +128,15 @@ export default async function ReportsPage({
               <Stack gap={1}>
                 <Heading level={3}>Abandoned carts</Heading>
                 <CardDescription>
-                  Recovery worker flips <code>recoveredAt</code> when a cart converts. Recovery
-                  rate is recovered/(abandoned+recovered) inside the range.
+                  Recovery worker flips <code>recoveredAt</code> when a cart converts. Recovery rate
+                  is recovered/(abandoned+recovered) inside the range.
                 </CardDescription>
               </Stack>
             </CardHeader>
             <CardContent>
               <Stack gap={2}>
-                <Row
-                  label="Abandoned"
-                  value={abandonment.abandonedCount.toLocaleString()}
-                />
-                <Row
-                  label="Recovered"
-                  value={abandonment.recoveredCount.toLocaleString()}
-                />
+                <Row label="Abandoned" value={abandonment.abandonedCount.toLocaleString()} />
+                <Row label="Recovered" value={abandonment.recoveredCount.toLocaleString()} />
                 <Row label="Recovery rate" value={pct(abandonment.recoveryRate)} bold />
                 <Row
                   label="Recovered revenue"
@@ -167,8 +154,8 @@ export default async function ReportsPage({
                 <Heading level={3}>Subscriptions</Heading>
                 <CardDescription>
                   MRR estimate normalizes weekly/yearly cadences to a monthly factor. Churn counts
-                  cancellations inside the period; new counts subscriptions whose row was created
-                  in the period.
+                  cancellations inside the period; new counts subscriptions whose row was created in
+                  the period.
                 </CardDescription>
               </Stack>
             </CardHeader>
@@ -195,10 +182,7 @@ export default async function ReportsPage({
             <CardContent>
               <Stack gap={2}>
                 <Row label="Units on hand" value={inventory.totalUnits.toLocaleString()} />
-                <Row
-                  label="At cost"
-                  value={fmt(inventory.totalCostCents, inventory.currency)}
-                />
+                <Row label="At cost" value={fmt(inventory.totalCostCents, inventory.currency)} />
                 <Row
                   label="At retail"
                   value={fmt(inventory.totalRetailCents, inventory.currency)}
