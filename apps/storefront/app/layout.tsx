@@ -10,6 +10,7 @@ import { GeistSans } from 'geist/font/sans';
 import { GeistMono } from 'geist/font/mono';
 
 import { CartProvider } from '@/components/cart-provider';
+import { CustomerProvider } from '@/components/customer-provider';
 import { MiniCart } from '@/components/mini-cart';
 import { SiteHeader, type NavItem } from '@/components/site-header';
 import { SiteFooter, type FooterColumn } from '@/components/site-footer';
@@ -99,14 +100,16 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <head>{themeCss ? <style dangerouslySetInnerHTML={{ __html: themeCss }} /> : null}</head>
       <body className="sf-body">
         {tenant ? (
-          <CartProvider tenantSlug={tenant.slug} currency={tenant.storefront.defaultCurrency}>
-            <div className="sf-frame">
-              <SiteHeader tenant={tenant} nav={nav} />
-              <main className="sf-main">{children}</main>
-              <SiteFooter tenant={tenant} columns={footerColumns} year={FOOTER_YEAR} />
-            </div>
-            <MiniCart />
-          </CartProvider>
+          <CustomerProvider tenantSlug={tenant.slug}>
+            <CartProvider tenantSlug={tenant.slug} currency={tenant.storefront.defaultCurrency}>
+              <div className="sf-frame">
+                <SiteHeader tenant={tenant} nav={nav} />
+                <main className="sf-main">{children}</main>
+                <SiteFooter tenant={tenant} columns={footerColumns} year={FOOTER_YEAR} />
+              </div>
+              <MiniCart />
+            </CartProvider>
+          </CustomerProvider>
         ) : (
           <div className="sf-frame">
             <main className="sf-main">{children}</main>
