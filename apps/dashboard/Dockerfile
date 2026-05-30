@@ -29,6 +29,12 @@ COPY packages/crm-schemas/package.json packages/crm-schemas/
 COPY packages/commerce/package.json packages/commerce/
 COPY packages/commerce-schemas/package.json packages/commerce-schemas/
 COPY packages/integration-framework/package.json packages/integration-framework/
+COPY packages/provider-avalara/package.json packages/provider-avalara/
+COPY packages/provider-easypost/package.json packages/provider-easypost/
+COPY packages/provider-paypal/package.json packages/provider-paypal/
+COPY packages/provider-shippo/package.json packages/provider-shippo/
+COPY packages/provider-stripe/package.json packages/provider-stripe/
+COPY packages/provider-taxjar/package.json packages/provider-taxjar/
 COPY packages/search/package.json packages/search/
 COPY packages/cms-editor/package.json packages/cms-editor/
 COPY packages/cms-schemas/package.json packages/cms-schemas/
@@ -53,6 +59,12 @@ COPY packages/crm-schemas packages/crm-schemas
 COPY packages/commerce packages/commerce
 COPY packages/commerce-schemas packages/commerce-schemas
 COPY packages/integration-framework packages/integration-framework
+COPY packages/provider-avalara packages/provider-avalara
+COPY packages/provider-easypost packages/provider-easypost
+COPY packages/provider-paypal packages/provider-paypal
+COPY packages/provider-shippo packages/provider-shippo
+COPY packages/provider-stripe packages/provider-stripe
+COPY packages/provider-taxjar packages/provider-taxjar
 COPY packages/search packages/search
 COPY packages/cms-editor packages/cms-editor
 COPY packages/cms-schemas packages/cms-schemas
