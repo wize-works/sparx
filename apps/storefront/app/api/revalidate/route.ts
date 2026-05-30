@@ -58,9 +58,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ success: false, error: 'tenant is required.' }, { status: 400 });
   }
 
-  const requested = Array.isArray(body.scopes)
-    ? (body.scopes.filter((s): s is Scope => SCOPES.includes(s as Scope)) as Scope[])
-    : [];
+  const requestedRaw: unknown[] = Array.isArray(body.scopes) ? body.scopes : [];
+  const requested = requestedRaw.filter(
+    (s): s is Scope => typeof s === 'string' && (SCOPES as readonly string[]).includes(s)
+  );
   const scopes = requested.length ? requested : [...SCOPES];
 
   // The storefront also tags every fetch with the shared 'sparx-storefront'

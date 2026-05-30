@@ -31,15 +31,17 @@ export interface ThemePreset {
 
 export const DEFAULT_PRESET_ID = 'classic';
 
+// Classic = the design-system defaults. Empty token set so storefront.css :root
+// governs; named so it's a definite (non-undefined) fallback for resolvePreset.
+const CLASSIC: ThemePreset = {
+  id: 'classic',
+  name: 'Classic',
+  description: 'The default Sparx storefront look — balanced, neutral, versatile.',
+  tokens: {},
+};
+
 export const PRESETS: Record<string, ThemePreset> = {
-  // Classic = the design-system defaults. Empty token set so storefront.css
-  // :root governs; present as a named option for the theme picker.
-  classic: {
-    id: 'classic',
-    name: 'Classic',
-    description: 'The default Sparx storefront look — balanced, neutral, versatile.',
-    tokens: {},
-  },
+  classic: CLASSIC,
   // Bold = high-contrast, squared, confident type.
   bold: {
     id: 'bold',
@@ -70,5 +72,6 @@ export const PRESETS: Record<string, ThemePreset> = {
 
 /** Resolve a preset by id, falling back to the default. Always returns a preset. */
 export function resolvePreset(id: string | null | undefined): ThemePreset {
-  return (id && PRESETS[id]) || PRESETS[DEFAULT_PRESET_ID]!;
+  const found = id ? PRESETS[id] : undefined;
+  return found ?? CLASSIC;
 }
