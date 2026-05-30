@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { DEFAULT_PREFERENCES, type UserPreferences } from '../_shell/preferences';
+import { DEFAULT_PREFERENCES, type UserPreferences } from '../_shell/preferences-types';
 
 // Client-side context for the user's preferences bag. Mounted once by the
 // DashboardShell with server-fetched values. Any client component below

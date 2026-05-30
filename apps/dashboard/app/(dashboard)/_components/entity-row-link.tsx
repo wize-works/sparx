@@ -4,7 +4,7 @@ import * as React from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { hasDetailView } from '../_shell/detail-registry';
-import type { DefaultDetailView, UserPreferences } from '../_shell/preferences';
+import type { DefaultDetailView, UserPreferences } from '../_shell/preferences-types';
 import { usePreferences } from './preferences-provider';
 
 // Replaces `<Link>` for any row in an entity list (orders, customers,
