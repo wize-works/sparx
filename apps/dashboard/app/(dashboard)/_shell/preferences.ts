@@ -1,20 +1,16 @@
 import 'server-only';
 import { prisma, type Prisma } from '@sparx/db';
+import {
+  DEFAULT_PREFERENCES,
+  parsePreferences,
+  type UserPreferences,
+} from './preferences-types';
 
-// Per-user preferences. Stored as a JSON bag on User.preferences; the
-// TypeScript shape here is the canonical contract. Unknown keys read from
-// the DB are tolerated (returned but unused); missing keys fall back to
-// defaults below.
+// Server-only DB access for per-user preferences. Client modules should
+// import types from `./preferences-types` instead — see the comment there.
 
-export type DefaultDetailView = 'drawer' | 'modal' | 'fullPage' | 'newTab';
-
-export interface UserPreferences {
-  defaultDetailView: DefaultDetailView;
-}
-
-export const DEFAULT_PREFERENCES: UserPreferences = {
-  defaultDetailView: 'drawer',
-};
+export { DEFAULT_PREFERENCES };
+export type { DefaultDetailView, UserPreferences } from './preferences-types';
 
 export async function getUserPreferences(userId: string): Promise<UserPreferences> {
   const row = await prisma.user.findUnique({
@@ -35,16 +31,4 @@ export async function setUserPreferences(
     data: { preferences: next as unknown as Prisma.InputJsonValue },
   });
   return next;
-}
-
-function parsePreferences(raw: unknown): UserPreferences {
-  if (!raw || typeof raw !== 'object') return DEFAULT_PREFERENCES;
-  const obj = raw as Record<string, unknown>;
-  const view = obj.defaultDetailView;
-  const valid: DefaultDetailView[] = ['drawer', 'modal', 'fullPage', 'newTab'];
-  return {
-    defaultDetailView: valid.includes(view as DefaultDetailView)
-      ? (view as DefaultDetailView)
-      : DEFAULT_PREFERENCES.defaultDetailView,
-  };
 }
