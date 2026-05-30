@@ -42,4 +42,8 @@ USER node
 
 EXPOSE 3000
 
-ENTRYPOINT ["pnpm", "exec", "tsx", "src/index.ts"]
+# Run tsx directly via node (matches the `start` script), not via `pnpm exec`:
+# pnpm re-invokes corepack at container start, which re-downloads pnpm from the
+# npm registry on every cold start (build-time corepack cache is root-owned,
+# unreadable by the runtime `node` user). This keeps corepack out of runtime.
+ENTRYPOINT ["node", "--import", "tsx/esm", "src/index.ts"]

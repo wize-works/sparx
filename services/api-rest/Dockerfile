@@ -56,6 +56,10 @@ USER node
 
 EXPOSE 3000
 
-# tsx as entrypoint matches the dev script; Fastify handles SIGTERM via the
-# graceful-shutdown hook in src/index.ts.
-ENTRYPOINT ["pnpm", "exec", "tsx", "src/index.ts"]
+# Run tsx directly via node (matches the `start` script). NOT through pnpm:
+# `pnpm exec` re-invokes corepack at container start, and corepack's per-user
+# cache (prepared as root at build time) is unreadable by the runtime `node`
+# user — so it re-downloaded pnpm from the npm registry on every cold start.
+# `node --import tsx/esm` keeps corepack out of the runtime path entirely.
+# Fastify handles SIGTERM via the graceful-shutdown hook in src/index.ts.
+ENTRYPOINT ["node", "--import", "tsx/esm", "src/index.ts"]

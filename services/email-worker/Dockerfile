@@ -42,5 +42,8 @@ EXPOSE 8080
 
 # dumb-init forwards SIGTERM to the worker's graceful-shutdown hook so a
 # Cloud Run revision swap mid-send finishes in-flight requests before
-# exiting.
-ENTRYPOINT ["dumb-init", "--", "pnpm", "exec", "tsx", "src/index.ts"]
+# exiting. Run tsx directly via node (matches the `start` script), not
+# `pnpm exec` — pnpm re-invokes corepack at container start, re-downloading
+# pnpm from the npm registry on every cold start (build-time corepack cache is
+# root-owned, unreadable by the runtime `node` user).
+ENTRYPOINT ["dumb-init", "--", "node", "--import", "tsx/esm", "src/index.ts"]

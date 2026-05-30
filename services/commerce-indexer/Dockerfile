@@ -32,4 +32,9 @@ USER node
 
 EXPOSE 8080
 
-ENTRYPOINT ["dumb-init", "--", "pnpm", "exec", "tsx", "src/index.ts"]
+# Run tsx directly via node (matches the `start` script), not `pnpm exec` —
+# pnpm re-invokes corepack at container start, re-downloading pnpm from the npm
+# registry on every cold start (build-time corepack cache is root-owned and
+# unreadable by the runtime `node` user). dumb-init forwards SIGTERM to the
+# graceful-shutdown hook before exiting.
+ENTRYPOINT ["dumb-init", "--", "node", "--import", "tsx/esm", "src/index.ts"]
