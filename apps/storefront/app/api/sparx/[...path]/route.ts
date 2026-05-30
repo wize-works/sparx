@@ -50,7 +50,9 @@ async function forward(request: NextRequest, path: string[]): Promise<NextRespon
   return new NextResponse(payload, { status: upstream.status, headers: resHeaders });
 }
 
-type Ctx = { params: Promise<{ path: string[] }> };
+interface Ctx {
+  params: Promise<{ path: string[] }>;
+}
 
 export async function GET(request: NextRequest, ctx: Ctx) {
   return forward(request, (await ctx.params).path);
