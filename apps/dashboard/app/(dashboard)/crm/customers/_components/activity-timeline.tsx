@@ -122,8 +122,12 @@ export function ActivityTimeline({ activities }: Props) {
   }
 
   return (
-    <Timeline>
-      {activities.map((a, idx) => {
+    <Stack gap={3}>
+      <Text variant="muted" size="xs">
+        Activities are append-only — corrections appear as new entries marked Edited.
+      </Text>
+      <Timeline>
+        {activities.map((a, idx) => {
         const meta = renderForType(a);
         const isCorrection = a.correctsActivityId != null;
         return (
@@ -157,6 +161,7 @@ export function ActivityTimeline({ activities }: Props) {
           </TimelineItem>
         );
       })}
-    </Timeline>
+      </Timeline>
+    </Stack>
   );
 }

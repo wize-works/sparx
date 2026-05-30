@@ -35,6 +35,7 @@ import {
 import { stageColor } from '../../pipelines/[id]/_components/kanban-types';
 import { AttachOrderPopover, DetachOrderButton } from './_components/attach-order-popover';
 import { AttachQuotePopover, DetachQuoteButton } from './_components/attach-quote-popover';
+import { StagePicker } from './_components/stage-picker';
 
 export const dynamic = 'force-dynamic';
 
@@ -101,6 +102,17 @@ export default async function DealDetailPage({ params }: PageProps) {
               >
                 {stage.name} · {Number(stage.probability)}%
               </Badge>
+            )}
+            {!deal.closedAt && (
+              <StagePicker
+                dealId={deal.id}
+                currentStageId={deal.stageId}
+                stages={pipeline.stages.map((s) => ({
+                  id: s.id,
+                  name: s.name,
+                  probability: Number(s.probability),
+                }))}
+              />
             )}
             {deal.closedAt && (
               <Badge variant={stage?.stageType === 'won' ? 'success' : 'warning'}>
