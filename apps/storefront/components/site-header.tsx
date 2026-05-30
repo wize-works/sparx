@@ -9,6 +9,7 @@ import { mediaUrl } from '@/lib/media';
 import type { ResolvedTenant } from '@/lib/tenant';
 import { CartButton } from './cart-button';
 import { MobileNav } from './mobile-nav';
+import { SearchBox } from './search-box';
 
 export interface NavItem {
   label: string;
@@ -43,15 +44,7 @@ export function SiteHeader({ tenant, nav, announcement }: SiteHeaderProps) {
             ))}
           </nav>
 
-          <form className="sf-search sf-search--desktop" action="/search" role="search">
-            <SearchIcon />
-            <input
-              type="search"
-              name="q"
-              placeholder="Search products…"
-              aria-label="Search products"
-            />
-          </form>
+          <SearchBox tenantSlug={tenant.slug} />
 
           <div className="sf-header__actions">
             <Link href="/search" className="sf-iconbtn sf-search--mobile" aria-label="Search">
