@@ -2,10 +2,11 @@ import { Heading, Stack, Text } from '@sparx/ui';
 import { api, type ApiRestError } from '@/lib/api-rest-client';
 import { MenuEditor, type EditableMenuItem } from './menu-editor';
 
-// Detail content for a CMS navigation menu. Mounted by both the full-page
-// route and the dashboard shell's drawer / modal. The "id" passed in is the
-// menu location (e.g. 'header', 'footer'), not a UUID — menus are keyed by
-// location, one per location per tenant.
+// Detail content for a Site Builder navigation menu. Mounted by both the
+// full-page route and the dashboard shell's drawer / modal. The "id" passed in
+// is the menu location (e.g. 'header', 'footer'), not a UUID — menus are keyed
+// by location, one per location per tenant. Items can link to a published CMS
+// entry or an external URL.
 
 export const dynamic = 'force-dynamic';
 

@@ -7,18 +7,18 @@ import {
   Section as ReSection,
   Text as ReText,
 } from '@react-email/components';
-import { colors, fontFamily, radius, spacing, typography } from './tokens';
+import { colors, radius, spacing, typography } from './tokens';
+import { useBrand } from './brand';
 
-// Atomic email components. Wrappers around @react-email/components that bake
-// in the Sparx brand styling so callers never inline raw style props.
+// Atomic email components. Wrappers around @react-email/components that bake in
+// the active brand styling so callers never inline raw style props. Brand-
+// driven colors + fonts come from the BrandContext (per-tenant); typography
+// scale, spacing, radius, and the muted/callout chrome stay fixed.
 //
 // Why no Tailwind: @react-email's Tailwind support exists but adds a build
 // step and a wrapper component the renderer has to traverse. Inline style
 // objects keep render simple, predictable, and easy to debug — the rendered
 // HTML matches the JSX 1:1.
-//
-// Add a new component here when (a) a third template needs the same shape
-// or (b) brand consistency would suffer from per-template inlining.
 
 // ────────────────────────────────────────────────────────────────────────
 // Typography
@@ -31,15 +31,16 @@ export interface EmailHeadingProps {
 }
 
 export function EmailHeading({ children, level = 1 }: EmailHeadingProps) {
+  const brand = useBrand();
   const style = level === 1 ? typography.heading : typography.subheading;
   return (
     <ReHeading
       as={level === 1 ? 'h1' : 'h2'}
       style={{
         ...style,
-        color: colors.textPrimary,
+        color: brand.foreground,
         margin: `0 0 ${spacing.sm}px`,
-        fontFamily,
+        fontFamily: brand.fontHeading,
       }}
     >
       {children}
@@ -55,12 +56,13 @@ export interface EmailParagraphProps {
 }
 
 export function EmailParagraph({ children, flush = false }: EmailParagraphProps) {
+  const brand = useBrand();
   return (
     <ReText
       style={{
         ...typography.body,
-        color: colors.textPrimary,
-        fontFamily,
+        color: brand.foreground,
+        fontFamily: brand.fontBody,
         margin: `0 0 ${flush ? 0 : spacing.md}px`,
       }}
     >
@@ -74,12 +76,13 @@ export interface EmailMutedProps {
 }
 
 export function EmailMuted({ children }: EmailMutedProps) {
+  const brand = useBrand();
   return (
     <ReText
       style={{
         ...typography.muted,
         color: colors.textMuted,
-        fontFamily,
+        fontFamily: brand.fontBody,
         margin: `${spacing.md}px 0 0`,
       }}
     >
@@ -98,11 +101,12 @@ export interface EmailLinkProps {
 }
 
 export function EmailLink({ href, children }: EmailLinkProps) {
+  const brand = useBrand();
   return (
     <ReLink
       href={href}
       style={{
-        color: colors.brand,
+        color: brand.primary,
         textDecoration: 'underline',
         wordBreak: 'break-word',
       }}
@@ -119,18 +123,19 @@ export function EmailLink({ href, children }: EmailLinkProps) {
 export interface EmailButtonProps {
   href: string;
   children: React.ReactNode;
-  /** primary: filled indigo (default). secondary: outlined. */
+  /** primary: filled brand (default). secondary: outlined. */
   variant?: 'primary' | 'secondary';
 }
 
 export function EmailButton({ href, children, variant = 'primary' }: EmailButtonProps) {
+  const brand = useBrand();
   const variantStyle =
     variant === 'primary'
-      ? { backgroundColor: colors.brand, color: colors.textInverse, border: 'none' }
+      ? { backgroundColor: brand.primary, color: brand.primaryForeground, border: 'none' }
       : {
-          backgroundColor: colors.surface,
-          color: colors.brand,
-          border: `1px solid ${colors.brand}`,
+          backgroundColor: brand.background,
+          color: brand.primary,
+          border: `1px solid ${brand.primary}`,
         };
   return (
     <ReButton
@@ -143,7 +148,7 @@ export function EmailButton({ href, children, variant = 'primary' }: EmailButton
         padding: '10px 18px',
         textDecoration: 'none',
         display: 'inline-block',
-        fontFamily,
+        fontFamily: brand.fontBody,
       }}
     >
       {children}
@@ -162,6 +167,7 @@ export interface EmailCalloutProps {
 }
 
 export function EmailCallout({ children, tone = 'info' }: EmailCalloutProps) {
+  const brand = useBrand();
   const bg =
     tone === 'warn'
       ? colors.calloutWarnBg
@@ -180,8 +186,8 @@ export function EmailCallout({ children, tone = 'info' }: EmailCalloutProps) {
       <ReText
         style={{
           ...typography.body,
-          color: colors.textPrimary,
-          fontFamily,
+          color: brand.foreground,
+          fontFamily: brand.fontBody,
           margin: 0,
         }}
       >
@@ -205,5 +211,6 @@ export function EmailSpacer({ size = spacing.md }: EmailSpacerProps) {
 }
 
 export function EmailDivider() {
-  return <ReHr style={{ borderColor: colors.border, margin: `${spacing.lg}px 0` }} />;
+  const brand = useBrand();
+  return <ReHr style={{ borderColor: brand.border, margin: `${spacing.lg}px 0` }} />;
 }

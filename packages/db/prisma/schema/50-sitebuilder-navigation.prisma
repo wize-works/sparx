@@ -1,0 +1,54 @@
+// Site Builder — navigation menus.
+//
+// Navigation is owned by the Site Builder (storefront) module: the merchant
+// edits header / footer / mega / custom_* menus in the Site Builder dashboard,
+// and the storefront renders them via the SiteLayoutBlock → NavigationMenu
+// reference. Items link to a CMS ContentEntry OR an external URL (exactly one,
+// validated at the API). The `entry` relation crosses into CMS-owned content —
+// that's a reference only; Prisma merges every schema file, so the cross-module
+// relation resolves regardless of which file each model lives in.
+//
+// Tables are unchanged from when these models lived in 13-cms-editorial.prisma
+// (navigation_menus / navigation_items) — this is an ownership move, not a
+// data migration.
+
+model NavigationMenu {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId  String   @map("tenant_id") @db.Uuid
+  location  String   @db.VarChar(63)
+  name      String   @db.VarChar(120)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  tenant           Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  items            NavigationItem[]
+  // Site Builder header/footer slots reference this menu. docs/29 §2.
+  siteLayoutBlocks SiteLayoutBlock[]
+
+  @@unique([tenantId, location])
+  @@map("navigation_menus")
+}
+
+model NavigationItem {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId     String   @map("tenant_id") @db.Uuid
+  menuId       String   @map("menu_id") @db.Uuid
+  parentItemId String?  @map("parent_item_id") @db.Uuid
+  position     Int
+  label        String   @db.VarChar(255)
+  entryId      String?  @map("entry_id") @db.Uuid
+  externalUrl  String?  @map("external_url") @db.VarChar(2048)
+  openInNewTab Boolean  @default(false) @map("open_in_new_tab")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  tenant   Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  menu     NavigationMenu   @relation(fields: [menuId], references: [id], onDelete: Cascade)
+  parent   NavigationItem?  @relation("NavTree", fields: [parentItemId], references: [id], onDelete: Cascade)
+  children NavigationItem[] @relation("NavTree")
+  entry    ContentEntry?    @relation(fields: [entryId], references: [id], onDelete: SetNull)
+
+  @@index([menuId, position])
+  @@index([tenantId])
+  @@map("navigation_items")
+}

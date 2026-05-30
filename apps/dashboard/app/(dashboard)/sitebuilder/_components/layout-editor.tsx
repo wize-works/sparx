@@ -1,16 +1,25 @@
 'use client';
 
 // Header / footer / announcement editor. Each slot has a small known field set
-// plus an optional reference to a CMS navigation menu (sitebuilder only points
-// at menus — the CMS owns editing them). Saving upserts the slot's layout block.
+// plus, for header/footer, a reference to one of the navigation menus managed
+// on this same page. Saving upserts the slot's layout block.
 
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { Button, Card, Heading, Input, Label, Text } from '@sparx/ui';
+import {
+  Button,
+  Card,
+  Heading,
+  Label,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@sparx/ui';
 import type { SectionField } from '@sparx/sitebuilder-schemas';
 import { upsertLayout } from '../_lib/actions';
-import type { SiteLayoutBlockDto } from '../_lib/types';
+import type { NavMenuDto, SiteLayoutBlockDto } from '../_lib/types';
 import { FieldControl } from './field-control';
 
 type Slot = 'header' | 'footer' | 'announcement';
@@ -42,39 +51,50 @@ const FIELDS: Record<Slot, SectionField[]> = {
 
 const HAS_MENU: Record<Slot, boolean> = { header: true, footer: true, announcement: false };
 
-export function LayoutEditor({ blocks }: { blocks: SiteLayoutBlockDto[] }) {
+// Sentinel for the Select's "no menu" choice (Radix Select disallows an
+// empty-string value).
+const NO_MENU = '__none__';
+
+export function LayoutEditor({
+  blocks,
+  menus,
+}: {
+  blocks: SiteLayoutBlockDto[];
+  menus: NavMenuDto[];
+}) {
   return (
     <div className="flex flex-col gap-6">
-      <Card variant="module" padding="md">
-        <Text size="xs" variant="muted">
-          Menus
-        </Text>
-        <Text variant="muted">
-          Header and footer menus are managed in the CMS.{' '}
-          <Link href="/cms/navigation" className="text-[var(--module-active)] hover:underline">
-            Edit navigation menus →
-          </Link>
-        </Text>
-      </Card>
-
       {(['announcement', 'header', 'footer'] as Slot[]).map((slot) => (
-        <SlotEditor key={slot} slot={slot} block={blocks.find((b) => b.slot === slot)} />
+        <SlotEditor
+          key={slot}
+          slot={slot}
+          block={blocks.find((b) => b.slot === slot)}
+          menus={menus}
+        />
       ))}
     </div>
   );
 }
 
-function SlotEditor({ slot, block }: { slot: Slot; block?: SiteLayoutBlockDto }) {
+function SlotEditor({
+  slot,
+  block,
+  menus,
+}: {
+  slot: Slot;
+  block?: SiteLayoutBlockDto;
+  menus: NavMenuDto[];
+}) {
   const router = useRouter();
   const [config, setConfig] = React.useState<Record<string, unknown>>(block?.config ?? {});
-  const [menuId, setMenuId] = React.useState(block?.navigationMenuId ?? '');
+  const [menuId, setMenuId] = React.useState(block?.navigationMenuId ?? NO_MENU);
   const [pending, startTransition] = React.useTransition();
 
   const save = () =>
     startTransition(async () => {
       await upsertLayout(slot, {
         config,
-        navigationMenuId: HAS_MENU[slot] && menuId ? menuId : null,
+        navigationMenuId: HAS_MENU[slot] && menuId !== NO_MENU ? menuId : null,
       });
       router.refresh();
     });
@@ -95,8 +115,20 @@ function SlotEditor({ slot, block }: { slot: Slot; block?: SiteLayoutBlockDto })
         ))}
         {HAS_MENU[slot] ? (
           <div className="flex flex-col gap-1.5">
-            <Label>Navigation menu id (optional)</Label>
-            <Input value={menuId} onChange={(e) => setMenuId(e.target.value)} placeholder="menu uuid" />
+            <Label>Navigation menu</Label>
+            <Select value={menuId} onValueChange={setMenuId}>
+              <SelectTrigger aria-label="Navigation menu">
+                <SelectValue placeholder="No menu" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={NO_MENU}>No menu</SelectItem>
+                {menus.map((m) => (
+                  <SelectItem key={m.id} value={m.id}>
+                    {m.name} · /{m.location}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         ) : null}
         <Button className="self-start" onClick={save} disabled={pending}>

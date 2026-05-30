@@ -8,3 +8,4 @@
 export * from './settings';
 export * from './domains';
 export * from './suppressions';
+export * from './templates';

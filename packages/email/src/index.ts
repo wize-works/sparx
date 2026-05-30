@@ -26,11 +26,14 @@ export {
 
 export {
   renderTemplate,
+  renderAuthoredEmail,
   sendEmail,
   sendTemplate,
   _renderTemplateForTest,
   type TemplateId,
   type TemplateSend,
+  type RenderTemplateOptions,
+  type AuthoredEmailInput,
 } from './send';
 
 export {

@@ -1,19 +1,100 @@
-import { LayoutTemplate } from 'lucide-react';
-import { EmailShell } from '../_components/email-shell';
-import { EmailComingSoon } from '../_components/coming-soon';
+import Link from 'next/link';
+import { LayoutTemplate, Plus } from 'lucide-react';
+import {
+  Badge,
+  Button,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  EmptyState,
+  Grid,
+  Heading,
+  Stack,
+  Text,
+} from '@sparx/ui';
 
-export default function TemplatesPage() {
+import { api } from '@/lib/api-rest-client';
+import { EmailShell } from '../_components/email-shell';
+import type { TemplateListResponse } from '../_lib/types';
+
+export const dynamic = 'force-dynamic';
+
+export default async function TemplatesPage() {
+  const { builtins, authored } = await api.get<TemplateListResponse>('/v1/email/templates');
+
   return (
     <EmailShell
       current="templates"
       icon={<LayoutTemplate className="h-5 w-5" />}
       title="Templates"
-      description="Branded transactional + marketing templates with live preview."
+      description="Built-in transactional templates and your own marketing templates."
+      actions={
+        <Button variant="module" size="sm" asChild>
+          <Link href="/email/templates/new">
+            <Plus className="h-4 w-4" />
+            New template
+          </Link>
+        </Button>
+      }
     >
-      <EmailComingSoon
-        title="Templates are coming online"
-        description="Manage built-in transactional templates (logo, color, subject, sender, intro/outro slots) and author marketing templates with live preview and test send. This surface lands in an upcoming release."
-      />
+      <Stack gap={3}>
+        <Heading level={3}>Transactional</Heading>
+        <Grid cols={1} mdCols={2} lgCols={3} gap={4}>
+          {builtins.map((t) => (
+            <Card key={t.key} variant="module">
+              <CardHeader>
+                <Stack direction="row" align="center" justify="between" gap={2}>
+                  <CardTitle>{t.name}</CardTitle>
+                  {t.customized ? <Badge variant="soft">Customized</Badge> : null}
+                </Stack>
+                <CardDescription>{t.description}</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Stack gap={2}>
+                  <Text size="sm" variant="muted">
+                    Subject: {t.subject}
+                  </Text>
+                  <Button variant="outline" size="sm" asChild>
+                    <Link href={`/email/templates/builtin/${t.key}`}>Customize</Link>
+                  </Button>
+                </Stack>
+              </CardContent>
+            </Card>
+          ))}
+        </Grid>
+      </Stack>
+
+      <Stack gap={3}>
+        <Heading level={3}>Marketing</Heading>
+        {authored.length === 0 ? (
+          <EmptyState
+            icon={<LayoutTemplate className="h-5 w-5" />}
+            title="No marketing templates yet"
+            description="Author a reusable marketing template to drop into broadcasts."
+          />
+        ) : (
+          <Grid cols={1} mdCols={2} lgCols={3} gap={4}>
+            {authored.map((t) => (
+              <Card key={t.id} variant="module">
+                <CardHeader>
+                  <Stack direction="row" align="center" justify="between" gap={2}>
+                    <CardTitle>{t.name}</CardTitle>
+                    <Badge variant={t.status === 'active' ? 'success' : 'outline'}>{t.status}</Badge>
+                  </Stack>
+                  <CardDescription>Subject: {t.subject}</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Button variant="outline" size="sm" asChild>
+                    <Link href={`/email/templates/${t.id}`}>Edit</Link>
+                  </Button>
+                </CardContent>
+              </Card>
+            ))}
+          </Grid>
+        )}
+      </Stack>
     </EmailShell>
   );
 }

@@ -10,7 +10,6 @@ import {
   Database,
   FileText,
   Image as ImageIcon,
-  Menu,
   Tags,
   Upload,
   User,
@@ -27,7 +26,6 @@ export const cmsManifest: ModuleManifest = {
     { id: 'types', label: 'Content types', icon: Database, href: '/cms/types' },
     { id: 'media', label: 'Media', icon: ImageIcon, href: '/cms/media' },
     { id: 'authors', label: 'Authors', icon: User, href: '/cms/authors' },
-    { id: 'navigation', label: 'Navigation', icon: Menu, href: '/cms/navigation' },
     { id: 'taxonomy', label: 'Taxonomy', icon: Tags, href: '/cms/taxonomy' },
     { id: 'redirects', label: 'Redirects', icon: CornerUpRight, href: '/cms/redirects' },
     { id: 'webhooks', label: 'Webhooks', icon: Webhook, href: '/cms/webhooks' },
@@ -50,9 +48,6 @@ export const cmsManifest: ModuleManifest = {
     { id: 'content-type', label: 'Content type', routePrefix: '/cms/types' },
     { id: 'media', label: 'Media', routePrefix: '/cms/media', hasDetailView: true },
     { id: 'author', label: 'Author', routePrefix: '/cms/authors', hasDetailView: true },
-    // Menus are keyed by location string, not UUID — the entity id for the
-    // detail-view URL is the location (e.g. ?drawer=menu:header).
-    { id: 'menu', label: 'Menu', routePrefix: '/cms/navigation', hasDetailView: true },
     // Taxonomies are keyed by `key` string, not UUID — entity id is the key.
     { id: 'taxonomy', label: 'Taxonomy', routePrefix: '/cms/taxonomy', hasDetailView: true },
     { id: 'redirect', label: 'Redirect', routePrefix: '/cms/redirects' },

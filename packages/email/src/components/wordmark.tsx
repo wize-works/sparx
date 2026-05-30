@@ -1,35 +1,51 @@
 import * as React from 'react';
-import { colors, fontFamily } from './tokens';
+import { Img } from '@react-email/components';
+import { useBrand } from './brand';
 
-// EmailWordmark — email-safe twin of @sparx/ui's <Wordmark>. Mail clients
-// strip <style> blocks and don't honour CSS variables, so this can't share
-// the same component as the web one — but it produces the same visual
-// output (Geist-equivalent fallback, indigo "x", tight tracking) by
-// inlining hex values from the brand token module.
+// EmailWordmark — the email header brand mark. Resolves from the active brand:
+//   • a merchant logo (when brand.logoUrl is set) → renders the image,
+//   • a merchant store name → renders it in the brand foreground,
+//   • the Sparx default → the "Spar<x>" wordmark with the accent "x".
 //
-// If the brand color ever moves, change colors.brand in
-// packages/email/src/components/tokens.ts AND --sparx-primary in
-// packages/ui/src/tokens.css together — they intentionally mirror.
+// Mail clients strip <style> blocks and don't honour CSS variables, so every
+// value is inlined. Brand colors/fonts come from the BrandContext.
 
 export interface EmailWordmarkProps {
-  /** Font size in px. Default 22 matches the dashboard auth header + the
-   *  marketing nav, so the recipient's mental model is consistent. */
+  /** Font size in px (logo height scales from this). Default 22. */
   size?: number;
 }
 
 export function EmailWordmark({ size = 22 }: EmailWordmarkProps) {
+  const brand = useBrand();
+
+  if (brand.logoUrl) {
+    return (
+      <Img
+        src={brand.logoUrl}
+        alt={brand.storeName ?? 'Logo'}
+        height={Math.round(size * 1.4)}
+        style={{ display: 'block', maxHeight: Math.round(size * 1.6), width: 'auto' }}
+      />
+    );
+  }
+
+  const wordmarkStyle: React.CSSProperties = {
+    fontFamily: brand.fontHeading,
+    fontSize: size,
+    fontWeight: 500,
+    letterSpacing: '-0.03em',
+    lineHeight: 1,
+    color: brand.foreground,
+  };
+
+  // Merchant store name (anything other than the Sparx default) renders plain.
+  if (brand.storeName && brand.storeName !== 'Sparx') {
+    return <span style={wordmarkStyle}>{brand.storeName}</span>;
+  }
+
   return (
-    <span
-      style={{
-        fontFamily,
-        fontSize: size,
-        fontWeight: 500,
-        letterSpacing: '-0.03em',
-        lineHeight: 1,
-        color: colors.textPrimary,
-      }}
-    >
-      Spar<span style={{ color: colors.brand }}>x</span>
+    <span style={wordmarkStyle}>
+      Spar<span style={{ color: brand.primary }}>x</span>
     </span>
   );
 }

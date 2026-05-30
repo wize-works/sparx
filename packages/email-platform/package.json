@@ -33,6 +33,7 @@
     "clean": "rm -rf .turbo dist *.tsbuildinfo"
   },
   "dependencies": {
+    "@sparx/cms-editor": "workspace:*",
     "@sparx/db": "workspace:*",
     "@sparx/email": "workspace:*",
     "@sparx/events": "workspace:*",

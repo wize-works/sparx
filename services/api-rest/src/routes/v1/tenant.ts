@@ -396,16 +396,16 @@ const tenantRoutes: FastifyPluginAsync = async (app) => {
       {
         id: 'theme' as const,
         title: 'Pick a theme',
-        description: 'Themes ship with the Sitebuilder module.',
-        done: false,
-        comingSoon: true,
+        description: 'Choose and customize your storefront look in Site Builder.',
+        done: state.completed.theme,
+        cta: { label: 'Open Site Builder', href: '/sitebuilder/design' },
       },
       {
         id: 'domain' as const,
-        title: 'Connect a custom domain',
-        description: 'Use your wizeworks subdomain for now; bring your own later.',
-        done: false,
-        comingSoon: true,
+        title: 'Set your store address',
+        description: 'Your storefront subdomain. Bring a custom domain later.',
+        done: state.completed.domain,
+        cta: { label: 'Set address', href: '/onboarding' },
       },
       {
         id: 'payments' as const,

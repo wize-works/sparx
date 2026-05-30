@@ -66,3 +66,13 @@ export interface TenantDto {
   name: string;
   slug: string;
 }
+
+// Navigation menus are owned by Site Builder. api-rest returns items as a flat
+// list spanning every depth (the Prisma include is non-recursive); the listing
+// only needs top-level counts, so we keep `parentItemId` to filter.
+export interface NavMenuDto {
+  id: string;
+  location: string;
+  name: string;
+  items: { id: string; parentItemId: string | null }[];
+}

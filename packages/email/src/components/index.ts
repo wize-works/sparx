@@ -21,3 +21,4 @@ export {
   type EmailSpacerProps,
 } from './primitives';
 export { colors, typography, spacing, radius, fontFamily } from './tokens';
+export { BrandProvider, useBrand, defaultBrand, type BrandTokens } from './brand';

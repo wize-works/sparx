@@ -13,7 +13,6 @@ export type CmsSection =
   | 'types'
   | 'media'
   | 'redirects'
-  | 'navigation'
   | 'authors'
   | 'taxonomy'
   | 'webhooks';
@@ -26,7 +25,6 @@ const TABS: { section: CmsSection; href: string; label: string }[] = [
   { section: 'pages', href: '/cms', label: 'Pages' },
   { section: 'types', href: '/cms/types', label: 'Content types' },
   { section: 'media', href: '/cms/media', label: 'Media' },
-  { section: 'navigation', href: '/cms/navigation', label: 'Navigation' },
   { section: 'redirects', href: '/cms/redirects', label: 'Redirects' },
   { section: 'authors', href: '/cms/authors', label: 'Authors' },
   { section: 'taxonomy', href: '/cms/taxonomy', label: 'Taxonomy' },

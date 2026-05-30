@@ -9,23 +9,31 @@ export interface PasswordResetEmailProps {
   resetUrl: string;
   /** How long the link is valid for, surfaced to the recipient. */
   expiresInMinutes?: number;
+  /** Merchant-editable opening line (rendered after the greeting). */
+  intro?: string;
+  /** Merchant-editable closing line (rendered before the footer note). */
+  outro?: string;
 }
 
 export function PasswordResetEmail({
   name,
   resetUrl,
   expiresInMinutes = 60,
+  intro,
+  outro,
 }: PasswordResetEmailProps) {
   return (
     <EmailLayout preview="Reset your Sparx password">
       <Section>
         <EmailHeading>Reset your password</EmailHeading>
         <EmailParagraph>{name ? `Hi ${name},` : 'Hi there,'}</EmailParagraph>
+        {intro ? <EmailParagraph>{intro}</EmailParagraph> : null}
         <EmailParagraph>
           We received a request to reset the password on your Sparx account. Click the button below
           to choose a new one. The link expires in {expiresInMinutes} minutes.
         </EmailParagraph>
         <EmailButton href={resetUrl}>Reset password</EmailButton>
+        {outro ? <EmailParagraph>{outro}</EmailParagraph> : null}
         <EmailMuted>If the button doesn&apos;t work, paste this URL into your browser:</EmailMuted>
         <EmailParagraph flush>
           <EmailLink href={resetUrl}>{resetUrl}</EmailLink>

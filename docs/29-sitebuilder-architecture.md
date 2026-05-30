@@ -18,14 +18,14 @@ all rendered by the existing tenant-aware storefront.
 
 ### What already exists (consume, do not rebuild)
 
-| Capability                | Where                                                                           | Site Builder relationship                                                       |
-| ------------------------- | ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
-| TipTap content pages      | `Page` model (10-cms-pages), CMS dashboard, storefront `[...slug]` + `PageView` | CMS keeps prose pages; Site Builder owns _section-composed_ pages               |
-| Media library             | `MediaAsset` (15-cms-media), `mediaUrl()`, CMS media-picker                     | Reused for logos / section images                                               |
-| Navigation menus          | `NavigationMenu`/`NavigationItem` (13-cms-editorial), CMS menu-editor           | Storefront layout finally _consumes_ them; Site Builder references a menu by id |
-| Redirects, preview tokens | `Redirect`, `PreviewToken`, `?sparxPreview=`                                    | Reused for draft preview                                                        |
-| Limited theme tokens      | `StorefrontTheme` (47-commerce-storefront), `themeToCss()`                      | **Write-through target** — see §4                                               |
-| Onboarding state          | `GET/PATCH /v1/tenant/onboarding`, `tenants.settings.onboarding`                | Extended by the onboarding wizard                                               |
+| Capability                | Where                                                                                   | Site Builder relationship                                                                     |
+| ------------------------- | --------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| TipTap content pages      | `Page` model (10-cms-pages), CMS dashboard, storefront `[...slug]` + `PageView`         | CMS keeps prose pages; Site Builder owns _section-composed_ pages                             |
+| Media library             | `MediaAsset` (15-cms-media), `mediaUrl()`, CMS media-picker                             | Reused for logos / section images                                                             |
+| Navigation menus          | `NavigationMenu`/`NavigationItem` (50-sitebuilder-navigation), Site Builder menu-editor | Owned by Site Builder; storefront layout consumes them; a layout slot references a menu by id |
+| Redirects, preview tokens | `Redirect`, `PreviewToken`, `?sparxPreview=`                                            | Reused for draft preview                                                                      |
+| Limited theme tokens      | `StorefrontTheme` (47-commerce-storefront), `themeToCss()`                              | **Write-through target** — see §4                                                             |
+| Onboarding state          | `GET/PATCH /v1/tenant/onboarding`, `tenants.settings.onboarding`                        | Extended by the onboarding wizard                                                             |
 
 ### What this build adds
 
@@ -41,10 +41,14 @@ mode rendering, and the 5-step onboarding wizard.
   `commerce_storefront_themes`; it only upserts a _derived projection_ of the published
   light tokens into that row, inside the same `withTenant` transaction as the publish.
   Once a tenant has a `SiteConfig`, the customizer is the only writer of that row.
-- **CMS owns navigation.** `SiteLayoutBlock` holds a nullable FK _reference_ to a
-  `NavigationMenu`; the CMS nav API stays the sole writer of nav rows.
-- **Schema domain split.** All Site Builder models live in
-  `49-sitebuilder.prisma`; only inverse-relation arrays touch the tenant hub
+- **Site Builder owns navigation.** The `NavigationMenu`/`NavigationItem` models live in
+  `50-sitebuilder-navigation.prisma` and the menu editor is under `/sitebuilder/navigation`.
+  A `SiteLayoutBlock` references a menu by nullable FK. The `/v1/navigation/*` REST endpoints
+  are module-neutral and unchanged (the storefront consumes the same rows); only dashboard +
+  schema ownership moved out of the CMS. A `NavigationItem` may link to a CMS `ContentEntry`
+  (a cross-module reference, resolved by Prisma's merged schema).
+- **Schema domain split.** Site Builder models live in `49-sitebuilder.prisma` (+
+  `50-sitebuilder-navigation.prisma` for nav); only inverse-relation arrays touch the tenant hub
   (`02-tenant.prisma`) and one inverse touches `13-cms-editorial.prisma`.
 - **One service, many transports.** REST and MCP are thin wrappers over the
   `packages/sitebuilder` service layer (mirrors the CRM contract). No business logic in

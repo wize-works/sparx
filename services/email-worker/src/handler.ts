@@ -24,6 +24,7 @@ import {
   PostalParameterError,
   renderTemplate,
 } from '@sparx/email';
+import { brandService } from '@sparx/email-platform';
 
 const TemplateSendSchema = z.discriminatedUnion('template', [
   z.object({
@@ -35,6 +36,8 @@ const TemplateSendSchema = z.discriminatedUnion('template', [
       name: z.string().optional(),
       resetUrl: z.string().url(),
       expiresInMinutes: z.number().int().positive().optional(),
+      intro: z.string().optional(),
+      outro: z.string().optional(),
     }),
   }),
   z.object({
@@ -46,6 +49,8 @@ const TemplateSendSchema = z.discriminatedUnion('template', [
       name: z.string().optional(),
       storeName: z.string().min(1),
       dashboardUrl: z.string().url(),
+      intro: z.string().optional(),
+      outro: z.string().optional(),
     }),
   }),
 ]);
@@ -80,7 +85,17 @@ export async function handle(event: EmailSendEvent, logger: Logger): Promise<Han
   });
 
   try {
-    const rendered = await renderTemplate(event.data);
+    // Resolve the tenant's email brand so transactional mail renders in their
+    // storefront colors/logo. Null → @sparx/email's Sparx defaults. Best-effort:
+    // a brand-resolution failure must not block delivery.
+    let brand = null;
+    try {
+      brand = await brandService.resolveEmailBrand({ tenantId: event.tenantId });
+    } catch (brandErr) {
+      childLog.warn({ err: brandErr }, 'brand resolution failed — rendering with defaults');
+    }
+
+    const rendered = await renderTemplate(event.data, { brand: brand ?? undefined });
     // Stamp the tenant onto the message as a Mailgun user variable so the
     // webhook receiver can attribute delivery/engagement events back to it
     // (works even on the shared sending domain, where From doesn't identify

@@ -4,6 +4,7 @@
 import 'server-only';
 import { api } from '@/lib/api-rest-client';
 import type {
+  NavMenuDto,
   SiteConfigDto,
   SiteLayoutBlockDto,
   SitePublishScheduleDto,
@@ -48,4 +49,10 @@ export async function listSchedules(): Promise<SitePublishScheduleDto[]> {
     '/v1/sitebuilder/schedules'
   );
   return schedules;
+}
+
+// Navigation menus live behind the module-neutral /v1/navigation endpoints,
+// but Site Builder is the dashboard owner of them now.
+export function listMenus(): Promise<NavMenuDto[]> {
+  return api.get<NavMenuDto[]>('/v1/navigation/menus');
 }

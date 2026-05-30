@@ -4,7 +4,7 @@ import { parseDetailToken } from './detail-registry';
 import { AuthorDetailContent } from '../cms/authors/[id]/_content';
 import { CmsPageDetailContent } from '../cms/[id]/_content';
 import { MediaAssetDetailContent } from '../cms/media/[id]/_content';
-import { MenuDetailContent } from '../cms/navigation/[location]/_content';
+import { MenuDetailContent } from '../sitebuilder/navigation/menu-detail';
 import { TaxonomyDetailContent } from '../cms/taxonomy/[key]/_content';
 import { B2bAccountDetailContent } from '../crm/b2b/[id]/_content';
 import { CustomerDetailContent } from '../crm/customers/[id]/_content';
@@ -44,8 +44,9 @@ const detailComponents: Record<string, DetailComponent> = {
   page: CmsPageDetailContent,
   media: MediaAssetDetailContent,
   author: AuthorDetailContent,
-  menu: MenuDetailContent,
   taxonomy: TaxonomyDetailContent,
+  // Site Builder
+  menu: MenuDetailContent,
   // CRM
   customer: CustomerDetailContent,
   'b2b-account': B2bAccountDetailContent,

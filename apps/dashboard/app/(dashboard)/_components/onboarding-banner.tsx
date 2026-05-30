@@ -4,8 +4,9 @@ import { ArrowRight } from 'lucide-react';
 import type { OnboardingProgress } from '../welcome/onboarding';
 
 // Compact welcome banner shown on the dashboard home until the merchant
-// either finishes every actionable step OR dismisses onboarding from
-// /welcome. Read-only summary; the full checklist lives at /welcome.
+// either finishes every actionable step OR dismisses onboarding. If the guided
+// wizard hasn't been finished yet, the CTA resumes it (/onboarding picks up at
+// the saved step); once finished, it points at the day-0+ checklist (/welcome).
 
 export interface OnboardingBannerProps {
   progress: OnboardingProgress;
@@ -19,6 +20,10 @@ export function OnboardingBanner({ progress }: OnboardingBannerProps) {
   if (done === actionable.length) return null;
 
   const pct = Math.round(progress.completion * 100);
+  const wizardFinished = Boolean(progress.state.finishedAt);
+  const cta = wizardFinished
+    ? { href: '/welcome', label: 'Open checklist' }
+    : { href: '/onboarding', label: 'Resume setup' };
 
   return (
     <Card variant="subtle">
@@ -35,7 +40,7 @@ export function OnboardingBanner({ progress }: OnboardingBannerProps) {
           </Text>
         </Stack>
         <Button asChild rightIcon={<ArrowRight className="h-3.5 w-3.5" />}>
-          <Link href="/welcome">Open checklist</Link>
+          <Link href={cta.href}>{cta.label}</Link>
         </Button>
       </Stack>
     </Card>

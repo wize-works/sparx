@@ -34,7 +34,7 @@ export default function SignUpPage() {
         setError(result.error ?? 'Could not create account.');
         return;
       }
-      router.push('/welcome');
+      router.push('/onboarding');
       router.refresh();
     });
   }

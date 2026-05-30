@@ -43,7 +43,7 @@ import {
   Text,
 } from '@sparx/ui';
 import { ChevronDown, ChevronUp, Plus, Save, Trash2 } from 'lucide-react';
-import { saveMenu } from '../actions';
+import { saveMenu } from './menu-actions';
 
 export interface EditableMenuItem {
   uid: string;

@@ -45,5 +45,8 @@ export const sitebuilderManifest: ModuleManifest = {
   ],
   entityTypes: [
     { id: 'page', label: 'Page', routePrefix: '/sitebuilder/pages', hasDetailView: true },
+    // Menus are keyed by location string, not UUID — the entity id for the
+    // detail-view URL is the location (e.g. ?drawer=menu:header).
+    { id: 'menu', label: 'Menu', routePrefix: '/sitebuilder/navigation', hasDetailView: true },
   ],
 };

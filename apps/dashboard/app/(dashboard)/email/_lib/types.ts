@@ -1,6 +1,51 @@
 // Shared view types for the Email dashboard module — shapes returned by the
 // /v1/email/* api-rest endpoints (the unwrapped `data` of each envelope).
 
+export interface BuiltinTemplateView {
+  source: 'builtin';
+  key: string;
+  name: string;
+  kind: string;
+  description: string;
+  variables: string[];
+  supportsSlots: boolean;
+  subject: string;
+  intro: string | null;
+  outro: string | null;
+  customized: boolean;
+}
+
+export interface AuthoredTemplateView {
+  source: 'authored';
+  id: string;
+  name: string;
+  kind: string;
+  subject: string;
+  preheader: string | null;
+  status: string;
+  updatedAt: string;
+}
+
+export interface TemplateListResponse {
+  builtins: BuiltinTemplateView[];
+  authored: AuthoredTemplateView[];
+}
+
+export interface AuthoredTemplateDetail {
+  id: string;
+  name: string;
+  subject: string | null;
+  preheader: string | null;
+  body: unknown; // TipTap CmsDoc
+  status: string;
+}
+
+export interface RenderedPreview {
+  subject: string;
+  html: string;
+  text: string;
+}
+
 export interface EmailSettingsView {
   tenantId: string;
   fromName: string | null;

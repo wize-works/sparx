@@ -1,8 +1,9 @@
 // layoutService — header / footer / announcement composition.
 //
-// A layout block points at an existing CMS NavigationMenu (reference only —
-// the CMS nav API stays the sole writer of nav rows) and carries slot extras
-// in `config`, validated against the slot's schema in @sparx/sitebuilder-schemas.
+// A layout block points at an existing NavigationMenu by id and carries slot
+// extras in `config`, validated against the slot's schema in
+// @sparx/sitebuilder-schemas. Navigation is Site-Builder-owned; the menu rows
+// are written through the module-neutral /v1/navigation API.
 
 import { UpsertLayoutInput, parseLayoutConfig } from '@sparx/sitebuilder-schemas';
 import type { Prisma, SiteLayoutBlock } from '@sparx/db';

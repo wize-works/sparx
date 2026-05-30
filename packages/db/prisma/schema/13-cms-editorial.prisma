@@ -1,8 +1,13 @@
-// CMS — Authors, redirects, navigation, preview tokens.
+// CMS — Authors, redirects, preview tokens.
 //
 // Editorial primitives that ride alongside the content model. Authors are
 // distinct from User so a single user can publish under multiple pen names
 // and an author can persist after the user row is removed.
+//
+// Navigation menus moved to the Site Builder module — see
+// 50-sitebuilder-navigation.prisma. The tables (navigation_menus /
+// navigation_items) are unchanged; only ownership of the model definitions
+// moved.
 
 model Author {
   id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
@@ -42,51 +47,6 @@ model Redirect {
   @@unique([tenantId, fromPath])
   @@index([tenantId])
   @@map("redirects")
-}
-
-// Header / footer / mega / custom_*. Items reference internal entries or
-// external URLs; exactly one is non-null, validated at the API layer.
-
-model NavigationMenu {
-  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenantId  String   @map("tenant_id") @db.Uuid
-  location  String   @db.VarChar(63)
-  name      String   @db.VarChar(120)
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
-
-  tenant           Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  items            NavigationItem[]
-  // Sitebuilder header/footer slots reference this menu (read-only — CMS
-  // remains the sole writer of nav rows). docs/29 §2.
-  siteLayoutBlocks SiteLayoutBlock[]
-
-  @@unique([tenantId, location])
-  @@map("navigation_menus")
-}
-
-model NavigationItem {
-  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenantId     String   @map("tenant_id") @db.Uuid
-  menuId       String   @map("menu_id") @db.Uuid
-  parentItemId String?  @map("parent_item_id") @db.Uuid
-  position     Int
-  label        String   @db.VarChar(255)
-  entryId      String?  @map("entry_id") @db.Uuid
-  externalUrl  String?  @map("external_url") @db.VarChar(2048)
-  openInNewTab Boolean  @default(false) @map("open_in_new_tab")
-  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz
-
-  tenant   Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  menu     NavigationMenu   @relation(fields: [menuId], references: [id], onDelete: Cascade)
-  parent   NavigationItem?  @relation("NavTree", fields: [parentItemId], references: [id], onDelete: Cascade)
-  children NavigationItem[] @relation("NavTree")
-  entry    ContentEntry?    @relation(fields: [entryId], references: [id], onDelete: SetNull)
-
-  @@index([menuId, position])
-  @@index([tenantId])
-  @@map("navigation_items")
 }
 
 // HS256 JWTs are stateless; this row keyed on `jti` lets us revoke
