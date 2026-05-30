@@ -1,13 +1,15 @@
 import { Heading, Text } from '@sparx/ui';
-import { getConfig, listSections, listVersions } from '../_lib/api';
-import { SectionBuilder } from '../_components/section-builder';
+import { getConfig, getTenant, listSections, listVersions } from '../_lib/api';
+import { PageBuilder } from '../_components/page-builder';
 import { PublishBar } from '../_components/publish-bar';
+import { storefrontOrigin } from '../_lib/storefront';
 
 export default async function HomepagePage() {
-  const [config, sections, versions] = await Promise.all([
+  const [config, sections, versions, tenant] = await Promise.all([
     getConfig(),
     listSections('home'),
     listVersions(),
+    getTenant(),
   ]);
   const published = versions.find((v) => v.id === config.publishedVersionId);
   const hasUnpublishedChanges = published
@@ -26,7 +28,12 @@ export default async function HomepagePage() {
         isPublished={config.publishedVersionId !== null}
         hasUnpublishedChanges={hasUnpublishedChanges}
       />
-      <SectionBuilder pageKey="home" sections={sections} />
+      <PageBuilder
+        pageKey="home"
+        sections={sections}
+        storefrontUrl={storefrontOrigin(tenant.slug)}
+        slug={tenant.slug}
+      />
     </div>
   );
 }

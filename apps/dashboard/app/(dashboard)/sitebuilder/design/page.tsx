@@ -1,21 +1,7 @@
 import { Heading, Text } from '@sparx/ui';
 import { getConfig, getTenant, listThemes, listVersions } from '../_lib/api';
 import { Customizer } from '../_components/customizer';
-
-// Where the live-preview iframe points. Tenant storefronts run at
-// <slug>.sparx.zone in prod (same convention the CMS preview link uses).
-// `SPARX_STOREFRONT_URL` is a local-dev override only — set it to
-// http://localhost:3200 when running the storefront locally, since
-// *.sparx.zone doesn't resolve on a laptop. It is intentionally unset in
-// prod so we never fall back to localhost (which trips the browser's
-// "access other apps on this device" prompt and refuses to connect).
-const ZONE_DOMAIN = process.env.NEXT_PUBLIC_SPARX_ZONE_DOMAIN ?? 'sparx.zone';
-
-function storefrontOrigin(slug: string): string {
-  const devOverride = process.env.SPARX_STOREFRONT_URL;
-  if (devOverride) return devOverride;
-  return `https://${slug}.${ZONE_DOMAIN}`;
-}
+import { storefrontOrigin } from '../_lib/storefront';
 
 export default async function DesignPage() {
   const [config, themes, tenant, versions] = await Promise.all([

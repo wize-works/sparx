@@ -1,7 +1,8 @@
 import Link from 'next/link';
 import { Card, Heading, Text } from '@sparx/ui';
-import { listSections } from '../_lib/api';
-import { SectionBuilder } from '../_components/section-builder';
+import { getTenant, listSections } from '../_lib/api';
+import { PageBuilder } from '../_components/page-builder';
+import { storefrontOrigin } from '../_lib/storefront';
 import { PageSlugForm } from './page-slug-form';
 
 export default async function PagesPage({
@@ -10,7 +11,10 @@ export default async function PagesPage({
   searchParams: Promise<{ page?: string }>;
 }) {
   const pageKey = (await searchParams).page?.trim() ?? '';
-  const sections = pageKey ? await listSections(pageKey) : [];
+  const [sections, tenant] = await Promise.all([
+    pageKey ? listSections(pageKey) : Promise.resolve([]),
+    getTenant(),
+  ]);
 
   return (
     <div className="flex flex-col gap-5">
@@ -34,7 +38,13 @@ export default async function PagesPage({
           <Text size="sm" variant="muted">
             Editing sections for <span className="font-mono">/{pageKey}</span>
           </Text>
-          <SectionBuilder pageKey={pageKey} sections={sections} />
+          <PageBuilder
+            pageKey={pageKey}
+            sections={sections}
+            storefrontUrl={storefrontOrigin(tenant.slug)}
+            slug={tenant.slug}
+            previewPath={`/${pageKey}`}
+          />
         </div>
       ) : null}
     </div>

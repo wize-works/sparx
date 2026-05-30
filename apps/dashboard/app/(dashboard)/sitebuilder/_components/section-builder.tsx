@@ -28,9 +28,12 @@ import { FieldControl } from './field-control';
 export interface SectionBuilderProps {
   pageKey: string;
   sections: SiteSectionDto[];
+  /** Fired after any successful mutation so a parent (e.g. the live preview)
+   *  can refresh. Optional — the editor works standalone without it. */
+  onMutate?: () => void;
 }
 
-export function SectionBuilder({ pageKey, sections }: SectionBuilderProps) {
+export function SectionBuilder({ pageKey, sections, onMutate }: SectionBuilderProps) {
   const router = useRouter();
   const [pending, startTransition] = React.useTransition();
   const [adding, setAdding] = React.useState(false);
@@ -42,6 +45,7 @@ export function SectionBuilder({ pageKey, sections }: SectionBuilderProps) {
     startTransition(async () => {
       await fn();
       router.refresh();
+      onMutate?.();
     });
 
   const add = (type: SectionType) => {
@@ -174,6 +178,7 @@ export function SectionBuilder({ pageKey, sections }: SectionBuilderProps) {
           onSaved={() => {
             setEditing(null);
             router.refresh();
+            onMutate?.();
           }}
         />
       ) : null}
