@@ -136,17 +136,24 @@ export default async function ProductDetailPage({ params }: PageProps) {
         </section>
       ) : null}
 
-      {/* Reviews summary */}
-      {product.reviewCount > 0 && product.averageRating != null ? (
-        <section className="sf-section">
-          <h2 className="sf-h2" style={{ marginBottom: '1rem' }}>
-            Reviews
-          </h2>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+      {/* Reviews */}
+      <section className="sf-section">
+        <h2 className="sf-h2" style={{ marginBottom: '1rem' }}>
+          Reviews
+        </h2>
+        {product.reviewCount > 0 && product.averageRating != null ? (
+          <div
+            style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.25rem' }}
+          >
             <RatingStars rating={product.averageRating} count={product.reviewCount} />
           </div>
-        </section>
-      ) : null}
+        ) : (
+          <p className="sf-muted" style={{ marginBottom: '1.25rem' }}>
+            No reviews yet — be the first.
+          </p>
+        )}
+        <ReviewForm tenantSlug={tenant.slug} handle={product.handle} />
+      </section>
 
       {/* Related */}
       {related.length > 0 ? (

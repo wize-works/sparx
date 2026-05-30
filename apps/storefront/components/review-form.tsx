@@ -42,7 +42,7 @@ export function ReviewForm({ tenantSlug, handle }: { tenantSlug: string; handle:
         | { success: false; error: { message: string } }
         | null;
       if (!res.ok || !json || json.success === false) {
-        throw new Error(json && json.success === false ? json.error.message : 'Could not submit.');
+        throw new Error(json?.success === false ? json.error.message : 'Could not submit.');
       }
       setState('done');
     } catch (err) {

@@ -24,7 +24,7 @@ const PUBLISHABLE_KEY = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ?? '';
 // Memoize the Stripe.js loader across mounts (loadStripe should run once).
 let stripePromise: Promise<Stripe | null> | null = null;
 function getStripe(): Promise<Stripe | null> {
-  if (!stripePromise) stripePromise = loadStripe(PUBLISHABLE_KEY);
+  stripePromise ??= loadStripe(PUBLISHABLE_KEY);
   return stripePromise;
 }
 
