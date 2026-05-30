@@ -3,6 +3,14 @@
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
   Button,
   Card,
   CardContent,
@@ -29,17 +37,21 @@ export function AuthorEditForm({ author }: { author: EditableAuthor }) {
   const router = useRouter();
   const [pending, startTransition] = React.useTransition();
   const [error, setError] = React.useState<string | null>(null);
+  const [errorField, setErrorField] = React.useState<string | null>(null);
   const [message, setMessage] = React.useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = React.useState(false);
 
   function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
+    setErrorField(null);
     setMessage(null);
     const data = new FormData(e.currentTarget);
     startTransition(async () => {
       const result = await updateAuthor(author.id, data);
       if (!result.ok) {
         setError(result.error ?? 'Could not save author.');
+        setErrorField(result.field ?? null);
         return;
       }
       setMessage('Saved.');
@@ -47,8 +59,8 @@ export function AuthorEditForm({ author }: { author: EditableAuthor }) {
     });
   }
 
-  function onDelete() {
-    if (!confirm(`Delete author "${author.displayName}"?`)) return;
+  function executeDelete() {
+    setConfirmDelete(false);
     setError(null);
     setMessage(null);
     startTransition(async () => {
@@ -62,30 +74,52 @@ export function AuthorEditForm({ author }: { author: EditableAuthor }) {
     });
   }
 
+  const slugError = errorField === 'slug' ? error : null;
+  const generalError = errorField ? null : error;
+
   return (
     <form onSubmit={onSubmit} noValidate>
       <Stack gap={5}>
-        <Card>
+        <Card variant="module">
           <CardHeader>
             <Heading level={3}>Details</Heading>
           </CardHeader>
           <CardContent>
             <Stack gap={4}>
               <Stack gap={1}>
-                <Label htmlFor="display_name">Display name</Label>
+                <Label htmlFor="display_name" required>
+                  Display name
+                </Label>
                 <Input
                   id="display_name"
                   name="display_name"
                   defaultValue={author.displayName}
                   required
+                  aria-required
                 />
               </Stack>
               <Stack gap={1}>
-                <Label htmlFor="slug">Slug</Label>
-                <Input id="slug" name="slug" defaultValue={author.slug} required />
-                <Text size="xs" variant="muted">
-                  Unique per tenant — used in author URLs.
-                </Text>
+                <Label htmlFor="slug" required>
+                  Slug
+                </Label>
+                <Input
+                  id="slug"
+                  name="slug"
+                  defaultValue={author.slug}
+                  required
+                  aria-required
+                  aria-invalid={slugError ? true : undefined}
+                  aria-describedby={slugError ? 'slug-error' : undefined}
+                />
+                {slugError ? (
+                  <Text id="slug-error" size="xs" variant="danger" role="alert" aria-live="polite">
+                    {slugError}
+                  </Text>
+                ) : (
+                  <Text size="xs" variant="muted">
+                    Unique per tenant — used in author URLs.
+                  </Text>
+                )}
               </Stack>
               <Stack gap={1}>
                 <Label htmlFor="bio">Bio</Label>
@@ -108,14 +142,14 @@ export function AuthorEditForm({ author }: { author: EditableAuthor }) {
                 type="button"
                 variant="ghost"
                 leftIcon={<Trash2 className="h-4 w-4" />}
-                onClick={onDelete}
+                onClick={() => setConfirmDelete(true)}
                 disabled={pending}
               >
                 Delete
               </Button>
-              {error && (
+              {generalError && (
                 <Text size="sm" variant="danger" role="alert" aria-live="polite">
-                  {error}
+                  {generalError}
                 </Text>
               )}
               {message && (
@@ -127,6 +161,23 @@ export function AuthorEditForm({ author }: { author: EditableAuthor }) {
           </CardFooter>
         </Card>
       </Stack>
+
+      <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete author?</AlertDialogTitle>
+            <AlertDialogDescription>
+              <strong>{author.displayName}</strong> will be removed. Any blog posts attributed to
+              this author will keep their byline as a frozen string but lose the link back to the
+              author record.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={executeDelete}>Delete author</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </form>
   );
 }

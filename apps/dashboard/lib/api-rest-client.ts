@@ -84,13 +84,19 @@ export interface ResponseEnvelope<T> {
   etag: string | null;
 }
 
+export interface PagedEnvelope<T> {
+  data: T;
+  meta: { per_page?: number; next_cursor?: string | null } & Record<string, unknown>;
+  etag: string | null;
+}
+
 async function call<T>(
   session: SparxSession,
   method: string,
   path: string,
   body?: unknown,
   options: CallOptions = {}
-): Promise<ResponseEnvelope<T>> {
+): Promise<ResponseEnvelope<T> & { meta: unknown }> {
   const token = await signToken(session);
   const headers: Record<string, string> = {
     authorization: `Bearer ${token}`,
@@ -108,7 +114,7 @@ async function call<T>(
   const etag = res.headers.get('etag');
 
   if (res.status === 204) {
-    return { data: undefined as T, etag };
+    return { data: undefined as T, etag, meta: null };
   }
 
   const json = (await res.json()) as SuccessEnvelope<T> | ErrorEnvelope;
@@ -125,7 +131,8 @@ async function call<T>(
     }
     throw makeError(res.status, 'UNKNOWN', `api-rest ${res.status}`);
   }
-  return { data: (json as SuccessEnvelope<T>).data, etag };
+  const success = json as SuccessEnvelope<T>;
+  return { data: success.data, etag, meta: success.meta ?? null };
 }
 
 async function withSession<T>(fn: (session: SparxSession) => Promise<T>): Promise<T> {
@@ -136,8 +143,17 @@ async function withSession<T>(fn: (session: SparxSession) => Promise<T>): Promis
 export const api = {
   get: async <T>(path: string): Promise<T> =>
     withSession(async (s) => (await call<T>(s, 'GET', path)).data),
+  getPaged: async <T>(path: string): Promise<PagedEnvelope<T>> =>
+    withSession(async (s) => {
+      const r = await call<T>(s, 'GET', path);
+      const meta = (r.meta ?? {}) as PagedEnvelope<T>['meta'];
+      return { data: r.data, meta, etag: r.etag };
+    }),
   getWithEtag: async <T>(path: string): Promise<ResponseEnvelope<T>> =>
-    withSession((s) => call<T>(s, 'GET', path)),
+    withSession(async (s) => {
+      const r = await call<T>(s, 'GET', path);
+      return { data: r.data, etag: r.etag };
+    }),
   post: async <T>(path: string, body?: unknown): Promise<T> =>
     withSession(async (s) => (await call<T>(s, 'POST', path, body)).data),
   patch: async <T>(path: string, body?: unknown, options?: CallOptions): Promise<T> =>
@@ -148,7 +164,11 @@ export const api = {
     path: string,
     body?: unknown,
     options?: CallOptions
-  ): Promise<ResponseEnvelope<T>> => withSession((s) => call<T>(s, 'PATCH', path, body, options)),
+  ): Promise<ResponseEnvelope<T>> =>
+    withSession(async (s) => {
+      const r = await call<T>(s, 'PATCH', path, body, options);
+      return { data: r.data, etag: r.etag };
+    }),
   delete: async <T>(path: string): Promise<T> =>
     withSession(async (s) => (await call<T>(s, 'DELETE', path)).data),
 };

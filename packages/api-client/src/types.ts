@@ -61,13 +61,18 @@ export interface ContentRevision {
 }
 
 export interface ContentTypeMeta {
+  id: string;
   key: string;
   name: string;
-  pluralName: string;
-  urlPattern: string | null;
-  isBuiltIn: boolean;
-  isSingleton: boolean;
-  schema: { fields: unknown[] };
+  plural_name: string;
+  description: string | null;
+  icon: string | null;
+  url_pattern: string | null;
+  is_built_in: boolean;
+  is_singleton: boolean;
+  schema_json: { fields: unknown[] };
+  created_at: string;
+  updated_at: string;
 }
 
 export interface MediaAsset {

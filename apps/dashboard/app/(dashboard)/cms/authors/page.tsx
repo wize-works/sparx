@@ -7,11 +7,12 @@ import {
   CardDescription,
   CardHeader,
   Container,
+  EmptyState,
   Heading,
   Stack,
   Text,
 } from '@sparx/ui';
-import { Pencil } from 'lucide-react';
+import { Pencil, Users } from 'lucide-react';
 import { api } from '@/lib/api-rest-client';
 import { CmsTabs } from '../_components/cms-tabs';
 import { AuthorCreateForm } from './author-create-form';
@@ -46,14 +47,18 @@ export default async function AuthorsPage() {
 
         <AuthorCreateForm />
 
-        <Card>
+        <Card variant="module">
           <CardHeader>
             <Heading level={3}>Existing authors</Heading>
             <CardDescription>Click an author to edit name, slug, and bio.</CardDescription>
           </CardHeader>
           <CardContent>
             {authors.length === 0 ? (
-              <Text variant="muted">No authors yet.</Text>
+              <EmptyState
+                icon={<Users className="h-5 w-5" />}
+                title="No authors yet"
+                description="Add your first author above to start attributing blog posts and editorial entries."
+              />
             ) : (
               <Stack gap={2}>
                 {authors.map((a) => (

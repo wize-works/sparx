@@ -50,7 +50,7 @@ export default async function MediaPage() {
             <Stack direction="row" align="center" gap={2}>
               <ImageIcon className="h-5 w-5" />
               <Heading level={1}>Media library</Heading>
-              <Badge variant="module">teal active</Badge>
+              <Badge variant="outline">{assets.length}</Badge>
             </Stack>
             <Text variant="muted">
               Images, video, and other files used across your pages and posts.
@@ -59,12 +59,21 @@ export default async function MediaPage() {
           <UploadButton />
         </Stack>
 
+        {assets.length === 100 && (
+          <Text size="xs" variant="muted" role="note">
+            Showing the 100 most recently updated assets. Search + sort + cursor pagination land in
+            a follow-up — until then, upload-sort / filter via the API or the assets pane on the
+            content entry that uses each one.
+          </Text>
+        )}
+
         {assets.length === 0 ? (
-          <Card padding="none">
+          <Card variant="module" padding="none">
             <EmptyState
               icon={<ImageIcon className="h-5 w-5" />}
               title="No media yet"
               description="Upload your first image to start using it in pages and posts."
+              action={<UploadButton />}
             />
           </Card>
         ) : (

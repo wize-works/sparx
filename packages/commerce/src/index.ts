@@ -7,6 +7,8 @@
 
 export * from './services';
 export * from './events';
+export * from './search-projection';
+export * from './collection-rules';
 export * as commerceMcp from './mcp';
 export { commerceMcpTools } from './mcp';
 export type { AnyMcpTool, McpScope, McpToolDefinition } from './mcp';

@@ -20,6 +20,43 @@ import {
 } from '@sparx/cms-schemas';
 import { notFound, validationError } from './errors.js';
 
+export interface WireContentType {
+  id: string;
+  key: string;
+  name: string;
+  plural_name: string;
+  description: string | null;
+  icon: string | null;
+  url_pattern: string | null;
+  is_singleton: boolean;
+  is_built_in: boolean;
+  schema_json: { fields: unknown[] };
+  created_at: string;
+  updated_at: string;
+}
+
+// Canonical wire shape for a content type row. The dashboard, the GraphQL
+// service, and any external consumer all read this exact snake_case shape —
+// keep it in lockstep with the Prisma model and the audit "after" payload so
+// diffs stay readable.
+export function serializeContentType(row: ContentType): WireContentType {
+  const schema = (row.schemaJson ?? { fields: [] }) as { fields: unknown[] };
+  return {
+    id: row.id,
+    key: row.key,
+    name: row.name,
+    plural_name: row.pluralName,
+    description: row.description,
+    icon: row.icon,
+    url_pattern: row.urlPattern,
+    is_singleton: row.isSingleton,
+    is_built_in: row.isBuiltIn,
+    schema_json: schema && typeof schema === 'object' ? schema : { fields: [] },
+    created_at: row.createdAt.toISOString(),
+    updated_at: row.updatedAt.toISOString(),
+  };
+}
+
 export async function resolveType(tx: TxClient, key: string): Promise<ContentType> {
   // Both the tenant-owned row and the platform-owned row are visible thanks
   // to the content_types RLS policy. Order by `is_built_in` ASC so a

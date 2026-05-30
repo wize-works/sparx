@@ -19,13 +19,22 @@ const UpdateBody = z.object({
 export interface ActionResult<T = void> {
   ok: boolean;
   data?: T;
+  /** Optional field key the error is scoped to (e.g. 'slug' for a slug collision). */
+  field?: string;
   error?: string;
 }
 
-function friendly(err: unknown): string {
+function friendly(err: unknown): { message: string; field?: string } {
   const e = err as ApiRestError;
-  if (typeof e?.message === 'string') return e.message;
-  return 'An error occurred.';
+  const message = typeof e?.message === 'string' ? e.message : 'An error occurred.';
+  // The api-rest CONFLICT envelope for slug clashes is shaped like
+  // 'An author with slug "x" already exists.' Pin it to the slug field so the
+  // UI can render the error inline next to the offending input instead of in
+  // the form footer.
+  if (e?.code === 'CONFLICT' && /slug/i.test(message)) {
+    return { message, field: 'slug' };
+  }
+  return { message };
 }
 
 function readString(form: FormData, key: string): string {
@@ -47,7 +56,8 @@ export async function createAuthor(formData: FormData): Promise<ActionResult<{ i
     revalidatePath('/cms/authors');
     return { ok: true, data: { id: created.id } };
   } catch (err) {
-    return { ok: false, error: friendly(err) };
+    const { message, field } = friendly(err);
+    return { ok: false, error: message, ...(field ? { field } : {}) };
   }
 }
 
@@ -66,7 +76,8 @@ export async function updateAuthor(id: string, formData: FormData): Promise<Acti
     revalidatePath(`/cms/authors/${id}`);
     return { ok: true };
   } catch (err) {
-    return { ok: false, error: friendly(err) };
+    const { message, field } = friendly(err);
+    return { ok: false, error: message, ...(field ? { field } : {}) };
   }
 }
 
@@ -76,6 +87,7 @@ export async function deleteAuthor(id: string): Promise<ActionResult> {
     revalidatePath('/cms/authors');
     return { ok: true };
   } catch (err) {
-    return { ok: false, error: friendly(err) };
+    const { message, field } = friendly(err);
+    return { ok: false, error: message, ...(field ? { field } : {}) };
   }
 }

@@ -19,6 +19,14 @@
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
   Badge,
   Button,
   Card,
@@ -26,15 +34,23 @@ import {
   CardDescription,
   CardFooter,
   CardHeader,
+  DatePicker,
   Heading,
   Input,
   Label,
+  Modal,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
+  ModalTitle,
+  ModalDescription,
   Stack,
   Text,
+  toast,
 } from '@sparx/ui';
 import { ContentBlockEditor, EMPTY_DOC, type CmsDoc } from '@sparx/cms-editor';
 import Link from 'next/link';
-import { CalendarClock, History, RotateCw, Trash2 } from 'lucide-react';
+import { CalendarClock, History, Trash2 } from 'lucide-react';
 import {
   autosavePage,
   deletePage,
@@ -98,6 +114,14 @@ export function EditPageForm({
   const inFlightRef = React.useRef(false);
   const dirtyRef = React.useRef(false);
   const hydratedRef = React.useRef(false);
+
+  // Schedule + delete + conflict dialogs (kept in this file so they share the
+  // edit form's local state without prop-drilling).
+  const [scheduleOpen, setScheduleOpen] = React.useState(false);
+  const [scheduleAt, setScheduleAt] = React.useState<Date | undefined>(
+    page.scheduledAt ?? undefined
+  );
+  const [deleteOpen, setDeleteOpen] = React.useState(false);
 
   // Stable refs for the current values — the debounce closure reads from
   // these so we don't re-arm the timer on every keystroke (which would
@@ -214,42 +238,36 @@ export function EditPageForm({
     });
   }
 
-  function onSchedule() {
-    setError(null);
-    setMessage(null);
-    // Browser-native prompt is the smallest path to a working schedule UI.
-    // Date is parsed as local time then re-emitted as ISO with offset so
-    // the server gets an unambiguous UTC timestamp.
-    const defaultValue = formatLocalDateTime(
-      page.scheduledAt ?? new Date(Date.now() + 60 * 60 * 1000)
-    );
-    const raw = window.prompt(
-      'Schedule this page to publish (YYYY-MM-DDTHH:MM, your local time)',
-      defaultValue
-    );
-    if (!raw) return;
-    const parsed = new Date(raw);
-    if (Number.isNaN(parsed.getTime())) {
-      setError('That doesn’t look like a valid date/time.');
+  function confirmSchedule() {
+    if (!scheduleAt) {
+      setError('Pick a date and time to schedule the publish.');
       return;
     }
+    if (scheduleAt.getTime() <= Date.now()) {
+      setError('Pick a time in the future.');
+      return;
+    }
+    setError(null);
+    setMessage(null);
+    const target = scheduleAt;
 
     startTransition(async () => {
-      const result = await schedulePagePublish(page.id, parsed.toISOString());
+      const result = await schedulePagePublish(page.id, target.toISOString());
       if (!result.ok) {
         setError(result.error ?? 'Could not schedule publish.');
         return;
       }
-      setMessage(`Scheduled for ${parsed.toLocaleString()}.`);
+      setScheduleOpen(false);
+      setMessage(`Scheduled for ${target.toLocaleString()}.`);
+      toast.success(`Scheduled for ${target.toLocaleString()}`);
       router.refresh();
     });
   }
 
-  function onDelete() {
-    if (!confirm(`Delete "${page.title}"? This cannot be undone.`)) return;
+  function executeDelete() {
+    setDeleteOpen(false);
     setError(null);
     setMessage(null);
-
     startTransition(async () => {
       const result = await deletePage(page.id);
       if (!result.ok) {
@@ -264,7 +282,7 @@ export function EditPageForm({
   return (
     <form onSubmit={onSubmit} noValidate>
       <Stack gap={6}>
-        <Card>
+        <Card variant="module">
           <CardHeader>
             <Stack direction="row" align="center" justify="between">
               <Stack direction="row" align="center" gap={2}>
@@ -272,7 +290,23 @@ export function EditPageForm({
                 <Badge variant={page.status === 'published' ? 'success' : 'outline'}>
                   {page.status}
                 </Badge>
-                <AutosaveIndicator state={saveState} onReload={() => router.refresh()} />
+                <AutosaveIndicator
+                  state={saveState}
+                  onDiscardMine={() => {
+                    setSaveState({ kind: 'idle' });
+                    router.refresh();
+                  }}
+                  onKeepMine={() => {
+                    // Force save: drop the stale If-Match so the next PATCH
+                    // wins over whatever the other tab wrote. Our local
+                    // state stays — the audit's main concern was that
+                    // Reload destroyed in-progress edits with no warning.
+                    etagRef.current = null;
+                    setSaveState({ kind: 'idle' });
+                    dirtyRef.current = true;
+                    void runAutosave();
+                  }}
+                />
               </Stack>
               <Stack direction="row" align="center" gap={2}>
                 <PreviewButton
@@ -296,7 +330,7 @@ export function EditPageForm({
                     variant="ghost"
                     size="sm"
                     leftIcon={<CalendarClock className="h-3.5 w-3.5" />}
-                    onClick={onSchedule}
+                    onClick={() => setScheduleOpen(true)}
                     disabled={pending}
                   >
                     Schedule
@@ -332,7 +366,7 @@ export function EditPageForm({
           )}
         </Card>
 
-        <Card>
+        <Card variant="module">
           <CardHeader>
             <Heading level={3}>Content</Heading>
             <CardDescription>
@@ -365,8 +399,9 @@ export function EditPageForm({
                 </Text>
               </Stack>
               <Stack gap={2}>
-                <Label htmlFor="content">Body</Label>
+                <Label htmlFor="entry-body-editor">Body</Label>
                 <ContentBlockEditor
+                  id="entry-body-editor"
                   value={doc}
                   onChange={setDoc}
                   placeholder="Write the page body. Use the toolbar for formatting."
@@ -385,7 +420,7 @@ export function EditPageForm({
           fallbackTitle={title}
         />
 
-        <Card>
+        <Card variant="module">
           <CardContent>
             <Stack gap={2}>
               {error && (
@@ -405,7 +440,7 @@ export function EditPageForm({
               type="button"
               variant="ghost"
               leftIcon={<Trash2 className="h-4 w-4" />}
-              onClick={onDelete}
+              onClick={() => setDeleteOpen(true)}
               disabled={pending}
             >
               Delete
@@ -416,21 +451,98 @@ export function EditPageForm({
           </CardFooter>
         </Card>
       </Stack>
+
+      <Modal open={scheduleOpen} onOpenChange={setScheduleOpen}>
+        <ModalContent>
+          <ModalHeader>
+            <ModalTitle>Schedule publish</ModalTitle>
+            <ModalDescription>
+              Pick when this page should flip to <strong>published</strong>. Times are interpreted
+              in your local timezone ({Intl.DateTimeFormat().resolvedOptions().timeZone}) and stored
+              as UTC on the server.
+            </ModalDescription>
+          </ModalHeader>
+          <div className="px-6 py-4">
+            <Stack gap={3}>
+              <Label htmlFor="schedule-at" required>
+                When
+              </Label>
+              <DatePicker value={scheduleAt} onChange={setScheduleAt} />
+              {scheduleAt && (
+                <Text size="xs" variant="muted" aria-live="polite">
+                  Will publish at <strong>{scheduleAt.toLocaleString()}</strong>
+                  {' · '}UTC <code>{scheduleAt.toISOString()}</code>
+                </Text>
+              )}
+              {error && (
+                <Text size="sm" variant="danger" role="alert" aria-live="polite">
+                  {error}
+                </Text>
+              )}
+            </Stack>
+          </div>
+          <ModalFooter>
+            <Button type="button" variant="ghost" onClick={() => setScheduleOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="module"
+              onClick={confirmSchedule}
+              disabled={pending || !scheduleAt}
+              loading={pending}
+            >
+              Schedule publish
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+
+      <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this page?</AlertDialogTitle>
+            <AlertDialogDescription>
+              <strong>{page.title || '(untitled)'}</strong>
+              {page.slug && (
+                <>
+                  {' '}
+                  at <code>/{page.slug}</code>
+                </>
+              )}{' '}
+              will be soft-deleted. The entry stays recoverable in the database for 30 days but will
+              not render on the storefront or appear in lists. Use <em>Unpublish</em> instead if you
+              want it to stay editable.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={executeDelete}>Delete page</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </form>
   );
 }
 
-// Formats a Date as `YYYY-MM-DDTHH:MM` in the browser's local time —
-// matches the `datetime-local` input format and the parser the schedule
-// prompt feeds into `new Date()`.
-function formatLocalDateTime(d: Date): string {
-  const pad = (n: number) => n.toString().padStart(2, '0');
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
-}
-
 // Small status pill rendered next to the Status badge so the editor
 // always knows whether their last keystroke is safely on the server.
-function AutosaveIndicator({ state, onReload }: { state: SaveState; onReload: () => void }) {
+//
+// Conflict (412) treatment is the careful bit: the audit (F-06) found that
+// the previous "Reload" button silently discarded local edits when another
+// tab/user saved on top of us. We now require the editor to make an explicit
+// call between Discard mine (router.refresh → drop local state for server
+// state) and Keep mine (force-save by dropping If-Match). Either choice is
+// destructive in one direction; surfacing both keeps the editor in control.
+function AutosaveIndicator({
+  state,
+  onDiscardMine,
+  onKeepMine,
+}: {
+  state: SaveState;
+  onDiscardMine: () => void;
+  onKeepMine: () => void;
+}) {
   if (state.kind === 'idle') return null;
   if (state.kind === 'saving') {
     return (
@@ -448,18 +560,15 @@ function AutosaveIndicator({ state, onReload }: { state: SaveState; onReload: ()
   }
   if (state.kind === 'conflict') {
     return (
-      <Stack direction="row" align="center" gap={1}>
+      <Stack direction="row" align="center" gap={2}>
         <Text size="xs" variant="danger" aria-live="polite">
-          Someone else saved this page.
+          Someone else saved this page since you started editing.
         </Text>
-        <Button
-          type="button"
-          variant="ghost"
-          size="xs"
-          leftIcon={<RotateCw className="h-3 w-3" />}
-          onClick={onReload}
-        >
-          Reload
+        <Button type="button" variant="ghost" size="xs" onClick={onDiscardMine}>
+          Discard mine
+        </Button>
+        <Button type="button" variant="module-outline" size="xs" onClick={onKeepMine}>
+          Keep mine (force save)
         </Button>
       </Stack>
     );

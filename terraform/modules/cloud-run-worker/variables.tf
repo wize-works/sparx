@@ -130,3 +130,25 @@ variable "pubsub_path" {
   default     = "/"
   description = "HTTP path the push endpoint POSTs to."
 }
+
+# ── Fan-in: additional Pub/Sub topics this same Cloud Run worker handles ──
+#
+# The primary `pubsub_topic` above is the canonical subscription that gets
+# the per-worker tuning (ack deadline, DLQ). Workers that fan in across
+# multiple commerce event topics (e.g. commerce-indexer subscribing to
+# product.created + product.updated + variant.* + inventory.*) declare
+# the extra topics here. Each entry produces its own push subscription
+# pointed at the same Cloud Run service URL, sharing the same invoker SA
+# and DLQ. Keep the list short — Pub/Sub costs per-subscription, and the
+# router on the receiving end already knows how to fan in.
+
+variable "additional_subscriptions" {
+  type = list(object({
+    topic                = string
+    subscription_name    = string
+    ack_deadline_seconds = optional(number)
+    filter               = optional(string)
+  }))
+  default     = []
+  description = "Extra Pub/Sub push subscriptions targeting the same Cloud Run service. Useful for fan-in workers (commerce-indexer). DLQ + retry policy + invoker SA are inherited from the primary subscription."
+}

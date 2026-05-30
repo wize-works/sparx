@@ -59,7 +59,7 @@ export default async function ContentTypesPage() {
             <Stack direction="row" align="center" gap={2}>
               <Database className="h-5 w-5" />
               <Heading level={1}>Content types</Heading>
-              <Badge variant="module">teal active</Badge>
+              <Badge variant="outline">{types.length}</Badge>
             </Stack>
             <Text variant="muted">
               Authoring spaces for blog posts, modules, FAQs, editorial sections, and any custom

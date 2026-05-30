@@ -95,7 +95,7 @@ export default async function NavigationMenusPage() {
               {menus
                 .filter((m) => !PRESET_LOCATIONS.some((p) => p.location === m.location))
                 .map((m) => (
-                  <Card key={m.id}>
+                  <Card key={m.id} variant="module">
                     <CardHeader>
                       <Stack direction="row" align="center" justify="between">
                         <Stack gap={1}>
@@ -115,7 +115,7 @@ export default async function NavigationMenusPage() {
           </Stack>
         )}
 
-        <Card>
+        <Card variant="module">
           <CardHeader>
             <Heading level={4}>Custom location</Heading>
             <CardDescription>
@@ -123,7 +123,7 @@ export default async function NavigationMenusPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Button asChild variant="ghost" leftIcon={<Plus className="h-4 w-4" />}>
+            <Button asChild variant="module-outline" leftIcon={<Plus className="h-4 w-4" />}>
               <Link href="/cms/navigation/custom">New custom menu</Link>
             </Button>
           </CardContent>

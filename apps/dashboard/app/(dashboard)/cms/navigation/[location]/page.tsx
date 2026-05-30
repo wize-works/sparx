@@ -24,6 +24,14 @@ interface ApiMenu {
   items: ApiMenuItem[];
 }
 
+interface ApiEntrySummary {
+  id: string;
+  type_key: string;
+  slug: string | null;
+  status: string;
+  body: { title?: string } & Record<string, unknown>;
+}
+
 interface PageParams {
   params: Promise<{ location: string }>;
 }
@@ -62,6 +70,19 @@ export default async function EditNavigationMenuPage({ params }: PageParams) {
     if ((err as ApiRestError).status !== 404) throw err;
   }
 
+  // Load a shortlist of published entries so the menu editor can offer a
+  // proper picker instead of forcing editors to hand-paste UUIDs (F-12).
+  // 200 caps the list — plenty for the menu builder's typical needs; if a
+  // tenant has more, the editor can keep typing the UUID directly as fallback.
+  let entryChoices: ApiEntrySummary[] = [];
+  try {
+    entryChoices = await api.get<ApiEntrySummary[]>(
+      '/v1/content/entries?status=published&limit=200'
+    );
+  } catch {
+    entryChoices = [];
+  }
+
   const initialItems = menu ? buildTree(menu.items) : [];
   const initialName = menu?.name ?? defaultName(location);
 
@@ -80,12 +101,22 @@ export default async function EditNavigationMenuPage({ params }: PageParams) {
             {menu ? 'Edit' : 'Create'} <code>/{location}</code> menu
           </Heading>
           <Text variant="muted">
-            Each item must link to either a published entry by ID or an external URL — not both.
+            Each item must link to either a published entry or an external URL — not both.
             Drag-and-drop landing later; use the move buttons for now.
           </Text>
         </Stack>
 
-        <MenuEditor location={location} initialName={initialName} initialItems={initialItems} />
+        <MenuEditor
+          location={location}
+          initialName={initialName}
+          initialItems={initialItems}
+          entryChoices={entryChoices.map((e) => ({
+            id: e.id,
+            typeKey: e.type_key,
+            slug: e.slug,
+            title: typeof e.body.title === 'string' ? e.body.title : (e.slug ?? '(untitled)'),
+          }))}
+        />
       </Stack>
     </Container>
   );

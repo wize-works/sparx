@@ -14,6 +14,7 @@ import {
 } from '@sparx/ui';
 import { ArrowLeft, GitCompare, History } from 'lucide-react';
 import { api, type ApiRestError } from '@/lib/api-rest-client';
+import { CmsTabs } from '../../_components/cms-tabs';
 import { RestoreButton } from './restore-button';
 
 export const dynamic = 'force-dynamic';
@@ -51,6 +52,7 @@ export default async function RevisionsPage({ params }: { params: Promise<{ id: 
   return (
     <Container size="lg">
       <Stack gap={6} className="py-10">
+        <CmsTabs current="pages" />
         <Stack gap={2}>
           <Button variant="link" size="sm" asChild>
             <Link href={`/cms/${id}`}>
@@ -65,7 +67,7 @@ export default async function RevisionsPage({ params }: { params: Promise<{ id: 
           </Stack>
           <Text variant="muted">
             Every save creates a revision. Click <strong>Restore</strong> to copy that
-            revision&apos;s content back onto the current entry — your edits never disappear,
+            revision&apos;s content back onto the current entry — your edits never disappear;
             restores create a fresh revision instead of overwriting history.
           </Text>
           <Text size="sm" variant="muted">
@@ -80,7 +82,7 @@ export default async function RevisionsPage({ params }: { params: Promise<{ id: 
         </Stack>
 
         {revisions.length === 0 ? (
-          <Card>
+          <Card variant="module">
             <CardContent>
               <Text>No revisions yet. Save the entry to create the first one.</Text>
             </CardContent>

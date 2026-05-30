@@ -8,7 +8,18 @@
 
 import { useRouter } from 'next/navigation';
 import * as React from 'react';
-import { Button } from '@sparx/ui';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  Button,
+  toast,
+} from '@sparx/ui';
 import { RotateCcw } from 'lucide-react';
 import { restoreRevision } from '../../actions';
 
@@ -21,36 +32,51 @@ export function RestoreButton({
 }) {
   const router = useRouter();
   const [pending, startTransition] = React.useTransition();
+  const [open, setOpen] = React.useState(false);
 
-  function onRestore() {
-    if (
-      !confirm(
-        `Restore revision #${revisionNumber}? A new revision will be created — history is preserved.`
-      )
-    ) {
-      return;
-    }
+  function execute() {
+    setOpen(false);
     startTransition(async () => {
       const result = await restoreRevision(entryId, revisionNumber);
       if (!result.ok) {
-        alert(result.error);
+        toast.error(result.error ?? 'Could not restore revision.');
         return;
       }
+      toast.success(`Revision #${revisionNumber} restored.`);
       router.push(`/cms/${entryId}`);
       router.refresh();
     });
   }
 
   return (
-    <Button
-      size="sm"
-      variant="module-outline"
-      leftIcon={<RotateCcw className="h-3.5 w-3.5" />}
-      onClick={onRestore}
-      disabled={pending}
-      loading={pending}
-    >
-      Restore
-    </Button>
+    <>
+      <Button
+        size="sm"
+        variant="module-outline"
+        leftIcon={<RotateCcw className="h-3.5 w-3.5" />}
+        onClick={() => setOpen(true)}
+        disabled={pending}
+        loading={pending}
+      >
+        Restore
+      </Button>
+
+      <AlertDialog open={open} onOpenChange={setOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Restore revision #{revisionNumber}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              The current entry body and SEO will be replaced with the contents of this revision.
+              History is preserved — a new revision is created at the top of the stack, so you can
+              undo by restoring the previous revision.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={execute}>Restore revision</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }

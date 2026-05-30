@@ -16,15 +16,29 @@
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
   Button,
   Card,
   CardContent,
   CardDescription,
   CardFooter,
   CardHeader,
+  Checkbox,
   Heading,
   Input,
   Label,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
   Stack,
   Text,
 } from '@sparx/ui';
@@ -39,6 +53,13 @@ export interface EditableMenuItem {
   externalUrl: string | null;
   openInNewTab: boolean;
   children: EditableMenuItem[];
+}
+
+export interface EntryChoice {
+  id: string;
+  typeKey: string;
+  slug: string | null;
+  title: string;
 }
 
 let uidCounter = 0;
@@ -85,14 +106,29 @@ function updateAtPath(
   );
 }
 
+// Resolve a path back into the item it points to, used for the
+// remove-with-children confirm dialog.
+function resolveAtPath(items: EditableMenuItem[], path: PathStep[]): EditableMenuItem | null {
+  let cursor: EditableMenuItem | undefined;
+  let layer = items;
+  for (const step of path) {
+    cursor = layer[step.index];
+    if (!cursor) return null;
+    layer = cursor.children;
+  }
+  return cursor ?? null;
+}
+
 export function MenuEditor({
   location,
   initialName,
   initialItems,
+  entryChoices,
 }: {
   location: string;
   initialName: string;
   initialItems: EditableMenuItem[];
+  entryChoices: EntryChoice[];
 }) {
   const router = useRouter();
   const [name, setName] = React.useState(initialName);
@@ -100,6 +136,10 @@ export function MenuEditor({
   const [pending, startTransition] = React.useTransition();
   const [error, setError] = React.useState<string | null>(null);
   const [message, setMessage] = React.useState<string | null>(null);
+  const [pendingRemove, setPendingRemove] = React.useState<{
+    path: PathStep[];
+    item: EditableMenuItem;
+  } | null>(null);
 
   function addRoot() {
     setItems((prev) => [...prev, emptyItem()]);
@@ -117,8 +157,20 @@ export function MenuEditor({
     );
   }
 
-  function removeAt(path: PathStep[]) {
+  function requestRemove(path: PathStep[]) {
     if (path.length === 0) return;
+    const item = resolveAtPath(items, path);
+    if (!item) return;
+    // No subtree — drop without prompting. Subtrees gate behind a confirm
+    // dialog so an accidental click can't blow away nested work.
+    if (item.children.length === 0) {
+      executeRemove(path);
+      return;
+    }
+    setPendingRemove({ path, item });
+  }
+
+  function executeRemove(path: PathStep[]) {
     const parentPath = path.slice(0, -1);
     const childIndex = path[path.length - 1]!.index;
     setItems((prev) =>
@@ -172,7 +224,7 @@ export function MenuEditor({
 
   return (
     <Stack gap={5}>
-      <Card>
+      <Card variant="module">
         <CardHeader>
           <Heading level={3}>Menu name</Heading>
           <CardDescription>
@@ -181,22 +233,32 @@ export function MenuEditor({
         </CardHeader>
         <CardContent>
           <Stack gap={2}>
-            <Label htmlFor="menu-name">Name</Label>
-            <Input id="menu-name" value={name} onChange={(e) => setName(e.target.value)} required />
+            <Label htmlFor="menu-name" required>
+              Name
+            </Label>
+            <Input
+              id="menu-name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+              aria-required
+            />
           </Stack>
         </CardContent>
       </Card>
 
-      <Card>
+      <Card variant="module">
         <CardHeader>
           <Stack direction="row" align="center" justify="between">
             <Stack gap={1}>
               <Heading level={3}>Items</Heading>
-              <CardDescription>{items.length} top-level items</CardDescription>
+              <CardDescription>
+                {items.length} top-level item{items.length === 1 ? '' : 's'}
+              </CardDescription>
             </Stack>
             <Button
               type="button"
-              variant="ghost"
+              variant="module-outline"
               size="sm"
               leftIcon={<Plus className="h-3.5 w-3.5" />}
               onClick={addRoot}
@@ -207,14 +269,17 @@ export function MenuEditor({
         </CardHeader>
         <CardContent>
           {items.length === 0 ? (
-            <Text variant="muted">No items yet. Click “Add item” to start the tree.</Text>
+            <Text variant="muted">
+              No items yet. Click &ldquo;Add item&rdquo; to start the tree.
+            </Text>
           ) : (
             <ItemList
               items={items}
               path={[]}
+              entryChoices={entryChoices}
               onPatch={patchAt}
               onAddChild={addChild}
-              onRemove={removeAt}
+              onRemove={requestRemove}
               onMove={moveAt}
             />
           )}
@@ -232,18 +297,48 @@ export function MenuEditor({
               Save menu
             </Button>
             {error && (
-              <Text size="sm" variant="danger" role="alert">
+              <Text size="sm" variant="danger" role="alert" aria-live="polite">
                 {error}
               </Text>
             )}
             {message && (
-              <Text size="sm" variant="success">
+              <Text size="sm" variant="success" aria-live="polite">
                 {message}
               </Text>
             )}
           </Stack>
         </CardFooter>
       </Card>
+
+      <AlertDialog
+        open={pendingRemove !== null}
+        onOpenChange={(next) => {
+          if (!next) setPendingRemove(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove menu item?</AlertDialogTitle>
+            <AlertDialogDescription>
+              <strong>{pendingRemove?.item.label ?? '(no label)'}</strong> has{' '}
+              {pendingRemove?.item.children.length} nested{' '}
+              {pendingRemove?.item.children.length === 1 ? 'child' : 'children'}. Removing this item
+              drops the entire subtree — children cannot be recovered after you save.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (pendingRemove) executeRemove(pendingRemove.path);
+                setPendingRemove(null);
+              }}
+            >
+              Remove subtree
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Stack>
   );
 }
@@ -251,6 +346,7 @@ export function MenuEditor({
 function ItemList({
   items,
   path,
+  entryChoices,
   onPatch,
   onAddChild,
   onRemove,
@@ -258,6 +354,7 @@ function ItemList({
 }: {
   items: EditableMenuItem[];
   path: PathStep[];
+  entryChoices: EntryChoice[];
   onPatch: (path: PathStep[], patch: Partial<EditableMenuItem>) => void;
   onAddChild: (path: PathStep[]) => void;
   onRemove: (path: PathStep[]) => void;
@@ -268,148 +365,222 @@ function ItemList({
       {items.map((item, index) => {
         const itemPath: PathStep[] = [...path, { index }];
         return (
-          <div
+          <Stack
             key={item.uid}
-            style={{
-              border: '1px solid var(--color-border-default)',
-              borderRadius: '0.5rem',
-              padding: '0.75rem',
-            }}
+            gap={3}
+            className="rounded-lg border border-[var(--color-border-default)] p-3"
           >
-            <Stack gap={3}>
-              <Stack direction="row" align="end" gap={2}>
-                <Stack gap={1} className="flex-1">
-                  <Label htmlFor={`label-${item.uid}`}>Label</Label>
-                  <Input
-                    id={`label-${item.uid}`}
-                    value={item.label}
-                    onChange={(e) => onPatch(itemPath, { label: e.target.value })}
-                    placeholder="Display label"
-                  />
-                </Stack>
-                <Stack direction="row" gap={1}>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="xs"
-                    leftIcon={<ChevronUp className="h-3 w-3" />}
-                    onClick={() => onMove(itemPath, -1)}
-                    disabled={index === 0}
-                    aria-label="Move up"
-                  >
-                    Up
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="xs"
-                    leftIcon={<ChevronDown className="h-3 w-3" />}
-                    onClick={() => onMove(itemPath, 1)}
-                    disabled={index === items.length - 1}
-                    aria-label="Move down"
-                  >
-                    Down
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="xs"
-                    leftIcon={<Trash2 className="h-3 w-3" />}
-                    onClick={() => onRemove(itemPath)}
-                    aria-label="Remove"
-                  >
-                    Remove
-                  </Button>
-                </Stack>
+            <Stack direction="row" align="end" gap={2}>
+              <Stack gap={1} className="flex-1">
+                <Label htmlFor={`label-${item.uid}`}>Label</Label>
+                <Input
+                  id={`label-${item.uid}`}
+                  value={item.label}
+                  onChange={(e) => onPatch(itemPath, { label: e.target.value })}
+                  placeholder="Display label"
+                />
               </Stack>
-
-              <Stack direction="row" gap={3}>
-                <Stack gap={1}>
-                  <Label htmlFor={`kind-${item.uid}`}>Link kind</Label>
-                  <select
-                    id={`kind-${item.uid}`}
-                    value={item.kind}
-                    onChange={(e) =>
-                      onPatch(itemPath, {
-                        kind: e.target.value as 'entry' | 'external',
-                        // Clear the other side so the XOR constraint never breaks.
-                        ...(e.target.value === 'entry' ? { externalUrl: '' } : { entryId: null }),
-                      })
-                    }
-                    className="rounded-md border border-[var(--color-border-default)] bg-[var(--color-bg-surface)] px-3 py-2 text-sm"
-                  >
-                    <option value="external">External URL</option>
-                    <option value="entry">CMS entry</option>
-                  </select>
-                </Stack>
-                <Stack gap={1} className="flex-1">
-                  {item.kind === 'entry' ? (
-                    <>
-                      <Label htmlFor={`target-${item.uid}`}>Entry ID</Label>
-                      <Input
-                        id={`target-${item.uid}`}
-                        value={item.entryId ?? ''}
-                        onChange={(e) => onPatch(itemPath, { entryId: e.target.value || null })}
-                        placeholder="UUID of a published content entry"
-                      />
-                    </>
-                  ) : (
-                    <>
-                      <Label htmlFor={`target-${item.uid}`}>External URL</Label>
-                      <Input
-                        id={`target-${item.uid}`}
-                        type="url"
-                        value={item.externalUrl ?? ''}
-                        onChange={(e) => onPatch(itemPath, { externalUrl: e.target.value })}
-                        placeholder="https://…"
-                      />
-                    </>
-                  )}
-                </Stack>
-                <Stack gap={1}>
-                  <Label htmlFor={`new-tab-${item.uid}`}>New tab</Label>
-                  <input
-                    id={`new-tab-${item.uid}`}
-                    type="checkbox"
-                    checked={item.openInNewTab}
-                    onChange={(e) => onPatch(itemPath, { openInNewTab: e.target.checked })}
-                    className="h-5 w-5"
-                  />
-                </Stack>
-              </Stack>
-
-              <Stack gap={2}>
-                <Stack direction="row" align="center" justify="between">
-                  <Text size="xs" variant="muted">
-                    Children · {item.children.length}
-                  </Text>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="xs"
-                    leftIcon={<Plus className="h-3 w-3" />}
-                    onClick={() => onAddChild(itemPath)}
-                  >
-                    Add child
-                  </Button>
-                </Stack>
-                {item.children.length > 0 && (
-                  <div style={{ paddingLeft: '1.5rem' }}>
-                    <ItemList
-                      items={item.children}
-                      path={itemPath}
-                      onPatch={onPatch}
-                      onAddChild={onAddChild}
-                      onRemove={onRemove}
-                      onMove={onMove}
-                    />
-                  </div>
-                )}
+              <Stack direction="row" gap={1}>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="xs"
+                  leftIcon={<ChevronUp className="h-3 w-3" />}
+                  onClick={() => onMove(itemPath, -1)}
+                  disabled={index === 0}
+                  aria-label="Move up"
+                >
+                  Up
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="xs"
+                  leftIcon={<ChevronDown className="h-3 w-3" />}
+                  onClick={() => onMove(itemPath, 1)}
+                  disabled={index === items.length - 1}
+                  aria-label="Move down"
+                >
+                  Down
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="xs"
+                  leftIcon={<Trash2 className="h-3 w-3" />}
+                  onClick={() => onRemove(itemPath)}
+                  aria-label="Remove"
+                >
+                  Remove
+                </Button>
               </Stack>
             </Stack>
-          </div>
+
+            <Stack direction="row" gap={3}>
+              <Stack gap={1}>
+                <Label htmlFor={`kind-${item.uid}`}>Link kind</Label>
+                <Select
+                  value={item.kind}
+                  onValueChange={(v) =>
+                    onPatch(itemPath, {
+                      kind: v as 'entry' | 'external',
+                      // Clear the other side so the XOR constraint never breaks.
+                      ...(v === 'entry' ? { externalUrl: '' } : { entryId: null }),
+                    })
+                  }
+                >
+                  <SelectTrigger id={`kind-${item.uid}`} aria-label="Link kind">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="external">External URL</SelectItem>
+                    <SelectItem value="entry">CMS entry</SelectItem>
+                  </SelectContent>
+                </Select>
+              </Stack>
+              <Stack gap={1} className="flex-1">
+                {item.kind === 'entry' ? (
+                  <EntryField
+                    id={`target-${item.uid}`}
+                    value={item.entryId}
+                    choices={entryChoices}
+                    onChange={(entryId) => onPatch(itemPath, { entryId })}
+                  />
+                ) : (
+                  <>
+                    <Label htmlFor={`target-${item.uid}`}>External URL</Label>
+                    <Input
+                      id={`target-${item.uid}`}
+                      type="url"
+                      value={item.externalUrl ?? ''}
+                      onChange={(e) => onPatch(itemPath, { externalUrl: e.target.value })}
+                      placeholder="https://…"
+                    />
+                  </>
+                )}
+              </Stack>
+              <Stack gap={1}>
+                <Label htmlFor={`new-tab-${item.uid}`}>New tab</Label>
+                <Checkbox
+                  id={`new-tab-${item.uid}`}
+                  checked={item.openInNewTab}
+                  onCheckedChange={(next) => onPatch(itemPath, { openInNewTab: next === true })}
+                />
+              </Stack>
+            </Stack>
+
+            <Stack gap={2}>
+              <Stack direction="row" align="center" justify="between">
+                <Text size="xs" variant="muted">
+                  Children · {item.children.length}
+                </Text>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="xs"
+                  leftIcon={<Plus className="h-3 w-3" />}
+                  onClick={() => onAddChild(itemPath)}
+                >
+                  Add child
+                </Button>
+              </Stack>
+              {item.children.length > 0 && (
+                <Stack className="pl-6">
+                  <ItemList
+                    items={item.children}
+                    path={itemPath}
+                    entryChoices={entryChoices}
+                    onPatch={onPatch}
+                    onAddChild={onAddChild}
+                    onRemove={onRemove}
+                    onMove={onMove}
+                  />
+                </Stack>
+              )}
+            </Stack>
+          </Stack>
         );
       })}
     </Stack>
+  );
+}
+
+// EntryField — picker over the merchant's published entries with a typed
+// fallback for entries that aren't in the prefetched 200-entry shortlist
+// (tenants with more than that can still paste a UUID directly).
+function EntryField({
+  id,
+  value,
+  choices,
+  onChange,
+}: {
+  id: string;
+  value: string | null;
+  choices: EntryChoice[];
+  onChange: (entryId: string | null) => void;
+}) {
+  const [mode, setMode] = React.useState<'picker' | 'manual'>(
+    value && !choices.some((c) => c.id === value) ? 'manual' : 'picker'
+  );
+
+  if (mode === 'manual') {
+    return (
+      <>
+        <Stack direction="row" justify="between" align="end">
+          <Label htmlFor={id}>Entry ID</Label>
+          <Button
+            type="button"
+            variant="link"
+            size="xs"
+            onClick={() => setMode('picker')}
+            aria-label="Switch to entry picker"
+          >
+            Pick from list
+          </Button>
+        </Stack>
+        <Input
+          id={id}
+          value={value ?? ''}
+          onChange={(e) => onChange(e.target.value || null)}
+          placeholder="UUID of a published content entry"
+        />
+      </>
+    );
+  }
+
+  return (
+    <>
+      <Stack direction="row" justify="between" align="end">
+        <Label htmlFor={id}>Published entry</Label>
+        <Button
+          type="button"
+          variant="link"
+          size="xs"
+          onClick={() => setMode('manual')}
+          aria-label="Enter entry UUID manually"
+        >
+          Paste UUID
+        </Button>
+      </Stack>
+      <Select value={value ?? ''} onValueChange={(v) => onChange(v || null)}>
+        <SelectTrigger id={id} aria-label="Published entry">
+          <SelectValue placeholder="Choose a published entry…" />
+        </SelectTrigger>
+        <SelectContent>
+          {choices.length === 0 ? (
+            <SelectItem value="__empty__" disabled>
+              No published entries to pick from
+            </SelectItem>
+          ) : (
+            choices.map((c) => (
+              <SelectItem key={c.id} value={c.id}>
+                {c.title}
+                {c.slug ? ` · /${c.slug}` : ''}
+              </SelectItem>
+            ))
+          )}
+        </SelectContent>
+      </Select>
+    </>
   );
 }

@@ -44,6 +44,7 @@ jobs:
           - storefront
           - media-worker
           - email-worker
+          - commerce-indexer
           - domain-worker
           - dropship-worker
           - billing-worker

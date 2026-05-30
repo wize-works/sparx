@@ -20,6 +20,7 @@ import {
 import { ContentBlockEditor, EMPTY_DOC, type CmsDoc } from '@sparx/cms-editor';
 import { ArrowLeft } from 'lucide-react';
 import { createPage } from '../actions';
+import { CmsTabs } from '../_components/cms-tabs';
 
 export default function NewPage() {
   const router = useRouter();
@@ -47,6 +48,7 @@ export default function NewPage() {
   return (
     <Container size="lg">
       <Stack gap={6} className="py-10">
+        <CmsTabs current="pages" />
         <Stack gap={2}>
           <Button variant="link" size="sm" asChild>
             <Link href="/cms">
@@ -58,7 +60,7 @@ export default function NewPage() {
         </Stack>
 
         <form onSubmit={onSubmit} noValidate>
-          <Card>
+          <Card variant="module">
             <CardHeader>
               <Heading level={3}>Page basics</Heading>
               <CardDescription>You can edit everything after creation.</CardDescription>
@@ -66,8 +68,10 @@ export default function NewPage() {
             <CardContent>
               <Stack gap={4}>
                 <Stack gap={2}>
-                  <Label htmlFor="title">Title</Label>
-                  <Input id="title" name="title" required />
+                  <Label htmlFor="title" required>
+                    Title
+                  </Label>
+                  <Input id="title" name="title" required aria-required />
                 </Stack>
                 <Stack gap={2}>
                   <Label htmlFor="slug">Slug (optional)</Label>
@@ -77,8 +81,9 @@ export default function NewPage() {
                   </Text>
                 </Stack>
                 <Stack gap={2}>
-                  <Label>Content (optional)</Label>
+                  <Label htmlFor="page-body-editor">Content (optional)</Label>
                   <ContentBlockEditor
+                    id="page-body-editor"
                     value={doc}
                     onChange={setDoc}
                     placeholder="Write the initial body. You can always edit after creation."

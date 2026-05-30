@@ -84,12 +84,14 @@ export interface SidebarItemProps
 export const SidebarItem = React.forwardRef<HTMLButtonElement, SidebarItemProps>(
   ({ className, active, icon, asChild = false, children, ...props }, ref) => {
     const dataActive = active ? true : undefined;
+    const ariaCurrent = active ? 'page' : undefined;
     if (asChild) {
       return (
         <Slot
           ref={ref}
           className={cn(sidebarItemVariants({ active }), className)}
           data-active={dataActive}
+          aria-current={ariaCurrent}
           {...props}
         >
           {children}
@@ -102,6 +104,7 @@ export const SidebarItem = React.forwardRef<HTMLButtonElement, SidebarItemProps>
         type="button"
         className={cn(sidebarItemVariants({ active }), className)}
         data-active={dataActive}
+        aria-current={ariaCurrent}
         {...props}
       >
         {icon && (

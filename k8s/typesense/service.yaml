@@ -1,0 +1,17 @@
+# Typesense in-cluster Service. Reachable from commerce-indexer (Cloud Run
+# via VPC connector) at typesense.sparx-prod.svc.cluster.local:8108, and
+# from api-rest / dashboard pods at the same hostname. ClusterIP only —
+# no external exposure.
+apiVersion: v1
+kind: Service
+metadata:
+  name: typesense
+  namespace: sparx-prod
+spec:
+  type: ClusterIP
+  ports:
+    - name: typesense
+      port: 8108
+      targetPort: 8108
+  selector:
+    app: typesense

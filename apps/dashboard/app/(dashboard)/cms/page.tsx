@@ -18,6 +18,7 @@ import {
 import { FileText, Plus } from 'lucide-react';
 import { api } from '@/lib/api-rest-client';
 import { CmsTabs } from './_components/cms-tabs';
+import { EntryListFilters } from './_components/entry-list-filters';
 
 export const dynamic = 'force-dynamic';
 
@@ -27,10 +28,60 @@ interface ApiEntry {
   status: string;
   body: { title?: string } & Record<string, unknown>;
   updated_at: string;
+  published_at: string | null;
 }
 
-export default async function CmsPage() {
-  const entries = await api.get<ApiEntry[]>('/v1/content/entries?type=page&limit=100');
+interface SearchParams {
+  status?: string | string[];
+  q?: string | string[];
+  cursor?: string | string[];
+}
+
+const PAGE_SIZE = 50;
+
+function asString(v: string | string[] | undefined): string | undefined {
+  if (typeof v === 'string') return v;
+  if (Array.isArray(v)) return v[0];
+  return undefined;
+}
+
+function buildQuery(params: Record<string, string | undefined>): string {
+  const usp = new URLSearchParams();
+  for (const [k, v] of Object.entries(params)) {
+    if (v) usp.set(k, v);
+  }
+  return usp.toString();
+}
+
+export default async function CmsPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
+  const sp = await searchParams;
+  const status = asString(sp.status);
+  const q = asString(sp.q);
+  const cursor = asString(sp.cursor);
+
+  // Server-side query mirrors the filter UI exactly so the URL is the
+  // source of truth for the entry list.
+  const apiQuery = buildQuery({
+    type: 'page',
+    limit: String(PAGE_SIZE),
+    ...(status && status !== 'all' ? { status } : {}),
+    ...(q ? { q } : {}),
+    ...(cursor ? { cursor } : {}),
+  });
+
+  const paged = await api.getPaged<ApiEntry[]>(`/v1/content/entries?${apiQuery}`);
+  const entries = paged.data;
+  const nextCursor = typeof paged.meta?.next_cursor === 'string' ? paged.meta.next_cursor : null;
+
+  // Build the link URLs for "Load more" / first page. These are pure
+  // server-side navigations — no client state to wire.
+  const baseParams: Record<string, string | undefined> = {
+    ...(status && status !== 'all' ? { status } : {}),
+    ...(q ? { q } : {}),
+  };
+  const nextHref = nextCursor ? `/cms?${buildQuery({ ...baseParams, cursor: nextCursor })}` : null;
+  const isFiltered = Boolean(status && status !== 'all') || Boolean(q);
+  const isPaged = Boolean(cursor);
 
   return (
     <Container size="xl">
@@ -40,8 +91,8 @@ export default async function CmsPage() {
           <Stack gap={2}>
             <Stack direction="row" align="center" gap={2}>
               <FileText className="h-5 w-5" />
-              <Heading level={1}>CMS</Heading>
-              <Badge variant="module">teal active</Badge>
+              <Heading level={1}>Pages</Heading>
+              <Badge variant="outline">{entries.length}</Badge>
             </Stack>
             <Text variant="muted">
               Pages, landing pages, and policy content for your storefront.
@@ -52,16 +103,28 @@ export default async function CmsPage() {
           </Button>
         </Stack>
 
+        <EntryListFilters />
+
         {entries.length === 0 ? (
-          <Card padding="none">
+          <Card variant="module" padding="none">
             <EmptyState
               icon={<FileText className="h-5 w-5" />}
-              title="No pages yet"
-              description="Create your first page to start building out your store."
+              title={isFiltered ? 'No pages match your filter' : 'No pages yet'}
+              description={
+                isFiltered
+                  ? 'Try clearing the filter or searching for a different term.'
+                  : 'Create your first page to start building out your store.'
+              }
               action={
-                <Button asChild>
-                  <Link href="/cms/new">Create a page</Link>
-                </Button>
+                isFiltered ? (
+                  <Button asChild variant="ghost">
+                    <Link href="/cms">Clear filters</Link>
+                  </Button>
+                ) : (
+                  <Button asChild variant="module">
+                    <Link href="/cms/new">Create a page</Link>
+                  </Button>
+                )
               }
             />
           </Card>
@@ -79,7 +142,9 @@ export default async function CmsPage() {
                       {e.status}
                     </Badge>
                     <Text size="xs" variant="muted">
-                      Updated {new Date(e.updated_at).toLocaleDateString()}
+                      {e.status === 'published' && e.published_at
+                        ? `Published ${new Date(e.published_at).toLocaleDateString()}`
+                        : `Last edited ${new Date(e.updated_at).toLocaleDateString()}`}
                     </Text>
                   </Stack>
                 </CardContent>
@@ -91,6 +156,27 @@ export default async function CmsPage() {
               </Card>
             ))}
           </Grid>
+        )}
+
+        {(nextHref !== null || isPaged) && (
+          <Stack direction="row" align="center" justify="between">
+            {isPaged ? (
+              <Button asChild variant="ghost" size="sm">
+                <Link href={`/cms?${buildQuery(baseParams)}`}>← First page</Link>
+              </Button>
+            ) : (
+              <span />
+            )}
+            {nextHref ? (
+              <Button asChild variant="module-outline" size="sm">
+                <Link href={nextHref}>Load more →</Link>
+              </Button>
+            ) : (
+              <Text size="xs" variant="muted">
+                End of list.
+              </Text>
+            )}
+          </Stack>
         )}
       </Stack>
     </Container>

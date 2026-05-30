@@ -3,20 +3,34 @@
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
   Button,
   Card,
   CardContent,
   CardDescription,
   CardFooter,
   CardHeader,
+  EmptyState,
   Heading,
   Input,
   Label,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
   Stack,
   Text,
   Textarea,
 } from '@sparx/ui';
-import { Plus, Trash2 } from 'lucide-react';
+import { ListTree, Plus, Trash2 } from 'lucide-react';
 import { createTerm, deleteTerm } from '../actions';
 
 export interface Term {
@@ -40,6 +54,8 @@ export function TermsManager({
   const [pending, startTransition] = React.useTransition();
   const [error, setError] = React.useState<string | null>(null);
   const [message, setMessage] = React.useState<string | null>(null);
+  const [parentId, setParentId] = React.useState('');
+  const [pendingDelete, setPendingDelete] = React.useState<Term | null>(null);
 
   function onCreate(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -47,6 +63,9 @@ export function TermsManager({
     setMessage(null);
     const form = e.currentTarget;
     const data = new FormData(form);
+    // Select writes to React state, not FormData.
+    if (parentId) data.set('parent_term_id', parentId);
+    else data.delete('parent_term_id');
     startTransition(async () => {
       const result = await createTerm(taxonomyKey, data);
       if (!result.ok) {
@@ -54,17 +73,20 @@ export function TermsManager({
         return;
       }
       form.reset();
+      setParentId('');
       setMessage('Term created.');
       router.refresh();
     });
   }
 
-  function onDelete(id: string, name: string) {
-    if (!confirm(`Delete term "${name}"? Entries tagged with it will be untagged.`)) return;
+  function executeDelete() {
+    if (!pendingDelete) return;
+    const target = pendingDelete;
+    setPendingDelete(null);
     setError(null);
     setMessage(null);
     startTransition(async () => {
-      const result = await deleteTerm(taxonomyKey, id);
+      const result = await deleteTerm(taxonomyKey, target.id);
       if (!result.ok) {
         setError(result.error ?? 'Could not delete term.');
         return;
@@ -75,18 +97,28 @@ export function TermsManager({
 
   return (
     <Stack gap={5}>
-      <Card>
+      <Card variant="module">
         <CardHeader>
           <Heading level={3}>Add term</Heading>
-          <CardDescription>Slug auto-derives from the name when blank.</CardDescription>
+          <CardDescription>
+            Slug auto-derives from the name when blank.
+            {hierarchical && (
+              <>
+                {' '}
+                Pick <em>(top level)</em> for a root-level term.
+              </>
+            )}
+          </CardDescription>
         </CardHeader>
         <form onSubmit={onCreate}>
           <CardContent>
             <Stack gap={4}>
               <Stack direction="row" gap={3}>
                 <Stack gap={1} className="flex-1">
-                  <Label htmlFor="name">Name</Label>
-                  <Input id="name" name="name" required />
+                  <Label htmlFor="name" required>
+                    Name
+                  </Label>
+                  <Input id="name" name="name" required aria-required />
                 </Stack>
                 <Stack gap={1} className="flex-1">
                   <Label htmlFor="slug">Slug (optional)</Label>
@@ -95,19 +127,22 @@ export function TermsManager({
                 {hierarchical && (
                   <Stack gap={1} className="flex-1">
                     <Label htmlFor="parent_term_id">Parent</Label>
-                    <select
-                      id="parent_term_id"
-                      name="parent_term_id"
-                      defaultValue=""
-                      className="rounded-md border border-[var(--color-border-default)] bg-[var(--color-bg-surface)] px-3 py-2 text-sm"
+                    <Select
+                      value={parentId || 'top'}
+                      onValueChange={(v) => setParentId(v === 'top' ? '' : v)}
                     >
-                      <option value="">— (top level)</option>
-                      {terms.map((t) => (
-                        <option key={t.id} value={t.id}>
-                          {t.name}
-                        </option>
-                      ))}
-                    </select>
+                      <SelectTrigger id="parent_term_id" aria-label="Parent term">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="top">— (top level)</SelectItem>
+                        {terms.map((t) => (
+                          <SelectItem key={t.id} value={t.id}>
+                            {t.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </Stack>
                 )}
               </Stack>
@@ -129,12 +164,12 @@ export function TermsManager({
                 Add term
               </Button>
               {error && (
-                <Text size="sm" variant="danger" role="alert">
+                <Text size="sm" variant="danger" role="alert" aria-live="polite">
                   {error}
                 </Text>
               )}
               {message && (
-                <Text size="sm" variant="success">
+                <Text size="sm" variant="success" aria-live="polite">
                   {message}
                 </Text>
               )}
@@ -143,13 +178,17 @@ export function TermsManager({
         </form>
       </Card>
 
-      <Card>
+      <Card variant="module">
         <CardHeader>
           <Heading level={3}>Terms</Heading>
         </CardHeader>
         <CardContent>
           {terms.length === 0 ? (
-            <Text variant="muted">No terms yet.</Text>
+            <EmptyState
+              icon={<ListTree className="h-5 w-5" />}
+              title="No terms yet"
+              description="Add your first term above. Tagging entries with a term groups them on storefront index pages and feeds."
+            />
           ) : (
             <Stack gap={2}>
               {terms.map((t) => (
@@ -173,7 +212,7 @@ export function TermsManager({
                     variant="ghost"
                     size="xs"
                     leftIcon={<Trash2 className="h-3 w-3" />}
-                    onClick={() => onDelete(t.id, t.name)}
+                    onClick={() => setPendingDelete(t)}
                     disabled={pending}
                   >
                     Remove
@@ -184,6 +223,27 @@ export function TermsManager({
           )}
         </CardContent>
       </Card>
+
+      <AlertDialog
+        open={pendingDelete !== null}
+        onOpenChange={(next) => {
+          if (!next) setPendingDelete(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete term?</AlertDialogTitle>
+            <AlertDialogDescription>
+              <strong>{pendingDelete?.name}</strong> will be removed. Entries currently tagged with
+              it will be untagged — they stay published, but the term link is dropped.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={executeDelete}>Delete term</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Stack>
   );
 }

@@ -137,3 +137,47 @@ resource "google_pubsub_subscription" "push" {
 
   depends_on = [google_cloud_run_v2_service_iam_member.invoker]
 }
+
+# Fan-in subscriptions. Same push endpoint + invoker SA + DLQ + retry as the
+# primary above; only the topic and ack deadline vary per entry. The router
+# in the worker process disambiguates by event.type, so the worker code is
+# the same — only its TF surface widens.
+resource "google_pubsub_subscription" "additional" {
+  for_each = { for s in var.additional_subscriptions : s.subscription_name => s }
+
+  name    = each.value.subscription_name
+  topic   = each.value.topic
+  project = var.project_id
+
+  ack_deadline_seconds = coalesce(each.value.ack_deadline_seconds, var.pubsub_ack_deadline_seconds)
+
+  push_config {
+    push_endpoint = "${google_cloud_run_v2_service.this.uri}${var.pubsub_path}"
+
+    oidc_token {
+      service_account_email = var.pubsub_invoker_sa_email
+      audience              = google_cloud_run_v2_service.this.uri
+    }
+  }
+
+  retry_policy {
+    minimum_backoff = "10s"
+    maximum_backoff = "600s"
+  }
+
+  dynamic "dead_letter_policy" {
+    for_each = var.pubsub_dead_letter_topic_id == null ? [] : [1]
+    content {
+      dead_letter_topic     = var.pubsub_dead_letter_topic_id
+      max_delivery_attempts = var.pubsub_max_delivery_attempts
+    }
+  }
+
+  filter = each.value.filter
+
+  expiration_policy {
+    ttl = ""
+  }
+
+  depends_on = [google_cloud_run_v2_service_iam_member.invoker]
+}

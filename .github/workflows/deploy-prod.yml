@@ -94,7 +94,7 @@ jobs:
       - name: Rollout image to each Cloud Run service
         run: |
           IMAGE_BASE="$REGION-docker.pkg.dev/${{ env.PROJECT_ID }}/$AR_REPO"
-          for svc in email-worker media-worker; do
+          for svc in email-worker media-worker commerce-indexer; do
             if gcloud run services describe "$svc" --region="$REGION" --project="${{ env.PROJECT_ID }}" >/dev/null 2>&1; then
               echo "::group::Rolling out $svc (Cloud Run)"
               gcloud run services update "$svc" \

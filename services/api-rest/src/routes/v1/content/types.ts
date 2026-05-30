@@ -17,6 +17,7 @@ import { withRequestTenant } from '@sparx/api-core/db';
 import { requireAuth, requireRole } from '@sparx/api-core/auth';
 import { conflict, notFound } from '@sparx/api-core/errors';
 import { ContentTypeSchema } from '@sparx/cms-schemas';
+import { serializeContentType } from '@sparx/api-core/content-types';
 import { writeAudit } from '@sparx/api-core/audit';
 import { publish } from '@sparx/api-core/pubsub';
 
@@ -59,7 +60,7 @@ const contentTypeRoutes: FastifyPluginAsync = (app) => {
         orderBy: [{ isBuiltIn: 'asc' }, { key: 'asc' }],
       })
     );
-    return ok(rows);
+    return ok(rows.map(serializeContentType));
   });
 
   app.get('/v1/content/types/:key', async (request) => {
@@ -72,7 +73,7 @@ const contentTypeRoutes: FastifyPluginAsync = (app) => {
       })
     );
     if (!row) throw notFound('Content type', key);
-    return ok(row);
+    return ok(serializeContentType(row));
   });
 
   app.post('/v1/content/types', async (request, reply) => {
@@ -113,7 +114,7 @@ const contentTypeRoutes: FastifyPluginAsync = (app) => {
       typeKey: created.key,
     });
     reply.code(201);
-    return ok(created);
+    return ok(serializeContentType(created));
   });
 
   app.patch('/v1/content/types/:key', async (request) => {
@@ -150,7 +151,7 @@ const contentTypeRoutes: FastifyPluginAsync = (app) => {
     await publish(request.log, 'content_type.upserted', auth.tenantId, auth.actorId, {
       typeKey: updated.key,
     });
-    return ok(updated);
+    return ok(serializeContentType(updated));
   });
 
   app.delete('/v1/content/types/:key', async (request, reply) => {

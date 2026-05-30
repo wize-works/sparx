@@ -14,7 +14,7 @@ interface ApiContentType {
   name: string;
   plural_name: string;
   url_pattern: string | null;
-  schema: { fields: unknown[] };
+  schema_json: { fields: unknown[] };
 }
 
 interface ApiEntry {
@@ -72,7 +72,7 @@ export default async function EditEntryPage({ params }: PageProps) {
           id={entry.id}
           typeKey={type.key}
           urlPattern={type.url_pattern}
-          schema={type.schema as { fields: FieldDef[] }}
+          schema={type.schema_json as { fields: FieldDef[] }}
           initialBody={entry.body}
           initialStatus={entry.status}
         />

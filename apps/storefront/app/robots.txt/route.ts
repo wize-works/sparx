@@ -8,8 +8,17 @@ export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 export async function GET(request: Request) {
+  // Behind the cluster ingress (Caddy → Cloud Run/GKE), `request.url` reports
+  // the internal bind address (e.g. 0.0.0.0:3000), not the public host the
+  // crawler used. Prefer the x-forwarded headers so the Sitemap line points
+  // at the storefront origin a crawler can actually fetch.
+  const headers = request.headers;
+  const forwardedHost = headers.get('x-forwarded-host');
+  const forwardedProto = headers.get('x-forwarded-proto');
   const url = new URL(request.url);
-  const origin = `${url.protocol}//${url.host}`;
+  const host = forwardedHost ?? headers.get('host') ?? url.host;
+  const protocol = forwardedProto ? `${forwardedProto}:` : url.protocol;
+  const origin = `${protocol}//${host}`;
   const tenant = await resolveTenant();
 
   const lines = [

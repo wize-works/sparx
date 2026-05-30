@@ -27,6 +27,7 @@ on:
           - namespaces-only
           - caddy
           - redis
+          - typesense
           - pgbouncer
           - app-env
           - app-secrets
@@ -112,6 +113,22 @@ jobs:
           set -euo pipefail
           kubectl apply -k k8s/redis/
           kubectl rollout status statefulset/redis -n "$NAMESPACE" --timeout=5m
+
+      - name: Apply Typesense
+        if: ${{ inputs.components == 'all-platform' || inputs.components == 'typesense' }}
+        run: |
+          set -euo pipefail
+          # Typesense API key is generated outside the cluster (Phase 1
+          # admin convention — Typesense doesn't rotate). Source from
+          # Secret Manager so the k8s secret matches the value
+          # commerce-indexer reads via its Cloud Run env binding.
+          TS_KEY=$(gcloud secrets versions access latest --secret=typesense-api-key --project="$PROJECT_ID")
+          kubectl create secret generic typesense-secrets \
+            -n "$NAMESPACE" \
+            --from-literal=api-key="$TS_KEY" \
+            --dry-run=client -o yaml | kubectl apply -f -
+          kubectl apply -k k8s/typesense/
+          kubectl rollout status statefulset/typesense -n "$NAMESPACE" --timeout=5m
 
       - name: Apply PgBouncer
         if: ${{ inputs.components == 'all-platform' || inputs.components == 'pgbouncer' }}

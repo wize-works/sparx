@@ -21,6 +21,8 @@ import {
   Stack,
   Text,
 } from '@sparx/ui';
+// Stable per-type badge ("built-in" outline / "custom" default). Replaces the
+// "teal active" placeholder that shipped from the scaffolding.
 import { FileText, Plus } from 'lucide-react';
 import { api } from '@/lib/api-rest-client';
 import { CmsTabs } from '../../_components/cms-tabs';
@@ -33,7 +35,9 @@ interface ApiContentType {
   plural_name: string;
   url_pattern: string | null;
   is_singleton: boolean;
+  is_built_in: boolean;
   description: string | null;
+  schema_json: { fields: unknown[] };
 }
 
 interface ApiEntry {
@@ -78,7 +82,9 @@ export default async function TypeListPage({ params }: PageProps) {
             <Stack direction="row" align="center" gap={2}>
               <FileText className="h-5 w-5" />
               <Heading level={1}>{type.plural_name}</Heading>
-              <Badge variant="module">teal active</Badge>
+              <Badge variant={type.is_built_in ? 'outline' : 'default'}>
+                {type.is_built_in ? 'built-in' : 'custom'}
+              </Badge>
             </Stack>
             {type.description && <Text variant="muted">{type.description}</Text>}
           </Stack>

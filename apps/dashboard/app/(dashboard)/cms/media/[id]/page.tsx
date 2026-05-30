@@ -8,13 +8,17 @@ import {
   CardDescription,
   CardHeader,
   Container,
+  Grid,
   Heading,
   Stack,
   Text,
 } from '@sparx/ui';
 import { ArrowLeft } from 'lucide-react';
 import { api, type ApiRestError } from '@/lib/api-rest-client';
+import { CmsTabs } from '../../_components/cms-tabs';
 import { AssetEditForm } from './edit-form';
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export const dynamic = 'force-dynamic';
 
@@ -49,11 +53,13 @@ interface MediaAssetDetail {
 
 export default async function AssetPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  if (!UUID_RE.test(id)) notFound();
   let asset: MediaAssetDetail;
   try {
     asset = await api.get<MediaAssetDetail>(`/v1/media/assets/${id}`);
   } catch (err) {
-    if ((err as ApiRestError).status === 404) notFound();
+    const status = (err as ApiRestError).status;
+    if (status === 404 || status >= 400) notFound();
     throw err;
   }
 
@@ -66,6 +72,7 @@ export default async function AssetPage({ params }: { params: Promise<{ id: stri
   return (
     <Container size="xl">
       <Stack gap={6} className="py-10">
+        <CmsTabs current="media" />
         <Stack gap={2}>
           <Button variant="link" size="sm" asChild>
             <Link href="/cms/media">
@@ -88,28 +95,30 @@ export default async function AssetPage({ params }: { params: Promise<{ id: stri
           )}
         </Stack>
 
-        <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
-          <Card>
-            <CardHeader>
-              <Heading level={3}>Preview &amp; focal point</Heading>
-              <CardDescription>
-                Click anywhere on the image to set the focal point — crops in non-uniform aspect
-                ratios will center on that pixel.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <AssetEditForm
-                assetId={asset.id}
-                isImage={isImage}
-                previewUrl={preview}
-                altText={asset.alt_text}
-                caption={asset.caption}
-                focalPoint={asset.focal_point}
-              />
-            </CardContent>
-          </Card>
+        <Grid cols={1} lgCols={3} gap={6}>
+          <div className="lg:col-span-2">
+            <Card variant="module">
+              <CardHeader>
+                <Heading level={3}>Preview &amp; focal point</Heading>
+                <CardDescription>
+                  Click anywhere on the image to set the focal point — crops in non-uniform aspect
+                  ratios will center on that pixel.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <AssetEditForm
+                  assetId={asset.id}
+                  isImage={isImage}
+                  previewUrl={preview}
+                  altText={asset.alt_text}
+                  caption={asset.caption}
+                  focalPoint={asset.focal_point}
+                />
+              </CardContent>
+            </Card>
+          </div>
 
-          <Card>
+          <Card variant="module">
             <CardHeader>
               <Heading level={3}>Variants</Heading>
               <CardDescription>
@@ -143,7 +152,7 @@ export default async function AssetPage({ params }: { params: Promise<{ id: stri
               )}
             </CardContent>
           </Card>
-        </div>
+        </Grid>
       </Stack>
     </Container>
   );

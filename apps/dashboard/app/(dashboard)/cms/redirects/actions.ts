@@ -75,9 +75,18 @@ export async function deleteRedirect(id: string): Promise<ActionResult> {
 // Status code is optional and defaults to 301. Lines are validated row-by
 // -row so a single bad row doesn't kill the whole import — invalid rows
 // surface in `failed` so the user knows which ones to fix.
+//
+// Two-phase import (audit F-21): we still try /v1/redirects/bulk first for
+// the fast path, but if the API rejects (e.g. one row creates a loop and the
+// bulk endpoint is all-or-nothing for business rules), we fall back to
+// posting each candidate row individually so partial success + per-row
+// diagnostics survive. The line numbers reported in `failed` always trace
+// back to the original CSV row.
 export async function bulkImportRedirects(
   csv: string
-): Promise<ActionResult<{ imported: number; failed: { line: number; reason: string }[] }>> {
+): Promise<
+  ActionResult<{ imported: number; failed: { line: number; from_path: string; reason: string }[] }>
+> {
   const lines = csv
     .replace(/\r\n/g, '\n')
     .split('\n')
@@ -89,36 +98,61 @@ export async function bulkImportRedirects(
   // Detect header row by looking for the literal token "from_path".
   const startIdx = lines[0]?.toLowerCase().includes('from_path') ? 1 : 0;
 
-  const rows: z.infer<typeof BulkRow>[] = [];
-  const failed: { line: number; reason: string }[] = [];
+  interface Candidate {
+    line: number;
+    data: z.infer<typeof BulkRow>;
+  }
+  const candidates: Candidate[] = [];
+  const failed: { line: number; from_path: string; reason: string }[] = [];
 
   for (let i = startIdx; i < lines.length; i++) {
     const parts = lines[i]!.split(',').map((s) => s.trim().replace(/^"|"$/g, ''));
-    const candidate = {
+    const raw = {
       from_path: parts[0] ?? '',
       to_path: parts[1] ?? '',
       status_code: Number(parts[2] ?? 301),
     };
-    const parsed = BulkRow.safeParse(candidate);
+    const parsed = BulkRow.safeParse(raw);
     if (!parsed.success) {
       failed.push({
         line: i + 1,
+        from_path: raw.from_path,
         reason: parsed.error.issues[0]?.message ?? 'Invalid row.',
       });
       continue;
     }
-    rows.push(parsed.data);
+    candidates.push({ line: i + 1, data: parsed.data });
   }
 
-  if (rows.length === 0) {
-    return { ok: false, error: 'No valid rows found in CSV.' };
+  if (candidates.length === 0) {
+    return { ok: false, error: 'No valid rows found in CSV.', data: { imported: 0, failed } };
   }
 
+  // Fast path: bulk endpoint.
   try {
-    await api.post('/v1/redirects/bulk', { rows });
-  } catch (err) {
-    return { ok: false, error: friendly(err) };
+    await api.post('/v1/redirects/bulk', { rows: candidates.map((c) => c.data) });
+    revalidatePath('/cms/redirects');
+    return { ok: true, data: { imported: candidates.length, failed } };
+  } catch {
+    // Fall through to per-row. We discard the bulk error message — the
+    // per-row pass surfaces accurate per-line diagnostics instead.
+  }
+
+  // Slow-but-accurate path: one POST per row. Each failure is annotated with
+  // its original CSV line so the editor can fix the offending row.
+  let imported = 0;
+  for (const c of candidates) {
+    try {
+      await api.post('/v1/redirects', c.data);
+      imported += 1;
+    } catch (err) {
+      failed.push({
+        line: c.line,
+        from_path: c.data.from_path,
+        reason: friendly(err),
+      });
+    }
   }
   revalidatePath('/cms/redirects');
-  return { ok: true, data: { imported: rows.length, failed } };
+  return { ok: imported > 0, data: { imported, failed } };
 }

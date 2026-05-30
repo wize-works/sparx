@@ -14,7 +14,7 @@ interface ApiContentType {
   url_pattern: string | null;
   is_singleton: boolean;
   description: string | null;
-  schema: { fields: unknown[] };
+  schema_json: { fields: unknown[] };
 }
 
 interface PageProps {
@@ -41,7 +41,7 @@ export default async function NewEntryPage({ params }: PageProps) {
         <NewEntryForm
           typeKey={type.key}
           urlPattern={type.url_pattern}
-          schema={type.schema as { fields: FieldDef[] }}
+          schema={type.schema_json as { fields: FieldDef[] }}
         />
       </Stack>
     </Container>

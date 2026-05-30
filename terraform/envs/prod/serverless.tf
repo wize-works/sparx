@@ -66,6 +66,22 @@ resource "google_project_iam_member" "email_worker_roles" {
   member  = "serviceAccount:${google_service_account.email_worker.email}"
 }
 
+resource "google_service_account" "commerce_indexer" {
+  account_id   = "sparx-commerce-indexer"
+  display_name = "Sparx commerce-indexer (Cloud Run)"
+  description  = "Runtime SA for the commerce-indexer Cloud Run service. Reads DB URL + Typesense API key from Secret Manager; reprojects product rows into Typesense."
+}
+
+resource "google_project_iam_member" "commerce_indexer_roles" {
+  for_each = toset([
+    "roles/cloudsql.client",
+    "roles/secretmanager.secretAccessor",
+  ])
+  project = var.project_id
+  role    = each.value
+  member  = "serviceAccount:${google_service_account.commerce_indexer.email}"
+}
+
 resource "google_service_account" "media_worker" {
   account_id   = "sparx-media-worker"
   display_name = "Sparx media-worker (Cloud Run)"
@@ -234,6 +250,82 @@ module "media_worker_cloudrun" {
     module.pubsub,
     google_project_iam_member.media_worker_roles,
     google_storage_bucket_iam_member.media_worker_buckets,
+    google_service_account_iam_member.pubsub_invoker_token_creator,
+  ]
+}
+
+# ─── commerce-indexer ─────────────────────────────────────────────────────
+#
+# Single Cloud Run service that fans in from product.*/variant.*/inventory.*
+# topics. The primary subscription is product.created (chosen as the
+# "canonical" one because every product first appears via it); the rest
+# attach via additional_subscriptions on the same service. The router in
+# services/commerce-indexer/src/handler.ts disambiguates by event.type.
+
+module "commerce_indexer_cloudrun" {
+  source = "../../modules/cloud-run-worker"
+
+  name                  = "commerce-indexer"
+  project_id            = var.project_id
+  region                = var.region
+  image                 = "${var.region}-docker.pkg.dev/${var.project_id}/sparx/commerce-indexer:latest"
+  service_account_email = google_service_account.commerce_indexer.email
+  vpc_connector_id      = google_vpc_access_connector.workers.id
+
+  # Projection is light: one Prisma read + one HTTP upsert per event.
+  # Container concurrency of 8 matches email-worker; bump if Typesense
+  # round-trip becomes the floor.
+  min_instance_count    = 0
+  max_instance_count    = 10
+  container_concurrency = 8
+  cpu                   = "1"
+  memory                = "512Mi"
+  timeout_seconds       = 120
+
+  env_vars = {
+    NODE_ENV                = "production"
+    SERVICE_NAME            = "commerce-indexer"
+    LOG_LEVEL               = "info"
+    PUBSUB_INVOKER_SA       = google_service_account.pubsub_invoker.email
+    GCS_MEDIA_PUBLIC_BUCKET = module.storage.media_public_bucket_name
+    # Typesense lives in-cluster (k8s Service); reach it via the VPC
+    # connector. Hostname matches k8s/typesense/service.yaml.
+    TYPESENSE_HOST     = "typesense.sparx-prod.svc.cluster.local"
+    TYPESENSE_PORT     = "8108"
+    TYPESENSE_PROTOCOL = "http"
+  }
+
+  secrets = [
+    {
+      name      = "DATABASE_URL"
+      secret_id = "database-url"
+    },
+    {
+      name      = "TYPESENSE_API_KEY"
+      secret_id = "typesense-api-key"
+    },
+  ]
+
+  # Primary subscription = product.created. Inventory + variant + the rest
+  # of the product lifecycle attach as additional subscriptions below.
+  pubsub_topic                 = "product.created"
+  pubsub_subscription_name     = "product.created.commerce-indexer-cloudrun"
+  pubsub_invoker_sa_email      = google_service_account.pubsub_invoker.email
+  pubsub_dead_letter_topic_id  = module.pubsub.dead_letter_topic == null ? null : "projects/${var.project_id}/topics/${module.pubsub.dead_letter_topic}"
+  pubsub_max_delivery_attempts = 5
+
+  additional_subscriptions = [
+    { topic = "product.updated", subscription_name = "product.updated.commerce-indexer-cloudrun" },
+    { topic = "product.deleted", subscription_name = "product.deleted.commerce-indexer-cloudrun" },
+    { topic = "variant.created", subscription_name = "variant.created.commerce-indexer-cloudrun" },
+    { topic = "variant.updated", subscription_name = "variant.updated.commerce-indexer-cloudrun" },
+    { topic = "variant.deleted", subscription_name = "variant.deleted.commerce-indexer-cloudrun" },
+    { topic = "inventory.adjusted", subscription_name = "inventory.adjusted.commerce-indexer-cloudrun" },
+  ]
+
+  depends_on = [
+    module.pubsub,
+    google_project_iam_member.commerce_indexer_roles,
     google_service_account_iam_member.pubsub_invoker_token_creator,
   ]
 }

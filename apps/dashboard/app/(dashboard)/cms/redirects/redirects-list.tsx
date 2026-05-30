@@ -3,6 +3,14 @@
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
   Badge,
   Button,
   Card,
@@ -10,13 +18,19 @@ import {
   CardDescription,
   CardFooter,
   CardHeader,
+  EmptyState,
   Heading,
   Input,
   Label,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
   Stack,
   Text,
 } from '@sparx/ui';
-import { ArrowRight, FileUp, Plus, Trash2 } from 'lucide-react';
+import { ArrowRight, FileUp, Plus, Trash2, Waypoints } from 'lucide-react';
 import { bulkImportRedirects, createRedirect, deleteRedirect } from './actions';
 
 interface RedirectRow {
@@ -33,6 +47,9 @@ export function RedirectsList({ rows }: { rows: RedirectRow[] }) {
   const [pending, startTransition] = React.useTransition();
   const [error, setError] = React.useState<string | null>(null);
   const [message, setMessage] = React.useState<string | null>(null);
+  const [pendingDelete, setPendingDelete] = React.useState<RedirectRow | null>(null);
+  const [statusCode, setStatusCode] = React.useState('301');
+  const fromInputRef = React.useRef<HTMLInputElement>(null);
 
   function onCreate(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -40,6 +57,9 @@ export function RedirectsList({ rows }: { rows: RedirectRow[] }) {
     setMessage(null);
     const form = e.currentTarget;
     const data = new FormData(form);
+    // Form's <Select> writes to React state, not native FormData — the
+    // submission needs the value injected.
+    data.set('status_code', statusCode);
     startTransition(async () => {
       const result = await createRedirect(data);
       if (!result.ok) {
@@ -48,16 +68,23 @@ export function RedirectsList({ rows }: { rows: RedirectRow[] }) {
       }
       setMessage('Redirect added.');
       form.reset();
+      setStatusCode('301');
       router.refresh();
     });
   }
 
-  function onDelete(id: string, fromPath: string) {
-    if (!confirm(`Remove redirect "${fromPath}"?`)) return;
+  function confirmDelete(row: RedirectRow) {
+    setPendingDelete(row);
+  }
+
+  function executeDelete() {
+    if (!pendingDelete) return;
+    const target = pendingDelete;
+    setPendingDelete(null);
     setError(null);
     setMessage(null);
     startTransition(async () => {
-      const result = await deleteRedirect(id);
+      const result = await deleteRedirect(target.id);
       if (!result.ok) {
         setError(result.error ?? 'Could not delete redirect.');
         return;
@@ -68,7 +95,7 @@ export function RedirectsList({ rows }: { rows: RedirectRow[] }) {
 
   return (
     <Stack gap={5}>
-      <Card>
+      <Card variant="module">
         <CardHeader>
           <Heading level={3}>Add redirect</Heading>
           <CardDescription>
@@ -81,7 +108,13 @@ export function RedirectsList({ rows }: { rows: RedirectRow[] }) {
               <Stack direction="row" gap={3} align="end">
                 <Stack gap={1} className="flex-1">
                   <Label htmlFor="from_path">From</Label>
-                  <Input id="from_path" name="from_path" placeholder="/old-path" required />
+                  <Input
+                    ref={fromInputRef}
+                    id="from_path"
+                    name="from_path"
+                    placeholder="/old-path"
+                    required
+                  />
                 </Stack>
                 <Stack gap={1} className="flex-1">
                   <Label htmlFor="to_path">To</Label>
@@ -89,17 +122,17 @@ export function RedirectsList({ rows }: { rows: RedirectRow[] }) {
                 </Stack>
                 <Stack gap={1}>
                   <Label htmlFor="status_code">Status</Label>
-                  <select
-                    id="status_code"
-                    name="status_code"
-                    defaultValue={301}
-                    className="rounded-md border border-[var(--color-border-default)] bg-[var(--color-bg-surface)] px-3 py-2 text-sm"
-                  >
-                    <option value={301}>301 Permanent</option>
-                    <option value={302}>302 Found</option>
-                    <option value={307}>307 Temporary</option>
-                    <option value={308}>308 Permanent (keep method)</option>
-                  </select>
+                  <Select value={statusCode} onValueChange={setStatusCode}>
+                    <SelectTrigger id="status_code" aria-label="HTTP status code">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="301">301 Permanent</SelectItem>
+                      <SelectItem value="302">302 Found</SelectItem>
+                      <SelectItem value="307">307 Temporary</SelectItem>
+                      <SelectItem value="308">308 Permanent (keep method)</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </Stack>
               </Stack>
             </Stack>
@@ -137,13 +170,30 @@ export function RedirectsList({ rows }: { rows: RedirectRow[] }) {
         </Text>
       )}
 
-      <Card>
+      <Card variant="module">
         <CardHeader>
           <Heading level={3}>Existing redirects</Heading>
+          <CardDescription>
+            {rows.length} redirect{rows.length === 1 ? '' : 's'} active.
+          </CardDescription>
         </CardHeader>
         <CardContent>
           {rows.length === 0 ? (
-            <Text variant="muted">No redirects yet.</Text>
+            <EmptyState
+              icon={<Waypoints className="h-5 w-5" />}
+              title="No redirects yet"
+              description="Use the form above to forward an old URL to a new one. Redirects are returned with the chosen HTTP status code on every storefront hit."
+              action={
+                <Button
+                  type="button"
+                  variant="module-outline"
+                  size="sm"
+                  onClick={() => fromInputRef.current?.focus()}
+                >
+                  Add your first redirect
+                </Button>
+              }
+            />
           ) : (
             <Stack gap={2}>
               {rows.map((r) => (
@@ -173,7 +223,7 @@ export function RedirectsList({ rows }: { rows: RedirectRow[] }) {
                       variant="ghost"
                       size="xs"
                       leftIcon={<Trash2 className="h-3 w-3" />}
-                      onClick={() => onDelete(r.id, r.from_path)}
+                      onClick={() => confirmDelete(r)}
                       disabled={pending}
                     >
                       Remove
@@ -185,6 +235,28 @@ export function RedirectsList({ rows }: { rows: RedirectRow[] }) {
           )}
         </CardContent>
       </Card>
+
+      <AlertDialog
+        open={pendingDelete !== null}
+        onOpenChange={(next) => {
+          if (!next) setPendingDelete(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove redirect?</AlertDialogTitle>
+            <AlertDialogDescription>
+              <span className="font-mono">{pendingDelete?.from_path}</span> will no longer forward
+              to <span className="font-mono">{pendingDelete?.to_path}</span>. Any external links to
+              the old path will return 404.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={executeDelete}>Remove redirect</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Stack>
   );
 }
@@ -200,7 +272,9 @@ function BulkUploadCard({
 }) {
   const fileRef = React.useRef<HTMLInputElement>(null);
   const [pending, startTransition] = React.useTransition();
-  const [skipped, setSkipped] = React.useState<{ line: number; reason: string }[]>([]);
+  const [skipped, setSkipped] = React.useState<
+    { line: number; from_path: string; reason: string }[]
+  >([]);
 
   function onChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -210,21 +284,25 @@ function BulkUploadCard({
       startTransition(async () => {
         const result = await bulkImportRedirects(text);
         if (fileRef.current) fileRef.current.value = '';
-        if (!result.ok) {
+        const imported = result.data?.imported ?? 0;
+        const failedList = result.data?.failed ?? [];
+        setSkipped(failedList);
+        if (!result.ok && imported === 0) {
           onError(result.error ?? 'Bulk import failed.');
           return;
         }
         onDone(
-          `Imported ${result.data?.imported ?? 0} redirects` +
-            (result.data?.failed.length ? ` (${result.data.failed.length} skipped)` : '.')
+          `Imported ${imported} redirect${imported === 1 ? '' : 's'}` +
+            (failedList.length
+              ? ` (${failedList.length} row${failedList.length === 1 ? '' : 's'} skipped — see below).`
+              : '.')
         );
-        setSkipped(result.data?.failed ?? []);
       });
     });
   }
 
   return (
-    <Card>
+    <Card variant="module">
       <CardHeader>
         <Heading level={3}>Bulk import</Heading>
         <CardDescription>
@@ -255,16 +333,16 @@ function BulkUploadCard({
         {skipped.length > 0 && (
           <Stack gap={1} className="mt-3">
             <Text size="sm" variant="danger">
-              Skipped {skipped.length} invalid {skipped.length === 1 ? 'row' : 'rows'}:
+              Skipped {skipped.length} {skipped.length === 1 ? 'row' : 'rows'}:
             </Text>
-            {skipped.slice(0, 5).map((s) => (
-              <Text key={s.line} size="xs" variant="muted">
-                Line {s.line}: {s.reason}
+            {skipped.slice(0, 10).map((s) => (
+              <Text key={`${s.line}-${s.from_path}`} size="xs" variant="muted">
+                Line {s.line} (<code>{s.from_path || '(blank)'}</code>): {s.reason}
               </Text>
             ))}
-            {skipped.length > 5 && (
+            {skipped.length > 10 && (
               <Text size="xs" variant="muted">
-                …and {skipped.length - 5} more.
+                …and {skipped.length - 10} more.
               </Text>
             )}
           </Stack>

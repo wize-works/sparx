@@ -15,6 +15,7 @@
 
 import * as React from 'react';
 import {
+  Button,
   Card,
   CardContent,
   CardDescription,
@@ -22,10 +23,17 @@ import {
   Heading,
   Input,
   Label,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
   Stack,
   Text,
   Textarea,
 } from '@sparx/ui';
+import { ImageOff, Pencil } from 'lucide-react';
+import { MediaPicker, type PickedAsset } from '../_components/media-picker';
 
 export interface SeoFields {
   title: string;
@@ -50,7 +58,7 @@ interface SeoPanelProps {
 }
 
 const ROBOTS_OPTIONS = [
-  { value: '', label: 'Default (index, follow)' },
+  { value: 'default', label: 'Default (index, follow)' },
   { value: 'index,follow', label: 'Index, follow' },
   { value: 'noindex,follow', label: 'No-index, follow' },
   { value: 'index,nofollow', label: 'Index, no-follow' },
@@ -65,13 +73,16 @@ export function SeoPanel({ value, onChange, previewOrigin, slug, fallbackTitle }
     onChange({ ...value, [k]: v });
   };
 
+  const [pickerOpen, setPickerOpen] = React.useState(false);
+  const [ogPreview, setOgPreview] = React.useState<PickedAsset | null>(null);
+
   const previewTitle = value.title || fallbackTitle || 'Untitled page';
   const previewDescription =
     value.description ||
     'Provide a meta description so Google can show this snippet under your search result.';
 
   return (
-    <Card>
+    <Card variant="module">
       <CardHeader>
         <Heading level={3}>SEO</Heading>
         <CardDescription>
@@ -119,18 +130,30 @@ export function SeoPanel({ value, onChange, previewOrigin, slug, fallbackTitle }
           </Stack>
 
           <Stack gap={2}>
-            <Label htmlFor="ogImage">Social share image (asset ID)</Label>
-            <Input
-              id="ogImage"
-              name="ogImage"
-              value={value.ogImage}
-              onChange={(e) => update('ogImage', e.target.value)}
-              placeholder="Pick from /cms/media — paste the UUID here."
+            <Label htmlFor="ogImage">Social share image</Label>
+            <OgImageField
+              assetId={value.ogImage}
+              preview={ogPreview}
+              onPick={() => setPickerOpen(true)}
+              onClear={() => {
+                setOgPreview(null);
+                update('ogImage', '');
+              }}
             />
             <Text size="xs" variant="muted">
               Used as the Open Graph image when this page is shared on Facebook, LinkedIn, Slack,
               etc. Falls back to the merchant&apos;s default OG image when blank.
             </Text>
+            <MediaPicker
+              open={pickerOpen}
+              onOpenChange={setPickerOpen}
+              accept={['image/*']}
+              onPick={(asset) => {
+                setOgPreview(asset);
+                update('ogImage', asset.assetId);
+                setPickerOpen(false);
+              }}
+            />
           </Stack>
 
           <Stack gap={2}>
@@ -150,19 +173,21 @@ export function SeoPanel({ value, onChange, previewOrigin, slug, fallbackTitle }
 
           <Stack gap={2}>
             <Label htmlFor="robots">Robots directive</Label>
-            <select
-              id="robots"
-              name="robots"
-              value={value.robots}
-              onChange={(e) => update('robots', e.target.value)}
-              className="h-9 w-full rounded-md border border-[var(--color-border-default)] bg-[var(--color-bg-surface)] px-3 text-sm text-[var(--color-text-primary)] focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:outline-none"
+            <Select
+              value={value.robots ? value.robots : 'default'}
+              onValueChange={(v) => update('robots', v === 'default' ? '' : v)}
             >
-              {ROBOTS_OPTIONS.map((o) => (
-                <option key={o.value || 'default'} value={o.value}>
-                  {o.label}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger id="robots" aria-label="Robots directive">
+                <SelectValue placeholder="Default (index, follow)" />
+              </SelectTrigger>
+              <SelectContent>
+                {ROBOTS_OPTIONS.map((o) => (
+                  <SelectItem key={o.value} value={o.value}>
+                    {o.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <Text size="xs" variant="muted">
               Controls whether search engines index this page and follow its links.
             </Text>
@@ -170,6 +195,76 @@ export function SeoPanel({ value, onChange, previewOrigin, slug, fallbackTitle }
         </Stack>
       </CardContent>
     </Card>
+  );
+}
+
+function OgImageField({
+  assetId,
+  preview,
+  onPick,
+  onClear,
+}: {
+  assetId: string;
+  preview: PickedAsset | null;
+  onPick: () => void;
+  onClear: () => void;
+}) {
+  // Two display states: nothing picked → "Pick image" button; picked →
+  // thumbnail (if we have one cached from this session) + filename + change/
+  // clear actions. We deliberately don't fetch the asset on mount when only
+  // an assetId is present — the picker can re-surface it lazily without an
+  // extra round-trip on every edit-page open.
+  const hasAsset = assetId.length > 0;
+  if (!hasAsset) {
+    return (
+      <Stack direction="row" align="center" gap={2}>
+        <Button type="button" variant="secondary" size="sm" onClick={onPick}>
+          Pick image
+        </Button>
+        <Text size="xs" variant="muted">
+          No image selected — Slack and OG cards will use the site default.
+        </Text>
+      </Stack>
+    );
+  }
+  return (
+    <Stack direction="row" align="center" gap={3}>
+      {preview?.src ? (
+        <img
+          src={preview.src}
+          alt={preview.alt || 'Selected social share image'}
+          className="h-14 w-14 rounded-md object-cover"
+        />
+      ) : (
+        <Stack
+          align="center"
+          justify="center"
+          className="h-14 w-14 rounded-md border border-[var(--color-border-default)] bg-[var(--color-bg-subtle)]"
+        >
+          <ImageOff aria-hidden className="h-5 w-5 text-[var(--color-text-tertiary)]" />
+        </Stack>
+      )}
+      <Stack gap={1}>
+        <Text size="sm">{preview?.alt ?? preview?.caption ?? 'Image selected'}</Text>
+        <Text size="xs" variant="muted">
+          Asset {assetId.slice(0, 8)}…
+        </Text>
+      </Stack>
+      <Stack direction="row" gap={1} className="ml-auto">
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          leftIcon={<Pencil className="h-3.5 w-3.5" />}
+          onClick={onPick}
+        >
+          Change
+        </Button>
+        <Button type="button" variant="ghost" size="sm" onClick={onClear}>
+          Clear
+        </Button>
+      </Stack>
+    </Stack>
   );
 }
 
@@ -199,6 +294,13 @@ function GooglePreview({
   const url = `${origin}/${slug ?? ''}`.replace(/\/+$/, '');
   // Display: chevron-separated "domain › path"
   const displayUrl = url.replace(/^https?:\/\//, '').replace('/', ' › ');
+  // Brand-fidelity exception: this block deliberately mimics Google's SERP
+  // typography (the blue title link `#1a0dab`, the gray description `#4d5156`,
+  // the dark URL chip `#202124`). Those colors are not in the Sparx design
+  // system — they're Google's, and editors expect to see what their result
+  // will look like there. Keep the inline Tailwind here; do not migrate to
+  // Sparx tokens. The surrounding chrome (border / background) does use
+  // tokens.
   return (
     <Stack
       gap={1}

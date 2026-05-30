@@ -53,6 +53,12 @@ export interface ContentBlockEditorProps {
   className?: string;
   ariaLabel?: string;
   /**
+   * DOM id forwarded to the contenteditable surface. Lets a sibling
+   * <Label htmlFor> click-focus into the editor and screen-readers walk
+   * aria-labelledby/describedby references back to a visible label.
+   */
+  id?: string;
+  /**
    * Search callback for the @-mention popover. The dashboard supplies one
    * that hits /v1/content/entries; consumers without a reference index can
    * omit it and the popover stays empty.
@@ -173,6 +179,7 @@ export function ContentBlockEditor({
   disabled,
   className,
   ariaLabel = 'Content editor',
+  id,
   referenceSearch,
   pickImage,
 }: ContentBlockEditorProps) {
@@ -192,6 +199,7 @@ export function ContentBlockEditor({
     editorProps: {
       attributes: {
         'aria-label': ariaLabel,
+        ...(id ? { id } : {}),
         class: cn(
           'min-h-[14rem] w-full px-3 py-2 text-sm text-[var(--color-text-primary)]',
           'focus:outline-none',

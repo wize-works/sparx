@@ -9,6 +9,7 @@ import {
   CardDescription,
   CardFooter,
   CardHeader,
+  Checkbox,
   Heading,
   Input,
   Label,
@@ -23,13 +24,18 @@ export function TaxonomyCreateForm() {
   const [pending, startTransition] = React.useTransition();
   const [error, setError] = React.useState<string | null>(null);
   const [message, setMessage] = React.useState<string | null>(null);
+  const [hierarchical, setHierarchical] = React.useState(false);
 
   function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
     setMessage(null);
     const form = e.currentTarget;
+    // <Checkbox> writes to React state, not native FormData. Inject the value
+    // before the server action reads it.
     const data = new FormData(form);
+    if (hierarchical) data.set('hierarchical', 'on');
+    else data.delete('hierarchical');
     startTransition(async () => {
       const result = await createTaxonomy(data);
       if (!result.ok) {
@@ -37,13 +43,14 @@ export function TaxonomyCreateForm() {
         return;
       }
       form.reset();
+      setHierarchical(false);
       setMessage('Taxonomy created.');
       router.refresh();
     });
   }
 
   return (
-    <Card>
+    <Card variant="module">
       <CardHeader>
         <Heading level={3}>Add taxonomy</Heading>
         <CardDescription>
@@ -56,20 +63,36 @@ export function TaxonomyCreateForm() {
           <Stack gap={4}>
             <Stack direction="row" gap={3}>
               <Stack gap={1} className="flex-1">
-                <Label htmlFor="key">Key</Label>
-                <Input id="key" name="key" placeholder="blog_category" required />
+                <Label htmlFor="key" required>
+                  Key
+                </Label>
+                <Input id="key" name="key" placeholder="blog_category" required aria-required />
               </Stack>
               <Stack gap={1} className="flex-1">
-                <Label htmlFor="name">Name</Label>
-                <Input id="name" name="name" placeholder="Category" required />
+                <Label htmlFor="name" required>
+                  Name
+                </Label>
+                <Input id="name" name="name" placeholder="Category" required aria-required />
               </Stack>
               <Stack gap={1} className="flex-1">
-                <Label htmlFor="plural_name">Plural</Label>
-                <Input id="plural_name" name="plural_name" placeholder="Categories" required />
+                <Label htmlFor="plural_name" required>
+                  Plural
+                </Label>
+                <Input
+                  id="plural_name"
+                  name="plural_name"
+                  placeholder="Categories"
+                  required
+                  aria-required
+                />
               </Stack>
             </Stack>
             <Stack direction="row" align="center" gap={2}>
-              <input id="hierarchical" name="hierarchical" type="checkbox" className="h-5 w-5" />
+              <Checkbox
+                id="hierarchical"
+                checked={hierarchical}
+                onCheckedChange={(next) => setHierarchical(next === true)}
+              />
               <Label htmlFor="hierarchical">Allow parent / child term nesting</Label>
             </Stack>
           </Stack>

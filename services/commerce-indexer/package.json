@@ -1,0 +1,32 @@
+{
+  "name": "@sparx/commerce-indexer",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Sparx commerce indexer. Receives product.*, variant.*, inventory.adjusted, and collection.updated events via Pub/Sub push (Cloud Run HTTP entrypoint). Reprojects affected products into Typesense via @sparx/commerce's projectProduct() + @sparx/search's upsertProduct(); reprojects rules-driven collection memberships on relevant changes.",
+  "type": "module",
+  "main": "src/index.ts",
+  "scripts": {
+    "dev": "tsx watch --clear-screen=false src/index.ts",
+    "start": "node --import tsx/esm src/index.ts",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --passWithNoTests",
+    "test:watch": "vitest",
+    "clean": "rm -rf .turbo dist *.tsbuildinfo"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.19.3",
+    "@sparx/commerce": "workspace:*",
+    "@sparx/db": "workspace:*",
+    "@sparx/search": "workspace:*",
+    "pino": "^9.5.0",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "^25.9.1",
+    "dotenv": "^16.4.7",
+    "tsx": "^4.19.2",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.7"
+  }
+}

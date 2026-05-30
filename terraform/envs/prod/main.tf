@@ -69,6 +69,17 @@ module "pubsub" {
   # Empty list = topic exists (publishable) but no subscriber yet — Phase 1
   # cost optimisation, since idle subscriptions still cost retention.
   topics = {
+    # Commerce — catalog + inventory fan-in to commerce-indexer
+    "product.created"    = ["commerce-indexer"]
+    "product.updated"    = ["commerce-indexer"]
+    "product.deleted"    = ["commerce-indexer"]
+    "variant.created"    = ["commerce-indexer"]
+    "variant.updated"    = ["commerce-indexer"]
+    "variant.deleted"    = ["commerce-indexer"]
+    "inventory.adjusted" = ["commerce-indexer"]
+    "inventory.low"      = []
+    "inventory.depleted" = []
+
     # Commerce / orders
     "order.created" = ["worker-webhook"]
     "order.updated" = ["worker-webhook"]
@@ -145,6 +156,10 @@ module "secrets" {
     "godaddy-api-secret-prod",
     "postal-api-key",
     "cloudflare-api-token",
+    # Typesense admin/search API key. commerce-indexer reads it via Secret
+    # Manager → Cloud Run env binding. Rotated by the operator manually
+    # (Typesense doesn't have rotation hooks).
+    "typesense-api-key",
   ]
 }
 
