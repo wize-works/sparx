@@ -1,26 +1,39 @@
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 
-import { requireSession } from '@sparx/auth';
-import { b2bAccountService, customerService } from '@sparx/crm';
 import { Button, Container, Heading, Stack, Text } from '@sparx/ui';
+
+import { api } from '@/lib/api-rest-client';
 
 import { NewQuoteForm } from './_components/new-quote-form';
 
 export const dynamic = 'force-dynamic';
+
+interface CustomerLite {
+  id: string;
+  firstName: string | null;
+  lastName: string | null;
+  company: string | null;
+  email: string | null;
+}
+
+interface B2bAccountLite {
+  id: string;
+  companyName: string;
+}
 
 interface PageProps {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }
 
 export default async function NewQuotePage({ searchParams }: PageProps) {
-  const session = await requireSession();
   const sp = await searchParams;
-  const ctx = { tenantId: session.user.tenantId, userId: session.user.id };
 
-  const [customersResult, b2bResult] = await Promise.all([
-    customerService.list(ctx, { take: 200, sortBy: 'updatedAt' }),
-    b2bAccountService.list(ctx, { take: 200 }),
+  const [customers, b2bAccounts] = await Promise.all([
+    api
+      .getPaged<CustomerLite[]>('/v1/crm/customers?take=200&sort_by=updatedAt')
+      .then((r) => r.data),
+    api.getPaged<B2bAccountLite[]>('/v1/crm/b2b-accounts?take=200').then((r) => r.data),
   ]);
   const preselectedCustomerId = stringParam(sp.customerId) ?? null;
 
@@ -41,13 +54,13 @@ export default async function NewQuotePage({ searchParams }: PageProps) {
         </Stack>
 
         <NewQuoteForm
-          customers={customersResult.items.map((c) => ({
+          customers={customers.map((c) => ({
             id: c.id,
             label:
               [c.firstName, c.lastName].filter(Boolean).join(' ') ||
               (c.company ?? c.email ?? c.id.slice(0, 8)),
           }))}
-          b2bAccounts={b2bResult.items.map((a) => ({
+          b2bAccounts={b2bAccounts.map((a) => ({
             id: a.id,
             label: a.companyName,
           }))}

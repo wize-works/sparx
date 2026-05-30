@@ -4,8 +4,6 @@
 
 import Link from 'next/link';
 
-import { requireSession } from '@sparx/auth';
-import { dealService, pipelineService } from '@sparx/crm';
 import {
   Badge,
   Card,
@@ -20,18 +18,41 @@ import {
   Text,
 } from '@sparx/ui';
 
+import { api } from '@/lib/api-rest-client';
+
 import { stageColor } from './kanban-types';
+
+interface PipelineStage {
+  id: string;
+  name: string;
+  color: string | null;
+  stageType: 'open' | 'won' | 'lost';
+}
+
+interface Pipeline {
+  id: string;
+  stages: PipelineStage[];
+}
+
+interface DealRow {
+  id: string;
+  title: string;
+  stageId: string;
+  currency: string;
+  value: string | number;
+  probability: string | number;
+  expectedCloseDate: string | null;
+  updatedAt: string;
+}
 
 interface PipelineListProps {
   pipelineId: string;
 }
 
 export async function PipelineList({ pipelineId }: PipelineListProps) {
-  const session = await requireSession();
-  const ctx = { tenantId: session.user.tenantId, userId: session.user.id };
-  const [{ items: deals }, pipeline] = await Promise.all([
-    dealService.list(ctx, { pipelineId, take: 250 }),
-    pipelineService.get(ctx, pipelineId),
+  const [{ data: deals }, pipeline] = await Promise.all([
+    api.getPaged<DealRow[]>(`/v1/crm/deals?pipeline_id=${pipelineId}&take=250`),
+    api.get<Pipeline>(`/v1/crm/pipelines/${pipelineId}`),
   ]);
   const stagesById = new Map(pipeline.stages.map((s) => [s.id, s]));
 
@@ -94,12 +115,14 @@ export async function PipelineList({ pipelineId }: PipelineListProps) {
                   </TableCell>
                   <TableCell>
                     <Text size="sm" variant="muted">
-                      {d.expectedCloseDate ? d.expectedCloseDate.toLocaleDateString() : '—'}
+                      {d.expectedCloseDate
+                        ? new Date(d.expectedCloseDate).toLocaleDateString()
+                        : '—'}
                     </Text>
                   </TableCell>
                   <TableCell>
                     <Text size="sm" variant="muted">
-                      {d.updatedAt.toLocaleDateString()}
+                      {new Date(d.updatedAt).toLocaleDateString()}
                     </Text>
                   </TableCell>
                 </TableRow>

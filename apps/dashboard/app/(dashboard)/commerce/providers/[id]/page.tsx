@@ -1,25 +1,7 @@
 import Link from 'next/link';
-import { notFound } from 'next/navigation';
-import { ArrowLeft, PackageOpen } from 'lucide-react';
-
-import { isModuleEnabled, requireSession } from '@sparx/auth';
-import { providerService } from '@sparx/commerce';
-import {
-  Badge,
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  Container,
-  Heading,
-  Stack,
-  Text,
-} from '@sparx/ui';
-
-import { ensureProvidersRegistered } from '../../../../../lib/providers-bootstrap';
-import { ModuleStub } from '../../../../../components/module-stub';
-
-import { ProviderActionsBar } from './_components/provider-actions-bar';
+import { ArrowLeft } from 'lucide-react';
+import { Container, Stack } from '@sparx/ui';
+import { ProviderInstallationDetailContent } from './_content';
 
 export const dynamic = 'force-dynamic';
 
@@ -28,122 +10,19 @@ export default async function ProviderInstallationDetailPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  ensureProvidersRegistered();
-
   const { id } = await params;
-  const session = await requireSession();
-  const enabled = await isModuleEnabled(session.user.tenantId, 'commerce');
-  if (!enabled) {
-    return (
-      <ModuleStub
-        icon={<PackageOpen className="h-5 w-5" />}
-        title="Commerce"
-        tagline=""
-        description="Activate the Commerce module from Billing to manage providers."
-        features={[]}
-      />
-    );
-  }
-
-  const ctx = { tenantId: session.user.tenantId, userId: session.user.id };
-  const installation = await providerService.getInstallation(ctx, id);
-  if (!installation) notFound();
-  const metadata = await providerService.getMetadata(installation.providerSlug);
-
   return (
     <Container size="lg">
       <Stack gap={6} className="py-10">
-        <Stack gap={2}>
-          <Link
-            href="/commerce/providers"
-            className="inline-flex items-center gap-1 text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"
-          >
-            <ArrowLeft className="h-3.5 w-3.5" />
-            Back to providers
-          </Link>
-          <Stack direction="row" align="end" justify="between" wrap gap={2}>
-            <Stack gap={1}>
-              <Stack direction="row" align="center" gap={2}>
-                <Heading level={1}>{metadata?.displayName ?? installation.providerSlug}</Heading>
-                <Badge variant="outline">{installation.kind}</Badge>
-                <Badge variant={installation.environment === 'production' ? 'success' : 'warning'}>
-                  {installation.environment}
-                </Badge>
-                <Badge variant={installation.enabled ? 'success' : 'outline'}>
-                  {installation.enabled ? 'enabled' : 'disabled'}
-                </Badge>
-              </Stack>
-              {installation.label && (
-                <Text size="sm" variant="muted">
-                  {installation.label}
-                </Text>
-              )}
-            </Stack>
-            <ProviderActionsBar installationId={installation.id} enabled={installation.enabled} />
-          </Stack>
-        </Stack>
-
-        <Card>
-          <CardHeader>
-            <Stack gap={1}>
-              <Heading level={3}>Status</Heading>
-              <CardDescription>
-                The platform records every successful + failed call here; persistent errors surface
-                to the dashboard alerts strip.
-              </CardDescription>
-            </Stack>
-          </CardHeader>
-          <CardContent>
-            <Stack gap={3}>
-              <Row label="Status" value={installation.status} />
-              <Row
-                label="Last health check"
-                value={
-                  installation.lastHealthCheckAt
-                    ? `${installation.lastHealthStatus ?? 'unknown'} · ${new Date(
-                        installation.lastHealthCheckAt
-                      ).toLocaleString()}`
-                    : 'never'
-                }
-              />
-              <Row label="Error count" value={String(installation.errorCount)} />
-              <Row label="Provider account id" value={installation.providerAccountId ?? '—'} />
-              <Row label="Installed" value={new Date(installation.installedAt).toLocaleString()} />
-            </Stack>
-          </CardContent>
-        </Card>
-
-        {metadata && (
-          <Card>
-            <CardHeader>
-              <Stack gap={1}>
-                <Heading level={3}>Webhook</Heading>
-                <CardDescription>
-                  Paste this URL into the provider&apos;s webhook configuration so callbacks land at
-                  the right tenant. The path&apos;s <code>:installationId</code> token is
-                  auto-filled on dispatch.
-                </CardDescription>
-              </Stack>
-            </CardHeader>
-            <CardContent>
-              <Text className="font-mono text-xs">
-                {metadata.webhookPathTemplate.replace(':installationId', installation.id)}
-              </Text>
-            </CardContent>
-          </Card>
-        )}
+        <Link
+          href="/commerce/providers"
+          className="inline-flex items-center gap-1 text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"
+        >
+          <ArrowLeft className="h-3.5 w-3.5" />
+          Back to providers
+        </Link>
+        <ProviderInstallationDetailContent id={id} />
       </Stack>
     </Container>
-  );
-}
-
-function Row({ label, value }: { label: string; value: string }) {
-  return (
-    <Stack direction="row" gap={4}>
-      <Text size="sm" className="w-40" variant="muted">
-        {label}
-      </Text>
-      <Text size="sm">{value}</Text>
-    </Stack>
   );
 }

@@ -2,8 +2,6 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ArrowLeft, KanbanSquare, List, BarChart3, Plus } from 'lucide-react';
 
-import { requireSession } from '@sparx/auth';
-import { CrmNotFoundError, dealService, pipelineService } from '@sparx/crm';
 import {
   Badge,
   Button,
@@ -16,9 +14,39 @@ import {
   Text,
 } from '@sparx/ui';
 
+import { api, type ApiRestError } from '@/lib/api-rest-client';
+
 import { PipelineKanban } from './_components/pipeline-kanban';
 import { PipelineList } from './_components/pipeline-list';
 import { PipelineForecast } from './_components/pipeline-forecast';
+
+interface PipelineStage {
+  id: string;
+  name: string;
+  color: string | null;
+  stageType: 'open' | 'won' | 'lost';
+  probability: string | number;
+}
+
+interface Pipeline {
+  id: string;
+  name: string;
+  slug: string;
+  isDefault: boolean;
+  stages: PipelineStage[];
+}
+
+interface PipelineDeal {
+  id: string;
+  title: string;
+  stageId: string;
+  value: string | number;
+  currency: string;
+  probability: string | number;
+  assignedRepId: string | null;
+  expectedCloseDate: string | null;
+  tags: string[];
+}
 
 // Pipeline detail — Kanban (default), list, or forecast. The view switch
 // lives in the URL (?view=) so back-button + bookmarks behave.
@@ -33,25 +61,21 @@ interface PageProps {
 }
 
 export default async function PipelineDetailPage({ params, searchParams }: PageProps) {
-  const session = await requireSession();
   const { id } = await params;
   const sp = await searchParams;
   const view: View = sp.view === 'list' ? 'list' : sp.view === 'forecast' ? 'forecast' : 'kanban';
 
-  const ctx = { tenantId: session.user.tenantId, userId: session.user.id };
-
-  let pipeline;
+  let pipeline: Pipeline;
   try {
-    pipeline = await pipelineService.get(ctx, id);
+    pipeline = await api.get<Pipeline>(`/v1/crm/pipelines/${id}`);
   } catch (err) {
-    if (err instanceof CrmNotFoundError) notFound();
+    if ((err as ApiRestError).code === 'NOT_FOUND') notFound();
     throw err;
   }
 
-  const { items: deals } = await dealService.list(ctx, {
-    pipelineId: pipeline.id,
-    take: 250,
-  });
+  const { data: deals } = await api.getPaged<PipelineDeal[]>(
+    `/v1/crm/deals?pipeline_id=${pipeline.id}&take=250`
+  );
   const dealCounts = pipeline.stages.map((stage) => ({
     stageId: stage.id,
     count: deals.filter((d) => d.stageId === stage.id).length,
@@ -122,7 +146,7 @@ export default async function PipelineDetailPage({ params, searchParams }: PageP
               currency: d.currency,
               probability: Number(d.probability),
               assignedRepId: d.assignedRepId,
-              expectedCloseDate: d.expectedCloseDate?.toISOString() ?? null,
+              expectedCloseDate: d.expectedCloseDate,
               tags: d.tags,
             }))}
           />

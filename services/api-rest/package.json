@@ -29,6 +29,7 @@
     "@sparx/crm": "workspace:*",
     "@sparx/crm-schemas": "workspace:*",
     "@sparx/db": "workspace:*",
+    "@sparx/email": "workspace:*",
     "@sparx/events": "workspace:*",
     "fastify": "^5.6.1",
     "fastify-plugin": "^5.0.1",

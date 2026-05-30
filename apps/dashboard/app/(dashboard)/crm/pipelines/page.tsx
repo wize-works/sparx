@@ -1,9 +1,6 @@
 import Link from 'next/link';
 import { KanbanSquare, ArrowRight, Archive, Plus, Settings } from 'lucide-react';
 
-import { requireSession } from '@sparx/auth';
-import { pipelineService } from '@sparx/crm';
-import { CrmTabs } from '../_components/crm-tabs';
 import {
   Badge,
   Button,
@@ -17,6 +14,27 @@ import {
   Stack,
   Text,
 } from '@sparx/ui';
+
+import { api } from '@/lib/api-rest-client';
+
+import { CrmTabs } from '../_components/crm-tabs';
+
+interface PipelineStageRow {
+  id: string;
+  name: string;
+  stageType: 'open' | 'won' | 'lost';
+  probability: string | number;
+  color: string | null;
+}
+
+interface PipelineRow {
+  id: string;
+  name: string;
+  slug: string;
+  isDefault: boolean;
+  archivedAt: string | null;
+  stages: PipelineStageRow[];
+}
 
 // Pipelines index — one card per pipeline, click-through to Kanban.
 //
@@ -32,13 +50,11 @@ interface PageProps {
 }
 
 export default async function PipelinesPage({ searchParams }: PageProps) {
-  const session = await requireSession();
   const params = await searchParams;
   const includeArchived = Boolean(params.includeArchived);
 
-  const pipelines = await pipelineService.list(
-    { tenantId: session.user.tenantId, userId: session.user.id },
-    { includeArchived }
+  const pipelines = await api.get<PipelineRow[]>(
+    `/v1/crm/pipelines${includeArchived ? '?include_archived=true' : ''}`
   );
 
   return (

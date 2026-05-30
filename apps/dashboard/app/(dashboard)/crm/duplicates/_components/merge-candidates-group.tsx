@@ -7,13 +7,26 @@ import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
-import type { Customer } from '@sparx/db';
 import { Badge, Button, Stack, Text } from '@sparx/ui';
 
 import { mergeCustomersAction } from '../../actions';
 
+// Customer shape comes serialized from /v1/crm/customers/duplicates — dates
+// arrive as ISO strings, decimals as strings.
+export interface DuplicateCustomer {
+  id: string;
+  firstName: string | null;
+  lastName: string | null;
+  company: string | null;
+  email: string | null;
+  type: string;
+  orderCount: number;
+  totalSpent: string | number;
+  updatedAt: string;
+}
+
 interface Props {
-  customers: Customer[];
+  customers: DuplicateCustomer[];
 }
 
 export function MergeCandidatesGroup({ customers }: Props) {
@@ -105,7 +118,7 @@ export function MergeCandidatesGroup({ customers }: Props) {
                   )}
                 </Stack>
                 <Text size="xs" variant="muted">
-                  Updated {c.updatedAt.toLocaleString()} · Total spent $
+                  Updated {new Date(c.updatedAt).toLocaleString()} · Total spent $
                   {Number(c.totalSpent).toLocaleString()}
                 </Text>
               </Stack>
@@ -151,7 +164,7 @@ export function MergeCandidatesGroup({ customers }: Props) {
   );
 }
 
-function customerDisplayName(c: Customer): string {
+function customerDisplayName(c: DuplicateCustomer): string {
   const fullName = [c.firstName, c.lastName].filter(Boolean).join(' ').trim();
   if (fullName) return fullName;
   if (c.company) return c.company;

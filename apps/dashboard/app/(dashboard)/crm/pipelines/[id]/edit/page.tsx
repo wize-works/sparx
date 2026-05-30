@@ -2,28 +2,42 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
 
-import { requireSession } from '@sparx/auth';
-import { CrmNotFoundError, pipelineService } from '@sparx/crm';
 import { Button, Container, Heading, Stack, Text } from '@sparx/ui';
+
+import { api, type ApiRestError } from '@/lib/api-rest-client';
 
 import { PipelineEditor } from './_components/pipeline-editor';
 
 export const dynamic = 'force-dynamic';
+
+interface PipelineForEdit {
+  id: string;
+  name: string;
+  slug: string;
+  isDefault: boolean;
+  archivedAt: string | null;
+  stages: {
+    id: string;
+    name: string;
+    sortOrder: number;
+    probability: string | number;
+    stageType: 'open' | 'won' | 'lost';
+    color: string | null;
+  }[];
+}
 
 interface PageProps {
   params: Promise<{ id: string }>;
 }
 
 export default async function EditPipelinePage({ params }: PageProps) {
-  const session = await requireSession();
   const { id } = await params;
-  const ctx = { tenantId: session.user.tenantId, userId: session.user.id };
 
-  let pipeline;
+  let pipeline: PipelineForEdit;
   try {
-    pipeline = await pipelineService.get(ctx, id);
+    pipeline = await api.get<PipelineForEdit>(`/v1/crm/pipelines/${id}`);
   } catch (err) {
-    if (err instanceof CrmNotFoundError) notFound();
+    if ((err as ApiRestError).code === 'NOT_FOUND') notFound();
     throw err;
   }
 
@@ -49,13 +63,13 @@ export default async function EditPipelinePage({ params }: PageProps) {
             name: pipeline.name,
             slug: pipeline.slug,
             isDefault: pipeline.isDefault,
-            archivedAt: pipeline.archivedAt?.toISOString() ?? null,
+            archivedAt: pipeline.archivedAt,
             stages: pipeline.stages.map((s) => ({
               id: s.id,
               name: s.name,
               sortOrder: s.sortOrder,
               probability: Number(s.probability),
-              stageType: s.stageType as 'open' | 'won' | 'lost',
+              stageType: s.stageType,
               color: s.color,
             })),
           }}

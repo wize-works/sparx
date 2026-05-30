@@ -1,8 +1,6 @@
 import Link from 'next/link';
 import { BarChart3, TrendingUp, Users, AlertCircle } from 'lucide-react';
 
-import { requireSession } from '@sparx/auth';
-import { pipelineService, reportingService } from '@sparx/crm';
 import {
   Badge,
   Card,
@@ -22,8 +20,47 @@ import {
   Text,
 } from '@sparx/ui';
 
+import { api } from '@/lib/api-rest-client';
+
 import { CrmTabs } from '../_components/crm-tabs';
 import { stageColor } from '../pipelines/[id]/_components/kanban-types';
+
+interface TenantSnapshot {
+  customers: number;
+  b2bAccounts: number;
+  openDeals: number;
+  pipelineValue: number;
+  openTasks: number;
+  overdueTasks: number;
+}
+
+interface PipelineLite {
+  id: string;
+  name: string;
+  isDefault: boolean;
+}
+
+interface FunnelBucket {
+  stageId: string;
+  stageName: string;
+  stageType: 'open' | 'won' | 'lost';
+  count: number;
+  totalValue: number;
+}
+
+interface WinLossRow {
+  repId: string | null;
+  won: number;
+  lost: number;
+  open: number;
+  winRate: number;
+  totalWonValue: number;
+}
+
+interface AcquisitionPoint {
+  month: string;
+  newCustomers: number;
+}
 
 // CRM reports landing — tenant snapshot + funnel for the default pipeline
 // + recent acquisition. Each report is a server-rendered card calling
@@ -32,19 +69,18 @@ import { stageColor } from '../pipelines/[id]/_components/kanban-types';
 export const dynamic = 'force-dynamic';
 
 export default async function ReportsPage() {
-  const session = await requireSession();
-  const ctx = { tenantId: session.user.tenantId, userId: session.user.id };
-
   const [snapshot, pipelines, winLoss, acquisition] = await Promise.all([
-    reportingService.tenantSnapshot(ctx),
-    pipelineService.list(ctx),
-    reportingService.winLossByRep(ctx, {}),
-    reportingService.acquisitionByMonth(ctx, { months: 12 }),
+    api.get<TenantSnapshot>('/v1/crm/reports/snapshot'),
+    api.get<PipelineLite[]>('/v1/crm/pipelines'),
+    api.get<WinLossRow[]>('/v1/crm/reports/win-loss'),
+    api.get<AcquisitionPoint[]>('/v1/crm/reports/acquisition?months=12'),
   ]);
 
   const defaultPipeline = pipelines.find((p) => p.isDefault) ?? pipelines[0];
   const funnel = defaultPipeline
-    ? await reportingService.pipelineFunnel(ctx, defaultPipeline.id)
+    ? await api.get<FunnelBucket[]>(
+        `/v1/crm/reports/pipeline-funnel?pipeline_id=${defaultPipeline.id}`
+      )
     : [];
 
   const maxAcquisition = acquisition.reduce((m, p) => Math.max(m, p.newCustomers), 0);

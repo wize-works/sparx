@@ -41,6 +41,11 @@ import publicMediaRoutes from './routes/v1/public/media.js';
 import uploadRoutes from './routes/v1/media/uploads.js';
 import mediaAssetRoutes from './routes/v1/media/assets.js';
 import crmRoutes from './routes/v1/crm/index.js';
+import tenantRoutes from './routes/v1/tenant.js';
+import meRoutes from './routes/v1/me.js';
+import userRoutes from './routes/v1/users.js';
+import emailTestRoutes from './routes/v1/email/test.js';
+import dashboardRoutes from './routes/v1/dashboard.js';
 
 function loggerOptions(): FastifyServerOptions['logger'] {
   if (env.NODE_ENV === 'test') return false;
@@ -190,6 +195,11 @@ export async function createApp(): Promise<FastifyInstance> {
   await app.register(uploadRoutes);
   await app.register(mediaAssetRoutes);
   await app.register(crmRoutes);
+  await app.register(tenantRoutes);
+  await app.register(meRoutes);
+  await app.register(userRoutes);
+  await app.register(emailTestRoutes);
+  await app.register(dashboardRoutes);
 
   return app;
 }

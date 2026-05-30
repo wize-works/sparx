@@ -2,8 +2,6 @@
 // month, computed by dealService.forecast (which the MCP get_forecast tool
 // also wraps, so REST/UI/AI all see identical numbers).
 
-import { requireSession } from '@sparx/auth';
-import { dealService } from '@sparx/crm';
 import {
   Badge,
   Card,
@@ -21,15 +19,31 @@ import {
   Text,
 } from '@sparx/ui';
 
+import { api } from '@/lib/api-rest-client';
+
+interface ForecastBucket {
+  month: string;
+  dealCount: number;
+  openValue: number;
+  closedWonValue: number;
+  weightedValue: number;
+}
+
+interface ForecastResponse {
+  totalWeighted: number;
+  startMonth: string;
+  endMonth: string;
+  buckets: ForecastBucket[];
+}
+
 interface PipelineForecastProps {
   pipelineId: string;
 }
 
 export async function PipelineForecast({ pipelineId }: PipelineForecastProps) {
-  const session = await requireSession();
-  const ctx = { tenantId: session.user.tenantId, userId: session.user.id };
-
-  const result = await dealService.forecast(ctx, { pipelineId });
+  const result = await api.get<ForecastResponse>(
+    `/v1/crm/deals/forecast?pipeline_id=${pipelineId}`
+  );
   const maxBucket = result.buckets.reduce((m, b) => Math.max(m, b.weightedValue), 0);
 
   return (

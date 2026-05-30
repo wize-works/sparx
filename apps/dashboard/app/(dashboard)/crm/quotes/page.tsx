@@ -1,8 +1,6 @@
 import Link from 'next/link';
 import { FileText, Plus } from 'lucide-react';
 
-import { requireSession } from '@sparx/auth';
-import { quoteService } from '@sparx/crm';
 import {
   Badge,
   Button,
@@ -21,8 +19,20 @@ import {
   Text,
 } from '@sparx/ui';
 
+import { api } from '@/lib/api-rest-client';
+
 import { EntityRowLink } from '../../_components/entity-row-link';
 import { CrmTabs } from '../_components/crm-tabs';
+
+interface QuoteRow {
+  id: string;
+  quoteNumber: string;
+  status: string;
+  currency: string;
+  total: string | number;
+  validUntil: string | null;
+  createdAt: string;
+}
 
 export const dynamic = 'force-dynamic';
 
@@ -40,20 +50,18 @@ const STATUS_VARIANT: Record<string, 'success' | 'warning' | 'outline' | 'danger
 };
 
 export default async function QuotesPage({ searchParams }: PageProps) {
-  const session = await requireSession();
   const params = await searchParams;
   const status = stringParam(params.status);
   const q = stringParam(params.q);
 
-  const { items: quotes, total } = await quoteService.list(
-    { tenantId: session.user.tenantId, userId: session.user.id },
-    {
-      take: 100,
-      sortBy: 'createdAt',
-      ...(status ? { status } : {}),
-      ...(q ? { q } : {}),
-    }
+  const query = new URLSearchParams({ take: '100', sort_by: 'createdAt' });
+  if (status) query.set('status', status);
+  if (q) query.set('q', q);
+
+  const { data: quotes, meta } = await api.getPaged<QuoteRow[]>(
+    `/v1/crm/quotes?${query.toString()}`
   );
+  const total = (meta?.total as number | undefined) ?? quotes.length;
 
   return (
     <Container size="xl">
@@ -122,12 +130,12 @@ export default async function QuotesPage({ searchParams }: PageProps) {
                       </TableCell>
                       <TableCell>
                         <Text size="sm" variant="muted">
-                          {q.validUntil?.toLocaleDateString() ?? '—'}
+                          {q.validUntil ? new Date(q.validUntil).toLocaleDateString() : '—'}
                         </Text>
                       </TableCell>
                       <TableCell>
                         <Text size="sm" variant="muted">
-                          {q.createdAt.toLocaleDateString()}
+                          {new Date(q.createdAt).toLocaleDateString()}
                         </Text>
                       </TableCell>
                     </TableRow>

@@ -1,7 +1,5 @@
 import { Users } from 'lucide-react';
 
-import { requireSession } from '@sparx/auth';
-import { customerService } from '@sparx/crm';
 import {
   Badge,
   Card,
@@ -15,6 +13,8 @@ import {
   Text,
 } from '@sparx/ui';
 
+import { api } from '@/lib/api-rest-client';
+
 import { CrmTabs } from '../_components/crm-tabs';
 import { MergeCandidatesGroup } from './_components/merge-candidates-group';
 
@@ -24,12 +24,23 @@ import { MergeCandidatesGroup } from './_components/merge-candidates-group';
 
 export const dynamic = 'force-dynamic';
 
+interface DuplicateGroup {
+  reason: 'email' | 'name_company';
+  customers: {
+    id: string;
+    firstName: string | null;
+    lastName: string | null;
+    company: string | null;
+    email: string | null;
+    type: string;
+    orderCount: number;
+    totalSpent: string | number;
+    updatedAt: string;
+  }[];
+}
+
 export default async function DuplicatesPage() {
-  const session = await requireSession();
-  const groups = await customerService.findLikelyDuplicates(
-    { tenantId: session.user.tenantId, userId: session.user.id },
-    { limit: 5000 }
-  );
+  const groups = await api.get<DuplicateGroup[]>('/v1/crm/customers/duplicates');
 
   return (
     <Container size="xl">

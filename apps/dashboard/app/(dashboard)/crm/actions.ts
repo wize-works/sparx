@@ -3,8 +3,9 @@
 // Each domain has its own `'use server'` module (customer-actions,
 // deal-actions, order-actions, etc.). This barrel re-exports them so
 // existing imports keep working while each file stays under the 200-line
-// target. Locked decision #6 (module gate) and #7 (one service layer,
-// three transports) are enforced inside `_action-helpers.runAction`.
+// target. The CRM module gate (locked decision #6) is now enforced by
+// api-rest (`requireCrmModule` per route); each action is a thin POST/
+// PATCH against /v1/crm/* via `_rest-action.ts`.
 
 export type { ActionResult } from './_action-helpers';
 

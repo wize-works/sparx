@@ -8,7 +8,18 @@
 // back to a generic dot — the timeline never crashes on a new event type
 // added downstream.
 
-import type { CrmActivity } from '@sparx/db';
+// Activity shape comes serialized from /v1/crm/activities — dates arrive as
+// ISO strings, not Date objects. Match the API envelope rather than the
+// Prisma model so this component never has to call `.toISOString()` on a
+// raw string.
+export interface CrmActivity {
+  id: string;
+  type: string;
+  description: string | null;
+  occurredAt: string;
+  actorType: string;
+  correctsActivityId: string | null;
+}
 import {
   Badge,
   Stack,
@@ -154,8 +165,8 @@ export function ActivityTimeline({ activities }: Props) {
                   <Badge variant="outline">{a.actorType}</Badge>
                 </Stack>
                 {a.description && <TimelineDescription>{a.description}</TimelineDescription>}
-                <TimelineTime dateTime={a.occurredAt.toISOString()}>
-                  {a.occurredAt.toLocaleString()}
+                <TimelineTime dateTime={a.occurredAt}>
+                  {new Date(a.occurredAt).toLocaleString()}
                 </TimelineTime>
               </Stack>
             </TimelineItem>

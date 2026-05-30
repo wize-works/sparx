@@ -2,15 +2,6 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Package, CreditCard, Truck } from 'lucide-react';
 
-import { requireSession } from '@sparx/auth';
-import {
-  CrmNotFoundError,
-  customerService,
-  orderFulfillmentsService,
-  orderPaymentsService,
-  orderRefundsService,
-  orderService,
-} from '@sparx/crm';
 import {
   Badge,
   Card,
@@ -29,6 +20,66 @@ import {
   Text,
 } from '@sparx/ui';
 
+import { api, type ApiRestError } from '@/lib/api-rest-client';
+
+interface OrderItem {
+  id: string;
+  sku: string;
+  name: string;
+  quantity: number;
+  quantityFulfilled: number;
+  quantityRefunded: number;
+  unitPrice: string | number;
+  lineTotal: string | number;
+}
+
+interface OrderWithItems {
+  id: string;
+  orderNumber: string;
+  status: string;
+  paymentStatus: string;
+  customerId: string;
+  currency: string;
+  total: string | number;
+  amountPaid: string | number;
+  refundTotal: string | number;
+  placedAt: string | null;
+  items: OrderItem[];
+}
+
+interface PaymentRow {
+  id: string;
+  processor: string;
+  status: string;
+  amount: string | number;
+  currency: string;
+  capturedAt: string | null;
+}
+
+interface RefundRow {
+  id: string;
+  amount: string | number;
+  currency: string;
+  reason: string | null;
+  refundedAt: string | null;
+}
+
+interface FulfillmentRow {
+  id: string;
+  status: string;
+  carrier: string | null;
+  trackingNumber: string | null;
+  shippedAt: string | null;
+}
+
+interface CustomerSummary {
+  id: string;
+  firstName: string | null;
+  lastName: string | null;
+  company: string | null;
+  email: string | null;
+}
+
 export const dynamic = 'force-dynamic';
 
 const STATUS_VARIANT: Record<string, 'success' | 'warning' | 'outline' | 'danger'> = {
@@ -44,22 +95,19 @@ interface Props {
 }
 
 export async function OrderDetailContent({ id }: Props) {
-  const session = await requireSession();
-  const ctx = { tenantId: session.user.tenantId, userId: session.user.id };
-
-  let order;
+  let order: OrderWithItems;
   try {
-    order = await orderService.get(ctx, id);
+    order = await api.get<OrderWithItems>(`/v1/crm/orders/${id}`);
   } catch (err) {
-    if (err instanceof CrmNotFoundError) notFound();
+    if ((err as ApiRestError).code === 'NOT_FOUND') notFound();
     throw err;
   }
 
   const [payments, refunds, fulfillments, customer] = await Promise.all([
-    orderPaymentsService.listForOrder(ctx, order.id),
-    orderRefundsService.listForOrder(ctx, order.id),
-    orderFulfillmentsService.listForOrder(ctx, order.id),
-    customerService.get(ctx, order.customerId).catch(() => null),
+    api.get<PaymentRow[]>(`/v1/crm/orders/${order.id}/payments`),
+    api.get<RefundRow[]>(`/v1/crm/orders/${order.id}/refunds`),
+    api.get<FulfillmentRow[]>(`/v1/crm/orders/${order.id}/fulfillments`),
+    api.get<CustomerSummary>(`/v1/crm/customers/${order.customerId}`).catch(() => null),
   ]);
 
   return (
@@ -108,7 +156,10 @@ export async function OrderDetailContent({ id }: Props) {
         </Card>
         <Card>
           <CardContent className="py-4">
-            <Stat label="Placed" value={order.placedAt?.toLocaleDateString() ?? '—'} />
+            <Stat
+              label="Placed"
+              value={order.placedAt ? new Date(order.placedAt).toLocaleDateString() : '—'}
+            />
           </CardContent>
         </Card>
       </div>
@@ -201,7 +252,7 @@ export async function OrderDetailContent({ id }: Props) {
                       </TableCell>
                       <TableCell>
                         <Text size="xs" variant="muted">
-                          {p.capturedAt?.toLocaleDateString() ?? '—'}
+                          {p.capturedAt ? new Date(p.capturedAt).toLocaleDateString() : '—'}
                         </Text>
                       </TableCell>
                     </TableRow>
@@ -217,7 +268,8 @@ export async function OrderDetailContent({ id }: Props) {
                 {refunds.map((r) => (
                   <Stack key={r.id} direction="row" justify="between">
                     <Text size="xs" variant="muted">
-                      {r.refundedAt?.toLocaleDateString() ?? '—'} · {r.reason ?? 'no reason'}
+                      {r.refundedAt ? new Date(r.refundedAt).toLocaleDateString() : '—'} ·{' '}
+                      {r.reason ?? 'no reason'}
                     </Text>
                     <Text size="xs" className="tabular-nums">
                       {r.currency} {Number(r.amount).toLocaleString()}
@@ -260,7 +312,7 @@ export async function OrderDetailContent({ id }: Props) {
                         {f.trackingNumber && <code className="text-xs">{f.trackingNumber}</code>}
                       </Stack>
                       <Text size="xs" variant="muted">
-                        {f.shippedAt?.toLocaleDateString() ?? '—'}
+                        {f.shippedAt ? new Date(f.shippedAt).toLocaleDateString() : '—'}
                       </Text>
                     </Stack>
                   </Stack>

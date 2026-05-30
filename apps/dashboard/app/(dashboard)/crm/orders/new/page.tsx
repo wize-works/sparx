@@ -1,24 +1,32 @@
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 
-import { requireSession } from '@sparx/auth';
-import { customerService } from '@sparx/crm';
 import { Button, Container, Heading, Stack, Text } from '@sparx/ui';
+
+import { api } from '@/lib/api-rest-client';
 
 import { NewOrderForm } from './_components/new-order-form';
 
 export const dynamic = 'force-dynamic';
+
+interface CustomerLite {
+  id: string;
+  firstName: string | null;
+  lastName: string | null;
+  company: string | null;
+  email: string | null;
+}
 
 interface PageProps {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }
 
 export default async function NewOrderPage({ searchParams }: PageProps) {
-  const session = await requireSession();
   const sp = await searchParams;
-  const ctx = { tenantId: session.user.tenantId, userId: session.user.id };
 
-  const customersResult = await customerService.list(ctx, { take: 200, sortBy: 'updatedAt' });
+  const { data: customers } = await api.getPaged<CustomerLite[]>(
+    '/v1/crm/customers?take=200&sort_by=updatedAt'
+  );
   const preselectedCustomerId = stringParam(sp.customerId) ?? null;
 
   return (
@@ -38,7 +46,7 @@ export default async function NewOrderPage({ searchParams }: PageProps) {
         </Stack>
 
         <NewOrderForm
-          customers={customersResult.items.map((c) => ({
+          customers={customers.map((c) => ({
             id: c.id,
             label:
               [c.firstName, c.lastName].filter(Boolean).join(' ') ||

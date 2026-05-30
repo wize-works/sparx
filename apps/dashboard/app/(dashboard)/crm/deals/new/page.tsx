@@ -1,11 +1,30 @@
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 
-import { requireSession } from '@sparx/auth';
-import { customerService, pipelineService } from '@sparx/crm';
 import { Button, Container, Heading, Stack, Text } from '@sparx/ui';
 
+import { api } from '@/lib/api-rest-client';
+
 import { NewDealForm } from './_components/new-deal-form';
+
+interface PipelineWithStages {
+  id: string;
+  name: string;
+  stages: {
+    id: string;
+    name: string;
+    probability: string | number;
+    stageType: 'open' | 'won' | 'lost';
+  }[];
+}
+
+interface CustomerLite {
+  id: string;
+  firstName: string | null;
+  lastName: string | null;
+  company: string | null;
+  email: string | null;
+}
 
 // Server entry — loads pipelines + a customer slice so the form's
 // dropdowns aren't blocked on a client-side fetch.
@@ -17,13 +36,13 @@ interface PageProps {
 }
 
 export default async function NewDealPage({ searchParams }: PageProps) {
-  const session = await requireSession();
   const sp = await searchParams;
-  const ctx = { tenantId: session.user.tenantId, userId: session.user.id };
 
-  const [pipelines, customersResult] = await Promise.all([
-    pipelineService.list(ctx),
-    customerService.list(ctx, { take: 200, sortBy: 'updatedAt' }),
+  const [pipelines, customers] = await Promise.all([
+    api.get<PipelineWithStages[]>('/v1/crm/pipelines'),
+    api
+      .getPaged<CustomerLite[]>('/v1/crm/customers?take=200&sort_by=updatedAt')
+      .then((r) => r.data),
   ]);
 
   const initialPipelineId = stringParam(sp.pipelineId) ?? pipelines[0]?.id ?? null;
@@ -55,7 +74,7 @@ export default async function NewDealPage({ searchParams }: PageProps) {
               stageType: s.stageType,
             })),
           }))}
-          customers={customersResult.items.map((c) => ({
+          customers={customers.map((c) => ({
             id: c.id,
             label:
               [c.firstName, c.lastName].filter(Boolean).join(' ') ||

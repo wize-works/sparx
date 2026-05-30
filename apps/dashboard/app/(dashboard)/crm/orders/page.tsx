@@ -1,8 +1,6 @@
 import Link from 'next/link';
 import { ShoppingCart, Plus } from 'lucide-react';
 
-import { requireSession } from '@sparx/auth';
-import { orderService } from '@sparx/crm';
 import {
   Badge,
   Button,
@@ -21,8 +19,22 @@ import {
   Text,
 } from '@sparx/ui';
 
+import { api } from '@/lib/api-rest-client';
+
 import { EntityRowLink } from '../../_components/entity-row-link';
 import { CrmTabs } from '../_components/crm-tabs';
+
+interface OrderRow {
+  id: string;
+  orderNumber: string;
+  status: string;
+  paymentStatus: string;
+  currency: string;
+  total: string | number;
+  amountPaid: string | number;
+  placedAt: string | null;
+  channel: string | null;
+}
 
 // Orders index — sortable + filterable table. Filters live in the query
 // string so links and saved views serialize cleanly.
@@ -42,22 +54,20 @@ const STATUS_VARIANT: Record<string, 'success' | 'warning' | 'outline' | 'danger
 };
 
 export default async function OrdersPage({ searchParams }: PageProps) {
-  const session = await requireSession();
   const params = await searchParams;
   const status = stringParam(params.status);
   const paymentStatus = stringParam(params.paymentStatus);
   const q = stringParam(params.q);
 
-  const { items: orders, total } = await orderService.list(
-    { tenantId: session.user.tenantId, userId: session.user.id },
-    {
-      take: 100,
-      sortBy: 'placedAt',
-      ...(status ? { status } : {}),
-      ...(paymentStatus ? { paymentStatus } : {}),
-      ...(q ? { q } : {}),
-    }
+  const query = new URLSearchParams({ take: '100', sort_by: 'placedAt' });
+  if (status) query.set('status', status);
+  if (paymentStatus) query.set('payment_status', paymentStatus);
+  if (q) query.set('q', q);
+
+  const { data: orders, meta } = await api.getPaged<OrderRow[]>(
+    `/v1/crm/orders?${query.toString()}`
   );
+  const total = (meta?.total as number | undefined) ?? orders.length;
 
   return (
     <Container size="xl">
@@ -136,7 +146,7 @@ export default async function OrdersPage({ searchParams }: PageProps) {
                       </TableCell>
                       <TableCell>
                         <Text size="sm" variant="muted">
-                          {o.placedAt?.toLocaleDateString() ?? '—'}
+                          {o.placedAt ? new Date(o.placedAt).toLocaleDateString() : '—'}
                         </Text>
                       </TableCell>
                       <TableCell>

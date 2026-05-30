@@ -18,7 +18,8 @@ import 'server-only';
 import { revalidatePath } from 'next/cache';
 import { invalidateModuleCache, requireSession, type ModuleSlug } from '@sparx/auth';
 import { prisma, type Prisma } from '@sparx/db';
-import { pipelineService, segmentService } from '@sparx/crm';
+
+import { api } from '@/lib/api-rest-client';
 
 export type ActionResult<T> = { ok: true; data: T } | { ok: false; error: { message: string } };
 
@@ -121,9 +122,7 @@ export async function setModuleEnabledAction(
     // `module.activated` to the api-rest consumer; both paths are
     // idempotent so a double-run is a no-op.
     if (enabled && slug === 'crm') {
-      const ctx = { tenantId: session.user.tenantId, userId: session.user.id };
-      await pipelineService.bootstrapDefaultPipeline(ctx);
-      await segmentService.bootstrapBuiltInSegments(ctx);
+      await api.post<{ bootstrapped: boolean }>('/v1/crm/bootstrap', {});
     }
 
     // Revalidate the settings page (status pills) AND the toggled module's

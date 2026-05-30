@@ -2,14 +2,6 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Building2, Mail, Phone, CreditCard, CheckSquare, AlertCircle } from 'lucide-react';
 
-import { requireSession } from '@sparx/auth';
-import {
-  CrmNotFoundError,
-  activityService,
-  b2bAccountService,
-  customerService,
-  taskService,
-} from '@sparx/crm';
 import {
   Badge,
   Button,
@@ -26,8 +18,57 @@ import {
   Text,
 } from '@sparx/ui';
 
+import { api, type ApiRestError } from '@/lib/api-rest-client';
+
 import { ActivityTimeline } from '../_components/activity-timeline';
 import { RecordActivityForm } from '../_components/record-activity-form';
+
+interface Customer {
+  id: string;
+  type: string;
+  firstName: string | null;
+  lastName: string | null;
+  company: string | null;
+  email: string | null;
+  phone: string | null;
+  jobTitle: string | null;
+  doNotContact: boolean;
+  mergedIntoCustomerId: string | null;
+  preferredContactMethod: string | null;
+  tags: string[];
+  orderCount: number;
+  totalSpent: string | number;
+  firstOrderAt: string | null;
+  lastOrderAt: string | null;
+  createdAt: string;
+  b2bAccountId: string | null;
+}
+
+interface CustomerActivity {
+  id: string;
+  type: string;
+  description: string | null;
+  occurredAt: string;
+  actorType: string;
+  correctsActivityId: string | null;
+}
+
+interface CustomerTask {
+  id: string;
+  title: string;
+  priority: string;
+  dueAt: string | null;
+}
+
+interface B2bAccountSummary {
+  id: string;
+  companyName: string;
+  pricingTier: string | null;
+  creditLimit: string | number;
+  creditUsed: string | number;
+  paymentTerms: string | null;
+  status: string;
+}
 
 // Detail content for a CRM customer. Mounted by both the full-page route
 // (crm/customers/[id]/page.tsx) and the dashboard shell's drawer / modal
@@ -40,22 +81,21 @@ interface Props {
 }
 
 export async function CustomerDetailContent({ id }: Props) {
-  const session = await requireSession();
-  const ctx = { tenantId: session.user.tenantId, userId: session.user.id };
-
-  let customer;
+  let customer: Customer;
   try {
-    customer = await customerService.get(ctx, id);
+    customer = await api.get<Customer>(`/v1/crm/customers/${id}`);
   } catch (err) {
-    if (err instanceof CrmNotFoundError) notFound();
+    if ((err as ApiRestError).code === 'NOT_FOUND') notFound();
     throw err;
   }
 
   const [activities, openTasks, b2bAccount] = await Promise.all([
-    activityService.list(ctx, { customerId: id, limit: 100 }),
-    taskService.list(ctx, { customerId: id, status: 'open', take: 25 }),
+    api.get<CustomerActivity[]>(`/v1/crm/activities?customer_id=${id}&limit=100`),
+    api.get<CustomerTask[]>(`/v1/crm/tasks?customer_id=${id}&status=open&take=25`),
     customer.b2bAccountId
-      ? b2bAccountService.get(ctx, customer.b2bAccountId).catch(() => null)
+      ? api
+          .get<B2bAccountSummary>(`/v1/crm/b2b-accounts/${customer.b2bAccountId}`)
+          .catch(() => null)
       : Promise.resolve(null),
   ]);
 
@@ -67,7 +107,7 @@ export async function CustomerDetailContent({ id }: Props) {
   const aov = customer.orderCount > 0 ? totalSpent / customer.orderCount : 0;
   const lifetimeDays = Math.max(
     1,
-    Math.floor((Date.now() - customer.createdAt.getTime()) / 86_400_000)
+    Math.floor((Date.now() - new Date(customer.createdAt).getTime()) / 86_400_000)
   );
 
   return (
@@ -109,11 +149,15 @@ export async function CustomerDetailContent({ id }: Props) {
             />
             <StatItem
               label="First order"
-              value={customer.firstOrderAt ? customer.firstOrderAt.toLocaleDateString() : '—'}
+              value={
+                customer.firstOrderAt ? new Date(customer.firstOrderAt).toLocaleDateString() : '—'
+              }
             />
             <StatItem
               label="Last order"
-              value={customer.lastOrderAt ? customer.lastOrderAt.toLocaleDateString() : '—'}
+              value={
+                customer.lastOrderAt ? new Date(customer.lastOrderAt).toLocaleDateString() : '—'
+              }
             />
           </Stack>
         </CardContent>
@@ -187,7 +231,7 @@ export async function CustomerDetailContent({ id }: Props) {
                             </Stack>
                             {task.dueAt && (
                               <Text size="xs" variant="muted">
-                                Due {task.dueAt.toLocaleDateString()}
+                                Due {new Date(task.dueAt).toLocaleDateString()}
                               </Text>
                             )}
                           </Stack>

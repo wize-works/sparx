@@ -2,8 +2,6 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Star, Archive, Users, Code2 } from 'lucide-react';
 
-import { requireSession } from '@sparx/auth';
-import { CrmNotFoundError, segmentService } from '@sparx/crm';
 import {
   Badge,
   Card,
@@ -23,30 +21,54 @@ import {
   Text,
 } from '@sparx/ui';
 
+import { api, type ApiRestError } from '@/lib/api-rest-client';
+
 import { RecomputeButton } from '../_components/recompute-button';
 
 export const dynamic = 'force-dynamic';
+
+interface Segment {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  isBuiltIn: boolean;
+  archivedAt: string | null;
+  rules: unknown;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface SegmentMember {
+  customerId: string;
+  enteredAt: string;
+  customer: {
+    type: string;
+    firstName: string | null;
+    lastName: string | null;
+    company: string | null;
+    email: string | null;
+    totalSpent: string | number;
+  };
+}
 
 interface Props {
   id: string;
 }
 
 export async function SegmentDetailContent({ id }: Props) {
-  const session = await requireSession();
-  const ctx = { tenantId: session.user.tenantId, userId: session.user.id };
-
-  let segment;
+  let segment: Segment;
   try {
-    segment = await segmentService.get(ctx, id);
+    segment = await api.get<Segment>(`/v1/crm/segments/${id}`);
   } catch (err) {
-    if (err instanceof CrmNotFoundError) notFound();
+    if ((err as ApiRestError).code === 'NOT_FOUND') notFound();
     throw err;
   }
 
-  const [members, total] = await Promise.all([
-    segmentService.members(ctx, id, { limit: 100 }),
-    segmentService.memberCount(ctx, id),
+  const [{ data: members, meta }] = await Promise.all([
+    api.getPaged<SegmentMember[]>(`/v1/crm/segments/${id}/members?limit=100`),
   ]);
+  const total = (meta?.total as number | undefined) ?? members.length;
 
   return (
     <Stack gap={6}>
@@ -79,12 +101,12 @@ export async function SegmentDetailContent({ id }: Props) {
         </Card>
         <Card>
           <CardContent className="py-4">
-            <Stat label="Created" value={segment.createdAt.toLocaleDateString()} />
+            <Stat label="Created" value={new Date(segment.createdAt).toLocaleDateString()} />
           </CardContent>
         </Card>
         <Card>
           <CardContent className="py-4">
-            <Stat label="Updated" value={segment.updatedAt.toLocaleDateString()} />
+            <Stat label="Updated" value={new Date(segment.updatedAt).toLocaleDateString()} />
           </CardContent>
         </Card>
       </div>
@@ -159,7 +181,7 @@ export async function SegmentDetailContent({ id }: Props) {
                     </TableCell>
                     <TableCell>
                       <Text size="sm" variant="muted">
-                        {m.enteredAt.toLocaleDateString()}
+                        {new Date(m.enteredAt).toLocaleDateString()}
                       </Text>
                     </TableCell>
                   </TableRow>

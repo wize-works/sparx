@@ -2,31 +2,39 @@ import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 
 import { requireSession } from '@sparx/auth';
-import { customerService } from '@sparx/crm';
 import { prisma } from '@sparx/db';
 import { Button, Container, Heading, Stack, Text } from '@sparx/ui';
+
+import { api } from '@/lib/api-rest-client';
 
 import { NewTaskForm } from './_components/new-task-form';
 
 export const dynamic = 'force-dynamic';
+
+interface CustomerLite {
+  id: string;
+  firstName: string | null;
+  lastName: string | null;
+  company: string | null;
+  email: string | null;
+}
 
 interface PageProps {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }
 
 export default async function NewTaskPage({ searchParams }: PageProps) {
+  // requireSession stays — we need currentUserId for the form, and the tenant
+  // user-list query (Better Auth's users table) has no REST equivalent yet.
   const session = await requireSession();
   const sp = await searchParams;
-  const ctx = { tenantId: session.user.tenantId, userId: session.user.id };
 
-  const [customersResult, users] = await Promise.all([
-    customerService.list(ctx, { take: 200 }),
-    // Tenant staff users — Better Auth users table. Single query under the
-    // tenant context so RLS gates it.
+  const [customers, users] = await Promise.all([
+    api.getPaged<CustomerLite[]>('/v1/crm/customers?take=200').then((r) => r.data),
     prisma.$transaction(async (tx) => {
-      await tx.$executeRawUnsafe(`SET LOCAL app.tenant_id = '${ctx.tenantId}'`);
+      await tx.$executeRawUnsafe(`SET LOCAL app.tenant_id = '${session.user.tenantId}'`);
       return tx.user.findMany({
-        where: { tenantId: ctx.tenantId },
+        where: { tenantId: session.user.tenantId },
         select: { id: true, name: true, email: true },
         orderBy: { name: 'asc' },
         take: 100,
@@ -56,7 +64,7 @@ export default async function NewTaskPage({ searchParams }: PageProps) {
             id: u.id,
             label: u.name ?? u.email ?? u.id.slice(0, 8),
           }))}
-          customers={customersResult.items.map((c) => ({
+          customers={customers.map((c) => ({
             id: c.id,
             label:
               [c.firstName, c.lastName].filter(Boolean).join(' ') ||

@@ -2,16 +2,6 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { FileText, Receipt, Calendar, User, Briefcase } from 'lucide-react';
 
-import { requireSession } from '@sparx/auth';
-import {
-  CrmNotFoundError,
-  activityService,
-  customerService,
-  dealService,
-  orderService,
-  pipelineService,
-  quoteService,
-} from '@sparx/crm';
 import {
   Badge,
   Card,
@@ -30,10 +20,71 @@ import {
   Text,
 } from '@sparx/ui';
 
+import { api, type ApiRestError } from '@/lib/api-rest-client';
+
 import { stageColor } from '../../pipelines/[id]/_components/kanban-types';
 import { AttachOrderPopover, DetachOrderButton } from './_components/attach-order-popover';
 import { AttachQuotePopover, DetachQuoteButton } from './_components/attach-quote-popover';
 import { StagePicker } from './_components/stage-picker';
+
+interface Deal {
+  id: string;
+  title: string;
+  pipelineId: string;
+  stageId: string;
+  value: string | number;
+  currency: string;
+  customerId: string | null;
+  closedAt: string | null;
+  expectedCloseDate: string | null;
+}
+
+interface PipelineStage {
+  id: string;
+  name: string;
+  stageType: 'open' | 'won' | 'lost';
+  probability: string | number;
+  color: string | null;
+}
+
+interface PipelineDetail {
+  id: string;
+  name: string;
+  stages: PipelineStage[];
+}
+
+interface OrderSummary {
+  id: string;
+  orderNumber: string;
+  status: string;
+  currency: string;
+  total: string | number;
+  placedAt: string | null;
+}
+
+interface QuoteSummary {
+  id: string;
+  quoteNumber: string;
+  status: string;
+  currency: string;
+  total: string | number;
+  validUntil: string | null;
+}
+
+interface CustomerSummary {
+  id: string;
+  firstName: string | null;
+  lastName: string | null;
+  company: string | null;
+  email: string | null;
+}
+
+interface ActivityRow {
+  id: string;
+  type: string;
+  description: string | null;
+  occurredAt: string;
+}
 
 // Detail content for a CRM deal. Mounted by the full-page route and by the
 // dashboard shell's drawer / modal. The full-page chrome (back-to-pipeline
@@ -46,42 +97,36 @@ interface Props {
 }
 
 export async function DealDetailContent({ id }: Props) {
-  const session = await requireSession();
-  const ctx = { tenantId: session.user.tenantId, userId: session.user.id };
-
-  let deal;
+  let deal: Deal;
   try {
-    deal = await dealService.get(ctx, id);
+    deal = await api.get<Deal>(`/v1/crm/deals/${id}`);
   } catch (err) {
-    if (err instanceof CrmNotFoundError) notFound();
+    if ((err as ApiRestError).code === 'NOT_FOUND') notFound();
     throw err;
   }
 
+  const customerFilter = deal.customerId ? `&customer_id=${deal.customerId}` : '';
   const [
     pipeline,
     attachedOrders,
     attachedQuotes,
     activities,
     customer,
-    candidateOrders,
-    candidateQuotes,
+    candidateOrdersResp,
+    candidateQuotesResp,
   ] = await Promise.all([
-    pipelineService.get(ctx, deal.pipelineId),
-    dealService.listAttachedOrders(ctx, deal.id),
-    dealService.listAttachedQuotes(ctx, deal.id),
-    activityService.list(ctx, { dealId: deal.id, take: 20 }),
-    deal.customerId ? customerService.get(ctx, deal.customerId).catch(() => null) : null,
-    orderService.list(ctx, {
-      take: 100,
-      sortBy: 'placedAt',
-      ...(deal.customerId ? { customerId: deal.customerId } : {}),
-    }),
-    quoteService.list(ctx, {
-      take: 100,
-      sortBy: 'createdAt',
-      ...(deal.customerId ? { customerId: deal.customerId } : {}),
-    }),
+    api.get<PipelineDetail>(`/v1/crm/pipelines/${deal.pipelineId}`),
+    api.get<OrderSummary[]>(`/v1/crm/deals/${deal.id}/orders`),
+    api.get<QuoteSummary[]>(`/v1/crm/deals/${deal.id}/quotes`),
+    api.get<ActivityRow[]>(`/v1/crm/activities?deal_id=${deal.id}&take=20`),
+    deal.customerId
+      ? api.get<CustomerSummary>(`/v1/crm/customers/${deal.customerId}`).catch(() => null)
+      : Promise.resolve(null),
+    api.getPaged<OrderSummary[]>(`/v1/crm/orders?take=100&sort_by=placedAt${customerFilter}`),
+    api.getPaged<QuoteSummary[]>(`/v1/crm/quotes?take=100&sort_by=createdAt${customerFilter}`),
   ]);
+  const candidateOrders = candidateOrdersResp.data;
+  const candidateQuotes = candidateQuotesResp.data;
   const stage = pipeline.stages.find((s) => s.id === deal.stageId);
 
   return (
@@ -110,7 +155,7 @@ export async function DealDetailContent({ id }: Props) {
           )}
           {deal.closedAt && (
             <Badge variant={stage?.stageType === 'won' ? 'success' : 'warning'}>
-              Closed {deal.closedAt.toLocaleDateString()}
+              Closed {new Date(deal.closedAt).toLocaleDateString()}
             </Badge>
           )}
         </Stack>
@@ -125,7 +170,7 @@ export async function DealDetailContent({ id }: Props) {
             <Calendar className="h-3.5 w-3.5 text-[var(--color-text-tertiary)]" />
             <Text size="sm" variant="muted">
               {deal.expectedCloseDate
-                ? `Expected ${deal.expectedCloseDate.toLocaleDateString()}`
+                ? `Expected ${new Date(deal.expectedCloseDate).toLocaleDateString()}`
                 : 'No expected close'}
             </Text>
           </Stack>
@@ -158,7 +203,7 @@ export async function DealDetailContent({ id }: Props) {
                 <AttachOrderPopover
                   dealId={deal.id}
                   attachedIds={attachedOrders.map((o) => o.id)}
-                  candidates={candidateOrders.items.map((o) => ({
+                  candidates={candidateOrders.map((o) => ({
                     id: o.id,
                     orderNumber: o.orderNumber,
                     status: o.status,
@@ -206,7 +251,7 @@ export async function DealDetailContent({ id }: Props) {
                         </TableCell>
                         <TableCell>
                           <Text size="sm" variant="muted">
-                            {o.placedAt?.toLocaleDateString() ?? '—'}
+                            {o.placedAt ? new Date(o.placedAt).toLocaleDateString() : '—'}
                           </Text>
                         </TableCell>
                         <TableCell className="text-right">
@@ -232,7 +277,7 @@ export async function DealDetailContent({ id }: Props) {
                 <AttachQuotePopover
                   dealId={deal.id}
                   attachedIds={attachedQuotes.map((q) => q.id)}
-                  candidates={candidateQuotes.items.map((q) => ({
+                  candidates={candidateQuotes.map((q) => ({
                     id: q.id,
                     quoteNumber: q.quoteNumber,
                     status: q.status,
@@ -280,7 +325,7 @@ export async function DealDetailContent({ id }: Props) {
                         </TableCell>
                         <TableCell>
                           <Text size="sm" variant="muted">
-                            {q.validUntil?.toLocaleDateString() ?? '—'}
+                            {q.validUntil ? new Date(q.validUntil).toLocaleDateString() : '—'}
                           </Text>
                         </TableCell>
                         <TableCell className="text-right">
@@ -313,7 +358,7 @@ export async function DealDetailContent({ id }: Props) {
                         {a.type}
                       </Badge>
                       <Text size="xs" variant="muted">
-                        {a.occurredAt.toLocaleDateString()}
+                        {new Date(a.occurredAt).toLocaleDateString()}
                       </Text>
                     </Stack>
                     {a.description && <Text size="sm">{a.description}</Text>}

@@ -2,8 +2,6 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Package } from 'lucide-react';
 
-import { requireSession } from '@sparx/auth';
-import { CrmNotFoundError, customerService, quoteService } from '@sparx/crm';
 import {
   Badge,
   Card,
@@ -22,7 +20,44 @@ import {
   Text,
 } from '@sparx/ui';
 
+import { api, type ApiRestError } from '@/lib/api-rest-client';
+
 import { QuoteLifecycleActions } from './_components/quote-lifecycle-actions';
+
+interface QuoteItem {
+  id: string;
+  sku: string;
+  name: string;
+  quantity: number;
+  unitPrice: string | number;
+  discountAmount: string | number;
+  taxAmount: string | number;
+  lineTotal: string | number;
+}
+
+interface QuoteWithItems {
+  id: string;
+  quoteNumber: string;
+  status: string;
+  customerId: string | null;
+  convertedToOrderId: string | null;
+  currency: string;
+  total: string | number;
+  subtotal: string | number;
+  taxTotal: string | number;
+  validUntil: string | null;
+  customerNote: string | null;
+  internalNote: string | null;
+  items: QuoteItem[];
+}
+
+interface CustomerSummary {
+  id: string;
+  firstName: string | null;
+  lastName: string | null;
+  company: string | null;
+  email: string | null;
+}
 
 export const dynamic = 'force-dynamic';
 
@@ -40,19 +75,16 @@ interface Props {
 }
 
 export async function QuoteDetailContent({ id }: Props) {
-  const session = await requireSession();
-  const ctx = { tenantId: session.user.tenantId, userId: session.user.id };
-
-  let quote;
+  let quote: QuoteWithItems;
   try {
-    quote = await quoteService.get(ctx, id);
+    quote = await api.get<QuoteWithItems>(`/v1/crm/quotes/${id}`);
   } catch (err) {
-    if (err instanceof CrmNotFoundError) notFound();
+    if ((err as ApiRestError).code === 'NOT_FOUND') notFound();
     throw err;
   }
 
   const customer = quote.customerId
-    ? await customerService.get(ctx, quote.customerId).catch(() => null)
+    ? await api.get<CustomerSummary>(`/v1/crm/customers/${quote.customerId}`).catch(() => null)
     : null;
 
   return (
@@ -111,7 +143,10 @@ export async function QuoteDetailContent({ id }: Props) {
         </Card>
         <Card>
           <CardContent className="py-4">
-            <Stat label="Valid until" value={quote.validUntil?.toLocaleDateString() ?? '—'} />
+            <Stat
+              label="Valid until"
+              value={quote.validUntil ? new Date(quote.validUntil).toLocaleDateString() : '—'}
+            />
           </CardContent>
         </Card>
       </div>
