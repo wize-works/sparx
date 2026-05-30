@@ -87,6 +87,30 @@ export interface SegmentOption {
   name: string;
 }
 
+export interface EngagementCounts {
+  accepted: number;
+  delivered: number;
+  opened: number;
+  clicked: number;
+  bounced: number;
+  complained: number;
+  unsubscribed: number;
+  failed: number;
+}
+
+export interface OverviewResult {
+  days: number;
+  counts: EngagementCounts;
+  suppressedTotal: number;
+  recent: {
+    type: string;
+    recipient: string;
+    occurredAt: string;
+    broadcastId: string | null;
+    automationKey: string | null;
+  }[];
+}
+
 export interface EmailSettingsView {
   tenantId: string;
   fromName: string | null;

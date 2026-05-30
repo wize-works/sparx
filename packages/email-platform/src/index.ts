@@ -14,3 +14,8 @@ export {
   EmailConflictError,
   EmailProviderError,
 } from './errors';
+
+// MCP — the tool array the MCP server publishes (mirrors crmMcpTools).
+export * as emailMcp from './mcp';
+export { emailMcpTools } from './mcp';
+export type { AnyMcpTool, McpScope, McpToolDefinition } from './mcp';

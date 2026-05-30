@@ -8,7 +8,7 @@
 //   P4 — templateService                          (done)
 //   P5 — automationService                         (done)
 //   P6 — broadcastService                          (done)
-//   P7 — analyticsService
+//   P7 — analyticsService                          (done)
 
 export * as settingsService from './settings-service';
 export * as domainService from './domain-service';
@@ -18,6 +18,7 @@ export * as brandService from './brand-service';
 export * as templateService from './template-service';
 export * as automationService from './automation-service';
 export * as broadcastService from './broadcast-service';
+export * as analyticsService from './analytics-service';
 
 export { BUILTIN_TEMPLATES, getBuiltinTemplate, type BuiltinTemplate } from '../builtin-templates';
 export {

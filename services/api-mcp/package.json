@@ -21,6 +21,7 @@
     "@sparx/auth": "workspace:*",
     "@sparx/crm": "workspace:*",
     "@sparx/db": "workspace:*",
+    "@sparx/email-platform": "workspace:*",
     "@sparx/sitebuilder": "workspace:*",
     "fastify": "^5.6.1",
     "fastify-plugin": "^5.0.1",
