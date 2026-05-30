@@ -96,13 +96,13 @@ export default async function TypeListPage({ params }: PageProps) {
         </Stack>
 
         {entries.length === 0 ? (
-          <Card padding="none">
+          <Card variant="module" padding="none">
             <EmptyState
               icon={<FileText className="h-5 w-5" />}
               title={`No ${type.plural_name.toLowerCase()} yet`}
               description={`Create your first ${type.name.toLowerCase()} to get started.`}
               action={
-                <Button asChild>
+                <Button asChild variant="module">
                   <Link href={`/cms/types/${typeKey}/new`}>Create a {type.name.toLowerCase()}</Link>
                 </Button>
               }
