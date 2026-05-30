@@ -9,6 +9,7 @@
 import { PublishInput, RollbackInput } from '@sparx/sitebuilder-schemas';
 import type { SiteVersion } from '@sparx/db';
 import { withTenant } from '@sparx/db';
+import { compileTokens } from '@sparx/storefront-themes';
 
 import { publishSitebuilderEvent } from '../events';
 import type { ServiceContext } from '../errors';
@@ -104,5 +105,43 @@ export async function getPublishedSnapshot(ctx: ServiceContext): Promise<Publish
     if (!config?.publishedVersionId) return null;
     const version = await tx.siteVersion.findUnique({ where: { id: config.publishedVersionId } });
     return version ? toPublishedSnapshot(version) : null;
+  });
+}
+
+/**
+ * The current DRAFT assembled into the same snapshot shape — what the
+ * customizer's live preview renders. Compiled on the fly (not yet a version).
+ */
+export async function getDraftSnapshot(ctx: ServiceContext): Promise<PublishedSnapshot> {
+  return withTenant(ctx, async (tx) => {
+    const config = await getOrCreateConfig(tx, ctx.tenantId);
+    const [sections, layout] = await Promise.all([
+      tx.siteSection.findMany({ orderBy: [{ pageKey: 'asc' }, { position: 'asc' }] }),
+      tx.siteLayoutBlock.findMany({ orderBy: { slot: 'asc' } }),
+    ]);
+    const settings = (config.draftSettings ?? {}) as {
+      tokens?: { light?: Record<string, string>; dark?: Record<string, string> };
+    };
+    const compiled = compileTokens(config.themeKey, settings.tokens ?? {});
+    return {
+      versionNumber: 0,
+      themeKey: config.themeKey,
+      appearancePolicy: config.appearancePolicy,
+      compiledTokens: compiled,
+      sections: sections.map((s) => ({
+        id: s.id,
+        pageKey: s.pageKey,
+        sectionType: s.sectionType,
+        position: s.position,
+        visible: s.visible,
+        config: (s.config ?? {}) as Record<string, unknown>,
+      })),
+      layout: layout.map((b) => ({
+        slot: b.slot,
+        navigationMenuId: b.navigationMenuId,
+        config: (b.config ?? {}) as Record<string, unknown>,
+        visible: b.visible,
+      })),
+    };
   });
 }

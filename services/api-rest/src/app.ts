@@ -16,6 +16,11 @@ import Fastify, {
 import cookie from '@fastify/cookie';
 import { CrmConflictError, CrmNotFoundError, CrmValidationError } from '@sparx/crm';
 import {
+  SitebuilderConflictError,
+  SitebuilderNotFoundError,
+  SitebuilderValidationError,
+} from '@sparx/sitebuilder';
+import {
   CommerceConflictError,
   CommerceNotFoundError,
   CommerceOutOfStockError,
@@ -23,6 +28,12 @@ import {
   CommerceProviderError,
   CommerceValidationError,
 } from '@sparx/commerce';
+import {
+  EmailConflictError,
+  EmailNotFoundError,
+  EmailProviderError,
+  EmailValidationError,
+} from '@sparx/email-platform';
 import { createAuthPlugin } from '@sparx/api-core/auth';
 import { createErrorsPlugin, type ErrorEnvelope } from '@sparx/api-core/errors-plugin';
 import { env } from './env.js';
@@ -50,15 +61,18 @@ import publicCartRoutes from './routes/v1/public/cart.js';
 import publicCheckoutRoutes from './routes/v1/public/checkout.js';
 import publicReviewRoutes from './routes/v1/public/reviews.js';
 import publicAccountRoutes from './routes/v1/public/account.js';
+import publicStorefrontRoutes from './routes/v1/public/storefront.js';
 import publicMediaRoutes from './routes/v1/public/media.js';
 import uploadRoutes from './routes/v1/media/uploads.js';
 import mediaAssetRoutes from './routes/v1/media/assets.js';
 import crmRoutes from './routes/v1/crm/index.js';
+import sitebuilderRoutes from './routes/v1/sitebuilder/index.js';
 import commerceRoutes from './routes/v1/commerce/index.js';
 import tenantRoutes from './routes/v1/tenant.js';
 import meRoutes from './routes/v1/me.js';
 import userRoutes from './routes/v1/users.js';
 import emailTestRoutes from './routes/v1/email/test.js';
+import emailRoutes from './routes/v1/email/index.js';
 import dashboardRoutes from './routes/v1/dashboard.js';
 import { bootstrapProviders } from './lib/providers-bootstrap.js';
 
@@ -114,6 +128,51 @@ function crmErrorMapper(
     return reply.code(422).send(body);
   }
   if (err instanceof CrmConflictError) {
+    const body: ErrorEnvelope = {
+      success: false,
+      error: {
+        code: 'CONFLICT',
+        message: err.message,
+        ...(err.field !== undefined ? { details: { field: err.field } } : {}),
+        request_id: requestId,
+      },
+    };
+    return reply.code(409).send(body);
+  }
+  return undefined;
+}
+
+function sitebuilderErrorMapper(
+  err: unknown,
+  request: { id: string },
+  reply: FastifyReply
+): FastifyReply | undefined {
+  const requestId = request.id;
+  if (err instanceof SitebuilderNotFoundError) {
+    const body: ErrorEnvelope = {
+      success: false,
+      error: {
+        code: 'NOT_FOUND',
+        message: err.message,
+        details: { entityType: err.entityType, entityId: err.entityId },
+        request_id: requestId,
+      },
+    };
+    return reply.code(404).send(body);
+  }
+  if (err instanceof SitebuilderValidationError) {
+    const body: ErrorEnvelope = {
+      success: false,
+      error: {
+        code: 'VALIDATION_ERROR',
+        message: err.message,
+        details: err.details,
+        request_id: requestId,
+      },
+    };
+    return reply.code(422).send(body);
+  }
+  if (err instanceof SitebuilderConflictError) {
     const body: ErrorEnvelope = {
       success: false,
       error: {
@@ -221,6 +280,65 @@ function commerceErrorMapper(
   return undefined;
 }
 
+// Email-platform service-layer errors — same envelope vocabulary as CRM, with
+// PROVIDER_ERROR (→ 502) for Mailgun admin failures the merchant should see.
+function emailErrorMapper(
+  err: unknown,
+  request: { id: string },
+  reply: FastifyReply
+): FastifyReply | undefined {
+  const requestId = request.id;
+  if (err instanceof EmailNotFoundError) {
+    const body: ErrorEnvelope = {
+      success: false,
+      error: {
+        code: 'NOT_FOUND',
+        message: err.message,
+        details: { entityType: err.entityType, entityId: err.entityId },
+        request_id: requestId,
+      },
+    };
+    return reply.code(404).send(body);
+  }
+  if (err instanceof EmailValidationError) {
+    const body: ErrorEnvelope = {
+      success: false,
+      error: {
+        code: 'VALIDATION_ERROR',
+        message: err.message,
+        details: err.details,
+        request_id: requestId,
+      },
+    };
+    return reply.code(422).send(body);
+  }
+  if (err instanceof EmailConflictError) {
+    const body: ErrorEnvelope = {
+      success: false,
+      error: {
+        code: 'CONFLICT',
+        message: err.message,
+        ...(err.field !== undefined ? { details: { field: err.field } } : {}),
+        request_id: requestId,
+      },
+    };
+    return reply.code(409).send(body);
+  }
+  if (err instanceof EmailProviderError) {
+    const body: ErrorEnvelope = {
+      success: false,
+      error: {
+        code: 'PROVIDER_ERROR',
+        message: err.message,
+        details: { provider: err.provider, ...(err.status ? { status: err.status } : {}) },
+        request_id: requestId,
+      },
+    };
+    return reply.code(502).send(body);
+  }
+  return undefined;
+}
+
 export async function createApp(): Promise<FastifyInstance> {
   // Populate the integration-framework registry + wire the SecretReader
   // before any route can call providerService.runPayment*.
@@ -258,7 +376,11 @@ export async function createApp(): Promise<FastifyInstance> {
   // handler must be registered first so it catches anything that throws
   // from the others. OpenAPI must be initialised before routes register so
   // each route's schema is recorded.
-  await app.register(createErrorsPlugin({ extraMappers: [crmErrorMapper, commerceErrorMapper] }));
+  await app.register(
+    createErrorsPlugin({
+      extraMappers: [crmErrorMapper, commerceErrorMapper, sitebuilderErrorMapper, emailErrorMapper],
+    })
+  );
   await app.register(openapiPlugin);
   await app.register(rateLimitPlugin);
   // Cookie support — used by the storefront customer session (httpOnly
@@ -311,15 +433,18 @@ export async function createApp(): Promise<FastifyInstance> {
   await app.register(publicCheckoutRoutes);
   await app.register(publicReviewRoutes);
   await app.register(publicAccountRoutes);
+  await app.register(publicStorefrontRoutes);
   await app.register(publicMediaRoutes);
   await app.register(uploadRoutes);
   await app.register(mediaAssetRoutes);
   await app.register(crmRoutes);
+  await app.register(sitebuilderRoutes);
   await app.register(commerceRoutes);
   await app.register(tenantRoutes);
   await app.register(meRoutes);
   await app.register(userRoutes);
   await app.register(emailTestRoutes);
+  await app.register(emailRoutes);
   await app.register(dashboardRoutes);
 
   return app;

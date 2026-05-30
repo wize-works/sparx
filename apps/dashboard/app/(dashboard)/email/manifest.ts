@@ -1,18 +1,4 @@
-// Email module — stub manifest.
-//
-// TODO: migrate to packages/email-module/src/manifest.ts (or similar — note
-// that packages/email is sending infrastructure, not the module package)
-// when that package exists.
-
-import type { ModuleManifest } from '@sparx/ui/shell';
-import { Mail } from 'lucide-react';
-
-export const emailManifest: ModuleManifest = {
-  id: 'email',
-  label: 'Email',
-  icon: Mail,
-  routePrefix: '/email',
-  sections: [],
-  actions: [],
-  entityTypes: [],
-};
+// Email module manifest — now owned by the @sparx/email-platform package
+// (mirrors @sparx/crm/manifest). Re-exported here so any local relative
+// imports keep resolving; the shell registry imports from the package.
+export { emailManifest } from '@sparx/email-platform/manifest';

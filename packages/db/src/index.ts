@@ -131,5 +131,14 @@ export type {
   SiteSection,
   SiteLayoutBlock,
   SitePublishSchedule,
+  // Email platform
+  EmailSettings,
+  SendingDomain,
+  EmailTemplate,
+  EmailAutomation,
+  ScheduledSend,
+  Broadcast,
+  EmailEvent,
+  EmailSuppression,
   Prisma,
 } from '@prisma/client';

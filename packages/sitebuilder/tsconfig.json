@@ -1,9 +1,10 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "rootDir": "./src",
-    "outDir": "./dist",
-    "jsx": "react-jsx"
+    // @sparx/db's source (consumed as types) references node globals like
+    // `process`; this package imports no node builtins itself, so node types
+    // aren't auto-loaded into the program. Include them explicitly.
+    "types": ["node"]
   },
-  "include": ["src/**/*"]
+  "include": ["src/**/*", "test/**/*"]
 }

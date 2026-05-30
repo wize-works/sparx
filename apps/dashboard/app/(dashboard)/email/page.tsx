@@ -1,54 +1,122 @@
-import { Mail } from 'lucide-react';
+import Link from 'next/link';
+import {
+  Globe,
+  LayoutTemplate,
+  Send,
+  Settings as SettingsIcon,
+  ShieldOff,
+  Workflow,
+} from 'lucide-react';
 import {
   Badge,
+  Button,
   Card,
   CardContent,
   CardDescription,
   CardHeader,
+  CardTitle,
   Code,
-  Container,
+  Grid,
   Heading,
   Stack,
-  Text,
 } from '@sparx/ui';
+
+import { EmailShell } from './_components/email-shell';
 import { TestSendForm } from './test-send-form';
 import { readLastDevSend } from './actions';
 
 export const dynamic = 'force-dynamic';
 
-export default async function EmailPage() {
+const SURFACES = [
+  {
+    href: '/email/broadcasts',
+    icon: Send,
+    title: 'Broadcasts',
+    description: 'Compose a segment-targeted campaign, preview it, and schedule or send.',
+  },
+  {
+    href: '/email/automations',
+    icon: Workflow,
+    title: 'Automations',
+    description: 'Order, cart-abandon, win-back, and B2B flows triggered by platform events.',
+  },
+  {
+    href: '/email/templates',
+    icon: LayoutTemplate,
+    title: 'Templates',
+    description: 'Branded transactional + marketing templates with live preview and test send.',
+  },
+  {
+    href: '/email/domains',
+    icon: Globe,
+    title: 'Sending domains',
+    description: 'Send from your own domain — automatic DKIM, SPF, and DMARC via Mailgun.',
+  },
+  {
+    href: '/email/suppressions',
+    icon: ShieldOff,
+    title: 'Suppressions',
+    description: 'Unsubscribes, bounces, and complaints — kept in sync with Mailgun.',
+  },
+  {
+    href: '/email/settings',
+    icon: SettingsIcon,
+    title: 'Settings',
+    description: 'Sender identity, reply-to, physical address, and brand defaults.',
+  },
+] as const;
+
+export default async function EmailOverviewPage() {
   const lastSend = await readLastDevSend();
   const provider = (process.env.SPARX_EMAIL_PROVIDER ?? 'console').toLowerCase();
 
   return (
-    <Container size="xl">
-      <Stack gap={8} className="py-10">
-        <Stack gap={2}>
-          <Stack direction="row" align="center" gap={2}>
-            <Mail className="h-5 w-5 text-[var(--module-active)]" />
-            <Heading level={1}>Email</Heading>
-            <Badge variant="module">Active</Badge>
-          </Stack>
-          <Text variant="muted">
-            Transactional email runs through <Code>@sparx/email</Code>. Provider:{' '}
-            <Code>{provider}</Code>. Welcome + password reset templates ship today; broadcasts +
-            automations land with the email-worker service.
-          </Text>
-        </Stack>
-
-        <Card>
-          <CardHeader>
-            <Heading level={3}>Send a test email</Heading>
-            <CardDescription>
-              Renders the production template against the active provider and reports the delivery
-              id. In dev (console provider) the email content is also logged to stdout.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <TestSendForm devLastSend={lastSend} />
-          </CardContent>
-        </Card>
+    <EmailShell
+      current="overview"
+      icon={<Send className="h-5 w-5" />}
+      title="Email"
+      description={
+        <>
+          Transactional, automated, and broadcast email through Mailgun. Active provider:{' '}
+          <Code>{provider}</Code>.
+        </>
+      }
+      actions={<Badge variant="module">Active</Badge>}
+    >
+      <Stack gap={3}>
+        <Heading level={3}>Surfaces</Heading>
+        <Grid cols={1} mdCols={2} lgCols={3} gap={4}>
+          {SURFACES.map(({ href, icon: Icon, title, description }) => (
+            <Card key={href} variant="module">
+              <CardHeader>
+                <Stack direction="row" align="center" gap={2}>
+                  <Icon className="h-4 w-4 text-[var(--module-active)]" />
+                  <CardTitle>{title}</CardTitle>
+                </Stack>
+                <CardDescription>{description}</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button variant="module-outline" size="sm" asChild>
+                  <Link href={href}>Open {title.toLowerCase()}</Link>
+                </Button>
+              </CardContent>
+            </Card>
+          ))}
+        </Grid>
       </Stack>
-    </Container>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Send a test email</CardTitle>
+          <CardDescription>
+            Renders a production template against the active provider and reports the delivery id.
+            In dev (console provider) the email content is also logged to stdout.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <TestSendForm devLastSend={lastSend} />
+        </CardContent>
+      </Card>
+    </EmailShell>
   );
 }

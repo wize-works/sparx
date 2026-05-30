@@ -1,0 +1,11 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    // @sparx/db's source (consumed as types) references node globals like
+    // `process`; this package imports no node builtins itself yet, so node
+    // types aren't auto-loaded into the program. Include them explicitly
+    // (mirrors packages/sitebuilder/tsconfig.json).
+    "types": ["node"]
+  },
+  "include": ["src/**/*", "test/**/*"]
+}

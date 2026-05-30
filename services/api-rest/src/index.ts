@@ -7,6 +7,7 @@ import { installCrmWebhookFanout, preconnectWebhookFanout } from '@sparx/crm';
 import { createApp } from './app.js';
 import { env } from './env.js';
 import { startScheduledPublishLoop } from './lib/scheduled-publish.js';
+import { startSitebuilderPublishLoop } from './lib/sitebuilder-publish.js';
 
 async function main(): Promise<void> {
   // Hand api-core its Pub/Sub config before any route handler can call
@@ -26,6 +27,11 @@ async function main(): Promise<void> {
   // pods via Postgres advisory lock — see lib/scheduled-publish.ts.
   const stopScheduledPublish = startScheduledPublishLoop(app.log);
 
+  // Background tick that publishes Site Builder drafts whose scheduled
+  // publish time has passed. Singleton across pods via its own advisory
+  // lock — see lib/sitebuilder-publish.ts.
+  const stopSitebuilderPublish = startSitebuilderPublishLoop(app.log);
+
   // Background tick that POSTs pending webhook deliveries to their
   // subscriber URLs with HMAC-SHA256 signatures. Singleton across pods
   // via a separate advisory lock — see @sparx/api-core/webhook-delivery.
@@ -34,6 +40,7 @@ async function main(): Promise<void> {
   const shutdown = (signal: NodeJS.Signals): void => {
     app.log.info({ signal }, 'shutdown received');
     stopScheduledPublish();
+    stopSitebuilderPublish();
     stopWebhookDelivery();
     void app
       .close()

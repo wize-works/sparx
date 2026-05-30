@@ -9,7 +9,6 @@ import {
   RollbackInput,
   ScheduleInput,
   SelectThemeInput,
-  UpdateSectionInput,
   UpdateSettingsInput,
   UpsertLayoutInput,
   Uuid,

@@ -121,7 +121,7 @@ export async function processDueSchedule(
     // (a thrown query poisons the current transaction — it can't be reused).
     const status = await withTenant(ctx, async (tx): Promise<'published' | 'skipped'> => {
       const schedule = await tx.sitePublishSchedule.findUnique({ where: { id: scheduleId } });
-      if (!schedule || schedule.status !== 'pending') return 'skipped';
+      if (schedule?.status !== 'pending') return 'skipped';
 
       await getOrCreateConfig(tx, ctx.tenantId);
       const version = await publishWithinTx(tx, {

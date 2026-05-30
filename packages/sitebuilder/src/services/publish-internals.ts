@@ -36,8 +36,7 @@ export interface PublishedSnapshot {
 }
 
 async function readDraft(
-  tx: TxClient,
-  tenantId: string
+  tx: TxClient
 ): Promise<{ sections: SectionSnapshot[]; layout: LayoutSnapshot[] }> {
   const [sections, layout] = await Promise.all([
     tx.siteSection.findMany({ orderBy: [{ pageKey: 'asc' }, { position: 'asc' }] }),
@@ -83,8 +82,8 @@ async function writeThrough(
   );
   await tx.storefrontTheme.upsert({
     where: { tenantId },
-    create: { tenantId, ...columns } as Prisma.StorefrontThemeUncheckedCreateInput,
-    update: columns as Prisma.StorefrontThemeUncheckedUpdateInput,
+    create: { tenantId, ...columns },
+    update: columns,
   });
 }
 
@@ -105,7 +104,7 @@ export async function publishWithinTx(
     tokens?: { light?: Record<string, string>; dark?: Record<string, string> };
   };
   const compiled = compileTokens(config.themeKey, settings.tokens ?? {});
-  const draft = await readDraft(tx, tenantId);
+  const draft = await readDraft(tx);
   const versionNumber = await nextVersionNumber(tx, tenantId);
 
   const version = await tx.siteVersion.create({

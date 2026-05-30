@@ -19,7 +19,7 @@ export const readTools: AnyMcpTool[] = [
     scope: 'read:storefront',
     input: NoArgs,
     confirmation: false,
-    run: async () => themeService.listThemes(),
+    run: () => Promise.resolve(themeService.listThemes()),
   },
   {
     name: 'get_site_config',

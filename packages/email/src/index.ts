@@ -45,3 +45,13 @@ export {
 // also exported so apps building one-off email content (e.g. a CRM export
 // summary screen embedded in a notification) can re-use the brand chrome.
 export * from './components';
+
+// Mailgun domain-admin control-plane (create / verify / delete sending
+// domains). Consumed by @sparx/email-platform's domain-service.
+export {
+  getMailgunDomainAdmin,
+  MailgunAdminError,
+  type MailgunDomainAdmin,
+  type MailgunDomainResult,
+  type MailgunDnsRecord,
+} from './admin/mailgun-domains';

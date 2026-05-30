@@ -5,7 +5,7 @@
 // in `config`, validated against the slot's schema in @sparx/sitebuilder-schemas.
 
 import { UpsertLayoutInput, parseLayoutConfig } from '@sparx/sitebuilder-schemas';
-import type { SiteLayoutBlock } from '@sparx/db';
+import type { Prisma, SiteLayoutBlock } from '@sparx/db';
 import { withTenant } from '@sparx/db';
 
 import { writeAuditLog } from '../audit';
@@ -34,12 +34,12 @@ export async function upsert(ctx: ServiceContext, rawInput: unknown): Promise<Si
         tenantId: ctx.tenantId,
         slot: input.slot,
         navigationMenuId: input.navigationMenuId ?? null,
-        config,
+        config: config as Prisma.InputJsonValue,
         visible: input.visible ?? true,
       },
       update: {
         navigationMenuId: input.navigationMenuId ?? null,
-        config,
+        config: config as Prisma.InputJsonValue,
         ...(input.visible !== undefined ? { visible: input.visible } : {}),
       },
     });

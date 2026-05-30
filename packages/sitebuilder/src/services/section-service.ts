@@ -10,7 +10,7 @@ import {
   UpdateSectionInput,
   parseSectionConfig,
 } from '@sparx/sitebuilder-schemas';
-import type { SiteSection } from '@sparx/db';
+import type { Prisma, SiteSection } from '@sparx/db';
 import { withTenant } from '@sparx/db';
 
 import { writeAuditLog } from '../audit';
@@ -50,7 +50,7 @@ export async function create(ctx: ServiceContext, rawInput: unknown): Promise<Si
         pageKey: input.pageKey,
         sectionType: input.sectionType,
         position,
-        config,
+        config: config as Prisma.InputJsonValue,
       },
     });
     await writeAuditLog({
@@ -85,7 +85,7 @@ export async function update(
     return tx.siteSection.update({
       where: { id: sectionId },
       data: {
-        ...(config !== undefined ? { config } : {}),
+        ...(config !== undefined ? { config: config as Prisma.InputJsonValue } : {}),
         ...(input.visible !== undefined ? { visible: input.visible } : {}),
       },
     });

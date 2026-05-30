@@ -13,16 +13,16 @@
 // `destructiveHint` annotation so the MCP client can prompt the user.
 
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { crmMcpTools, type AnyMcpTool } from '@sparx/crm';
 import type { McpAuthContext } from './auth.js';
 import { recordToolInvocation } from './audit.js';
+import { ALL_MCP_TOOLS, type AnyMcpTool } from './tool-registry.js';
 
 const SERVER_INFO = { name: 'sparx-mcp', version: '1.0.0' } as const;
 
 export function buildServerForRequest(auth: McpAuthContext): McpServer {
   const server = new McpServer(SERVER_INFO);
 
-  for (const tool of crmMcpTools as AnyMcpTool[]) {
+  for (const tool of ALL_MCP_TOOLS) {
     // ZodObject is `AnySchema`-compatible — pass it through so the SDK can
     // derive the JSON-schema for the client without us re-deriving the shape.
     const inputSchema = tool.input as Parameters<typeof server.registerTool>[1]['inputSchema'];
@@ -36,7 +36,7 @@ export function buildServerForRequest(auth: McpAuthContext): McpServer {
           // acknowledgement before invocation. The destructiveHint tells
           // MCP clients (Claude desktop, ChatGPT) to prompt.
           destructiveHint: tool.confirmation,
-          openWorldHint: tool.scope !== 'read:crm',
+          openWorldHint: !tool.scope.startsWith('read:'),
         },
       },
       (async (input: unknown) => dispatch(tool, auth, input)) as Parameters<

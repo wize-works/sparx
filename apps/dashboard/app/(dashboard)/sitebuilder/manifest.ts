@@ -1,16 +1,5 @@
-// Storefront / Sitebuilder module — stub manifest.
-//
-// TODO: migrate to packages/storefront/src/manifest.ts when that package exists.
+// Storefront / Site Builder module manifest. The canonical definition lives in
+// the package (@sparx/sitebuilder/manifest); re-exported here so the dashboard
+// shell registry import path stays stable.
 
-import type { ModuleManifest } from '@sparx/ui/shell';
-import { LayoutTemplate } from 'lucide-react';
-
-export const sitebuilderManifest: ModuleManifest = {
-  id: 'storefront',
-  label: 'Sitebuilder',
-  icon: LayoutTemplate,
-  routePrefix: '/sitebuilder',
-  sections: [],
-  actions: [],
-  entityTypes: [],
-};
+export { sitebuilderManifest } from '@sparx/sitebuilder/manifest';
