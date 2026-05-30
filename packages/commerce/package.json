@@ -16,6 +16,10 @@
     "./mcp": {
       "types": "./src/mcp/index.ts",
       "default": "./src/mcp/index.ts"
+    },
+    "./manifest": {
+      "types": "./src/manifest.ts",
+      "default": "./src/manifest.ts"
     }
   },
   "files": [
@@ -37,7 +41,12 @@
     "@sparx/events": "workspace:*",
     "@sparx/integration-framework": "workspace:*",
     "@sparx/search": "workspace:*",
+    "@sparx/ui": "workspace:*",
+    "lucide-react": "^0.469.0",
     "zod": "^4.4.3"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0"
   },
   "devDependencies": {
     "@types/node": "^25.9.1",

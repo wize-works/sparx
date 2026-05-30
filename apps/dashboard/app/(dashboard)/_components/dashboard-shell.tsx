@@ -20,65 +20,14 @@ import {
   SidebarNav,
   SidebarSection,
   SidebarSectionLabel,
-  type SparxModule,
   Stack,
   Text,
   toast,
   Wordmark,
 } from '@sparx/ui';
-import {
-  Building2,
-  ChevronsUpDown,
-  FileText,
-  Home,
-  LayoutTemplate,
-  LogOut,
-  Mail,
-  Settings,
-  ShoppingCart,
-  Sparkles,
-  Truck,
-  User as UserIcon,
-  Users,
-} from 'lucide-react';
+import { ChevronsUpDown, Home, LogOut, Settings, User as UserIcon } from 'lucide-react';
 import { authClient } from '@sparx/auth/client';
-
-interface NavLink {
-  href: string;
-  label: string;
-  icon: React.ReactNode;
-}
-
-interface ModuleNavLink extends NavLink {
-  module: SparxModule;
-}
-
-const PRIMARY_NAV: NavLink[] = [{ href: '/', label: 'Home', icon: <Home className="h-4 w-4" /> }];
-
-const MODULE_NAV: ModuleNavLink[] = [
-  {
-    href: '/sitebuilder',
-    label: 'Sitebuilder',
-    module: 'storefront',
-    icon: <LayoutTemplate className="h-4 w-4" />,
-  },
-  {
-    href: '/commerce',
-    label: 'Commerce',
-    module: 'commerce',
-    icon: <ShoppingCart className="h-4 w-4" />,
-  },
-  { href: '/cms', label: 'CMS', module: 'cms', icon: <FileText className="h-4 w-4" /> },
-  { href: '/crm', label: 'CRM', module: 'crm', icon: <Users className="h-4 w-4" /> },
-  { href: '/email', label: 'Email', module: 'email', icon: <Mail className="h-4 w-4" /> },
-  { href: '/b2b', label: 'B2B', module: 'b2b', icon: <Building2 className="h-4 w-4" /> },
-  { href: '/dropship', label: 'Dropship', module: 'dropship', icon: <Truck className="h-4 w-4" /> },
-  { href: '/ai', label: 'AI', module: 'ai', icon: <Sparkles className="h-4 w-4" /> },
-];
-
-const SECONDARY_NAV: NavLink[] = [
-  { href: '/settings', label: 'Settings', icon: <Settings className="h-4 w-4" /> },
-];
+import { moduleManifests } from '../_shell/registry';
 
 export interface DashboardShellProps {
   user: { id: string; email: string; name?: string | null };
@@ -119,39 +68,35 @@ function NavSections({ pathname }: { pathname: string | null }) {
   return (
     <SidebarNav>
       <SidebarSection>
-        {PRIMARY_NAV.map((item) => (
-          <SidebarItem key={item.href} asChild active={pathname === item.href} icon={item.icon}>
-            <Link href={item.href}>{item.label}</Link>
-          </SidebarItem>
-        ))}
+        <SidebarItem asChild active={pathname === '/'} icon={<Home className="h-4 w-4" />}>
+          <Link href="/">Home</Link>
+        </SidebarItem>
       </SidebarSection>
 
       <SidebarSection>
         <SidebarSectionLabel>Modules</SidebarSectionLabel>
-        {MODULE_NAV.map((item) => (
-          <ModuleProvider key={item.href} module={item.module}>
-            <SidebarItem
-              asChild
-              active={pathname === item.href || pathname?.startsWith(`${item.href}/`)}
-              icon={item.icon}
-            >
-              <Link href={item.href}>{item.label}</Link>
-            </SidebarItem>
-          </ModuleProvider>
-        ))}
+        {moduleManifests.map((manifest) => {
+          const Icon = manifest.icon;
+          const isActive =
+            pathname === manifest.routePrefix || pathname?.startsWith(`${manifest.routePrefix}/`);
+          return (
+            <ModuleProvider key={manifest.id} module={manifest.id}>
+              <SidebarItem asChild active={isActive} icon={<Icon className="h-4 w-4" />}>
+                <Link href={manifest.routePrefix}>{manifest.label}</Link>
+              </SidebarItem>
+            </ModuleProvider>
+          );
+        })}
       </SidebarSection>
 
       <SidebarSection>
-        {SECONDARY_NAV.map((item) => (
-          <SidebarItem
-            key={item.href}
-            asChild
-            active={pathname === item.href || pathname?.startsWith(`${item.href}/`)}
-            icon={item.icon}
-          >
-            <Link href={item.href}>{item.label}</Link>
-          </SidebarItem>
-        ))}
+        <SidebarItem
+          asChild
+          active={pathname === '/settings' || pathname?.startsWith('/settings/')}
+          icon={<Settings className="h-4 w-4" />}
+        >
+          <Link href="/settings">Settings</Link>
+        </SidebarItem>
       </SidebarSection>
     </SidebarNav>
   );

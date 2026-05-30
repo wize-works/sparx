@@ -12,6 +12,10 @@
       "types": "./src/index.ts",
       "default": "./src/index.ts"
     },
+    "./shell": {
+      "types": "./src/shell/index.ts",
+      "default": "./src/shell/index.ts"
+    },
     "./tokens.css": "./src/tokens.css",
     "./tailwind.config": {
       "types": "./tailwind.config.ts",

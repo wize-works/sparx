@@ -20,6 +20,10 @@
     "./editor": {
       "types": "./src/editor.tsx",
       "default": "./src/editor.tsx"
+    },
+    "./manifest": {
+      "types": "./src/manifest.ts",
+      "default": "./src/manifest.ts"
     }
   },
   "files": [
