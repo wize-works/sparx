@@ -1,0 +1,44 @@
+// Dashboard shell — per-user, per-tenant pinned navigation state.
+//
+// Favorites and Recents both key on (user_id, tenant_id) rather than a
+// `tenant_membership_id` row, because the platform's User model carries
+// `tenantId` directly today (one user, one tenant). When Better Auth's
+// organization plugin lands and introduces real membership rows, this
+// compound key migrates cleanly to `tenant_membership_id`.
+//
+// `action_id` is a free-form text matching a ModuleManifest action.id. No
+// FK — manifests are code, not data. If a module is removed, orphaned
+// favorites/recents become unrenderable and are filtered client-side.
+//
+// See docs/24-dashboard-shell.md §8.
+
+model UserFavorite {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  tenantId  String   @map("tenant_id") @db.Uuid
+  actionId  String   @map("action_id") @db.VarChar(120)
+  position  Int
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, tenantId, actionId])
+  @@index([userId, tenantId, position])
+  @@map("user_favorites")
+}
+
+model UserRecent {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId        String   @map("user_id") @db.Uuid
+  tenantId      String   @map("tenant_id") @db.Uuid
+  actionId      String   @map("action_id") @db.VarChar(120)
+  lastVisitedAt DateTime @default(now()) @map("last_visited_at") @db.Timestamptz
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, tenantId, actionId])
+  @@index([userId, tenantId, lastVisitedAt(sort: Desc)])
+  @@map("user_recents")
+}

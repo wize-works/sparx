@@ -5,7 +5,8 @@
 // here and appending it to `moduleManifests`. See docs/24-dashboard-shell.md
 // §3 for the contract.
 
-import type { ModuleManifest, ModuleAction, ModuleSection } from '@sparx/ui/shell';
+import type { ModuleManifest, ModuleAction, ModuleSection, ModuleIcon } from '@sparx/ui/shell';
+import type { SparxModule } from '@sparx/ui';
 
 import { commerceManifest } from '@sparx/commerce/manifest';
 import { crmManifest } from '@sparx/crm/manifest';
@@ -71,4 +72,54 @@ export function findSectionByPath(pathname: string): ModuleSection | undefined {
     }
   }
   return best?.section;
+}
+
+// A unified shape for anything a user can favorite or land in recents.
+// Section-id favorites are namespaced as `${moduleId}.section.${sectionId}`
+// to avoid collisions with manifest action ids.
+export interface FavoritableItem {
+  id: string;
+  label: string;
+  href: string;
+  icon: ModuleIcon;
+  moduleId: Exclude<SparxModule, 'platform'>;
+  kind: 'action' | 'section';
+}
+
+export function listFavoritableItems(): FavoritableItem[] {
+  const items: FavoritableItem[] = [];
+  for (const m of moduleManifests) {
+    for (const s of m.sections) {
+      items.push({
+        id: `${m.id}.section.${s.id}`,
+        label: s.label,
+        href: s.href,
+        icon: s.icon,
+        moduleId: m.id,
+        kind: 'section',
+      });
+    }
+    for (const a of m.actions) {
+      items.push({
+        id: a.id,
+        label: a.label,
+        href: a.href,
+        icon: a.icon,
+        moduleId: m.id,
+        kind: 'action',
+      });
+    }
+  }
+  return items;
+}
+
+export function findFavoritableById(id: string): FavoritableItem | undefined {
+  return listFavoritableItems().find((i) => i.id === id);
+}
+
+export function findFavoritableByPath(pathname: string): FavoritableItem | undefined {
+  // Prefer exact href match (a "specific" item is the manifest action whose
+  // href equals the current path). Fall back to nothing — we deliberately do
+  // not auto-favorite descendant routes.
+  return listFavoritableItems().find((i) => i.href === pathname);
 }

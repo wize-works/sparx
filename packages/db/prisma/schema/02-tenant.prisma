@@ -25,6 +25,10 @@ model Tenant {
   auditLogs AuditLog[]
   apiKeys   ApiKey[]
 
+  // Dashboard shell — per-user pinned/recent navigation state
+  userFavorites UserFavorite[]
+  userRecents   UserRecent[]
+
   // CMS module
   pages                Page[]
   contentTypes         ContentType[]

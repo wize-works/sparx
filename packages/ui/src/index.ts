@@ -10,6 +10,9 @@ export { cva, type VariantProps } from './utils/cva';
 // ── Providers / context ───────────────────────────────────
 export { ModuleProvider, useModule, type SparxModule } from './providers/module-provider';
 
+// ── Hooks ─────────────────────────────────────────────────
+export { useTheme, THEME_INIT_SCRIPT, type Theme } from './hooks/use-theme';
+
 // ── Brand ────────────────────────────────────────────────
 export { Wordmark, type WordmarkProps } from './components/brand/wordmark';
 

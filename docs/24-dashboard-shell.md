@@ -36,54 +36,40 @@ Every module exports a single static manifest from its package barrel. The shell
 ```ts
 // packages/commerce/src/manifest.ts
 import type { ModuleManifest } from '@sparx/ui/shell';
+import { Package, Tag, Percent, ShoppingCart, PackagePlus } from 'lucide-react';
 
 export const commerceManifest: ModuleManifest = {
+  // Matches the SparxModule union from @sparx/ui; drives the accent color
+  // automatically via ModuleProvider — no separate `color` field needed.
   id: 'commerce',
   label: 'Commerce',
-  icon: ShoppingCartIcon,
-  color: 'commerce', // resolves to var(--module-commerce)
+  icon: ShoppingCart,
+  // URL prefix this module owns. Usually `/${id}`; explicit because not all
+  // module ids match their dashboard route (Storefront → /sitebuilder).
+  routePrefix: '/commerce',
 
   // Sections that show as expandable children under the module in the sidebar
   // and as siblings when a Commerce breadcrumb segment is clicked.
   sections: [
-    { id: 'orders', label: 'Orders', icon: ReceiptIcon, href: '/commerce/orders' },
-    { id: 'products', label: 'Products', icon: PackageIcon, href: '/commerce/products' },
-    { id: 'customers', label: 'Customers', icon: UsersIcon, href: '/commerce/customers' },
-    { id: 'pricing', label: 'Pricing', icon: TagIcon, href: '/commerce/pricing' },
-    { id: 'discounts', label: 'Discounts', icon: PercentIcon, href: '/commerce/discounts' },
+    { id: 'products', label: 'Products', icon: Package, href: '/commerce/products' },
+    { id: 'pricing', label: 'Pricing', icon: Tag, href: '/commerce/pricing' },
+    { id: 'discounts', label: 'Discounts', icon: Percent, href: '/commerce/discounts' },
   ],
 
   // Generic, parameterless actions invocable from ⌘K, favorites, or the `+` button.
   // Instance actions ("delete this order") live on the entity, not here.
   actions: [
-    { id: 'order.create', label: 'Create order', icon: PlusIcon, href: '/commerce/orders/new' },
     {
-      id: 'product.create',
+      id: 'commerce.product.create',
       label: 'Create product',
-      icon: PlusIcon,
+      icon: PackagePlus,
       href: '/commerce/products/new',
-    },
-    {
-      id: 'customer.create',
-      label: 'Create customer',
-      icon: PlusIcon,
-      href: '/commerce/customers/new',
-    },
-    {
-      id: 'discount.create',
-      label: 'Create discount',
-      icon: PlusIcon,
-      href: '/commerce/discounts/new',
     },
   ],
 
   // Entity types this module owns. Used by detail-page chrome to render the
   // entity-type label in the `...` menu and to scope context-aware actions.
-  entityTypes: [
-    { id: 'order', label: 'Order', routePrefix: '/commerce/orders' },
-    { id: 'product', label: 'Product', routePrefix: '/commerce/products' },
-    { id: 'customer', label: 'Customer', routePrefix: '/commerce/customers' },
-  ],
+  entityTypes: [{ id: 'product', label: 'Product', routePrefix: '/commerce/products' }],
 };
 ```
 
@@ -447,6 +433,8 @@ All endpoints are tenant-scoped via Better Auth org context + RLS. The shell con
 Tracked for Phase 2+:
 
 - **Drag-to-reorder favorites** across module boundaries (Phase 1 supports reorder within Favorites; cross-section drag is out of scope).
+- **⌘K Deep Mode** — entity full-text search via the existing `@sparx/search` `palette()` function (Typesense-backed). Quick Mode ships in Phase 1; Deep Mode lands when Typesense is reachable from the dashboard runtime.
+- **Sidebar drag-to-resize** — persisted per-device width with a drag handle on the sidebar's right edge. Defers until a `<ResizableSidebar>` primitive lands in `@sparx/ui` (avoiding shell-side className hacks).
 - **Side peek** — an `Alt+Click` modifier to open an entity in a right-hand pane without leaving the current page. Useful for browsing related entities; not Phase 1.
 - **Custom favorite labels** — currently the label is the manifest action label; eventually let users rename their own favorites ("Create order" → "New PO").
 - **Folder grouping in favorites** — nested hierarchies inside the Favorites section; Phase 1 keeps it flat.

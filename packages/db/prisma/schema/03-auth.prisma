@@ -38,6 +38,10 @@ model User {
   completedTasks      Task[]       @relation("TaskCompletedBy")
   createdQuotes       Quote[]      @relation("QuoteCreatedBy")
 
+  // Dashboard shell — per-user pinned/recent navigation state
+  favorites UserFavorite[]
+  recents   UserRecent[]
+
   @@index([tenantId])
   @@map("users")
 }

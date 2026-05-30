@@ -32,6 +32,8 @@ export interface SidebarAppShellProps {
    * mobile drawer.
    */
   sidebar: React.ReactNode;
+  /** Left-aligned header content (e.g. breadcrumbs). */
+  headerStart?: React.ReactNode;
   /** Right-aligned content for the top header (user menu, etc). */
   headerActions?: React.ReactNode;
   /**
@@ -50,6 +52,7 @@ export interface SidebarAppShellProps {
 
 export function SidebarAppShell({
   sidebar,
+  headerStart,
   headerActions,
   pathname,
   mobileNavLabel = 'Primary navigation',
@@ -98,8 +101,14 @@ export function SidebarAppShell({
           >
             <Menu className="h-4 w-4" />
           </Button>
-          <div className="flex-1" />
-          {headerActions}
+          {headerStart ? (
+            <div className="min-w-0 flex-1">{headerStart}</div>
+          ) : (
+            <div className="flex-1" />
+          )}
+          {headerActions ? (
+            <div className="flex shrink-0 items-center gap-1">{headerActions}</div>
+          ) : null}
         </header>
         <div
           ref={contentRef}

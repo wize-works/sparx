@@ -1,0 +1,68 @@
+'use server';
+
+import { revalidatePath } from 'next/cache';
+import { requireSession } from '@sparx/auth';
+import {
+  addFavorite as svcAddFavorite,
+  clearRecents as svcClearRecents,
+  listFavorites as svcListFavorites,
+  listRecents as svcListRecents,
+  recordVisit as svcRecordVisit,
+  removeFavorite as svcRemoveFavorite,
+  reorderFavorites as svcReorderFavorites,
+  type FavoriteRow,
+  type RecentRow,
+} from './service';
+
+// Server Actions wrapping the shell service. Every action gates on
+// requireSession() and uses the session's userId/tenantId — clients never
+// pass these. Revalidation triggers a sidebar refresh on mutations.
+
+async function ctxFromSession() {
+  const { user } = await requireSession();
+  return { userId: user.id, tenantId: user.tenantId };
+}
+
+export async function getFavoritesAction(): Promise<FavoriteRow[]> {
+  const ctx = await ctxFromSession();
+  return svcListFavorites(ctx);
+}
+
+export async function addFavoriteAction(actionId: string): Promise<FavoriteRow> {
+  const ctx = await ctxFromSession();
+  const row = await svcAddFavorite(ctx, actionId);
+  // The sidebar Favorites section reads server-rendered data, so we revalidate
+  // the entire (dashboard) tree on any favorites mutation.
+  revalidatePath('/', 'layout');
+  return row;
+}
+
+export async function removeFavoriteAction(actionId: string): Promise<void> {
+  const ctx = await ctxFromSession();
+  await svcRemoveFavorite(ctx, actionId);
+  revalidatePath('/', 'layout');
+}
+
+export async function reorderFavoritesAction(orderedActionIds: string[]): Promise<void> {
+  const ctx = await ctxFromSession();
+  await svcReorderFavorites(ctx, orderedActionIds);
+  revalidatePath('/', 'layout');
+}
+
+export async function getRecentsAction(limit?: number): Promise<RecentRow[]> {
+  const ctx = await ctxFromSession();
+  return svcListRecents(ctx, limit);
+}
+
+export async function recordVisitAction(actionId: string): Promise<void> {
+  const ctx = await ctxFromSession();
+  await svcRecordVisit(ctx, actionId);
+  // Don't revalidate on every nav — recents update is high-frequency and
+  // the sidebar reads it explicitly when it needs to.
+}
+
+export async function clearRecentsAction(): Promise<void> {
+  const ctx = await ctxFromSession();
+  await svcClearRecents(ctx);
+  revalidatePath('/', 'layout');
+}

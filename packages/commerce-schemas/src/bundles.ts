@@ -23,7 +23,10 @@ export const BundleComponentInput = z.object({
   defaultQuantity: z.number().int().positive().default(1),
   isRequired: z.boolean().default(true),
   isSwappable: z.boolean().default(false),
-  swappableCollectionId: Uuid.optional(),
+  // When isSwappable, storefront can replace this variant with any
+  // variant of the linked product. Null = exact-variant only.
+  swappableProductId: Uuid.optional(),
+  position: z.number().int().nonnegative().default(0),
 });
 export type BundleComponentInput = z.infer<typeof BundleComponentInput>;
 
@@ -36,6 +39,15 @@ export const CreateBundleInput = z.object({
   components: z.array(BundleComponentInput).min(1).max(50),
 });
 export type CreateBundleInput = z.infer<typeof CreateBundleInput>;
+
+export const UpdateBundleInput = z.object({
+  pricingMode: BundlePricingMode.optional(),
+  fixedPriceCents: MoneyCents.nullable().optional(),
+  percentOffSum: z.number().min(0).max(100).nullable().optional(),
+  inventoryMode: BundleInventoryMode.optional(),
+  components: z.array(BundleComponentInput).min(1).max(50).optional(),
+});
+export type UpdateBundleInput = z.infer<typeof UpdateBundleInput>;
 
 // ─── Configurator templates ───────────────────────────────────────────
 
@@ -162,6 +174,17 @@ export const CreateConfigurationTemplateInput = z.object({
   addOns: z.array(ConfigurationAddOnInput).max(100).default([]),
 });
 export type CreateConfigurationTemplateInput = z.infer<typeof CreateConfigurationTemplateInput>;
+
+export const UpdateConfigurationTemplateInput = z.object({
+  name: z.string().min(1).max(127).optional(),
+  description: z.string().max(2000).nullable().optional(),
+  status: z.enum(['draft', 'active', 'archived']).optional(),
+  layout: CreateConfigurationTemplateInput.shape.layout.optional(),
+  options: z.array(ConfigurationOptionInput).min(1).max(50).optional(),
+  rules: z.array(ConfigurationRuleInput).max(100).optional(),
+  addOns: z.array(ConfigurationAddOnInput).max(100).optional(),
+});
+export type UpdateConfigurationTemplateInput = z.infer<typeof UpdateConfigurationTemplateInput>;
 
 // ─── Resolution (cart side) ───────────────────────────────────────────
 

@@ -28,13 +28,28 @@ import {
 import { ChevronsUpDown, Home, LogOut, Settings, User as UserIcon } from 'lucide-react';
 import { authClient } from '@sparx/auth/client';
 import { moduleManifests } from '../_shell/registry';
+import type { FavoriteRow, RecentRow } from '../_shell/service';
+import { BreadcrumbTrail } from './breadcrumb-trail';
+import { CommandPalette } from './command-palette';
+import { DashboardHeader } from './dashboard-header';
+import { FavoritesSection } from './favorites-section';
+import { RecentsSection } from './recents-section';
 
 export interface DashboardShellProps {
   user: { id: string; email: string; name?: string | null };
+  tenantName: string;
+  favorites: FavoriteRow[];
+  recents: RecentRow[];
   children: React.ReactNode;
 }
 
-export function DashboardShell({ user, children }: DashboardShellProps) {
+export function DashboardShell({
+  user,
+  tenantName,
+  favorites,
+  recents,
+  children,
+}: DashboardShellProps) {
   const pathname = usePathname();
   const trimmedName = user.name?.trim();
   const emailLocal = user.email.split('@')[0] ?? user.email;
@@ -50,7 +65,7 @@ export function DashboardShell({ user, children }: DashboardShellProps) {
           </Text>
         </Stack>
       </SidebarHeader>
-      <NavSections pathname={pathname} />
+      <NavSections pathname={pathname} favorites={favorites} recents={recents} />
       <SidebarFooter>
         <UserMenu user={user} displayName={displayName} />
       </SidebarFooter>
@@ -58,13 +73,32 @@ export function DashboardShell({ user, children }: DashboardShellProps) {
   );
 
   return (
-    <SidebarAppShell pathname={pathname} sidebar={sidebar}>
-      {children}
-    </SidebarAppShell>
+    <>
+      <SidebarAppShell
+        pathname={pathname}
+        sidebar={sidebar}
+        headerStart={<BreadcrumbTrail tenantName={tenantName} />}
+        headerActions={<DashboardHeader favorites={favorites} />}
+      >
+        {children}
+      </SidebarAppShell>
+      {/* ⌘K palette — mounted once at the shell, listens globally for the
+          shortcut. Receives favorites + recents so they appear at the top
+          of the search results without an extra fetch. */}
+      <CommandPalette favorites={favorites} recents={recents} />
+    </>
   );
 }
 
-function NavSections({ pathname }: { pathname: string | null }) {
+function NavSections({
+  pathname,
+  favorites,
+  recents,
+}: {
+  pathname: string | null;
+  favorites: FavoriteRow[];
+  recents: RecentRow[];
+}) {
   return (
     <SidebarNav>
       <SidebarSection>
@@ -72,6 +106,9 @@ function NavSections({ pathname }: { pathname: string | null }) {
           <Link href="/">Home</Link>
         </SidebarItem>
       </SidebarSection>
+
+      <FavoritesSection favorites={favorites} />
+      <RecentsSection recents={recents} favorites={favorites} />
 
       <SidebarSection>
         <SidebarSectionLabel>Modules</SidebarSectionLabel>
