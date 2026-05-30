@@ -10,7 +10,37 @@
 // Drafts are NOT exposed here — the authenticated /v1/sitebuilder/preview
 // endpoint serves the dashboard customizer. Public storefront = published only.
 
-import type { PublishedSnapshot, SectionSnapshot } from '@sparx/sitebuilder';
+// The storefront consumes the published snapshot as JSON over HTTP, so it owns
+// the *consumer's view* of that payload rather than depending on the heavy
+// `@sparx/sitebuilder` service package (which pulls in @sparx/db, @sparx/ui,
+// react, and the whole MCP/service layer — none of which belong in this image).
+// These interfaces mirror the publish output in
+// packages/sitebuilder/src/services/publish-internals.ts — keep them in sync.
+
+export interface SectionSnapshot {
+  id: string;
+  pageKey: string;
+  sectionType: string;
+  position: number;
+  visible: boolean;
+  config: Record<string, unknown>;
+}
+
+export interface LayoutSnapshot {
+  slot: string;
+  navigationMenuId: string | null;
+  config: Record<string, unknown>;
+  visible: boolean;
+}
+
+export interface PublishedSnapshot {
+  versionNumber: number;
+  themeKey: string;
+  appearancePolicy: string;
+  compiledTokens: { light: Record<string, string>; dark: Record<string, string> };
+  sections: SectionSnapshot[];
+  layout: LayoutSnapshot[];
+}
 
 const BASE_URL = process.env.SPARX_API_REST_URL ?? 'http://localhost:3100';
 
@@ -22,8 +52,6 @@ interface ErrorEnvelope {
   success: false;
   error: { code: string; message: string };
 }
-
-export type { PublishedSnapshot, SectionSnapshot } from '@sparx/sitebuilder';
 
 /**
  * Fetch the tenant's published site snapshot, or null if nothing is published

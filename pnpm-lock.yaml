@@ -183,9 +183,6 @@ importers:
       '@sparx/cms-editor':
         specifier: workspace:*
         version: link:../../packages/cms-editor
-      '@sparx/sitebuilder':
-        specifier: workspace:*
-        version: link:../../packages/sitebuilder
       '@sparx/sitebuilder-schemas':
         specifier: workspace:*
         version: link:../../packages/sitebuilder-schemas

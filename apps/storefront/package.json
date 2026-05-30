@@ -13,7 +13,6 @@
   },
   "dependencies": {
     "@sparx/cms-editor": "workspace:*",
-    "@sparx/sitebuilder": "workspace:*",
     "@sparx/sitebuilder-schemas": "workspace:*",
     "@sparx/storefront-themes": "workspace:*",
     "@sparx/ui": "workspace:*",
