@@ -1,8 +1,6 @@
 import Link from 'next/link';
-import { PackageOpen, Settings2 } from 'lucide-react';
+import { Settings2 } from 'lucide-react';
 
-import { isModuleEnabled, requireSession } from '@sparx/auth';
-import { configuratorService } from '@sparx/commerce';
 import {
   Badge,
   Card,
@@ -22,8 +20,21 @@ import {
   Text,
 } from '@sparx/ui';
 
-import { ModuleStub } from '../../../../components/module-stub';
+import { api } from '@/lib/api-rest-client';
 import { EntityRowLink } from '../../_components/entity-row-link';
+
+interface ConfigurationTemplateRow {
+  id: string;
+  productId: string;
+  productTitle: string;
+  name: string;
+  description: string | null;
+  status: string;
+  optionCount: number;
+  ruleCount: number;
+  addOnCount: number;
+  updatedAt: string;
+}
 
 // Configurator — option-matrix-with-rules templates that resolve a
 // storefront selection into a ResolvedConfiguration. Per-product
@@ -39,22 +50,9 @@ const STATUS_VARIANT: Record<string, 'success' | 'warning' | 'outline'> = {
 };
 
 export default async function ConfiguratorPage() {
-  const session = await requireSession();
-  const enabled = await isModuleEnabled(session.user.tenantId, 'commerce');
-  if (!enabled) {
-    return (
-      <ModuleStub
-        icon={<PackageOpen className="h-5 w-5" />}
-        title="Commerce"
-        tagline="Option matrices with rules + add-ons."
-        description="Activate the Commerce module from Billing to manage configurators."
-        features={[]}
-      />
-    );
-  }
-
-  const ctx = { tenantId: session.user.tenantId, userId: session.user.id };
-  const templates = await configuratorService.listAllTemplates(ctx);
+  const templates = await api.get<ConfigurationTemplateRow[]>(
+    '/v1/commerce/configurator-templates?take=200'
+  );
 
   return (
     <Container size="xl">

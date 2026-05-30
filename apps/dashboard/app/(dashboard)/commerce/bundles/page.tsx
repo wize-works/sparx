@@ -1,8 +1,6 @@
 import Link from 'next/link';
-import { PackageOpen, Package2, Plus } from 'lucide-react';
+import { Package2, Plus } from 'lucide-react';
 
-import { isModuleEnabled, requireSession } from '@sparx/auth';
-import { configuratorService } from '@sparx/commerce';
 import {
   Badge,
   Button,
@@ -23,8 +21,20 @@ import {
   Text,
 } from '@sparx/ui';
 
-import { ModuleStub } from '../../../../components/module-stub';
+import { api } from '@/lib/api-rest-client';
 import { EntityRowLink } from '../../_components/entity-row-link';
+
+interface BundleRow {
+  id: string;
+  bundleProductId: string;
+  bundleProductTitle: string;
+  pricingMode: string;
+  fixedPriceCents: number | null;
+  percentOffSum: number | null;
+  inventoryMode: string;
+  componentCount: number;
+  updatedAt: string;
+}
 
 // Bundles — kit / pack / gift-set wrappers around N component variants.
 // One wrapper product = one bundle, set via `bundleProductId`. The
@@ -35,22 +45,7 @@ export const dynamic = 'force-dynamic';
 const moneyFmt = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
 
 export default async function BundlesPage() {
-  const session = await requireSession();
-  const enabled = await isModuleEnabled(session.user.tenantId, 'commerce');
-  if (!enabled) {
-    return (
-      <ModuleStub
-        icon={<PackageOpen className="h-5 w-5" />}
-        title="Commerce"
-        tagline="Kits, packs, and gift sets."
-        description="Activate the Commerce module from Billing to manage bundles."
-        features={[]}
-      />
-    );
-  }
-
-  const ctx = { tenantId: session.user.tenantId, userId: session.user.id };
-  const bundles = await configuratorService.listBundles(ctx);
+  const bundles = await api.get<BundleRow[]>('/v1/commerce/bundles');
 
   return (
     <Container size="xl">

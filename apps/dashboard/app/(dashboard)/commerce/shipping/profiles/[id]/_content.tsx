@@ -1,8 +1,5 @@
 import { notFound } from 'next/navigation';
-import { PackageOpen } from 'lucide-react';
 
-import { isModuleEnabled, requireSession } from '@sparx/auth';
-import { shippingService } from '@sparx/commerce';
 import {
   Badge,
   Card,
@@ -14,7 +11,7 @@ import {
   Text,
 } from '@sparx/ui';
 
-import { ModuleStub } from '../../../../../../components/module-stub';
+import { api, type ApiRestError } from '@/lib/api-rest-client';
 
 import { ProfileDeleteButton } from './_components/profile-delete-button';
 
@@ -24,24 +21,28 @@ interface Props {
   id: string;
 }
 
-export async function ShippingProfileDetailContent({ id }: Props) {
-  const session = await requireSession();
-  const enabled = await isModuleEnabled(session.user.tenantId, 'commerce');
-  if (!enabled) {
-    return (
-      <ModuleStub
-        icon={<PackageOpen className="h-5 w-5" />}
-        title="Commerce"
-        tagline=""
-        description="Activate the Commerce module from Billing to manage shipping profiles."
-        features={[]}
-      />
-    );
-  }
+interface ShippingProfileRow {
+  id: string;
+  name: string;
+  description: string | null;
+  allowedCarrierServices: string[];
+  hazmatClassesAllowed: string[];
+  requiresSignature: boolean;
+  requiresFreight: boolean;
+  productCount: number;
+  variantCount: number;
+  collectionCount: number;
+  updatedAt: string;
+}
 
-  const ctx = { tenantId: session.user.tenantId, userId: session.user.id };
-  const profile = await shippingService.getProfile(ctx, id).catch(() => null);
-  if (!profile) notFound();
+export async function ShippingProfileDetailContent({ id }: Props) {
+  let profile: ShippingProfileRow;
+  try {
+    profile = await api.get<ShippingProfileRow>(`/v1/commerce/shipping/profiles/${id}`);
+  } catch (err) {
+    if ((err as ApiRestError).code === 'NOT_FOUND') notFound();
+    throw err;
+  }
 
   return (
     <Stack gap={6}>

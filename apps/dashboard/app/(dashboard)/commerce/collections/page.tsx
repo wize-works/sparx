@@ -60,9 +60,11 @@ export default async function CollectionsPage({ searchParams }: PageProps) {
   if (featuredOnly) query.set('featured', 'true');
   if (q) query.set('q', q);
 
-  const { items, total } = await api.get<CollectionListResponse>(
+  const { items: rawItems, total: rawTotal } = await api.get<CollectionListResponse>(
     `/v1/commerce/collections?${query.toString()}`
   );
+  const items = featuredOnly ? rawItems.filter((c) => c.featured) : rawItems;
+  const total = featuredOnly ? items.length : rawTotal;
 
   return (
     <Container size="xl">

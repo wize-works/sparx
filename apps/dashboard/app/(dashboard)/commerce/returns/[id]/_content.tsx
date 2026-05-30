@@ -1,8 +1,5 @@
 import { notFound } from 'next/navigation';
-import { PackageOpen } from 'lucide-react';
 
-import { isModuleEnabled, requireSession } from '@sparx/auth';
-import { returnService } from '@sparx/commerce';
 import {
   Badge,
   Card,
@@ -20,7 +17,7 @@ import {
   Text,
 } from '@sparx/ui';
 
-import { ModuleStub } from '../../../../../components/module-stub';
+import { api, type ApiRestError } from '@/lib/api-rest-client';
 
 import { ReturnApprovalForm } from './_components/return-approval-form';
 import { ReturnInspectionForm } from './_components/return-inspection-form';
@@ -33,24 +30,74 @@ interface Props {
   id: string;
 }
 
-export async function ReturnDetailContent({ id }: Props) {
-  const session = await requireSession();
-  const enabled = await isModuleEnabled(session.user.tenantId, 'commerce');
-  if (!enabled) {
-    return (
-      <ModuleStub
-        icon={<PackageOpen className="h-5 w-5" />}
-        title="Commerce"
-        tagline=""
-        description="Activate the Commerce module from Billing to manage returns."
-        features={[]}
-      />
-    );
-  }
+type ReturnStatus =
+  | 'requested'
+  | 'approved'
+  | 'denied'
+  | 'awaiting_shipment'
+  | 'in_transit'
+  | 'received'
+  | 'inspecting'
+  | 'inspected'
+  | 'refunded'
+  | 'cancelled';
 
-  const ctx = { tenantId: session.user.tenantId, userId: session.user.id };
-  const ret = await returnService.get(ctx, id).catch(() => null);
-  if (!ret) notFound();
+interface ReturnItem {
+  id: string;
+  orderItemId: string;
+  quantity: number;
+  approvedQuantity: number;
+  reasonCode: string;
+  customerNote: string | null;
+  mediaAssetIds: string[];
+}
+
+interface ReturnInspection {
+  id: string;
+  returnLineItemId: string;
+  condition: string;
+  restockable: boolean;
+  warehouseId: string | null;
+  note: string | null;
+}
+
+interface ReturnLabel {
+  id: string;
+  providerSlug: string;
+  labelRef: string;
+  trackingNumber: string | null;
+  trackingUrl: string | null;
+}
+
+interface ReturnDetail {
+  id: string;
+  orderId: string;
+  customerId: string | null;
+  status: ReturnStatus;
+  preferredOutcome: string;
+  itemCount: number;
+  requestedAt: string;
+  staffNote: string | null;
+  refundedAmountCents: number | null;
+  restockingFeeCents: number | null;
+  refundIssuedAs: string | null;
+  approvedAt: string | null;
+  receivedAt: string | null;
+  refundedAt: string | null;
+  cancelledAt: string | null;
+  items: ReturnItem[];
+  inspections: ReturnInspection[];
+  labels: ReturnLabel[];
+}
+
+export async function ReturnDetailContent({ id }: Props) {
+  let ret: ReturnDetail;
+  try {
+    ret = await api.get<ReturnDetail>(`/v1/commerce/returns/${id}`);
+  } catch (err) {
+    if ((err as ApiRestError).code === 'NOT_FOUND') notFound();
+    throw err;
+  }
 
   return (
     <Stack gap={6}>

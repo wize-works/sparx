@@ -1,8 +1,10 @@
 import { notFound } from 'next/navigation';
-import { PackageOpen } from 'lucide-react';
 
-import { isModuleEnabled, requireSession } from '@sparx/auth';
-import { providerService } from '@sparx/commerce';
+import type {
+  ProviderInstallStatus,
+  ProviderKind,
+  ProviderMetadata,
+} from '@sparx/commerce-schemas';
 import {
   Badge,
   Card,
@@ -14,8 +16,8 @@ import {
   Text,
 } from '@sparx/ui';
 
+import { api, type ApiRestError } from '@/lib/api-rest-client';
 import { ensureProvidersRegistered } from '../../../../../lib/providers-bootstrap';
-import { ModuleStub } from '../../../../../components/module-stub';
 
 import { ProviderActionsBar } from './_components/provider-actions-bar';
 
@@ -25,27 +27,38 @@ interface Props {
   id: string;
 }
 
+interface InstallationRow {
+  id: string;
+  providerSlug: string;
+  kind: ProviderKind;
+  environment: 'sandbox' | 'production';
+  enabled: boolean;
+  status: ProviderInstallStatus;
+  label: string | null;
+  providerAccountId: string | null;
+  lastHealthCheckAt: string | null;
+  lastHealthStatus: string | null;
+  errorCount: number;
+  installedAt: string;
+}
+
 export async function ProviderInstallationDetailContent({ id }: Props) {
   ensureProvidersRegistered();
 
-  const session = await requireSession();
-  const enabled = await isModuleEnabled(session.user.tenantId, 'commerce');
-  if (!enabled) {
-    return (
-      <ModuleStub
-        icon={<PackageOpen className="h-5 w-5" />}
-        title="Commerce"
-        tagline=""
-        description="Activate the Commerce module from Billing to manage providers."
-        features={[]}
-      />
+  let installation: InstallationRow | null;
+  try {
+    installation = await api.get<InstallationRow | null>(
+      `/v1/commerce/providers/installations/${id}`
     );
+  } catch (err) {
+    if ((err as ApiRestError).code === 'NOT_FOUND') notFound();
+    throw err;
   }
-
-  const ctx = { tenantId: session.user.tenantId, userId: session.user.id };
-  const installation = await providerService.getInstallation(ctx, id);
   if (!installation) notFound();
-  const metadata = await providerService.getMetadata(installation.providerSlug);
+
+  const metadata = await api.get<ProviderMetadata | null>(
+    `/v1/commerce/providers/metadata/${encodeURIComponent(installation.providerSlug)}`
+  );
 
   return (
     <Stack gap={6}>

@@ -1,8 +1,6 @@
 import Link from 'next/link';
-import { PackageOpen, Plus, Tag } from 'lucide-react';
+import { Plus, Tag } from 'lucide-react';
 
-import { isModuleEnabled, requireSession } from '@sparx/auth';
-import { discountService } from '@sparx/commerce';
 import {
   Badge,
   Button,
@@ -23,9 +21,31 @@ import {
   Text,
 } from '@sparx/ui';
 
-import { ModuleStub } from '../../../../components/module-stub';
+import { api } from '@/lib/api-rest-client';
 
 import { DiscountStatusToggle } from './_components/discount-status-toggle';
+
+interface DiscountRow {
+  id: string;
+  code: string | null;
+  name: string;
+  description: string | null;
+  type: string;
+  scope: string;
+  valueCents: number | null;
+  valuePercent: number | null;
+  currency: string | null;
+  conditions: unknown[];
+  startAt: string | null;
+  endAt: string | null;
+  totalUsageLimit: number | null;
+  perCustomerLimit: number;
+  stacking: string;
+  priority: number;
+  status: string;
+  usageCount: number;
+  updatedAt: string;
+}
 
 export const dynamic = 'force-dynamic';
 
@@ -38,22 +58,7 @@ const STATUS_VARIANT: Record<string, 'success' | 'warning' | 'outline'> = {
 const moneyFmt = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
 
 export default async function DiscountsPage() {
-  const session = await requireSession();
-  const enabled = await isModuleEnabled(session.user.tenantId, 'commerce');
-  if (!enabled) {
-    return (
-      <ModuleStub
-        icon={<PackageOpen className="h-5 w-5" />}
-        title="Commerce"
-        tagline="Codes, automatic discounts, BOGO."
-        description="Activate the Commerce module from Billing to manage discounts."
-        features={[]}
-      />
-    );
-  }
-
-  const ctx = { tenantId: session.user.tenantId, userId: session.user.id };
-  const discounts = await discountService.listDiscounts(ctx);
+  const discounts = await api.get<DiscountRow[]>('/v1/commerce/discounts');
 
   const active = discounts.filter((d) => d.status === 'active');
   const draft = discounts.filter((d) => d.status === 'draft');

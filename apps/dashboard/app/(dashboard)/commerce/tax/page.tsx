@@ -1,8 +1,6 @@
 import Link from 'next/link';
-import { FileBadge, Globe2, PackageOpen, Plus, Receipt } from 'lucide-react';
+import { FileBadge, Globe2, Plus, Receipt } from 'lucide-react';
 
-import { isModuleEnabled, requireSession } from '@sparx/auth';
-import { taxService } from '@sparx/commerce';
 import {
   Badge,
   Button,
@@ -23,28 +21,25 @@ import {
   Text,
 } from '@sparx/ui';
 
-import { ModuleStub } from '../../../../components/module-stub';
+import { api } from '@/lib/api-rest-client';
+
 import { EntityRowLink } from '../../_components/entity-row-link';
 
 export const dynamic = 'force-dynamic';
 
-export default async function TaxPage() {
-  const session = await requireSession();
-  const enabled = await isModuleEnabled(session.user.tenantId, 'commerce');
-  if (!enabled) {
-    return (
-      <ModuleStub
-        icon={<PackageOpen className="h-5 w-5" />}
-        title="Commerce"
-        tagline="Tax zones + exemptions."
-        description="Activate the Commerce module from Billing to configure tax."
-        features={[]}
-      />
-    );
-  }
+interface TaxZoneRow {
+  id: string;
+  country: string;
+  region: string | null;
+  nexusType: string;
+  registrationNumber: string | null;
+  registeredAt: string | null;
+  isActive: boolean;
+  rateCount: number;
+}
 
-  const ctx = { tenantId: session.user.tenantId, userId: session.user.id };
-  const zones = await taxService.listZones(ctx);
+export default async function TaxPage() {
+  const zones = await api.get<TaxZoneRow[]>('/v1/commerce/tax/zones');
   const activeZones = zones.filter((z) => z.isActive);
 
   return (

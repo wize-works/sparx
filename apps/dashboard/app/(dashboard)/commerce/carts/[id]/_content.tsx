@@ -1,8 +1,5 @@
 import { notFound } from 'next/navigation';
-import { PackageOpen } from 'lucide-react';
 
-import { isModuleEnabled, requireSession } from '@sparx/auth';
-import { cartService } from '@sparx/commerce';
 import {
   Badge,
   Card,
@@ -20,7 +17,7 @@ import {
   Text,
 } from '@sparx/ui';
 
-import { ModuleStub } from '../../../../../components/module-stub';
+import { api, type ApiRestError } from '@/lib/api-rest-client';
 
 export const dynamic = 'force-dynamic';
 
@@ -28,23 +25,49 @@ interface Props {
   id: string;
 }
 
-export async function CartDetailContent({ id }: Props) {
-  const session = await requireSession();
-  const enabled = await isModuleEnabled(session.user.tenantId, 'commerce');
-  if (!enabled) {
-    return (
-      <ModuleStub
-        icon={<PackageOpen className="h-5 w-5" />}
-        title="Commerce"
-        tagline=""
-        description="Activate the Commerce module from Billing to inspect carts."
-        features={[]}
-      />
-    );
-  }
+interface CartItem {
+  cartItemId: string;
+  variantId: string;
+  productId: string;
+  sku: string;
+  name: string;
+  quantity: number;
+  unitPriceCents: number;
+  subtotalCents: number;
+}
 
-  const ctx = { tenantId: session.user.tenantId, userId: session.user.id };
-  const cart = await cartService.get(ctx, id);
+interface CartTotals {
+  subtotalCents: number;
+  discountTotalCents: number;
+  shippingTotalCents: number;
+  taxTotalCents: number;
+  giftCardAppliedCents: number;
+  storeCreditAppliedCents: number;
+  totalCents: number;
+}
+
+interface CartSnapshot {
+  cartId: string;
+  customerId: string | null;
+  channel: string;
+  currency: string;
+  items: CartItem[];
+  appliedDiscountCodes: string[];
+  appliedGiftCardCodes: string[];
+  storeCreditAppliedCents: number;
+  totals: CartTotals;
+  expiresAt: string;
+  abandonedAt: string | null;
+}
+
+export async function CartDetailContent({ id }: Props) {
+  let cart: CartSnapshot | null;
+  try {
+    cart = await api.get<CartSnapshot | null>(`/v1/commerce/carts/${id}`);
+  } catch (err) {
+    if ((err as ApiRestError).code === 'NOT_FOUND') notFound();
+    throw err;
+  }
   if (!cart) notFound();
 
   return (

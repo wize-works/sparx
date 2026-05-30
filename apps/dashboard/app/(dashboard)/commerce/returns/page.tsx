@@ -1,9 +1,6 @@
 import Link from 'next/link';
-import { Inbox, PackageOpen } from 'lucide-react';
+import { Inbox } from 'lucide-react';
 
-import { isModuleEnabled, requireSession } from '@sparx/auth';
-import { returnService } from '@sparx/commerce';
-import type { ReturnStatus } from '@sparx/commerce-schemas';
 import {
   Badge,
   Card,
@@ -23,10 +20,38 @@ import {
   Text,
 } from '@sparx/ui';
 
-import { ModuleStub } from '../../../../components/module-stub';
+import { api } from '@/lib/api-rest-client';
+
 import { EntityRowLink } from '../../_components/entity-row-link';
 
 export const dynamic = 'force-dynamic';
+
+type ReturnStatus =
+  | 'requested'
+  | 'approved'
+  | 'denied'
+  | 'awaiting_shipment'
+  | 'in_transit'
+  | 'received'
+  | 'inspecting'
+  | 'inspected'
+  | 'refunded'
+  | 'cancelled';
+
+interface ReturnSummary {
+  id: string;
+  orderId: string;
+  customerId: string | null;
+  status: ReturnStatus;
+  preferredOutcome: string;
+  itemCount: number;
+  requestedAt: string;
+}
+
+interface ReturnsListResponse {
+  items: ReturnSummary[];
+  total: number;
+}
 
 const STATUS_FILTERS: { value: ReturnStatus | undefined; label: string }[] = [
   { value: undefined, label: 'All' },
@@ -46,28 +71,15 @@ export default async function ReturnsPage({
 }: {
   searchParams: Promise<{ status?: string }>;
 }) {
-  const session = await requireSession();
-  const enabled = await isModuleEnabled(session.user.tenantId, 'commerce');
-  if (!enabled) {
-    return (
-      <ModuleStub
-        icon={<PackageOpen className="h-5 w-5" />}
-        title="Commerce"
-        tagline="RMA workflow."
-        description="Activate the Commerce module from Billing to handle returns."
-        features={[]}
-      />
-    );
-  }
-
   const { status: statusParam } = await searchParams;
   const status = isStatus(statusParam) ? statusParam : undefined;
 
-  const ctx = { tenantId: session.user.tenantId, userId: session.user.id };
-  const { items, total } = await returnService.list(ctx, {
-    ...(status ? { status } : {}),
-    take: 100,
-  });
+  const query = new URLSearchParams();
+  if (status) query.set('status', status);
+  query.set('take', '100');
+  const { items, total } = await api.get<ReturnsListResponse>(
+    `/v1/commerce/returns?${query.toString()}`
+  );
 
   return (
     <Container size="xl">

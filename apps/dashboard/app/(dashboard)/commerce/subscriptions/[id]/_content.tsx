@@ -1,8 +1,5 @@
 import { notFound } from 'next/navigation';
-import { PackageOpen } from 'lucide-react';
 
-import { isModuleEnabled, requireSession } from '@sparx/auth';
-import { subscriptionService } from '@sparx/commerce';
 import {
   Badge,
   Card,
@@ -20,7 +17,7 @@ import {
   Text,
 } from '@sparx/ui';
 
-import { ModuleStub } from '../../../../../components/module-stub';
+import { api, type ApiRestError } from '@/lib/api-rest-client';
 
 import { SubscriptionActionsBar } from './_components/subscription-actions-bar';
 
@@ -30,24 +27,47 @@ interface Props {
   id: string;
 }
 
-export async function SubscriptionDetailContent({ id }: Props) {
-  const session = await requireSession();
-  const enabled = await isModuleEnabled(session.user.tenantId, 'commerce');
-  if (!enabled) {
-    return (
-      <ModuleStub
-        icon={<PackageOpen className="h-5 w-5" />}
-        title="Commerce"
-        tagline=""
-        description="Activate the Commerce module from Billing to manage subscriptions."
-        features={[]}
-      />
-    );
-  }
+type SubscriptionStatus = 'active' | 'trialing' | 'paused' | 'past_due' | 'cancelled';
 
-  const ctx = { tenantId: session.user.tenantId, userId: session.user.id };
-  const sub = await subscriptionService.get(ctx, id).catch(() => null);
-  if (!sub) notFound();
+interface SubscriptionItem {
+  id: string;
+  variantId: string;
+  quantity: number;
+  unitPriceCents: number;
+  addonOfId: string | null;
+}
+
+interface SubscriptionDetail {
+  id: string;
+  customerId: string;
+  status: SubscriptionStatus;
+  nextOccurrenceAt: string | null;
+  itemCount: number;
+  monthlyRecurringRevenueCents: number;
+  currency: string;
+  providerSlug: string;
+  intervalUnit: string;
+  intervalCount: number;
+  deliveriesPerCycle: number;
+  trialEndsAt: string | null;
+  startedAt: string | null;
+  currentPeriodStart: string | null;
+  currentPeriodEnd: string | null;
+  pausedUntil: string | null;
+  cancelledAt: string | null;
+  shippingAddress: unknown;
+  billingAddress: unknown;
+  items: SubscriptionItem[];
+}
+
+export async function SubscriptionDetailContent({ id }: Props) {
+  let sub: SubscriptionDetail;
+  try {
+    sub = await api.get<SubscriptionDetail>(`/v1/commerce/subscriptions/${id}`);
+  } catch (err) {
+    if ((err as ApiRestError).code === 'NOT_FOUND') notFound();
+    throw err;
+  }
 
   return (
     <Stack gap={6}>

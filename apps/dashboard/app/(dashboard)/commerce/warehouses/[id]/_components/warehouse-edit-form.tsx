@@ -3,7 +3,6 @@
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
 
-import type { inventoryService } from '@sparx/commerce';
 import {
   Button,
   Card,
@@ -22,7 +21,25 @@ import { updateWarehouseAction } from '../../../inventory-actions';
 
 const CHANNELS = ['storefront', 'b2b_portal', 'admin', 'subscription'] as const;
 
-type WarehouseRow = Awaited<ReturnType<typeof inventoryService.getWarehouse>>;
+interface WarehouseRow {
+  id: string;
+  name: string;
+  code: string;
+  type: string;
+  line1: string | null;
+  line2: string | null;
+  city: string | null;
+  region: string | null;
+  postalCode: string | null;
+  country: string | null;
+  phone: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  defaultForChannel: string[];
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
 
 export function WarehouseEditForm({ warehouse }: { warehouse: WarehouseRow }) {
   const router = useRouter();

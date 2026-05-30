@@ -1,8 +1,6 @@
 import Link from 'next/link';
-import { ArrowLeft, PackageOpen } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 
-import { isModuleEnabled, requireSession } from '@sparx/auth';
-import { withTenant } from '@sparx/db';
 import {
   Card,
   CardContent,
@@ -14,29 +12,34 @@ import {
   Text,
 } from '@sparx/ui';
 
-import { ModuleStub } from '../../../../../components/module-stub';
+import { api } from '@/lib/api-rest-client';
 
 import { NewTemplateForm, type ProductOption } from './_components/new-template-form';
+
+interface ProductListItem {
+  id: string;
+  title: string;
+  handle: string;
+  status: 'active' | 'draft' | 'archived';
+  vendor: string | null;
+  productType: string | null;
+  variantCount: number;
+  priceMinCents: number | null;
+  priceMaxCents: number | null;
+  imageUrl: string | null;
+  tags: string[];
+  updatedAt: string;
+}
+
+interface ProductListResponse {
+  items: ProductListItem[];
+  total: number;
+}
 
 export const dynamic = 'force-dynamic';
 
 export default async function NewConfiguratorTemplatePage() {
-  const session = await requireSession();
-  const enabled = await isModuleEnabled(session.user.tenantId, 'commerce');
-  if (!enabled) {
-    return (
-      <ModuleStub
-        icon={<PackageOpen className="h-5 w-5" />}
-        title="Commerce"
-        tagline=""
-        description="Activate the Commerce module from Billing to create configurators."
-        features={[]}
-      />
-    );
-  }
-
-  const ctx = { tenantId: session.user.tenantId, userId: session.user.id };
-  const products = await loadProducts(ctx);
+  const products = await loadProducts();
 
   return (
     <Container size="lg">
@@ -75,14 +78,10 @@ export default async function NewConfiguratorTemplatePage() {
   );
 }
 
-async function loadProducts(ctx: { tenantId: string; userId: string }): Promise<ProductOption[]> {
-  return withTenant(ctx, async (tx) => {
-    const rows = await tx.product.findMany({
-      where: { deletedAt: null },
-      orderBy: { title: 'asc' },
-      take: 500,
-      select: { id: true, title: true, handle: true, status: true },
-    });
-    return rows.map((p) => ({ id: p.id, title: p.title, handle: p.handle, status: p.status }));
-  });
+async function loadProducts(): Promise<ProductOption[]> {
+  const { items } = await api.get<ProductListResponse>(
+    '/v1/commerce/products?take=250&include_archived=true'
+  );
+  const sorted = [...items].sort((a, b) => a.title.localeCompare(b.title));
+  return sorted.map((p) => ({ id: p.id, title: p.title, handle: p.handle, status: p.status }));
 }

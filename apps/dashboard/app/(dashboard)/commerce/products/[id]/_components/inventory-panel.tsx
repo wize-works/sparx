@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Boxes } from 'lucide-react';
 
-import type { inventoryService } from '@sparx/commerce';
 import {
   Badge,
   Button,
@@ -28,7 +27,19 @@ import {
 
 import { adjustInventoryAction, setReorderPolicyAction } from '../../../inventory-actions';
 
-type LevelRow = Awaited<ReturnType<typeof inventoryService.levelsForVariant>>[number];
+interface LevelRow {
+  variantId: string;
+  warehouseId: string;
+  warehouseCode: string;
+  onHand: number;
+  allocated: number;
+  available: number;
+  reorderPoint: number | null;
+  reorderQuantity: number | null;
+  leadTimeDays: number | null;
+  unitCostCents: number | null;
+  updatedAt: string;
+}
 
 export interface VariantWithLevels {
   variantId: string;

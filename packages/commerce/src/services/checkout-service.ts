@@ -275,7 +275,9 @@ export async function createPaymentIntent(
     throw new CommerceValidationError('Cannot create payment intent on a zero-total session');
   }
   if (!session.customerEmail) {
-    throw new CommerceValidationError('Submit contact information before creating a payment intent');
+    throw new CommerceValidationError(
+      'Submit contact information before creating a payment intent'
+    );
   }
 
   // Stable order hash so the provider can spot tampering between
@@ -287,7 +289,7 @@ export async function createPaymentIntent(
     ctx,
     {
       amountCents: session.totalCents,
-      currency: session.currency as Parameters<typeof providerService.runPaymentCreate>[1]['currency'],
+      currency: session.currency,
       orderHash,
       description: `Sparx order — checkout session ${session.id.slice(0, 8)}`,
       metadata: {

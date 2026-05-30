@@ -1,8 +1,6 @@
 import Link from 'next/link';
-import { Globe2, Layers, PackageOpen, Plus, Truck } from 'lucide-react';
+import { Globe2, Layers, Plus, Truck } from 'lucide-react';
 
-import { isModuleEnabled, requireSession } from '@sparx/auth';
-import { shippingService } from '@sparx/commerce';
 import {
   Badge,
   Button,
@@ -23,30 +21,45 @@ import {
   Text,
 } from '@sparx/ui';
 
-import { ModuleStub } from '../../../../components/module-stub';
+import { api } from '@/lib/api-rest-client';
+
 import { EntityRowLink } from '../../_components/entity-row-link';
 
 export const dynamic = 'force-dynamic';
 
-export default async function ShippingPage() {
-  const session = await requireSession();
-  const enabled = await isModuleEnabled(session.user.tenantId, 'commerce');
-  if (!enabled) {
-    return (
-      <ModuleStub
-        icon={<PackageOpen className="h-5 w-5" />}
-        title="Commerce"
-        tagline="Shipping routes orders to carriers."
-        description="Activate the Commerce module from Billing to configure zones, profiles, and rates."
-        features={[]}
-      />
-    );
-  }
+interface ZoneTargeting {
+  countries: string[];
+  regions: string[];
+  postalCodeRanges: { country: string; from: string; to: string }[];
+}
 
-  const ctx = { tenantId: session.user.tenantId, userId: session.user.id };
+interface ShippingZoneRow {
+  id: string;
+  name: string;
+  priority: number;
+  targeting: ZoneTargeting;
+  rateCount: number;
+  updatedAt: string;
+}
+
+interface ShippingProfileRow {
+  id: string;
+  name: string;
+  description: string | null;
+  allowedCarrierServices: string[];
+  hazmatClassesAllowed: string[];
+  requiresSignature: boolean;
+  requiresFreight: boolean;
+  productCount: number;
+  variantCount: number;
+  collectionCount: number;
+  updatedAt: string;
+}
+
+export default async function ShippingPage() {
   const [zones, profiles] = await Promise.all([
-    shippingService.listZones(ctx),
-    shippingService.listProfiles(ctx),
+    api.get<ShippingZoneRow[]>('/v1/commerce/shipping/zones'),
+    api.get<ShippingProfileRow[]>('/v1/commerce/shipping/profiles'),
   ]);
 
   return (

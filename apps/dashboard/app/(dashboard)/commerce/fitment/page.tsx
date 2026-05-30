@@ -1,7 +1,5 @@
-import { Car, PackageOpen } from 'lucide-react';
+import { Car } from 'lucide-react';
 
-import { isModuleEnabled, requireSession } from '@sparx/auth';
-import { fitmentService } from '@sparx/commerce';
 import {
   Badge,
   Card,
@@ -15,9 +13,19 @@ import {
   Text,
 } from '@sparx/ui';
 
-import { ModuleStub } from '../../../../components/module-stub';
+import { api } from '@/lib/api-rest-client';
 
 import { FitmentReferenceEditor } from './_components/fitment-reference-editor';
+
+interface VehicleMakeRow {
+  id: string;
+  name: string;
+  slug: string;
+  countryOfOrigin: string | null;
+  logoMediaId: string | null;
+  isGlobal: boolean;
+  modelCount: number;
+}
 
 // Fitment reference data — vehicle makes, models, engines. Drives the
 // auto-parts / diesel-service catalog filter (Gillett's reference case).

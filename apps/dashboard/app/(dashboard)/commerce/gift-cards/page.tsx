@@ -1,7 +1,5 @@
-import { Gift, PackageOpen } from 'lucide-react';
+import { Gift } from 'lucide-react';
 
-import { isModuleEnabled, requireSession } from '@sparx/auth';
-import { discountService } from '@sparx/commerce';
 import {
   Badge,
   Card,
@@ -21,9 +19,22 @@ import {
   Text,
 } from '@sparx/ui';
 
-import { ModuleStub } from '../../../../components/module-stub';
+import { api } from '@/lib/api-rest-client';
 
 import { IssueGiftCardForm } from './_components/issue-gift-card-form';
+
+interface GiftCardSummary {
+  id: string;
+  code: string;
+  balanceCents: number;
+  initialBalanceCents: number;
+  currency: string;
+  status: string;
+  expiresAt: string | null;
+  recipientEmail: string | null;
+  recipientName: string | null;
+  createdAt: string;
+}
 
 export const dynamic = 'force-dynamic';
 
@@ -37,22 +48,7 @@ const STATUS_VARIANT: Record<string, 'success' | 'warning' | 'outline'> = {
 const moneyFmt = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
 
 export default async function GiftCardsPage() {
-  const session = await requireSession();
-  const enabled = await isModuleEnabled(session.user.tenantId, 'commerce');
-  if (!enabled) {
-    return (
-      <ModuleStub
-        icon={<PackageOpen className="h-5 w-5" />}
-        title="Commerce"
-        tagline="Gift cards + redemption tracking."
-        description="Activate the Commerce module from Billing to manage gift cards."
-        features={[]}
-      />
-    );
-  }
-
-  const ctx = { tenantId: session.user.tenantId, userId: session.user.id };
-  const cards = await discountService.listGiftCards(ctx, { take: 100 });
+  const cards = await api.get<GiftCardSummary[]>('/v1/commerce/gift-cards?take=100');
 
   const outstandingCents = cards
     .filter((c) => c.status === 'active')

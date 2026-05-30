@@ -1,7 +1,7 @@
 import Link from 'next/link';
-import { Boxes, PackageOpen } from 'lucide-react';
+import { Boxes } from 'lucide-react';
 
-import { isModuleEnabled, requireSession } from '@sparx/auth';
+import { requireSession } from '@sparx/auth';
 import { inventoryService } from '@sparx/commerce';
 import { withTenant } from '@sparx/db';
 import {
@@ -24,7 +24,7 @@ import {
   Text,
 } from '@sparx/ui';
 
-import { ModuleStub } from '../../../../components/module-stub';
+import { api } from '@/lib/api-rest-client';
 
 import { InventoryRowEditor } from './_components/inventory-row-editor';
 
@@ -42,6 +42,53 @@ interface PageProps {
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
 }
 
+interface WarehouseRow {
+  id: string;
+  name: string;
+  code: string;
+  type: string;
+  line1: string | null;
+  line2: string | null;
+  city: string | null;
+  region: string | null;
+  postalCode: string | null;
+  country: string | null;
+  phone: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  defaultForChannel: string[];
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface LowStockRow {
+  variantId: string;
+  productId: string;
+  sku: string;
+  title: string;
+  warehouseId: string;
+  warehouseCode: string;
+  available: number;
+  reorderPoint: number;
+  reorderQuantity: number | null;
+  leadTimeDays: number | null;
+}
+
+interface InventoryLevelRow {
+  variantId: string;
+  warehouseId: string;
+  warehouseCode: string;
+  onHand: number;
+  allocated: number;
+  available: number;
+  reorderPoint: number | null;
+  reorderQuantity: number | null;
+  leadTimeDays: number | null;
+  unitCostCents: number | null;
+  updatedAt: string;
+}
+
 function pickString(value: string | string[] | undefined): string | undefined {
   if (Array.isArray(value)) return value[0];
   return value;
@@ -49,30 +96,17 @@ function pickString(value: string | string[] | undefined): string | undefined {
 
 export default async function InventoryPage({ searchParams }: PageProps) {
   const session = await requireSession();
-  const enabled = await isModuleEnabled(session.user.tenantId, 'commerce');
-  if (!enabled) {
-    return (
-      <ModuleStub
-        icon={<PackageOpen className="h-5 w-5" />}
-        title="Commerce"
-        tagline="Real-time stock tracking across every warehouse."
-        description="Activate the Commerce module from Billing to manage inventory."
-        features={[]}
-      />
-    );
-  }
-
   const ctx = { tenantId: session.user.tenantId, userId: session.user.id };
   const params = (await searchParams) ?? {};
   const warehouseFilter = pickString(params.warehouse);
   const lowStockOnly = pickString(params.low) === '1';
 
+  const lowStockQuery = new URLSearchParams({ take: '50' });
+  if (warehouseFilter) lowStockQuery.set('warehouse_id', warehouseFilter);
+
   const [warehouses, lowStock] = await Promise.all([
-    inventoryService.listWarehouses(ctx, { includeInactive: false }),
-    inventoryService.listLowStock(ctx, {
-      warehouseId: warehouseFilter,
-      take: 50,
-    }),
+    api.get<WarehouseRow[]>('/v1/commerce/warehouses'),
+    api.get<LowStockRow[]>(`/v1/commerce/inventory/low-stock?${lowStockQuery.toString()}`),
   ]);
 
   const activeWarehouse = warehouseFilter ? warehouses.find((w) => w.id === warehouseFilter) : null;

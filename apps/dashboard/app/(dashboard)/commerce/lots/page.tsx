@@ -1,8 +1,7 @@
 import Link from 'next/link';
-import { CircleAlert, PackageOpen, ShieldAlert } from 'lucide-react';
+import { CircleAlert, ShieldAlert } from 'lucide-react';
 
-import { isModuleEnabled, requireSession } from '@sparx/auth';
-import { inventoryService } from '@sparx/commerce';
+import { requireSession } from '@sparx/auth';
 import { withTenant } from '@sparx/db';
 import {
   Badge,
@@ -24,7 +23,7 @@ import {
   Text,
 } from '@sparx/ui';
 
-import { ModuleStub } from '../../../../components/module-stub';
+import { api } from '@/lib/api-rest-client';
 
 // Lot batches — beauty + food + supplements + regulated goods carry
 // expiry + hazmat data per batch. Lists the next-to-expire and any
@@ -35,28 +34,31 @@ export const dynamic = 'force-dynamic';
 
 const ONE_YEAR_MS = 365 * 24 * 60 * 60 * 1000;
 
+interface LotBatchRow {
+  id: string;
+  variantId: string;
+  warehouseId: string;
+  warehouseCode: string;
+  lotNumber: string;
+  manufacturedAt: string | null;
+  expiresAt: string | null;
+  quantity: number;
+  hazmatClass: string;
+  recallStatus: string | null;
+  supplierBatchRef: string | null;
+}
+
 export default async function LotsPage() {
   const session = await requireSession();
-  const enabled = await isModuleEnabled(session.user.tenantId, 'commerce');
-  if (!enabled) {
-    return (
-      <ModuleStub
-        icon={<PackageOpen className="h-5 w-5" />}
-        title="Commerce"
-        tagline="Lot + serial traceability for regulated, food, and high-value goods."
-        description="Activate the Commerce module from Billing to manage lots."
-        features={[]}
-      />
-    );
-  }
-
   const ctx = { tenantId: session.user.tenantId, userId: session.user.id };
 
   // Stable upper bound so SSR cache is deterministic (no Date.now in
   // user-visible paths — matches the storefront convention).
   const horizon = new Date(2027, 5, 1).toISOString();
   const [expiringSoon, activeRecalls] = await Promise.all([
-    inventoryService.listLotsExpiringBefore(ctx, horizon),
+    api.get<LotBatchRow[]>(
+      `/v1/commerce/inventory/lots/expiring?before=${encodeURIComponent(horizon)}`
+    ),
     listActiveRecalls(ctx),
   ]);
 

@@ -1,8 +1,6 @@
 import { notFound } from 'next/navigation';
-import { Layers, PackageOpen, Sparkles, Star } from 'lucide-react';
+import { Layers, Sparkles, Star } from 'lucide-react';
 
-import { isModuleEnabled, requireSession } from '@sparx/auth';
-import { CommerceNotFoundError, collectionService, productService } from '@sparx/commerce';
 import {
   Badge,
   Card,
@@ -18,10 +16,48 @@ import {
   Text,
 } from '@sparx/ui';
 
-import { ModuleStub } from '../../../../../components/module-stub';
+import { api, type ApiRestError } from '@/lib/api-rest-client';
 
 import { CollectionMembershipEditor } from './_components/collection-membership-editor';
 import { CollectionMetaForm } from './_components/collection-meta-form';
+
+interface CollectionDetail {
+  id: string;
+  name: string;
+  handle: string;
+  type: 'manual' | 'rules';
+  productCount: number;
+  featured: boolean;
+  updatedAt: string;
+  description: string | null;
+  heroMediaId: string | null;
+  ruleSet: Record<string, unknown> | null;
+  seoTitle: string | null;
+  seoDescription: string | null;
+  ogImageId: string | null;
+  productIds: string[];
+  createdAt: string;
+}
+
+interface ProductListItem {
+  id: string;
+  title: string;
+  handle: string;
+  status: 'active' | 'draft' | 'archived';
+  vendor: string | null;
+  productType: string | null;
+  variantCount: number;
+  priceMinCents: number | null;
+  priceMaxCents: number | null;
+  imageUrl: string | null;
+  tags: string[];
+  updatedAt: string;
+}
+
+interface ProductListResponse {
+  items: ProductListItem[];
+  total: number;
+}
 
 export const dynamic = 'force-dynamic';
 
@@ -30,31 +66,17 @@ interface Props {
 }
 
 export async function CollectionDetailContent({ id }: Props) {
-  const session = await requireSession();
-  const enabled = await isModuleEnabled(session.user.tenantId, 'commerce');
-  if (!enabled) {
-    return (
-      <ModuleStub
-        icon={<PackageOpen className="h-5 w-5" />}
-        title="Commerce"
-        tagline=""
-        description="Commerce is disabled. Activate it from Billing to view collections."
-        features={[]}
-      />
-    );
-  }
-
-  const ctx = { tenantId: session.user.tenantId, userId: session.user.id };
-
-  let collection;
+  let collection: CollectionDetail;
   try {
-    collection = await collectionService.get(ctx, id);
+    collection = await api.get<CollectionDetail>(`/v1/commerce/collections/${id}`);
   } catch (err) {
-    if (err instanceof CommerceNotFoundError) notFound();
+    if ((err as ApiRestError).code === 'NOT_FOUND') notFound();
     throw err;
   }
 
-  const { items: allProducts } = await productService.list(ctx, { take: 250 });
+  const { items: allProducts } = await api.get<ProductListResponse>(
+    '/v1/commerce/products?take=250'
+  );
 
   return (
     <Stack gap={6}>

@@ -1,8 +1,6 @@
 import { notFound } from 'next/navigation';
-import { PackageOpen, Plus } from 'lucide-react';
+import { Plus } from 'lucide-react';
 
-import { isModuleEnabled, requireSession } from '@sparx/auth';
-import { taxService } from '@sparx/commerce';
 import {
   Badge,
   Card,
@@ -21,7 +19,7 @@ import {
   Text,
 } from '@sparx/ui';
 
-import { ModuleStub } from '../../../../../../components/module-stub';
+import { api, type ApiRestError } from '@/lib/api-rest-client';
 
 import { NewTaxRateForm } from './_components/new-tax-rate-form';
 import { TaxRateDeleteButton } from './_components/tax-rate-delete-button';
@@ -33,27 +31,35 @@ interface Props {
   id: string;
 }
 
-export async function TaxZoneDetailContent({ id }: Props) {
-  const session = await requireSession();
-  const enabled = await isModuleEnabled(session.user.tenantId, 'commerce');
-  if (!enabled) {
-    return (
-      <ModuleStub
-        icon={<PackageOpen className="h-5 w-5" />}
-        title="Commerce"
-        tagline=""
-        description="Activate the Commerce module from Billing to manage tax zones."
-        features={[]}
-      />
-    );
-  }
+interface TaxZoneRow {
+  id: string;
+  country: string;
+  region: string | null;
+  nexusType: string;
+  registrationNumber: string | null;
+  registeredAt: string | null;
+  isActive: boolean;
+  rateCount: number;
+}
 
-  const ctx = { tenantId: session.user.tenantId, userId: session.user.id };
-  const [zone, rates] = await Promise.all([
-    taxService.getZone(ctx, id).catch(() => null),
-    taxService.listRatesForZone(ctx, id),
-  ]);
-  if (!zone) notFound();
+interface TaxRateRow {
+  id: string;
+  zoneId: string;
+  name: string;
+  rateBasisPoints: number;
+  appliesToShipping: boolean;
+  productTaxClass: string | null;
+}
+
+export async function TaxZoneDetailContent({ id }: Props) {
+  let zone: TaxZoneRow;
+  try {
+    zone = await api.get<TaxZoneRow>(`/v1/commerce/tax/zones/${id}`);
+  } catch (err) {
+    if ((err as ApiRestError).code === 'NOT_FOUND') notFound();
+    throw err;
+  }
+  const rates = await api.get<TaxRateRow[]>(`/v1/commerce/tax/zones/${id}/rates`);
 
   return (
     <Stack gap={6}>

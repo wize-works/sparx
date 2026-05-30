@@ -293,6 +293,11 @@ module "commerce_indexer_cloudrun" {
     TYPESENSE_HOST     = "typesense.sparx-prod.svc.cluster.local"
     TYPESENSE_PORT     = "8108"
     TYPESENSE_PROTOCOL = "http"
+    # Create the products/customers/orders collections on cold start if
+    # they're missing (idempotent — ensureSchemas retrieves first, creates
+    # only on 404). The Phase-1 typesense-api-key is the admin key, so it
+    # has create rights. Makes a fresh Typesense self-heal on next boot.
+    ENSURE_SCHEMAS_ON_BOOT = "true"
   }
 
   secrets = [

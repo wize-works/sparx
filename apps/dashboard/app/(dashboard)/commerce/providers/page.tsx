@@ -3,7 +3,6 @@ import {
   CircleAlert,
   CircleCheck,
   CircleDashed,
-  PackageOpen,
   Plug,
   Puzzle,
   Receipt,
@@ -11,8 +10,6 @@ import {
   Wallet,
 } from 'lucide-react';
 
-import { isModuleEnabled, requireSession } from '@sparx/auth';
-import { providerService } from '@sparx/commerce';
 import type {
   ProviderInstallStatus,
   ProviderKind,
@@ -38,9 +35,24 @@ import {
   Text,
 } from '@sparx/ui';
 
+import { api } from '@/lib/api-rest-client';
 import { ensureProvidersRegistered } from '../../../../lib/providers-bootstrap';
-import { ModuleStub } from '../../../../components/module-stub';
 import { EntityRowLink } from '../../_components/entity-row-link';
+
+interface InstallationRow {
+  id: string;
+  providerSlug: string;
+  kind: ProviderKind;
+  environment: 'sandbox' | 'production';
+  enabled: boolean;
+  status: ProviderInstallStatus;
+  label: string | null;
+  providerAccountId: string | null;
+  lastHealthCheckAt: string | null;
+  lastHealthStatus: string | null;
+  errorCount: number;
+  installedAt: string;
+}
 
 export const dynamic = 'force-dynamic';
 
@@ -73,27 +85,12 @@ const KIND_LABEL: Record<ProviderKind, string> = {
 export default async function ProvidersPage() {
   ensureProvidersRegistered();
 
-  const session = await requireSession();
-  const enabled = await isModuleEnabled(session.user.tenantId, 'commerce');
-  if (!enabled) {
-    return (
-      <ModuleStub
-        icon={<PackageOpen className="h-5 w-5" />}
-        title="Commerce"
-        tagline="Payment, tax, shipping marketplace."
-        description="Activate the Commerce module from Billing to install providers."
-        features={[]}
-      />
-    );
-  }
-
-  const ctx = { tenantId: session.user.tenantId, userId: session.user.id };
   const [available, installed] = await Promise.all([
-    providerService.listAvailable(),
-    providerService.listInstallations(ctx),
+    api.get<ProviderMetadata[]>('/v1/commerce/providers/available'),
+    api.get<InstallationRow[]>('/v1/commerce/providers/installations'),
   ]);
 
-  const installedByKind = new Map<ProviderKind, typeof installed>();
+  const installedByKind = new Map<ProviderKind, InstallationRow[]>();
   for (const inst of installed) {
     const list = installedByKind.get(inst.kind) ?? [];
     list.push(inst);
@@ -140,7 +137,7 @@ function KindSection({
 }: {
   kind: ProviderKind;
   available: ProviderMetadata[];
-  installed: Awaited<ReturnType<typeof providerService.listInstallations>>;
+  installed: InstallationRow[];
 }) {
   const Icon = KIND_ICON[kind];
 

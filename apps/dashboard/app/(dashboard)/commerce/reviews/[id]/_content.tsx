@@ -1,7 +1,6 @@
-import { PackageOpen, Star } from 'lucide-react';
+import { notFound } from 'next/navigation';
+import { Star } from 'lucide-react';
 
-import { isModuleEnabled, requireSession } from '@sparx/auth';
-import { reviewService } from '@sparx/commerce';
 import {
   Badge,
   Card,
@@ -13,7 +12,7 @@ import {
   Text,
 } from '@sparx/ui';
 
-import { ModuleStub } from '../../../../../components/module-stub';
+import { api, type ApiRestError } from '@/lib/api-rest-client';
 
 import { ModerateActions } from './_components/moderate-actions';
 import { RespondForm } from './_components/respond-form';
@@ -24,23 +23,36 @@ interface Props {
   id: string;
 }
 
-export async function ReviewDetailContent({ id }: Props) {
-  const session = await requireSession();
-  const enabled = await isModuleEnabled(session.user.tenantId, 'commerce');
-  if (!enabled) {
-    return (
-      <ModuleStub
-        icon={<PackageOpen className="h-5 w-5" />}
-        title="Commerce"
-        tagline=""
-        description="Activate the Commerce module from Billing to moderate reviews."
-        features={[]}
-      />
-    );
-  }
+type ReviewStatus = 'pending' | 'approved' | 'rejected' | 'flagged';
 
-  const ctx = { tenantId: session.user.tenantId, userId: session.user.id };
-  const review = await reviewService.getReview(ctx, id);
+interface ReviewDetail {
+  id: string;
+  productId: string;
+  variantId: string | null;
+  customerId: string | null;
+  orderId: string | null;
+  rating: number;
+  title: string;
+  body: string;
+  displayName: string | null;
+  status: ReviewStatus;
+  verifiedPurchase: boolean;
+  helpfulCount: number;
+  unhelpfulCount: number;
+  response: string | null;
+  respondedAt: string | null;
+  mediaAssetIds: string[];
+  createdAt: string;
+}
+
+export async function ReviewDetailContent({ id }: Props) {
+  let review: ReviewDetail;
+  try {
+    review = await api.get<ReviewDetail>(`/v1/commerce/reviews/${id}`);
+  } catch (err) {
+    if ((err as ApiRestError).code === 'NOT_FOUND') notFound();
+    throw err;
+  }
 
   return (
     <Stack gap={6}>

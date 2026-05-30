@@ -1,14 +1,6 @@
 import { notFound } from 'next/navigation';
-import { ExternalLink, PackageOpen } from 'lucide-react';
+import { ExternalLink } from 'lucide-react';
 
-import { isModuleEnabled, requireSession } from '@sparx/auth';
-import {
-  CommerceNotFoundError,
-  fitmentService,
-  inventoryService,
-  productService,
-  variantService,
-} from '@sparx/commerce';
 import {
   Badge,
   Card,
@@ -23,13 +15,148 @@ import {
   Text,
 } from '@sparx/ui';
 
-import { ModuleStub } from '../../../../../components/module-stub';
+import { api, type ApiRestError } from '@/lib/api-rest-client';
 
 import { FitmentPanel } from './_components/fitment-panel';
 import { InventoryPanel } from './_components/inventory-panel';
 import { ProductEditForm } from './_components/product-edit-form';
 import { ProductStatusBar } from './_components/product-status-bar';
 import { VariantsPanel } from './_components/variants-panel';
+
+type ProductStatus = 'active' | 'draft' | 'archived';
+
+interface ProductDetail {
+  id: string;
+  tenantId: string;
+  title: string;
+  handle: string;
+  description: string | null;
+  status: ProductStatus;
+  productType: string | null;
+  vendor: string | null;
+  tags: string[];
+  fulfillmentType: string;
+  weightGrams: number | null;
+  lengthMm: number | null;
+  widthMm: number | null;
+  heightMm: number | null;
+  hazmatClass: string;
+  requiresShipping: boolean;
+  taxClass: string | null;
+  originCountry: string | null;
+  hsCode: string | null;
+  metadata: Record<string, unknown>;
+  seoTitle: string | null;
+  seoDescription: string | null;
+  ogImageId: string | null;
+  defaultWarehouseId: string | null;
+  priceMinCents: number | null;
+  priceMaxCents: number | null;
+  inStock: boolean;
+  averageRating: number | null;
+  reviewCount: number;
+  variantCount: number;
+  optionCount: number;
+  categoryIds: string[];
+  collectionIds: string[];
+  createdAt: string;
+  updatedAt: string;
+  publishedAt: string | null;
+}
+
+interface OptionValueRow {
+  id: string;
+  optionId: string;
+  value: string;
+  swatchHex: string | null;
+  swatchImageId: string | null;
+  position: number;
+}
+
+interface OptionRow {
+  id: string;
+  productId: string;
+  name: string;
+  displayType: string;
+  position: number;
+  values: OptionValueRow[];
+}
+
+interface VariantRow {
+  id: string;
+  productId: string;
+  sku: string;
+  barcode: string | null;
+  title: string | null;
+  priceCents: number;
+  compareAtPriceCents: number | null;
+  costCents: number | null;
+  currency: string;
+  weightGrams: number | null;
+  lengthMm: number | null;
+  widthMm: number | null;
+  heightMm: number | null;
+  inventoryPolicy: string;
+  requiresShipping: boolean;
+  fulfillmentType: string | null;
+  dropshipSourceId: string | null;
+  isDefault: boolean;
+  position: number;
+  metadata: Record<string, unknown>;
+  optionValueIds: string[];
+  imageCount: number;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt: string | null;
+}
+
+interface ProductFitmentRow {
+  id: string;
+  productId: string;
+  makeId: string;
+  makeName: string;
+  modelId: string | null;
+  modelName: string | null;
+  engineId: string | null;
+  engineName: string | null;
+  yearMin: number | null;
+  yearMax: number | null;
+  notes: string | null;
+}
+
+interface VehicleMakeRow {
+  id: string;
+  name: string;
+  slug: string;
+  countryOfOrigin: string | null;
+  logoMediaId: string | null;
+  isGlobal: boolean;
+  modelCount: number;
+}
+
+interface WarehouseRow {
+  id: string;
+  name: string;
+  code: string;
+  type: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface InventoryLevelRow {
+  variantId: string;
+  warehouseId: string;
+  warehouseCode: string;
+  onHand: number;
+  allocated: number;
+  available: number;
+  reorderPoint: number | null;
+  reorderQuantity: number | null;
+  leadTimeDays: number | null;
+  unitCostCents: number | null;
+  updatedAt: string;
+}
 
 // Detail content for a commerce product. Mounted by both the full-page
 // route and the dashboard shell's drawer / modal. Container width + back
@@ -48,36 +175,20 @@ interface Props {
 }
 
 export async function ProductDetailContent({ id }: Props) {
-  const session = await requireSession();
-  const enabled = await isModuleEnabled(session.user.tenantId, 'commerce');
-  if (!enabled) {
-    return (
-      <ModuleStub
-        icon={<PackageOpen className="h-5 w-5" />}
-        title="Commerce"
-        tagline=""
-        description="Commerce is disabled. Activate it from Billing to view products."
-        features={[]}
-      />
-    );
-  }
-
-  const ctx = { tenantId: session.user.tenantId, userId: session.user.id };
-
-  let product;
+  let product: ProductDetail;
   try {
-    product = await productService.get(ctx, id);
+    product = await api.get<ProductDetail>(`/v1/commerce/products/${id}`);
   } catch (err) {
-    if (err instanceof CommerceNotFoundError) notFound();
+    if ((err as ApiRestError).code === 'NOT_FOUND') notFound();
     throw err;
   }
 
   const [options, variants, fitments, makes, warehouses] = await Promise.all([
-    variantService.listOptions(ctx, id),
-    variantService.listForProduct(ctx, id, { includeArchived: true }),
-    fitmentService.listForProduct(ctx, id),
-    fitmentService.listMakes(ctx),
-    inventoryService.listWarehouses(ctx, { includeInactive: false }),
+    api.get<OptionRow[]>(`/v1/commerce/products/${id}/variants/options`),
+    api.get<VariantRow[]>(`/v1/commerce/products/${id}/variants?include_archived=true`),
+    api.get<ProductFitmentRow[]>(`/v1/commerce/products/${id}/fitment`),
+    api.get<VehicleMakeRow[]>('/v1/commerce/fitment/makes'),
+    api.get<WarehouseRow[]>('/v1/commerce/warehouses'),
   ]);
 
   const inventoryLevels = await Promise.all(
@@ -85,7 +196,9 @@ export async function ProductDetailContent({ id }: Props) {
       variantId: variant.id,
       sku: variant.sku,
       variantTitle: variant.title,
-      levels: await inventoryService.levelsForVariant(ctx, variant.id),
+      levels: await api.get<InventoryLevelRow[]>(
+        `/v1/commerce/inventory/levels/variant/${variant.id}`
+      ),
     }))
   );
 

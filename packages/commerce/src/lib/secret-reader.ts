@@ -29,7 +29,7 @@ export function envSecretReader(): SecretReader {
 export function mapSecretReader(entries: Record<string, string>): SecretReader {
   return {
     read(ref: string): Promise<string> {
-      if (ref in entries) return Promise.resolve(entries[ref] as string);
+      if (ref in entries) return Promise.resolve(entries[ref]!);
       return Promise.reject(new SecretNotFoundError(ref));
     },
   };

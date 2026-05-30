@@ -1,8 +1,6 @@
 import { notFound } from 'next/navigation';
-import { PackageOpen, Plus } from 'lucide-react';
+import { Plus } from 'lucide-react';
 
-import { isModuleEnabled, requireSession } from '@sparx/auth';
-import { shippingService } from '@sparx/commerce';
 import {
   Badge,
   Card,
@@ -21,7 +19,7 @@ import {
   Text,
 } from '@sparx/ui';
 
-import { ModuleStub } from '../../../../../../components/module-stub';
+import { api, type ApiRestError } from '@/lib/api-rest-client';
 
 import { NewRateForm } from './_components/new-rate-form';
 import { RateDeleteButton } from './_components/rate-delete-button';
@@ -33,28 +31,61 @@ interface Props {
   id: string;
 }
 
-export async function ShippingZoneDetailContent({ id }: Props) {
-  const session = await requireSession();
-  const enabled = await isModuleEnabled(session.user.tenantId, 'commerce');
-  if (!enabled) {
-    return (
-      <ModuleStub
-        icon={<PackageOpen className="h-5 w-5" />}
-        title="Commerce"
-        tagline=""
-        description="Activate the Commerce module from Billing to manage shipping zones."
-        features={[]}
-      />
-    );
-  }
+interface ZoneTargeting {
+  countries: string[];
+  regions: string[];
+  postalCodeRanges: { country: string; from: string; to: string }[];
+}
 
-  const ctx = { tenantId: session.user.tenantId, userId: session.user.id };
-  const [zone, profiles, rates] = await Promise.all([
-    shippingService.getZone(ctx, id).catch(() => null),
-    shippingService.listProfiles(ctx),
-    shippingService.listRatesForZone(ctx, id),
+interface ShippingZoneRow {
+  id: string;
+  name: string;
+  priority: number;
+  targeting: ZoneTargeting;
+  rateCount: number;
+  updatedAt: string;
+}
+
+interface ShippingProfileRow {
+  id: string;
+  name: string;
+  description: string | null;
+  allowedCarrierServices: string[];
+  hazmatClassesAllowed: string[];
+  requiresSignature: boolean;
+  requiresFreight: boolean;
+  productCount: number;
+  variantCount: number;
+  collectionCount: number;
+  updatedAt: string;
+}
+
+interface ShippingRateRow {
+  id: string;
+  zoneId: string;
+  profileId: string;
+  name: string;
+  type: string;
+  amountCents: number | null;
+  freeAboveCents: number | null;
+  bands: { min: number; max?: number; amountCents: number }[] | null;
+  currency: string;
+  carrier: string | null;
+  estimatedDeliveryDays: number | null;
+}
+
+export async function ShippingZoneDetailContent({ id }: Props) {
+  let zone: ShippingZoneRow;
+  try {
+    zone = await api.get<ShippingZoneRow>(`/v1/commerce/shipping/zones/${id}`);
+  } catch (err) {
+    if ((err as ApiRestError).code === 'NOT_FOUND') notFound();
+    throw err;
+  }
+  const [profiles, rates] = await Promise.all([
+    api.get<ShippingProfileRow[]>('/v1/commerce/shipping/profiles'),
+    api.get<ShippingRateRow[]>(`/v1/commerce/shipping/zones/${id}/rates`),
   ]);
-  if (!zone) notFound();
 
   const profileById = new Map(profiles.map((p) => [p.id, p]));
 

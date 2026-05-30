@@ -1,10 +1,8 @@
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
-import { ArrowLeft, PackageOpen } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 
-import { isModuleEnabled, requireSession } from '@sparx/auth';
-import { providerService } from '@sparx/commerce';
-import type { ProviderKind } from '@sparx/commerce-schemas';
+import type { ProviderKind, ProviderMetadata } from '@sparx/commerce-schemas';
 import {
   Badge,
   Card,
@@ -17,8 +15,8 @@ import {
   Text,
 } from '@sparx/ui';
 
+import { api, type ApiRestError } from '@/lib/api-rest-client';
 import { ensureProvidersRegistered } from '../../../../../lib/providers-bootstrap';
-import { ModuleStub } from '../../../../../components/module-stub';
 
 import { InstallProviderForm } from './_components/install-provider-form';
 
@@ -40,25 +38,19 @@ export default async function InstallProviderPage({
 }) {
   ensureProvidersRegistered();
 
-  const session = await requireSession();
-  const enabled = await isModuleEnabled(session.user.tenantId, 'commerce');
-  if (!enabled) {
-    return (
-      <ModuleStub
-        icon={<PackageOpen className="h-5 w-5" />}
-        title="Commerce"
-        tagline=""
-        description="Activate the Commerce module from Billing to install providers."
-        features={[]}
-      />
-    );
-  }
-
   const { slug, kind } = await searchParams;
   if (!slug || !kind) redirect('/commerce/providers');
   if (!KIND_VALUES.has(kind)) redirect('/commerce/providers');
 
-  const metadata = await providerService.getMetadata(slug);
+  let metadata: ProviderMetadata | null;
+  try {
+    metadata = await api.get<ProviderMetadata | null>(
+      `/v1/commerce/providers/metadata/${encodeURIComponent(slug)}`
+    );
+  } catch (err) {
+    if ((err as ApiRestError).code === 'NOT_FOUND') notFound();
+    throw err;
+  }
   if (!metadata) notFound();
   if (!metadata.kinds.includes(kind as ProviderKind)) redirect('/commerce/providers');
 

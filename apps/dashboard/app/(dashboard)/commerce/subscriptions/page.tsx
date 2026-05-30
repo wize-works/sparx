@@ -1,9 +1,6 @@
 import Link from 'next/link';
-import { PackageOpen, Repeat2 } from 'lucide-react';
+import { Repeat2 } from 'lucide-react';
 
-import { isModuleEnabled, requireSession } from '@sparx/auth';
-import { subscriptionService } from '@sparx/commerce';
-import type { SubscriptionStatus } from '@sparx/commerce-schemas';
 import {
   Badge,
   Card,
@@ -23,38 +20,44 @@ import {
   Text,
 } from '@sparx/ui';
 
-import { ModuleStub } from '../../../../components/module-stub';
+import { api } from '@/lib/api-rest-client';
+
 import { EntityRowLink } from '../../_components/entity-row-link';
 
 export const dynamic = 'force-dynamic';
+
+type SubscriptionStatus = 'active' | 'trialing' | 'paused' | 'past_due' | 'cancelled';
+
+interface SubscriptionSummary {
+  id: string;
+  customerId: string;
+  status: SubscriptionStatus;
+  nextOccurrenceAt: string | null;
+  itemCount: number;
+  monthlyRecurringRevenueCents: number;
+  currency: string;
+  providerSlug: string;
+}
+
+interface SubscriptionsListResponse {
+  items: SubscriptionSummary[];
+  total: number;
+}
 
 export default async function SubscriptionsPage({
   searchParams,
 }: {
   searchParams: Promise<{ status?: string }>;
 }) {
-  const session = await requireSession();
-  const enabled = await isModuleEnabled(session.user.tenantId, 'commerce');
-  if (!enabled) {
-    return (
-      <ModuleStub
-        icon={<PackageOpen className="h-5 w-5" />}
-        title="Commerce"
-        tagline="Auto-ship + recurring billing."
-        description="Activate the Commerce module from Billing to manage subscriptions."
-        features={[]}
-      />
-    );
-  }
-
   const { status: statusParam } = await searchParams;
   const status = isStatus(statusParam) ? statusParam : undefined;
 
-  const ctx = { tenantId: session.user.tenantId, userId: session.user.id };
-  const { items, total } = await subscriptionService.list(ctx, {
-    ...(status ? { status } : {}),
-    take: 100,
-  });
+  const query = new URLSearchParams();
+  if (status) query.set('status', status);
+  query.set('take', '100');
+  const { items, total } = await api.get<SubscriptionsListResponse>(
+    `/v1/commerce/subscriptions?${query.toString()}`
+  );
 
   const mrrCents = items.reduce((sum, s) => sum + s.monthlyRecurringRevenueCents, 0);
 

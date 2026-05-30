@@ -405,10 +405,7 @@ async function loadPaymentBundle(
         })
       );
   if (!installation) {
-    throw new CommerceNotFoundError(
-      'ProviderInstallation',
-      opts.installationId ?? 'kind=payment'
-    );
+    throw new CommerceNotFoundError('ProviderInstallation', opts.installationId ?? 'kind=payment');
   }
   const bundle = getProvider(installation.providerSlug);
   if (!bundle?.payment) {

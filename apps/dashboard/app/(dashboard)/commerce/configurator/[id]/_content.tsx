@@ -1,9 +1,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { PackageOpen, Settings2 } from 'lucide-react';
+import { Settings2 } from 'lucide-react';
 
-import { isModuleEnabled, requireSession } from '@sparx/auth';
-import { CommerceNotFoundError, configuratorService } from '@sparx/commerce';
 import {
   Badge,
   Card,
@@ -21,10 +19,81 @@ import {
   Text,
 } from '@sparx/ui';
 
-import { ModuleStub } from '../../../../../components/module-stub';
+import { api, type ApiRestError } from '@/lib/api-rest-client';
 
 import { TemplateStatusBar } from './_components/template-status-bar';
 import { TemplateJsonEditor } from './_components/template-json-editor';
+
+interface ConfigurationChoice {
+  key: string;
+  label: string;
+  variantId?: string;
+  addOnVariantId?: string;
+  priceDeltaCents?: number;
+  metadataPayload?: Record<string, unknown>;
+  swatchHex?: string;
+  imageMediaId?: string;
+  position: number;
+}
+
+interface ConfigurationOption {
+  key: string;
+  label: string;
+  helpText?: string;
+  type: 'single_choice' | 'multi_choice' | 'toggle' | 'text' | 'number';
+  required: boolean;
+  minSelections?: number;
+  maxSelections?: number;
+  defaultChoiceKeys: string[];
+  groupHeader?: string;
+  position: number;
+  choices: ConfigurationChoice[];
+}
+
+interface ConfigurationRuleCondition {
+  optionKey: string;
+  op: 'in' | 'not_in' | 'gt' | 'lt' | 'eq';
+  value: string | number | string[];
+}
+
+type ConfigurationRuleAction =
+  | { kind: 'require'; optionKey: string }
+  | { kind: 'hide'; optionKey: string }
+  | { kind: 'show_only_choices'; optionKey: string; choiceKeys: string[] }
+  | { kind: 'price_adjust'; deltaCents: number; label?: string }
+  | { kind: 'add_addon'; variantId: string; quantity: number }
+  | { kind: 'error'; message: string };
+
+interface ConfigurationRule {
+  name: string;
+  match: 'all' | 'any';
+  conditions: ConfigurationRuleCondition[];
+  actions: ConfigurationRuleAction[];
+  priority: number;
+}
+
+interface ConfigurationAddOn {
+  variantId: string;
+  defaultIncluded: boolean;
+  priceOverrideCents?: number;
+}
+
+interface ConfigurationTemplateDetail {
+  id: string;
+  productId: string;
+  productTitle: string;
+  name: string;
+  description: string | null;
+  status: string;
+  optionCount: number;
+  ruleCount: number;
+  addOnCount: number;
+  updatedAt: string;
+  layout: unknown;
+  options: ConfigurationOption[];
+  rules: ConfigurationRule[];
+  addOns: ConfigurationAddOn[];
+}
 
 export const dynamic = 'force-dynamic';
 
@@ -39,27 +108,13 @@ interface Props {
 }
 
 export async function ConfiguratorTemplateDetailContent({ id }: Props) {
-  const session = await requireSession();
-  const enabled = await isModuleEnabled(session.user.tenantId, 'commerce');
-  if (!enabled) {
-    return (
-      <ModuleStub
-        icon={<PackageOpen className="h-5 w-5" />}
-        title="Commerce"
-        tagline=""
-        description="Activate the Commerce module from Billing to edit configurators."
-        features={[]}
-      />
-    );
-  }
-
-  const ctx = { tenantId: session.user.tenantId, userId: session.user.id };
-
-  let template;
+  let template: ConfigurationTemplateDetail;
   try {
-    template = await configuratorService.getTemplate(ctx, id);
+    template = await api.get<ConfigurationTemplateDetail>(
+      `/v1/commerce/configurator-templates/${id}`
+    );
   } catch (err) {
-    if (err instanceof CommerceNotFoundError) notFound();
+    if ((err as ApiRestError).code === 'NOT_FOUND') notFound();
     throw err;
   }
 
