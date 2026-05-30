@@ -7,6 +7,7 @@
 // customized stays null here and the default token wins — zero code changes
 // per merchant.
 
+import { resolvePreset } from './theme-registry';
 import type { TenantTheme } from './tenant';
 
 // Maps a StorefrontTheme field → the CSS variable(s) it overrides. A single

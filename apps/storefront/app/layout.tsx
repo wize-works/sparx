@@ -41,7 +41,11 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const tenant = await resolveTenant();
-  const themeCss = themeToCss(tenant?.theme ?? null);
+  // Active base theme preset (additive registry); merchant overrides layer on
+  // top. Sourced from tenant settings so no schema change is needed.
+  const themePreset = (tenant?.settings as { theme?: { preset?: string } } | undefined)?.theme
+    ?.preset;
+  const themeCss = themeToCss(tenant?.theme ?? null, themePreset);
 
   // Build nav + footer columns from the tenant's collections (best-effort —
   // a brand-new store with no collections still renders the standard links).
@@ -105,8 +109,13 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             <WishlistProvider>
               <CartProvider tenantSlug={tenant.slug} currency={tenant.storefront.defaultCurrency}>
                 <div className="sf-frame">
+                  <a href="#sf-main" className="sf-skip-link">
+                    Skip to content
+                  </a>
                   <SiteHeader tenant={tenant} nav={nav} />
-                  <main className="sf-main">{children}</main>
+                  <main className="sf-main" id="sf-main" tabIndex={-1}>
+                    {children}
+                  </main>
                   <SiteFooter tenant={tenant} columns={footerColumns} year={FOOTER_YEAR} />
                 </div>
                 <MiniCart />

@@ -1463,6 +1463,41 @@
   margin-top: 0.15rem;
 }
 
+/* ── A11y: skip link ───────────────────────────────────────── */
+.sf-skip-link {
+  position: absolute;
+  left: 0.75rem;
+  top: -3rem;
+  z-index: 100;
+  padding: 0.6rem 1rem;
+  background: var(--sf-primary);
+  color: var(--sf-on-primary);
+  border-radius: var(--sf-radius-sm);
+  font-size: 0.9rem;
+  font-weight: 600;
+  transition: top var(--sf-ease) 140ms;
+}
+.sf-skip-link:focus {
+  top: 0.75rem;
+  outline: 2px solid var(--sf-on-primary);
+  outline-offset: 2px;
+}
+.sf-main:focus {
+  outline: none;
+}
+
+/* ── A11y: respect reduced-motion ──────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 @media (max-width: 860px) {
   .sf-cart-grid,
   .sf-checkout {
