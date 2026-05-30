@@ -67,7 +67,7 @@ const issueGiftCard: McpToolDefinition = {
   scope: 'write:commerce',
   confirmation: true,
   input: IssueGiftCardInput,
-  run: (ctx, input) => discountService.issueGiftCard(ctx, input as never),
+  run: (ctx, input) => discountService.issueGiftCard(ctx, input),
 };
 
 const grantStoreCredit: McpToolDefinition = {
@@ -76,7 +76,7 @@ const grantStoreCredit: McpToolDefinition = {
   scope: 'write:commerce',
   confirmation: true,
   input: GrantStoreCreditInput,
-  run: (ctx, input) => discountService.grantStoreCredit(ctx, input as never),
+  run: (ctx, input) => discountService.grantStoreCredit(ctx, input),
 };
 
 const pauseSubscription: McpToolDefinition = {
