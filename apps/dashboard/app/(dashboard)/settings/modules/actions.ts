@@ -17,7 +17,7 @@
 import 'server-only';
 import { revalidatePath } from 'next/cache';
 import { invalidateModuleCache, requireSession, type ModuleSlug } from '@sparx/auth';
-import { prisma } from '@sparx/db';
+import { prisma, type Prisma } from '@sparx/db';
 import { pipelineService, segmentService } from '@sparx/crm';
 
 export type ActionResult<T> = { ok: true; data: T } | { ok: false; error: { message: string } };
@@ -60,20 +60,59 @@ export async function setModuleEnabledAction(
       return { ok: false, error: { message: `Unknown module: ${slug}` } };
     }
 
-    // jsonb_set creates the nested path if it doesn't exist (last arg = true).
-    // Building the JSONB value via parameters avoids any string-formatting
-    // injection — slug is enum-validated above.
-    const rowsUpdated = await prisma.$executeRawUnsafe(
-      `UPDATE tenants SET settings = jsonb_set(
-         COALESCE(settings, '{}'::jsonb),
-         '{modules,${slug},enabled}',
-         to_jsonb($1::boolean),
-         true
-       ) WHERE id = $2::uuid`,
+    // Read-modify-write rather than `jsonb_set`. The raw-SQL approach we
+    // had previously silently no-op'd when `settings.modules.<slug>` did
+    // not already exist as an object — Postgres `jsonb_set` "cannot create
+    // a missing parent value", so writing `{modules, crm, enabled}` to a
+    // tenant whose `settings.modules` had no `crm` key returned the
+    // original settings unchanged while still counting as `UPDATE 1`.
+    // That was the F-01 persistence repro: CMS deactivation worked
+    // because the user had set `modules.cms` manually, but CRM activation
+    // silently dropped because `modules.crm` had no parent object yet.
+    //
+    // The read/modify/write here always produces a correctly nested
+    // structure regardless of starting shape, and we re-read after the
+    // write to confirm persistence in the pod logs.
+    const tenantBefore = await prisma.tenant.findUnique({
+      where: { id: session.user.tenantId },
+      select: { settings: true },
+    });
+    if (!tenantBefore) {
+      return { ok: false, error: { message: `Tenant ${session.user.tenantId} not found` } };
+    }
+    const currentSettings = (tenantBefore.settings as Record<string, unknown> | null) ?? {};
+    const currentModules = (currentSettings.modules as Record<string, unknown> | undefined) ?? {};
+    const currentSlot = (currentModules[slug] as Record<string, unknown> | undefined) ?? {};
+    const nextSettings = {
+      ...currentSettings,
+      modules: {
+        ...currentModules,
+        [slug]: { ...currentSlot, enabled },
+      },
+    };
+    console.log('[setModuleEnabledAction] writing', {
+      slug,
       enabled,
-      session.user.tenantId
-    );
-    console.log('[setModuleEnabledAction] update rows', { slug, enabled, rowsUpdated });
+      previousModules: currentModules,
+    });
+    await prisma.tenant.update({
+      where: { id: session.user.tenantId },
+      data: { settings: nextSettings as Prisma.InputJsonValue },
+    });
+    const tenantAfter = await prisma.tenant.findUnique({
+      where: { id: session.user.tenantId },
+      select: { settings: true },
+    });
+    const verifiedModules =
+      ((tenantAfter?.settings as Record<string, unknown> | null)?.modules as
+        | Record<string, { enabled?: boolean }>
+        | undefined) ?? {};
+    console.log('[setModuleEnabledAction] verified', {
+      slug,
+      enabled,
+      verifiedEnabled: verifiedModules[slug]?.enabled === true,
+      allModules: verifiedModules,
+    });
 
     invalidateModuleCache(session.user.tenantId, slug);
 
