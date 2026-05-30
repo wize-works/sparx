@@ -23,8 +23,10 @@ import { revalidateTag } from 'next/cache';
 import { NextResponse, type NextRequest } from 'next/server';
 
 const SECRET = process.env.SPARX_REVALIDATE_SECRET ?? '';
-// Coarse per-tenant tags the data layer attaches (lib/commerce.ts, lib/content.ts).
-const SCOPES = ['commerce', 'content'] as const;
+// Coarse per-tenant tags the data layer attaches (lib/commerce.ts → `commerce:`,
+// lib/content.ts → `content:`, lib/site.ts → `site:` for the published Site
+// Builder snapshot + resolved nav menus).
+const SCOPES = ['commerce', 'content', 'site'] as const;
 type Scope = (typeof SCOPES)[number];
 
 function timingSafeEqual(a: string, b: string): boolean {

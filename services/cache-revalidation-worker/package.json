@@ -1,0 +1,30 @@
+{
+  "name": "@sparx/cache-revalidation-worker",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Sparx cache-revalidation worker. Consumes catalog/content events via Pub/Sub push (Cloud Run HTTP entrypoint), resolves the event's tenant id to its storefront slug, and POSTs the storefront's /api/revalidate endpoint so the Next.js Data Cache for that tenant's scope (commerce/content/site) is purged immediately on a mutation rather than waiting for the TTL. Same shape as services/commerce-indexer.",
+  "type": "module",
+  "main": "src/index.ts",
+  "scripts": {
+    "dev": "tsx watch --clear-screen=false src/index.ts",
+    "start": "node --import tsx/esm src/index.ts",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --passWithNoTests",
+    "test:watch": "vitest",
+    "clean": "rm -rf .turbo dist *.tsbuildinfo"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.19.3",
+    "@sparx/db": "workspace:*",
+    "pino": "^9.5.0",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "^25.9.1",
+    "dotenv": "^16.4.7",
+    "tsx": "^4.19.2",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.7"
+  }
+}
