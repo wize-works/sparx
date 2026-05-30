@@ -6,7 +6,7 @@ import { Clock, Moon, Sun } from 'lucide-react';
 import { ActionsMenu } from './actions-menu';
 import { StarButton } from './star-button';
 import type { FavoriteRow } from '../_shell/service';
-import type { UserPreferences } from '../_shell/preferences';
+import type { UserPreferences } from '../_shell/preferences-types';
 
 // Right-side header controls. Order (left to right): last-activity, ⋯,
 // star, theme. See docs/24-dashboard-shell.md §4.5.

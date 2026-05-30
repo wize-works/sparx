@@ -29,7 +29,7 @@ import { ChevronsUpDown, Home, LogOut, Settings, User as UserIcon } from 'lucide
 import { authClient } from '@sparx/auth/client';
 import { moduleManifests } from '../_shell/registry';
 import type { FavoriteRow, RecentRow } from '../_shell/service';
-import type { UserPreferences } from '../_shell/preferences';
+import type { UserPreferences } from '../_shell/preferences-types';
 import { BreadcrumbTrail } from './breadcrumb-trail';
 import { CommandPalette } from './command-palette';
 import { DashboardHeader } from './dashboard-header';

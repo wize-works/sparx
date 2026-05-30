@@ -38,7 +38,7 @@ import {
 } from '../_shell/actions';
 import { findFavoritableByPath } from '../_shell/registry';
 import type { FavoriteRow } from '../_shell/service';
-import type { DefaultDetailView, UserPreferences } from '../_shell/preferences';
+import type { DefaultDetailView, UserPreferences } from '../_shell/preferences-types';
 
 // The `...` Actions menu — a searchable, grouped command list per
 // docs/24-dashboard-shell.md §4.6.
