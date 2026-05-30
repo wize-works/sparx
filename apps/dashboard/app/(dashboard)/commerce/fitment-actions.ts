@@ -9,15 +9,21 @@ interface VehicleModelRow {
   id: string;
   makeId: string;
   name: string;
-  yearStart: number | null;
-  yearEnd: number | null;
+  slug: string;
+  bodyStyle: string | null;
+  isGlobal: boolean;
+  engineCount: number;
 }
 
 interface VehicleEngineRow {
   id: string;
   modelId: string;
   name: string;
-  liters: string | number | null;
+  displacementCc: number | null;
+  cylinders: number | null;
+  fuelType: string | null;
+  aspiration: string | null;
+  isGlobal: boolean;
 }
 
 export async function listVehicleModelsAction(

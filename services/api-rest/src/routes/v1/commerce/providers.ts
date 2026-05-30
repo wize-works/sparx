@@ -19,7 +19,7 @@ const providerRoutes: FastifyPluginAsync = async (app) => {
     const q = request.query as Record<string, string | undefined>;
     return ok(
       providerService.listAvailable({
-        capability: q?.capability as never,
+        ...(q?.kind ? { kind: q.kind as never } : {}),
       })
     );
   });

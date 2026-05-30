@@ -19,7 +19,9 @@ const pricingRoutes: FastifyPluginAsync = async (app) => {
     const q = request.query as Record<string, string | undefined>;
     return ok(
       await pricingService.listPriceLists(toCommerceContext(request), {
-        includeArchived: q?.include_archived === 'true',
+        ...(q?.status ? { status: q.status } : {}),
+        ...(q?.channel ? { channel: q.channel } : {}),
+        ...(q?.b2b_account_id ? { b2bAccountId: q.b2b_account_id } : {}),
       })
     );
   });
@@ -127,8 +129,8 @@ const pricingRoutes: FastifyPluginAsync = async (app) => {
     const q = request.query as Record<string, string | undefined>;
     return ok(
       await discountService.listDiscounts(toCommerceContext(request), {
-        status: q?.status as never,
-        take: q?.take ? Number(q.take) : undefined,
+        ...(q?.status ? { status: q.status } : {}),
+        ...(q?.q ? { q: q.q } : {}),
       })
     );
   });

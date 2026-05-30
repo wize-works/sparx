@@ -1,10 +1,30 @@
 // Commerce — storefront settings + reporting (revenue, top products, etc).
 
 import type { FastifyPluginAsync } from 'fastify';
+import { z } from 'zod';
 import { reportingService, storefrontService } from '@sparx/commerce';
 import { ok } from '@sparx/api-core/envelope';
 import { requireRole } from '@sparx/api-core/auth';
 import { requireCommerceModule, toCommerceContext } from '../../../lib/commerce-context.js';
+
+// Reporting endpoints accept ?from=&to= (ISO 8601) and default to the
+// last 30 days when both are omitted — matches the dashboard's "last
+// 30d" preset so the surface is forgiving for staff browsing the API.
+const RangeQuery = z.object({
+  from: z.string().datetime().optional(),
+  to: z.string().datetime().optional(),
+});
+
+const LimitedRangeQuery = RangeQuery.extend({
+  limit: z.coerce.number().int().min(1).max(100).optional(),
+});
+
+function resolveRange(input: { from?: string; to?: string }): { from: string; to: string } {
+  const to = input.to ?? new Date().toISOString();
+  const from =
+    input.from ?? new Date(new Date(to).getTime() - 30 * 24 * 60 * 60_000).toISOString();
+  return { from, to };
+}
 
 const storefrontRoutes: FastifyPluginAsync = async (app) => {
   // Storefront settings
@@ -38,25 +58,19 @@ const storefrontRoutes: FastifyPluginAsync = async (app) => {
   app.get('/v1/commerce/reports/revenue-summary', async (request) => {
     requireRole(request, 'viewer');
     await requireCommerceModule(request);
-    const q = request.query as Record<string, string | undefined>;
-    return ok(
-      await reportingService.revenueSummary(toCommerceContext(request), {
-        from: q?.from ? new Date(q.from) : undefined,
-        to: q?.to ? new Date(q.to) : undefined,
-        groupBy: q?.group_by as never,
-      })
-    );
+    const range = resolveRange(RangeQuery.parse(request.query));
+    return ok(await reportingService.revenueSummary(toCommerceContext(request), range));
   });
 
   app.get('/v1/commerce/reports/top-products', async (request) => {
     requireRole(request, 'viewer');
     await requireCommerceModule(request);
-    const q = request.query as Record<string, string | undefined>;
+    const q = LimitedRangeQuery.parse(request.query);
+    const range = resolveRange(q);
     return ok(
       await reportingService.topProducts(toCommerceContext(request), {
-        from: q?.from ? new Date(q.from) : undefined,
-        to: q?.to ? new Date(q.to) : undefined,
-        take: q?.take ? Number(q.take) : undefined,
+        range,
+        ...(q.limit ? { limit: q.limit } : {}),
       })
     );
   });
@@ -64,12 +78,12 @@ const storefrontRoutes: FastifyPluginAsync = async (app) => {
   app.get('/v1/commerce/reports/top-customers', async (request) => {
     requireRole(request, 'viewer');
     await requireCommerceModule(request);
-    const q = request.query as Record<string, string | undefined>;
+    const q = LimitedRangeQuery.parse(request.query);
+    const range = resolveRange(q);
     return ok(
       await reportingService.topCustomers(toCommerceContext(request), {
-        from: q?.from ? new Date(q.from) : undefined,
-        to: q?.to ? new Date(q.to) : undefined,
-        take: q?.take ? Number(q.take) : undefined,
+        range,
+        ...(q.limit ? { limit: q.limit } : {}),
       })
     );
   });
@@ -77,31 +91,22 @@ const storefrontRoutes: FastifyPluginAsync = async (app) => {
   app.get('/v1/commerce/reports/conversion-funnel', async (request) => {
     requireRole(request, 'viewer');
     await requireCommerceModule(request);
-    const q = request.query as Record<string, string | undefined>;
-    return ok(
-      await reportingService.conversionFunnel(toCommerceContext(request), {
-        from: q?.from ? new Date(q.from) : undefined,
-        to: q?.to ? new Date(q.to) : undefined,
-      })
-    );
+    const range = resolveRange(RangeQuery.parse(request.query));
+    return ok(await reportingService.conversionFunnel(toCommerceContext(request), range));
   });
 
   app.get('/v1/commerce/reports/abandoned-carts', async (request) => {
     requireRole(request, 'viewer');
     await requireCommerceModule(request);
-    const q = request.query as Record<string, string | undefined>;
-    return ok(
-      await reportingService.abandonedCarts(toCommerceContext(request), {
-        from: q?.from ? new Date(q.from) : undefined,
-        to: q?.to ? new Date(q.to) : undefined,
-      })
-    );
+    const range = resolveRange(RangeQuery.parse(request.query));
+    return ok(await reportingService.abandonedCarts(toCommerceContext(request), range));
   });
 
   app.get('/v1/commerce/reports/subscription-metrics', async (request) => {
     requireRole(request, 'viewer');
     await requireCommerceModule(request);
-    return ok(await reportingService.subscriptionMetrics(toCommerceContext(request)));
+    const range = resolveRange(RangeQuery.parse(request.query));
+    return ok(await reportingService.subscriptionMetrics(toCommerceContext(request), range));
   });
 
   app.get('/v1/commerce/reports/inventory-valuation', async (request) => {

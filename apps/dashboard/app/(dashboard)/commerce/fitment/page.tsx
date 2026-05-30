@@ -40,22 +40,7 @@ interface VehicleMakeRow {
 export const dynamic = 'force-dynamic';
 
 export default async function FitmentReferencePage() {
-  const session = await requireSession();
-  const enabled = await isModuleEnabled(session.user.tenantId, 'commerce');
-  if (!enabled) {
-    return (
-      <ModuleStub
-        icon={<PackageOpen className="h-5 w-5" />}
-        title="Commerce"
-        tagline="Fitment data powers vehicle-compatibility filters."
-        description="Activate the Commerce module from Billing to manage fitment data."
-        features={[]}
-      />
-    );
-  }
-
-  const ctx = { tenantId: session.user.tenantId, userId: session.user.id };
-  const makes = await fitmentService.listMakes(ctx);
+  const makes = await api.get<VehicleMakeRow[]>('/v1/commerce/fitment/makes');
 
   const globalCount = makes.filter((m) => m.isGlobal).length;
   const tenantCount = makes.length - globalCount;

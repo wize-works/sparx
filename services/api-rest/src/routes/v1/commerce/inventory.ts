@@ -19,7 +19,7 @@ const inventoryRoutes: FastifyPluginAsync = async (app) => {
     const q = request.query as Record<string, string | undefined>;
     return ok(
       await inventoryService.listWarehouses(toCommerceContext(request), {
-        includeArchived: q?.include_archived === 'true',
+        includeInactive: q?.include_archived === 'true',
       })
     );
   });
@@ -69,9 +69,9 @@ const inventoryRoutes: FastifyPluginAsync = async (app) => {
     const q = request.query as Record<string, string | undefined>;
     return ok(
       await inventoryService.levelsForWarehouse(toCommerceContext(request), warehouseId, {
-        take: q?.take ? Number(q.take) : undefined,
-        skip: q?.skip ? Number(q.skip) : undefined,
-        q: q?.q,
+        ...(q?.take ? { take: Number(q.take) } : {}),
+        ...(q?.skip ? { skip: Number(q.skip) } : {}),
+        ...(q?.low_stock_only === 'true' ? { lowStockOnly: true } : {}),
       })
     );
   });
@@ -110,8 +110,8 @@ const inventoryRoutes: FastifyPluginAsync = async (app) => {
     requireRole(request, 'viewer');
     await requireCommerceModule(request);
     const q = request.query as Record<string, string | undefined>;
-    const before = q?.before ? new Date(q.before) : new Date(Date.now() + 30 * 86400_000);
-    return ok(await inventoryService.listLotsExpiringBefore(toCommerceContext(request), before));
+    const beforeIso = q?.before ?? new Date(Date.now() + 30 * 86400_000).toISOString();
+    return ok(await inventoryService.listLotsExpiringBefore(toCommerceContext(request), beforeIso));
   });
 
   app.post('/v1/commerce/inventory/serials', async (request, reply) => {
@@ -134,8 +134,8 @@ const inventoryRoutes: FastifyPluginAsync = async (app) => {
     const q = request.query as Record<string, string | undefined>;
     return ok(
       await inventoryService.listLowStock(toCommerceContext(request), {
-        warehouseId: q?.warehouse_id,
-        take: q?.take ? Number(q.take) : undefined,
+        ...(q?.warehouse_id ? { warehouseId: q.warehouse_id } : {}),
+        ...(q?.take ? { take: Number(q.take) } : {}),
       })
     );
   });

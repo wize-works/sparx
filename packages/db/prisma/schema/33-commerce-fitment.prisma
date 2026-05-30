@@ -1,101 +1,175 @@
-// Commerce — Fitment data. Vehicle reference (make/model/engine) plus
-// per-product applicability. Drives auto-parts / diesel-service catalog
-// filtering (Gillett Diesel reference case). Reference tables are seeded
-// from a one-time CSV import for US auto/diesel; merchants can extend
-// (custom modifications, racing builds).
+// Commerce — Fitment data. Generalized "this product fits that thing"
+// model. Originally vehicle-only (Make/Model/Engine) for the Gillett
+// Diesel reference case; generalized so the same UI + storefront filter
+// affordances cover any merchant whose catalog is filtered by what the
+// product is compatible with — vehicles, pets, devices, apparel,
+// industrial equipment, anything.
+//
+// Shape:
+//   FitmentDomain   — top-level fitment vocabulary (vehicle, pet, device, ...)
+//     ↳ FitmentCategory  — L1 grouping (Make / Brand / Species / Platform)
+//        ↳ FitmentItem    — L2 grouping (Model / Device / Breed / OS Version) — optional
+//           ↳ FitmentVariant — L3 grouping (Engine / Storage Tier / Size Class) — optional
+//   ProductFitment  — one applicability row per product, naming domain +
+//                     category (required), item/variant (optional), and
+//                     an optional numeric range (year / weight / age /
+//                     shoe size — unit declared on the domain).
+//
+// Domains can have 1, 2, or 3 levels:
+//   vehicle  → 3 levels (Make → Model → Engine) + Year range
+//   pet      → 2 levels (Species → Breed) + Weight range
+//   device   → 2 levels (Brand → Model)
+//   apparel  → 1 level (Size)
+// The `labels` jsonb on FitmentDomain renames the level headers in the
+// dashboard + storefront filter UI — same code, merchant-appropriate copy.
+//
+// Sparx seeds Vehicle as a global domain (tenantId IS NULL); tenants
+// can extend within it (custom modifications, racing builds) and add
+// their own domains entirely (a fishing-tackle store builds a "Species"
+// domain, a phone-case shop builds a "Device" domain, etc.).
 
-model VehicleMake {
-  id              String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenantId        String? @map("tenant_id") @db.Uuid // null = platform-seeded
-  name            String  @db.VarChar(63)
-  slug            String  @db.VarChar(63)
-  countryOfOrigin String? @map("country_of_origin") @db.VarChar(2)
-  logoMediaId     String? @map("logo_media_id") @db.Uuid
+model FitmentDomain {
+  id          String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId    String? @map("tenant_id") @db.Uuid // null = platform-seeded global
+  slug        String  @db.VarChar(63)
+  displayName String  @map("display_name") @db.VarChar(127)
+  description String? @db.Text
+  iconKey     String? @map("icon_key") @db.VarChar(63)
+  // ^ lucide icon name the dashboard renders alongside the domain
+  //   ("car" for vehicle, "paw-print" for pet, "smartphone" for device)
+  labels      Json    @default("{}") @db.JsonB
+  // ^ { l1: "Make", l2?: "Model", l3?: "Engine", range?: "Year" }
+  //   `range` only present when rangeUnit is set.
+  rangeUnit   String? @map("range_unit") @db.VarChar(20)
+  // ^ "year" | "lb" | "kg" | "month" | "us_shoe" | "eu_shoe" | "mm" | "in"
+  //   Drives storefront filter widget (year picker vs slider vs select).
+  position    Int     @default(0)
 
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz
 
-  tenant   Tenant?         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  models   VehicleModel[]
-  fitments ProductFitment[]
+  tenant     Tenant?            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  categories FitmentCategory[]
+  fitments   ProductFitment[]
 
-  @@unique([tenantId, slug], map: "vehicle_makes_tenant_slug_unique")
+  @@unique([tenantId, slug], map: "fitment_domains_tenant_slug_unique")
   @@index([tenantId])
-  @@map("commerce_vehicle_makes")
+  @@map("commerce_fitment_domains")
 }
 
-model VehicleModel {
-  id        String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenantId  String? @map("tenant_id") @db.Uuid
-  makeId    String  @map("make_id") @db.Uuid
-  name      String  @db.VarChar(127)
-  slug      String  @db.VarChar(127)
-  bodyStyle String? @map("body_style") @db.VarChar(63)
+model FitmentCategory {
+  id         String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId   String? @map("tenant_id") @db.Uuid // null = platform-seeded
+  domainId   String  @map("domain_id") @db.Uuid
+  name       String  @db.VarChar(127)
+  slug       String  @db.VarChar(127)
+  attributes Json    @default("{}") @db.JsonB
+  // ^ free-form per-domain: { countryOfOrigin: "US" } for vehicle make,
+  //   { taxonomyClass: "mammalia" } for pet species, etc.
+  iconMediaId String? @map("icon_media_id") @db.Uuid
+  position   Int     @default(0)
 
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz
 
-  tenant   Tenant?         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  make     VehicleMake     @relation(fields: [makeId], references: [id], onDelete: Cascade)
-  engines  VehicleEngine[]
+  tenant   Tenant?          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  domain   FitmentDomain    @relation(fields: [domainId], references: [id], onDelete: Cascade)
+  items    FitmentItem[]
   fitments ProductFitment[]
 
-  @@unique([makeId, slug], map: "vehicle_models_make_slug_unique")
+  @@unique([domainId, slug], map: "fitment_categories_domain_slug_unique")
   @@index([tenantId])
-  @@map("commerce_vehicle_models")
+  @@index([domainId])
+  @@map("commerce_fitment_categories")
 }
 
-model VehicleEngine {
-  id             String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenantId       String? @map("tenant_id") @db.Uuid
-  modelId        String  @map("model_id") @db.Uuid
-  name           String  @db.VarChar(127)
-  displacementCc Int?    @map("displacement_cc")
-  cylinders      Int?
-  fuelType       String? @map("fuel_type") @db.VarChar(20)
-  // ^ gasoline | diesel | hybrid | electric | flex_fuel | cng | lpg
-  aspiration     String? @db.VarChar(20)
-  // ^ natural | turbocharged | supercharged | twin_turbo
+model FitmentItem {
+  id         String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId   String? @map("tenant_id") @db.Uuid
+  categoryId String  @map("category_id") @db.Uuid
+  name       String  @db.VarChar(127)
+  slug       String  @db.VarChar(127)
+  attributes Json    @default("{}") @db.JsonB
+  // ^ vehicle: { bodyStyle: "truck" }; device: { platform: "ios" };
+  //   pet: { breedGroup: "working" }
+  position   Int     @default(0)
 
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz
 
-  tenant   Tenant?         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  model    VehicleModel    @relation(fields: [modelId], references: [id], onDelete: Cascade)
+  tenant   Tenant?           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  category FitmentCategory   @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  variants FitmentVariant[]
   fitments ProductFitment[]
 
-  @@index([tenantId, modelId])
-  @@map("commerce_vehicle_engines")
+  @@unique([categoryId, slug], map: "fitment_items_category_slug_unique")
+  @@index([tenantId])
+  @@index([categoryId])
+  @@map("commerce_fitment_items")
 }
 
-// A single fitment row = one applicability rule. A product can carry
-// many (fits both 6.0L and 6.7L Power Stroke 2003-2010 + the 7.3L
-// 1999-2003). All narrower filters are optional; absent = wildcard.
+model FitmentVariant {
+  id         String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId   String? @map("tenant_id") @db.Uuid
+  itemId     String  @map("item_id") @db.Uuid
+  name       String  @db.VarChar(127)
+  slug       String  @db.VarChar(127)
+  attributes Json    @default("{}") @db.JsonB
+  // ^ vehicle engine: { displacementCc, cylinders, fuelType, aspiration };
+  //   device: { storageGb, screenSizeIn }; apparel: { material }
+  position   Int     @default(0)
+
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz
+
+  tenant   Tenant?          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  item     FitmentItem      @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  fitments ProductFitment[]
+
+  @@unique([itemId, slug], map: "fitment_variants_item_slug_unique")
+  @@index([tenantId])
+  @@index([itemId])
+  @@map("commerce_fitment_variants")
+}
+
+// One row = one applicability rule. A product can carry many: a brake
+// pad fits both 6.0L and 6.7L Power Stroke 2003-2010 + the 7.3L
+// 1999-2003 — three rows. A dog harness fits Labradors 40-80 lb + Golden
+// Retrievers 50-90 lb — two rows. Narrower fields are optional; absent
+// columns widen the rule.
 
 model ProductFitment {
-  id        String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenantId  String  @map("tenant_id") @db.Uuid
-  productId String  @map("product_id") @db.Uuid
-  makeId    String  @map("make_id") @db.Uuid
-  modelId   String? @map("model_id") @db.Uuid
-  engineId  String? @map("engine_id") @db.Uuid
-  yearMin   Int?    @map("year_min")
-  yearMax   Int?    @map("year_max")
-  notes     String? @db.Text
+  id         String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId   String  @map("tenant_id") @db.Uuid
+  productId  String  @map("product_id") @db.Uuid
+  domainId   String  @map("domain_id") @db.Uuid
+  categoryId String  @map("category_id") @db.Uuid
+  itemId     String? @map("item_id") @db.Uuid
+  variantId  String? @map("variant_id") @db.Uuid
+  rangeMin   Decimal? @map("range_min") @db.Decimal(12, 4)
+  rangeMax   Decimal? @map("range_max") @db.Decimal(12, 4)
+  // ^ Decimal so years (2018) and weights (12.5 lb) and shoe sizes (9.5)
+  //   all fit one column. Unit lives on FitmentDomain.rangeUnit.
+  notes      String? @db.Text
 
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
 
-  tenant  Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  product Product        @relation(fields: [productId], references: [id], onDelete: Cascade)
-  make    VehicleMake    @relation(fields: [makeId], references: [id], onDelete: Restrict)
-  model   VehicleModel?  @relation(fields: [modelId], references: [id], onDelete: SetNull)
-  engine  VehicleEngine? @relation(fields: [engineId], references: [id], onDelete: SetNull)
+  tenant   Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  product  Product          @relation(fields: [productId], references: [id], onDelete: Cascade)
+  domain   FitmentDomain    @relation(fields: [domainId], references: [id], onDelete: Restrict)
+  category FitmentCategory  @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  item     FitmentItem?     @relation(fields: [itemId], references: [id], onDelete: SetNull)
+  variant  FitmentVariant?  @relation(fields: [variantId], references: [id], onDelete: SetNull)
 
   @@index([tenantId, productId])
-  @@index([tenantId, makeId])
-  @@index([tenantId, modelId])
-  @@index([tenantId, engineId])
-  @@index([tenantId, yearMin, yearMax])
+  @@index([tenantId, domainId, categoryId])
+  @@index([tenantId, itemId])
+  @@index([tenantId, variantId])
+  @@index([tenantId, rangeMin, rangeMax])
   @@map("commerce_product_fitments")
 }

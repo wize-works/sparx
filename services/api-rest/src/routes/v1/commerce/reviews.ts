@@ -75,8 +75,13 @@ const reviewRoutes: FastifyPluginAsync = async (app) => {
     requireRole(request, 'editor');
     await requireCommerceModule(request);
     const { id } = PathId.parse(request.params);
-    const body = (request.body as Record<string, unknown>) ?? {};
-    await reviewService.moderateQuestion(toCommerceContext(request), { ...body, questionId: id });
+    const body = z
+      .object({ status: z.enum(['published', 'rejected']) })
+      .parse(request.body ?? {});
+    await reviewService.moderateQuestion(toCommerceContext(request), {
+      questionId: id,
+      status: body.status,
+    });
     return ok({ id, moderated: true });
   });
 
@@ -96,9 +101,10 @@ const reviewRoutes: FastifyPluginAsync = async (app) => {
     await requireCommerceModule(request);
     const q = request.query as Record<string, string | undefined>;
     return ok(
-      await reviewService.topWishlistedVariants(toCommerceContext(request), {
-        take: q?.take ? Number(q.take) : undefined,
-      })
+      await reviewService.topWishlistedVariants(
+        toCommerceContext(request),
+        q?.take ? Number(q.take) : 50
+      )
     );
   });
 };

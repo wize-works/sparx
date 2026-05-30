@@ -140,8 +140,7 @@ const fitmentRoutes: FastifyPluginAsync = async (app) => {
     const q = request.query as Record<string, string | undefined>;
     return ok(
       await configuratorService.listAllTemplates(toCommerceContext(request), {
-        productId: q?.product_id,
-        take: q?.take ? Number(q.take) : undefined,
+        ...(q?.status ? { status: q.status } : {}),
       })
     );
   });

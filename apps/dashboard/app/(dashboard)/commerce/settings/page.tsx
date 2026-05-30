@@ -1,7 +1,5 @@
-import { PackageOpen, Settings2 } from 'lucide-react';
+import { Settings2 } from 'lucide-react';
 
-import { isModuleEnabled, requireSession } from '@sparx/auth';
-import { inventoryService, storefrontService } from '@sparx/commerce';
 import {
   Badge,
   Card,
@@ -14,35 +12,49 @@ import {
   Text,
 } from '@sparx/ui';
 
-import { ModuleStub } from '../../../../components/module-stub';
+import { api } from '@/lib/api-rest-client';
 
 import { StorefrontSettingsForm } from './_components/storefront-settings-form';
 
 export const dynamic = 'force-dynamic';
 
-export default async function StorefrontSettingsPage() {
-  const session = await requireSession();
-  const enabled = await isModuleEnabled(session.user.tenantId, 'commerce');
-  if (!enabled) {
-    return (
-      <ModuleStub
-        icon={<PackageOpen className="h-5 w-5" />}
-        title="Commerce"
-        tagline="Storefront settings."
-        description="Activate the Commerce module from Billing to configure your storefront."
-        features={[]}
-      />
-    );
-  }
+interface StorefrontSettings {
+  defaultCurrency: string;
+  defaultLocale: string;
+  defaultWarehouseId: string | null;
+  channelsEnabled: string[];
+  cartAbandonmentMinutes: number;
+  showStockBelow: number;
+  hidePricesWhenSignedOut: boolean;
+  requireAuthForCheckout: boolean;
+}
 
-  const ctx = { tenantId: session.user.tenantId, userId: session.user.id };
+interface WarehouseRow {
+  id: string;
+  name: string;
+  code: string;
+  type: string;
+  line1: string | null;
+  line2: string | null;
+  city: string | null;
+  region: string | null;
+  postalCode: string | null;
+  country: string | null;
+  phone: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  defaultForChannel: string[];
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export default async function StorefrontSettingsPage() {
   const [settings, warehouses] = await Promise.all([
-    storefrontService.getSettings(ctx),
-    inventoryService.listWarehouses(ctx),
+    api.get<StorefrontSettings>('/v1/commerce/storefront/settings'),
+    api.get<WarehouseRow[]>('/v1/commerce/warehouses'),
   ]);
 
-  // The service returns channelsEnabled as a plain string[] (read from a
-  // JSON column); the form's Channel union narrows it for the UI.
   const initialForForm = {
     ...settings,
     channelsEnabled: settings.channelsEnabled as (

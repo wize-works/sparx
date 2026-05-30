@@ -90,11 +90,12 @@ model Tenant {
   productCategories   ProductCategory[]
   productCollections  ProductCollection[]
 
-  // Commerce module — fitment
-  vehicleMakes    VehicleMake[]
-  vehicleModels   VehicleModel[]
-  vehicleEngines  VehicleEngine[]
-  productFitments ProductFitment[]
+  // Commerce module — fitment (generalized: vehicle, pet, device, ...)
+  fitmentDomains    FitmentDomain[]
+  fitmentCategories FitmentCategory[]
+  fitmentItems      FitmentItem[]
+  fitmentVariants   FitmentVariant[]
+  productFitments   ProductFitment[]
 
   // Commerce module — inventory + lots
   warehouses            Warehouse[]

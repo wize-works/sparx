@@ -1,8 +1,6 @@
 import Link from 'next/link';
-import { BarChart3, PackageOpen } from 'lucide-react';
+import { BarChart3 } from 'lucide-react';
 
-import { isModuleEnabled, requireSession } from '@sparx/auth';
-import { reportingService } from '@sparx/commerce';
 import {
   Badge,
   Card,
@@ -21,9 +19,68 @@ import {
   Text,
 } from '@sparx/ui';
 
-import { ModuleStub } from '../../../../components/module-stub';
+import { api } from '@/lib/api-rest-client';
 
 export const dynamic = 'force-dynamic';
+
+interface RevenueSummary {
+  rangeLabel: string;
+  ordersCount: number;
+  grossRevenueCents: number;
+  refundedCents: number;
+  netRevenueCents: number;
+  averageOrderValueCents: number;
+  currency: string;
+}
+
+interface TopProductRow {
+  productId: string;
+  productTitle: string;
+  unitsSold: number;
+  revenueCents: number;
+}
+
+interface TopCustomerRow {
+  customerId: string;
+  customerName: string;
+  ordersCount: number;
+  totalSpentCents: number;
+}
+
+interface ConversionFunnel {
+  rangeLabel: string;
+  sessions: number;
+  cartsCreated: number;
+  checkoutsStarted: number;
+  ordersPlaced: number;
+  cartToCheckoutRate: number;
+  checkoutToOrderRate: number;
+  overallConversion: number;
+}
+
+interface AbandonedCartReport {
+  rangeLabel: string;
+  abandonedCount: number;
+  recoveredCount: number;
+  recoveryRate: number;
+  recoveredRevenueCents: number;
+}
+
+interface SubscriptionMetrics {
+  activeCount: number;
+  mrrCents: number;
+  churnedThisPeriod: number;
+  newThisPeriod: number;
+  currency: string;
+}
+
+interface InventoryValuation {
+  totalUnits: number;
+  totalCostCents: number;
+  totalRetailCents: number;
+  currency: string;
+  asOf: string;
+}
 
 const RANGES: { value: string; label: string; days: number }[] = [
   { value: '7d', label: 'Last 7 days', days: 7 },
@@ -37,34 +94,21 @@ export default async function ReportsPage({
 }: {
   searchParams: Promise<{ range?: string }>;
 }) {
-  const session = await requireSession();
-  const enabled = await isModuleEnabled(session.user.tenantId, 'commerce');
-  if (!enabled) {
-    return (
-      <ModuleStub
-        icon={<PackageOpen className="h-5 w-5" />}
-        title="Commerce"
-        tagline="Reports."
-        description="Activate the Commerce module from Billing to view revenue, conversion, and subscription metrics."
-        features={[]}
-      />
-    );
-  }
-
   const { range: rangeParam } = await searchParams;
   const rangeSpec = RANGES.find((r) => r.value === rangeParam) ?? RANGES[1]!;
   const range = computeRange(rangeSpec);
+  const rangeQs = new URLSearchParams({ from: range.from, to: range.to });
+  const topQs = new URLSearchParams({ from: range.from, to: range.to, take: '10' });
 
-  const ctx = { tenantId: session.user.tenantId, userId: session.user.id };
   const [revenue, topProducts, topCustomers, funnel, abandonment, subs, inventory] =
     await Promise.all([
-      reportingService.revenueSummary(ctx, range),
-      reportingService.topProducts(ctx, { range, limit: 10 }),
-      reportingService.topCustomers(ctx, { range, limit: 10 }),
-      reportingService.conversionFunnel(ctx, range),
-      reportingService.abandonedCarts(ctx, range),
-      reportingService.subscriptionMetrics(ctx, range),
-      reportingService.inventoryValuation(ctx),
+      api.get<RevenueSummary>(`/v1/commerce/reports/revenue-summary?${rangeQs.toString()}`),
+      api.get<TopProductRow[]>(`/v1/commerce/reports/top-products?${topQs.toString()}`),
+      api.get<TopCustomerRow[]>(`/v1/commerce/reports/top-customers?${topQs.toString()}`),
+      api.get<ConversionFunnel>(`/v1/commerce/reports/conversion-funnel?${rangeQs.toString()}`),
+      api.get<AbandonedCartReport>(`/v1/commerce/reports/abandoned-carts?${rangeQs.toString()}`),
+      api.get<SubscriptionMetrics>(`/v1/commerce/reports/subscription-metrics`),
+      api.get<InventoryValuation>(`/v1/commerce/reports/inventory-valuation`),
     ]);
 
   return (
@@ -275,7 +319,6 @@ function computeRange(spec: { days: number }): { from: string; to: string } {
   const to = new Date();
   let from: Date;
   if (spec.days < 0) {
-    // YTD
     from = new Date(to.getFullYear(), 0, 1);
   } else {
     from = new Date(to.getTime() - spec.days * 24 * 60 * 60 * 1000);
