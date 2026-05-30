@@ -5,7 +5,7 @@
 
 import * as React from 'react';
 import { Trash2 } from 'lucide-react';
-import { Badge, Button, Stack, Text } from '@sparx/ui';
+import { Badge, Button, Stack, Text, useConfirm } from '@sparx/ui';
 
 import { revokeApiKeyAction } from '../actions';
 
@@ -23,15 +23,20 @@ interface ApiKeyRowProps {
 }
 
 export function ApiKeyRow({ apiKey }: ApiKeyRowProps) {
+  const confirm = useConfirm();
   const [pending, startTransition] = React.useTransition();
   const [error, setError] = React.useState<string | null>(null);
 
   function onRevoke() {
-    if (!confirm(`Revoke "${apiKey.name}"? Any integration using it will stop working.`)) {
-      return;
-    }
-    setError(null);
     startTransition(async () => {
+      const ok = await confirm({
+        title: `Revoke "${apiKey.name}"?`,
+        description: 'Any integration using this key will stop working immediately.',
+        confirmLabel: 'Revoke key',
+        tone: 'danger',
+      });
+      if (!ok) return;
+      setError(null);
       const res = await revokeApiKeyAction(apiKey.id);
       if (!res.ok) setError(res.error.message);
     });

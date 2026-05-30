@@ -123,6 +123,12 @@ export {
   AlertDialogCancel,
 } from './components/overlay/alert-dialog';
 export {
+  ConfirmProvider,
+  useConfirm,
+  type ConfirmOptions,
+  type ConfirmFn,
+} from './components/overlay/confirm-provider';
+export {
   ProductTour,
   useProductTour,
   type ProductTourStep,

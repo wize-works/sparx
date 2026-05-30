@@ -4,7 +4,7 @@ import * as React from 'react';
 import { useRouter } from 'next/navigation';
 import { ChevronDown, ChevronRight, Pencil, Star, Trash } from 'lucide-react';
 
-import { Badge, Button, Input, Label, Stack, Text, Textarea } from '@sparx/ui';
+import { Badge, Button, Input, Label, Stack, Text, Textarea, useConfirm } from '@sparx/ui';
 
 import {
   createCategoryAction,
@@ -171,6 +171,7 @@ interface NodeProps {
 
 function TreeNode({ node, all }: NodeProps) {
   const router = useRouter();
+  const confirm = useConfirm();
   const [expanded, setExpanded] = React.useState(node.depth <= 1);
   const [editing, setEditing] = React.useState(false);
   const [pending, startTransition] = React.useTransition();
@@ -237,16 +238,16 @@ function TreeNode({ node, all }: NodeProps) {
   }
 
   function onDelete() {
-    if (
-      typeof window !== 'undefined' &&
-      !window.confirm(
-        `Delete category "${node.name}"? Products keep their other category bindings; the category itself archives (soft-delete).`
-      )
-    ) {
-      return;
-    }
-    setError(null);
     startTransition(async () => {
+      const ok = await confirm({
+        title: `Delete category "${node.name}"?`,
+        description:
+          'Products keep their other category bindings; the category itself archives (soft-delete) and can be restored from the archive view.',
+        confirmLabel: 'Delete category',
+        tone: 'danger',
+      });
+      if (!ok) return;
+      setError(null);
       const result = await deleteCategoryAction(node.id);
       if (!result.ok) {
         setError(result.error.message);

@@ -7,7 +7,7 @@
 
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
-import { Button, Input, Label, Stack, Text, Textarea } from '@sparx/ui';
+import { Button, Input, Label, Stack, Text, Textarea, useConfirm } from '@sparx/ui';
 import { Trash2 } from 'lucide-react';
 import { deleteAsset, patchAsset } from '../actions';
 
@@ -29,6 +29,7 @@ export function AssetEditForm({
   focalPoint: initialFocalPoint,
 }: AssetEditFormProps) {
   const router = useRouter();
+  const confirm = useConfirm();
   const [pending, startTransition] = React.useTransition();
   const [error, setError] = React.useState<string | null>(null);
   const [message, setMessage] = React.useState<string | null>(null);
@@ -67,10 +68,16 @@ export function AssetEditForm({
   }
 
   function onDelete() {
-    if (!confirm('Delete this asset? This cannot be undone.')) return;
-    setError(null);
-    setMessage(null);
     startTransition(async () => {
+      const ok = await confirm({
+        title: 'Delete this asset?',
+        description: 'This cannot be undone — the file and every reference to it are removed.',
+        confirmLabel: 'Delete asset',
+        tone: 'danger',
+      });
+      if (!ok) return;
+      setError(null);
+      setMessage(null);
       const result = await deleteAsset(assetId);
       if (!result.ok) {
         setError(result.error);

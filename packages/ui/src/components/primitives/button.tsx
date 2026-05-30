@@ -25,6 +25,7 @@ const buttonVariants = cva(
           'text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-subtle)] hover:text-[var(--color-text-primary)]',
         link: 'h-auto p-0 text-[var(--sparx-primary)] underline-offset-4 hover:underline',
         danger: 'bg-[var(--color-danger)] text-white hover:opacity-90',
+        warning: 'bg-[var(--color-warning)] text-white hover:opacity-90',
         module: 'bg-[var(--module-active)] text-white hover:opacity-90',
         'module-outline':
           'border border-[var(--module-active)] text-[var(--module-active)] hover:bg-[var(--module-active-tint)]',

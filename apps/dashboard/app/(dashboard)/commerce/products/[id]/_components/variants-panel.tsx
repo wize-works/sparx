@@ -30,6 +30,7 @@ import {
   TableHeader,
   TableRow,
   Text,
+  useConfirm,
 } from '@sparx/ui';
 
 import {
@@ -285,6 +286,7 @@ interface VariantRowProps {
 }
 
 function VariantRowEditor({ variant, productId, valuesById, onChanged }: VariantRowProps) {
+  const confirm = useConfirm();
   const [pending, startTransition] = React.useTransition();
   const [error, setError] = React.useState<string | null>(null);
   const [priceDraft, setPriceDraft] = React.useState(variant.priceCents.toString());
@@ -333,14 +335,16 @@ function VariantRowEditor({ variant, productId, valuesById, onChanged }: Variant
   }
 
   function archive() {
-    if (
-      typeof window !== 'undefined' &&
-      !window.confirm(`Archive variant ${variant.sku}? Carts referencing it will fail to checkout.`)
-    ) {
-      return;
-    }
-    setError(null);
     startTransition(async () => {
+      const ok = await confirm({
+        title: `Archive variant ${variant.sku}?`,
+        description:
+          'Carts referencing this variant will fail to checkout. You can restore it from the archived list.',
+        confirmLabel: 'Archive variant',
+        tone: 'danger',
+      });
+      if (!ok) return;
+      setError(null);
       const result = await archiveVariantAction(variant.id, productId);
       if (!result.ok) {
         setError(result.error.message);

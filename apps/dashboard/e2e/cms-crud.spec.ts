@@ -86,9 +86,15 @@ test.describe('CMS pages — create, edit, publish, delete', () => {
     await expect(page.getByText('Reverted to draft.')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Publish' })).toBeVisible();
 
-    // 6. Delete — auto-accept the confirm() dialog
+    // 6. Delete — open the Sparx AlertDialog and confirm. The dialog
+    // listener is kept as a no-op safety net in case anything else on the
+    // page pops a native browser dialog.
     page.once('dialog', (d) => d.accept());
-    await page.getByRole('button', { name: 'Delete' }).click();
+    await page.getByRole('button', { name: 'Delete', exact: true }).click();
+    await page
+      .getByRole('alertdialog')
+      .getByRole('button', { name: /delete page/i })
+      .click();
 
     // 7. Back to list, page is gone
     await expect(page).toHaveURL(/\/cms$/);

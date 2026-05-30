@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
-import { Button, Stack } from '@sparx/ui';
+import { Button, Stack, useConfirm } from '@sparx/ui';
 import { Trash2 } from 'lucide-react';
 import type { FieldDef } from '@sparx/cms-schemas';
 import { ContentEntryForm } from '../../../_components/content-entry-form';
@@ -26,6 +26,7 @@ export function EditEntryForm({
   initialStatus,
 }: Props) {
   const router = useRouter();
+  const confirm = useConfirm();
   const [status, setStatus] = React.useState(initialStatus);
   const [busy, setBusy] = React.useState(false);
 
@@ -38,7 +39,14 @@ export function EditEntryForm({
   };
 
   const handleDelete = async () => {
-    if (!window.confirm('Soft-delete this entry?')) return;
+    const ok = await confirm({
+      title: 'Soft-delete this entry?',
+      description:
+        'The entry will be hidden from the storefront and lists but kept in the database. You can restore it from the deleted view.',
+      confirmLabel: 'Soft-delete',
+      tone: 'danger',
+    });
+    if (!ok) return;
     setBusy(true);
     const res = await deleteEntry(id, typeKey);
     setBusy(false);

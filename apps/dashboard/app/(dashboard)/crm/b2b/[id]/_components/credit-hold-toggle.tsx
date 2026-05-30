@@ -8,7 +8,7 @@ import * as React from 'react';
 import { useRouter } from 'next/navigation';
 import { Pause, Play } from 'lucide-react';
 
-import { Button, toast } from '@sparx/ui';
+import { Button, toast, useConfirm } from '@sparx/ui';
 
 import { setB2bAccountStatusAction } from '../../../b2b-actions';
 
@@ -19,18 +19,22 @@ interface CreditHoldToggleProps {
 
 export function CreditHoldToggle({ accountId, currentStatus }: CreditHoldToggleProps) {
   const router = useRouter();
+  const confirm = useConfirm();
   const [pending, startTransition] = React.useTransition();
   const onHold = currentStatus === 'credit_hold';
 
   function toggle() {
     const next = onHold ? 'active' : 'credit_hold';
-    if (
-      next === 'credit_hold' &&
-      !confirm('Put this account on credit hold? New orders + quotes will block until released.')
-    ) {
-      return;
-    }
     startTransition(async () => {
+      if (next === 'credit_hold') {
+        const ok = await confirm({
+          title: 'Put this account on credit hold?',
+          description: 'New orders and quotes will block until you release the hold.',
+          confirmLabel: 'Put on hold',
+          tone: 'warning',
+        });
+        if (!ok) return;
+      }
       const result = await setB2bAccountStatusAction(accountId, next);
       if (!result.ok) {
         toast.error(result.error.message ?? 'Could not change status');

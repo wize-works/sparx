@@ -22,6 +22,7 @@ import {
   TableHeader,
   TableRow,
   Text,
+  useConfirm,
 } from '@sparx/ui';
 
 import {
@@ -136,20 +137,22 @@ export function FitmentPanel({ productId, productTitle, fitments, makes }: Props
 
 function FitmentRowEditor({ row, productId }: { row: FitmentRow; productId: string }) {
   const router = useRouter();
+  const confirm = useConfirm();
   const [pending, startTransition] = React.useTransition();
   const [error, setError] = React.useState<string | null>(null);
 
   function onDelete() {
-    if (
-      typeof window !== 'undefined' &&
-      !window.confirm(
-        `Remove fitment rule for ${row.makeName}${row.modelName ? ' / ' + row.modelName : ''}?`
-      )
-    ) {
-      return;
-    }
-    setError(null);
     startTransition(async () => {
+      const label = `${row.makeName}${row.modelName ? ' / ' + row.modelName : ''}`;
+      const ok = await confirm({
+        title: `Remove fitment rule for ${label}?`,
+        description:
+          'This product will no longer appear when shoppers filter by this vehicle. Other fitment rules on this product are unaffected.',
+        confirmLabel: 'Remove rule',
+        tone: 'danger',
+      });
+      if (!ok) return;
+      setError(null);
       const result = await deleteFitmentAction(productId, row.id);
       if (!result.ok) {
         setError(result.error.message);
