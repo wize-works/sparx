@@ -1,0 +1,122 @@
+name: Cleanup old images
+
+on:
+    workflow_dispatch:
+        inputs:
+            keep:
+                description: "Number of most recent images to keep per service"
+                required: false
+                default: "3"
+            dry_run:
+                description: "Dry run — print what would be deleted without deleting"
+                required: false
+                type: boolean
+                default: true
+
+permissions:
+    contents: read
+    id-token: write
+
+env:
+    PROJECT_ID: sparxworks
+    REGION: us-central1
+    AR_REPO: sparx
+    WIF_PROVIDER: projects/631794111842/locations/global/workloadIdentityPools/github-pool/providers/github-provider
+    DEPLOYER_SA: sparx-deployer@sparxworks.iam.gserviceaccount.com
+
+jobs:
+    cleanup:
+        name: Prune old images
+        runs-on: ubuntu-latest
+        timeout-minutes: 30
+        steps:
+            - uses: google-github-actions/auth@v2
+              with:
+                  workload_identity_provider: ${{ env.WIF_PROVIDER }}
+                  service_account: ${{ env.DEPLOYER_SA }}
+
+            - uses: google-github-actions/setup-gcloud@v2
+
+            - name: Prune images
+              env:
+                  KEEP: ${{ inputs.keep || '3' }}
+                  DRY_RUN: ${{ inputs.dry_run }}
+              run: |
+                  REGISTRY="$REGION-docker.pkg.dev/$PROJECT_ID/$AR_REPO"
+                  SERVICES=(
+                    web
+                    api-rest
+                    api-graphql
+                    api-mcp
+                    dashboard
+                    storefront
+                    media-worker
+                    email-worker
+                    commerce-indexer
+                    domain-worker
+                    dropship-worker
+                    billing-worker
+                    webhook-worker
+                  )
+
+                  DELETED=0
+                  KEPT=0
+
+                  for service in "${SERVICES[@]}"; do
+                    IMAGE="$REGISTRY/$service"
+                    echo "--- $service ---"
+
+                    # List all digests sorted newest-first (~ prefix = descending)
+                    mapfile -t DIGESTS < <(
+                      gcloud artifacts docker images list "$IMAGE" \
+                        --include-tags \
+                        --sort-by=~CREATE_TIME \
+                        --format="value(digest)" 2>/dev/null
+                    )
+
+                    TOTAL=${#DIGESTS[@]}
+
+                    if [[ $TOTAL -eq 0 ]]; then
+                      echo "  No images found — skipping."
+                      continue
+                    fi
+
+                    echo "  Found $TOTAL image(s), keeping $KEEP most recent."
+
+                    if [[ $TOTAL -le $KEEP ]]; then
+                      echo "  Nothing to delete."
+                      KEPT=$((KEPT + TOTAL))
+                      continue
+                    fi
+
+                    # Keep the first $KEEP, delete the rest
+                    for ((i=0; i<TOTAL; i++)); do
+                      DIGEST="${DIGESTS[$i]}"
+                      [[ -z "$DIGEST" ]] && continue
+                      TARGET="$IMAGE@$DIGEST"
+                      if [[ $i -lt $KEEP ]]; then
+                        echo "  [keep] $DIGEST"
+                        KEPT=$((KEPT + 1))
+                      else
+                        if [[ "$DRY_RUN" == "true" ]]; then
+                          echo "  [dry-run] would delete: $DIGEST"
+                        else
+                          echo "  [delete] $DIGEST"
+                          gcloud artifacts docker images delete "$TARGET" \
+                            --delete-tags \
+                            --quiet
+                          DELETED=$((DELETED + 1))
+                        fi
+                      fi
+                    done
+                  done
+
+                  echo ""
+                  echo "============================="
+                  echo "Kept:    $KEPT image(s)"
+                  if [[ "$DRY_RUN" == "true" ]]; then
+                    echo "Deleted: 0 (dry run — re-run with dry_run=false to actually delete)"
+                  else
+                    echo "Deleted: $DELETED image(s)"
+                  fi
+                  echo "============================="
