@@ -1,0 +1,24 @@
+# Internal LoadBalancer for Typesense, exposing it on a stable private VPC IP
+# so Cloud Run workers (commerce-indexer) can reach it over the VPC connector —
+# the in-cluster ClusterIP and kube-DNS names aren't routable from there.
+#
+# loadBalancerIP is the reserved internal address from Terraform
+# (google_compute_address.typesense_internal in terraform/envs/prod/main.tf).
+# The indexer's TYPESENSE_HOST (serverless.tf) points at the same address.
+# Internal-only — never assigned a public IP.
+apiVersion: v1
+kind: Service
+metadata:
+  name: typesense-internal
+  namespace: sparx-prod
+  annotations:
+    networking.gke.io/load-balancer-type: 'Internal'
+spec:
+  type: LoadBalancer
+  loadBalancerIP: '10.0.0.54'
+  ports:
+    - name: typesense
+      port: 8108
+      targetPort: 8108
+  selector:
+    app: typesense

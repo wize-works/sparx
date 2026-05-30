@@ -1,5 +1,10 @@
-// Commerce — fitment (vehicle makes/models/engines + product fitment), and
-// configurator (templates + bundles).
+// Commerce — fitment (domains, categories, items, variants + product
+// applicability) and configurator (templates + bundles).
+//
+// "Fitment" is the generalized "this product fits that thing" concept.
+// Domain selects the vocabulary (vehicle / pet / device / apparel / ...);
+// category → item → variant form the 1-3 level tree under it. See
+// packages/commerce/src/services/fitment-service.ts for the storage model.
 
 import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
@@ -9,57 +14,84 @@ import { requireRole } from '@sparx/api-core/auth';
 import { requireCommerceModule, toCommerceContext } from '../../../lib/commerce-context.js';
 
 const PathId = z.object({ id: z.string().uuid() });
-const MakeParam = z.object({ makeId: z.string().uuid() });
+const DomainParam = z.object({ domainId: z.string().uuid() });
+const CategoryParam = z.object({ categoryId: z.string().uuid() });
+const ItemParam = z.object({ itemId: z.string().uuid() });
 const ProductIdParam = z.object({ productId: z.string().uuid() });
 const FitmentParam = z.object({ fitmentId: z.string().uuid() });
 
 const fitmentRoutes: FastifyPluginAsync = async (app) => {
-  // Vehicles
-  app.get('/v1/commerce/fitment/makes', async (request) => {
+  // ─── Domains ──────────────────────────────────────────────────────
+  app.get('/v1/commerce/fitment/domains', async (request) => {
     requireRole(request, 'viewer');
     await requireCommerceModule(request);
-    return ok(await fitmentService.listMakes(toCommerceContext(request)));
+    return ok(await fitmentService.listDomains(toCommerceContext(request)));
   });
 
-  app.get('/v1/commerce/fitment/makes/:makeId/models', async (request) => {
+  app.get('/v1/commerce/fitment/domains/:id', async (request) => {
     requireRole(request, 'viewer');
     await requireCommerceModule(request);
-    const { makeId } = MakeParam.parse(request.params);
-    return ok(await fitmentService.listModels(toCommerceContext(request), makeId));
+    const { id } = PathId.parse(request.params);
+    return ok(await fitmentService.getDomain(toCommerceContext(request), id));
   });
 
-  app.get('/v1/commerce/fitment/models/:modelId/engines', async (request) => {
-    requireRole(request, 'viewer');
-    await requireCommerceModule(request);
-    const { modelId } = z.object({ modelId: z.string().uuid() }).parse(request.params);
-    return ok(await fitmentService.listEngines(toCommerceContext(request), modelId));
-  });
-
-  app.post('/v1/commerce/fitment/makes', async (request, reply) => {
+  app.post('/v1/commerce/fitment/domains', async (request, reply) => {
     requireRole(request, 'editor');
     await requireCommerceModule(request);
-    const created = await fitmentService.createMake(toCommerceContext(request), request.body);
+    const created = await fitmentService.createDomain(toCommerceContext(request), request.body);
     reply.code(201);
     return ok(created);
   });
 
-  app.post('/v1/commerce/fitment/models', async (request, reply) => {
+  // ─── Categories (L1) ──────────────────────────────────────────────
+  app.get('/v1/commerce/fitment/domains/:domainId/categories', async (request) => {
+    requireRole(request, 'viewer');
+    await requireCommerceModule(request);
+    const { domainId } = DomainParam.parse(request.params);
+    return ok(await fitmentService.listCategories(toCommerceContext(request), domainId));
+  });
+
+  app.post('/v1/commerce/fitment/categories', async (request, reply) => {
     requireRole(request, 'editor');
     await requireCommerceModule(request);
-    const created = await fitmentService.createModel(toCommerceContext(request), request.body);
+    const created = await fitmentService.createCategory(toCommerceContext(request), request.body);
     reply.code(201);
     return ok(created);
   });
 
-  app.post('/v1/commerce/fitment/engines', async (request, reply) => {
+  // ─── Items (L2) ───────────────────────────────────────────────────
+  app.get('/v1/commerce/fitment/categories/:categoryId/items', async (request) => {
+    requireRole(request, 'viewer');
+    await requireCommerceModule(request);
+    const { categoryId } = CategoryParam.parse(request.params);
+    return ok(await fitmentService.listItems(toCommerceContext(request), categoryId));
+  });
+
+  app.post('/v1/commerce/fitment/items', async (request, reply) => {
     requireRole(request, 'editor');
     await requireCommerceModule(request);
-    const created = await fitmentService.createEngine(toCommerceContext(request), request.body);
+    const created = await fitmentService.createItem(toCommerceContext(request), request.body);
     reply.code(201);
     return ok(created);
   });
 
-  // Product fitment
+  // ─── Variants (L3) ────────────────────────────────────────────────
+  app.get('/v1/commerce/fitment/items/:itemId/variants', async (request) => {
+    requireRole(request, 'viewer');
+    await requireCommerceModule(request);
+    const { itemId } = ItemParam.parse(request.params);
+    return ok(await fitmentService.listVariants(toCommerceContext(request), itemId));
+  });
+
+  app.post('/v1/commerce/fitment/variants', async (request, reply) => {
+    requireRole(request, 'editor');
+    await requireCommerceModule(request);
+    const created = await fitmentService.createVariant(toCommerceContext(request), request.body);
+    reply.code(201);
+    return ok(created);
+  });
+
+  // ─── Product fitment ──────────────────────────────────────────────
   app.get('/v1/commerce/products/:productId/fitment', async (request) => {
     requireRole(request, 'viewer');
     await requireCommerceModule(request);
@@ -71,9 +103,7 @@ const fitmentRoutes: FastifyPluginAsync = async (app) => {
     requireRole(request, 'editor');
     await requireCommerceModule(request);
     const { productId } = ProductIdParam.parse(request.params);
-    const body = z
-      .object({ fitments: z.array(z.unknown()) })
-      .parse(request.body);
+    const body = z.object({ fitments: z.array(z.unknown()) }).parse(request.body);
     await fitmentService.setForProduct(
       toCommerceContext(request),
       productId,
@@ -96,7 +126,14 @@ const fitmentRoutes: FastifyPluginAsync = async (app) => {
     reply.code(204);
   });
 
-  // Configurator — bundles
+  // ─── Lookup ───────────────────────────────────────────────────────
+  app.get('/v1/commerce/fitment/lookup', async (request) => {
+    requireRole(request, 'viewer');
+    await requireCommerceModule(request);
+    return ok(await fitmentService.lookup(toCommerceContext(request), request.query));
+  });
+
+  // ─── Configurator — bundles ───────────────────────────────────────
   app.get('/v1/commerce/bundles', async (request) => {
     requireRole(request, 'viewer');
     await requireCommerceModule(request);
@@ -113,7 +150,10 @@ const fitmentRoutes: FastifyPluginAsync = async (app) => {
   app.post('/v1/commerce/bundles', async (request, reply) => {
     requireRole(request, 'editor');
     await requireCommerceModule(request);
-    const created = await configuratorService.createBundle(toCommerceContext(request), request.body);
+    const created = await configuratorService.createBundle(
+      toCommerceContext(request),
+      request.body
+    );
     reply.code(201);
     return ok(created);
   });
@@ -133,7 +173,7 @@ const fitmentRoutes: FastifyPluginAsync = async (app) => {
     reply.code(204);
   });
 
-  // Configurator — templates
+  // ─── Configurator — templates ─────────────────────────────────────
   app.get('/v1/commerce/configurator-templates', async (request) => {
     requireRole(request, 'viewer');
     await requireCommerceModule(request);

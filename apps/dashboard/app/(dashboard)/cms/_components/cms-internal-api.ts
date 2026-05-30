@@ -1,28 +1,11 @@
-// Thin client-side helpers around the dashboard's internal CMS routes.
+// Thin client-side helper around the CMS reference-picker Server Action.
 //
-// Browser code can't call api-rest directly (the CMS bearer JWT lives on
-// the server only), so we expose a couple of cookie-authed Next.js route
-// handlers that proxy to api-rest. The form pickers + asset library use
-// these.
+// `searchEntries` is consumed by reference-picker.tsx and field-renderer.tsx
+// (both client components). It delegates to `searchEntriesAction` so the
+// same `SearchEntryResult` row shape stays stable for the callers, while
+// the transport sheds the former `/api/internal/cms/entries` Next.js route.
 
-interface ApiEntryRow {
-  id: string;
-  type_key: string;
-  slug: string | null;
-  status: string;
-  body: { title?: string; name?: string } & Record<string, unknown>;
-  updated_at: string;
-}
-
-interface ApiEntryResponse {
-  success: true;
-  data: ApiEntryRow[];
-}
-
-interface ApiError {
-  success: false;
-  error: { code: string; message: string };
-}
+import { searchEntriesAction } from './cms-actions';
 
 export interface SearchEntryParams {
   q?: string;
@@ -38,25 +21,28 @@ export interface SearchEntryResult {
   title: string;
 }
 
-function deriveTitle(row: ApiEntryRow): string {
-  if (typeof row.body.title === 'string' && row.body.title) return row.body.title;
-  if (typeof row.body.name === 'string' && row.body.name) return row.body.name;
+function deriveTitle(row: {
+  id: string;
+  slug: string | null;
+  body: Record<string, unknown>;
+}): string {
+  const title = row.body.title;
+  if (typeof title === 'string' && title) return title;
+  const name = row.body.name;
+  if (typeof name === 'string' && name) return name;
   return row.slug ?? row.id;
 }
 
 export async function searchEntries(params: SearchEntryParams): Promise<SearchEntryResult[]> {
-  const qs = new URLSearchParams();
-  if (params.q) qs.set('q', params.q);
-  if (params.typeKey) qs.set('type', params.typeKey);
-  qs.set('limit', String(params.limit ?? 20));
-  const res = await fetch(`/api/internal/cms/entries?${qs.toString()}`, {
-    credentials: 'include',
+  const result = await searchEntriesAction({
+    q: params.q,
+    typeKey: params.typeKey,
+    limit: params.limit ?? 20,
   });
-  const body = (await res.json()) as ApiEntryResponse | ApiError;
-  if (!('success' in body) || !body.success) {
-    throw new Error(('error' in body && body.error?.message) || 'Failed to search entries.');
+  if (!result.success) {
+    throw new Error(result.error.message);
   }
-  return body.data.map((row) => ({
+  return result.data.map((row) => ({
     id: row.id,
     typeKey: row.type_key,
     slug: row.slug,

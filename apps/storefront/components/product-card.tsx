@@ -1,83 +1,86 @@
-// Product tile used by PLP + collection pages. Inline styles only — the
-// storefront's default theme will later become a token-driven @sparx/ui
-// surface, but for the Phase 1 scaffold the inline approach keeps the
-// dependency on @sparx/ui out of the storefront's runtime.
+// Product tile for the PLP, collections, search, and "related" rails.
+// Token-driven via the .sf-card classes in storefront.css so merchant theme
+// overrides flow through automatically.
 
 import Link from 'next/link';
 
+import { formatMoney, formatPriceRange } from '@/lib/format';
+import { mediaUrl } from '@/lib/media';
 import type { PublicProductListItem } from '@/lib/commerce';
+import { RatingStars } from './rating-stars';
 
 export interface ProductCardProps {
   product: PublicProductListItem;
+  tenantSlug: string;
+  currency?: string;
+  locale?: string;
 }
 
-export function ProductCard({ product }: ProductCardProps) {
+export function ProductCard({
+  product,
+  tenantSlug,
+  currency = 'USD',
+  locale = 'en-US',
+}: ProductCardProps) {
+  const img = mediaUrl(product.primaryImageId, tenantSlug);
+  const onSale =
+    product.compareAtCents != null &&
+    product.priceMinCents != null &&
+    product.compareAtCents > product.priceMinCents;
+
   return (
-    <Link
-      href={`/products/${product.handle}`}
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '0.75rem',
-        padding: '1.25rem',
-        borderRadius: '12px',
-        border: '1px solid var(--color-border-default, #e5e7eb)',
-        background: 'var(--color-bg-surface, #ffffff)',
-        textDecoration: 'none',
-        color: 'inherit',
-      }}
-    >
-      <div
-        aria-hidden
-        style={{
-          aspectRatio: '1 / 1',
-          background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.12), rgba(99, 102, 241, 0.04))',
-          borderRadius: '8px',
-        }}
-      />
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-        {product.vendor && (
-          <span
-            style={{
-              fontSize: '0.7rem',
-              letterSpacing: '0.08em',
-              textTransform: 'uppercase',
-              color: 'var(--color-text-muted, #6b7280)',
-            }}
-          >
-            {product.vendor}
-          </span>
+    <Link href={`/products/${product.handle}`} className="sf-card">
+      <div className="sf-card__media">
+        {onSale ? <span className="sf-badge sf-badge--sale">Sale</span> : null}
+        {!product.inStock ? <span className="sf-badge sf-badge--out">Sold out</span> : null}
+        {img ? (
+          // eslint-disable-next-line @next/next/no-img-element -- cross-origin media via api-rest redirect
+          <img src={img} alt={product.title} loading="lazy" decoding="async" />
+        ) : (
+          <div className="sf-card__media sf-card__media--empty" aria-hidden="true">
+            <span style={{ fontSize: '2rem' }}>◳</span>
+          </div>
         )}
-        <span style={{ fontSize: '1rem', fontWeight: 500, letterSpacing: '-0.01em' }}>
-          {product.title}
-        </span>
-        <PriceRange min={product.priceMinCents} max={product.priceMaxCents} />
-        {!product.inStock && (
-          <span
-            style={{
-              fontSize: '0.75rem',
-              color: 'var(--color-warning, #b45309)',
-              marginTop: '0.25rem',
-            }}
-          >
-            Out of stock
-          </span>
-        )}
+      </div>
+      <div className="sf-card__body">
+        {product.vendor ? <span className="sf-card__vendor">{product.vendor}</span> : null}
+        <span className="sf-card__title">{product.title}</span>
+        {product.reviewCount > 0 && product.averageRating != null ? (
+          <RatingStars rating={product.averageRating} count={product.reviewCount} compact />
+        ) : null}
+        <PriceLine
+          min={product.priceMinCents}
+          max={product.priceMaxCents}
+          compareAt={onSale ? product.compareAtCents : null}
+          currency={currency}
+          locale={locale}
+        />
       </div>
     </Link>
   );
 }
 
-function PriceRange({ min, max }: { min: number | null; max: number | null }) {
-  if (min === null) return null;
-  const fmt = (cents: number) =>
-    new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(cents / 100);
-  if (max === null || max === min) {
-    return <span style={{ fontSize: '0.95rem' }}>{fmt(min)}</span>;
-  }
+function PriceLine({
+  min,
+  max,
+  compareAt,
+  currency,
+  locale,
+}: {
+  min: number | null;
+  max: number | null;
+  compareAt: number | null;
+  currency: string;
+  locale: string;
+}) {
+  const range = formatPriceRange(min, max, currency, locale);
+  if (!range) return null;
   return (
-    <span style={{ fontSize: '0.95rem' }}>
-      {fmt(min)} – {fmt(max)}
+    <span className="sf-card__price">
+      {range}
+      {compareAt != null ? (
+        <span className="sf-card__compare">{formatMoney(compareAt, currency, locale)}</span>
+      ) : null}
     </span>
   );
 }

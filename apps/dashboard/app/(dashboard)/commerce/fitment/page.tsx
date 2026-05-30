@@ -1,4 +1,4 @@
-import { Car } from 'lucide-react';
+import { Boxes } from 'lucide-react';
 
 import {
   Badge,
@@ -17,33 +17,35 @@ import { api } from '@/lib/api-rest-client';
 
 import { FitmentReferenceEditor } from './_components/fitment-reference-editor';
 
-interface VehicleMakeRow {
+interface FitmentDomainRow {
   id: string;
-  name: string;
   slug: string;
-  countryOfOrigin: string | null;
-  logoMediaId: string | null;
+  displayName: string;
+  description: string | null;
+  iconKey: string | null;
+  labels: { l1: string; l2?: string; l3?: string; range?: string };
+  rangeUnit: string | null;
   isGlobal: boolean;
-  modelCount: number;
+  categoryCount: number;
 }
 
-// Fitment reference data — vehicle makes, models, engines. Drives the
-// auto-parts / diesel-service catalog filter (Gillett's reference case).
-// Platform-seeded makes/models/engines (tenant_id IS NULL) are visible
-// to every tenant and read-only here; tenant-added rows can be edited
-// and extended.
+// Fitment reference data — the "what your products are compatible with"
+// dictionary. Generalized across domains: Sparx seeds the Vehicle domain
+// (Make → Model → Engine + Year) globally; tenants can register their
+// own (Pet: Species → Breed; Device: Brand → Model; Apparel: Size; ...)
+// or extend the Vehicle domain with custom marques.
 //
 // Per-product fitment assignment lives on the product detail page's
-// Fitment tab — this page is the merchant's "manage the vehicle
+// Fitment tab — this page is the merchant's "manage the compatibility
 // dictionary" surface.
 
 export const dynamic = 'force-dynamic';
 
 export default async function FitmentReferencePage() {
-  const makes = await api.get<VehicleMakeRow[]>('/v1/commerce/fitment/makes');
+  const domains = await api.get<FitmentDomainRow[]>('/v1/commerce/fitment/domains');
 
-  const globalCount = makes.filter((m) => m.isGlobal).length;
-  const tenantCount = makes.length - globalCount;
+  const globalCount = domains.filter((d) => d.isGlobal).length;
+  const tenantCount = domains.length - globalCount;
 
   return (
     <Container size="xl">
@@ -51,17 +53,18 @@ export default async function FitmentReferencePage() {
         <Stack direction="row" align="end" justify="between" wrap gap={4}>
           <Stack gap={2}>
             <Stack direction="row" align="center" gap={2}>
-              <Car className="h-5 w-5" />
+              <Boxes className="h-5 w-5" />
               <Heading level={1}>Fitment reference</Heading>
               <Badge variant="module">
-                {makes.length} make{makes.length === 1 ? '' : 's'}
+                {domains.length} domain{domains.length === 1 ? '' : 's'}
               </Badge>
             </Stack>
             <Text variant="muted">
-              The vehicle dictionary your products fit. Platform-seeded rows ({globalCount}) are
-              read-only and shared across all tenants; tenant additions ({tenantCount}) are yours
-              alone. Add merchant-specific marques (specialty manufacturers, custom builds) without
-              touching the global catalog.
+              The compatibility dictionary your products fit. Platform-seeded domains ({globalCount}
+              ) are read-only and shared across all tenants; tenant-defined domains ({tenantCount})
+              are yours alone. A vehicle store uses Make/Model/Engine + Year; a pet store uses
+              Species/Breed + Weight; a phone-case shop uses Brand/Model. Each domain owns its own
+              vocabulary.
             </Text>
           </Stack>
         </Stack>
@@ -69,23 +72,23 @@ export default async function FitmentReferencePage() {
         <Card>
           <CardHeader>
             <Stack gap={1}>
-              <Heading level={3}>Makes</Heading>
+              <Heading level={3}>Domains</Heading>
               <CardDescription>
-                Click a make to expand its models and engines. Models hang off makes; engines hang
-                off models. A product&apos;s fitment rule can target any level of the tree (just the
-                make, make + model, or all three).
+                Expand a domain to manage its categories, items, and variants. A product&apos;s
+                fitment rule can target any depth — just the category (fits any Ford), category +
+                item (fits an F-250), or all three (fits an F-250 with a 6.7L Power Stroke).
               </CardDescription>
             </Stack>
           </CardHeader>
           <CardContent>
-            {makes.length === 0 ? (
+            {domains.length === 0 ? (
               <EmptyState
-                icon={<Car className="h-5 w-5" />}
-                title="No vehicle reference data yet"
-                description="The platform seeds the major auto and diesel makes on first install. If you don't see them yet, run the fitment seed from the dashboard staff settings."
+                icon={<Boxes className="h-5 w-5" />}
+                title="No fitment domains yet"
+                description="The platform seeds the Vehicle domain on first install. If you don't see it yet, run the fitment seed from the dashboard staff settings."
               />
             ) : (
-              <FitmentReferenceEditor makes={makes} />
+              <FitmentReferenceEditor domains={domains} />
             )}
           </CardContent>
         </Card>

@@ -178,6 +178,20 @@ resource "google_compute_address" "ingress" {
   address_type = "EXTERNAL"
 }
 
+# Stable internal IP for the Typesense internal-LB Service. Typesense runs
+# in-cluster as a ClusterIP (k8s/typesense/service.yaml) which in-cluster
+# consumers use, but Cloud Run workers (commerce-indexer) reach the cluster
+# only over the VPC connector — where kube-DNS names and ClusterIPs aren't
+# routable. The internal LoadBalancer (k8s/typesense/service-internal.yaml)
+# pins this address via `loadBalancerIP`, and the indexer's TYPESENSE_HOST
+# (serverless.tf) points at it. Pulled from the node subnet's primary range.
+resource "google_compute_address" "typesense_internal" {
+  name         = "${local.name_prefix}-typesense-internal"
+  region       = var.region
+  address_type = "INTERNAL"
+  subnetwork   = module.vpc.subnet_self_link
+}
+
 # Workload Identity GSA for application pods (apps + workers).
 # Bound to the `sparx-app` KSA in the `sparx-prod` namespace.
 resource "google_service_account" "app" {

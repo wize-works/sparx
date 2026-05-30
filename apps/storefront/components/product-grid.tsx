@@ -1,38 +1,34 @@
-// Responsive product grid wrapper. CSS Grid with auto-fit so the card
-// minimum-width drives column count without media queries.
+// Responsive product grid. Auto-fill columns so the card min-width drives the
+// column count without media queries.
 
-import type { PublicProductListItem } from '@/lib/commerce';
+import { EmptyState } from './empty-state';
 import { ProductCard } from './product-card';
+import type { PublicProductListItem } from '@/lib/commerce';
 
 export interface ProductGridProps {
   products: PublicProductListItem[];
+  tenantSlug: string;
+  currency?: string;
+  locale?: string;
   empty?: React.ReactNode;
 }
 
-export function ProductGrid({ products, empty }: ProductGridProps) {
+export function ProductGrid({ products, tenantSlug, currency, locale, empty }: ProductGridProps) {
   if (products.length === 0) {
     return (
-      <div
-        style={{
-          padding: '4rem 1.5rem',
-          textAlign: 'center',
-          color: 'var(--color-text-muted, #6b7280)',
-        }}
-      >
-        {empty ?? 'No products to show yet.'}
-      </div>
+      <>{empty ?? <EmptyState icon="🔍" title="No products found" description="Try adjusting your filters or search." />}</>
     );
   }
   return (
-    <div
-      style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
-        gap: '1.5rem',
-      }}
-    >
+    <div className="sf-grid">
       {products.map((product) => (
-        <ProductCard key={product.id} product={product} />
+        <ProductCard
+          key={product.id}
+          product={product}
+          tenantSlug={tenantSlug}
+          currency={currency}
+          locale={locale}
+        />
       ))}
     </div>
   );

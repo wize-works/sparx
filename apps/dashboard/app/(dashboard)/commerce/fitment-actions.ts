@@ -5,68 +5,117 @@ import { api } from '@/lib/api-rest-client';
 import type { ActionResult } from './_action-helpers';
 import { restAction } from './_rest-action';
 
-interface VehicleModelRow {
+// Generalized fitment — domain → category → item → variant. The dashboard
+// surfaces the tree using domain.labels (e.g. Make/Model/Engine for
+// vehicle, Brand/Model for device) and domain.rangeUnit for narrowing.
+//
+// Sparx seeds a global "vehicle" domain so the Gillett case works
+// out-of-the-box; tenants register their own domains for other catalog
+// shapes (pet store registers Species → Breed, phone case shop
+// registers Brand → Model, etc.).
+
+interface FitmentDomainRow {
   id: string;
-  makeId: string;
+  slug: string;
+  displayName: string;
+  description: string | null;
+  iconKey: string | null;
+  labels: { l1: string; l2?: string; l3?: string; range?: string };
+  rangeUnit: string | null;
+  isGlobal: boolean;
+  categoryCount: number;
+}
+
+interface FitmentCategoryRow {
+  id: string;
+  domainId: string;
   name: string;
   slug: string;
-  bodyStyle: string | null;
   isGlobal: boolean;
-  engineCount: number;
+  itemCount: number;
 }
 
-interface VehicleEngineRow {
+interface FitmentItemRow {
   id: string;
-  modelId: string;
+  categoryId: string;
   name: string;
-  displacementCc: number | null;
-  cylinders: number | null;
-  fuelType: string | null;
-  aspiration: string | null;
+  slug: string;
+  isGlobal: boolean;
+  variantCount: number;
+}
+
+interface FitmentVariantRow {
+  id: string;
+  itemId: string;
+  name: string;
+  slug: string;
+  attributes: Record<string, unknown>;
   isGlobal: boolean;
 }
 
-export async function listVehicleModelsAction(
-  makeId: string
-): Promise<ActionResult<VehicleModelRow[]>> {
-  return restAction(async () => {
-    return api.get<VehicleModelRow[]>(`/v1/commerce/fitment/makes/${makeId}/models`);
-  });
+export async function listFitmentDomainsAction(): Promise<ActionResult<FitmentDomainRow[]>> {
+  return restAction(async () => api.get<FitmentDomainRow[]>('/v1/commerce/fitment/domains'));
 }
 
-export async function listVehicleEnginesAction(
-  modelId: string
-): Promise<ActionResult<VehicleEngineRow[]>> {
-  return restAction(async () => {
-    return api.get<VehicleEngineRow[]>(`/v1/commerce/fitment/models/${modelId}/engines`);
-  });
+export async function listFitmentCategoriesAction(
+  domainId: string
+): Promise<ActionResult<FitmentCategoryRow[]>> {
+  return restAction(async () =>
+    api.get<FitmentCategoryRow[]>(`/v1/commerce/fitment/domains/${domainId}/categories`)
+  );
 }
 
-export async function createVehicleMakeAction(
+export async function listFitmentItemsAction(
+  categoryId: string
+): Promise<ActionResult<FitmentItemRow[]>> {
+  return restAction(async () =>
+    api.get<FitmentItemRow[]>(`/v1/commerce/fitment/categories/${categoryId}/items`)
+  );
+}
+
+export async function listFitmentVariantsAction(
+  itemId: string
+): Promise<ActionResult<FitmentVariantRow[]>> {
+  return restAction(async () =>
+    api.get<FitmentVariantRow[]>(`/v1/commerce/fitment/items/${itemId}/variants`)
+  );
+}
+
+export async function createFitmentDomainAction(
   input: unknown
 ): Promise<ActionResult<{ id: string }>> {
   return restAction(async () => {
-    const result = await api.post<{ id: string }>('/v1/commerce/fitment/makes', input);
+    const result = await api.post<{ id: string }>('/v1/commerce/fitment/domains', input);
     revalidatePath('/commerce/fitment');
     return result;
   });
 }
 
-export async function createVehicleModelAction(
+export async function createFitmentCategoryAction(
   input: unknown
 ): Promise<ActionResult<{ id: string }>> {
   return restAction(async () => {
-    const result = await api.post<{ id: string }>('/v1/commerce/fitment/models', input);
+    const result = await api.post<{ id: string }>('/v1/commerce/fitment/categories', input);
     revalidatePath('/commerce/fitment');
     return result;
   });
 }
 
-export async function createVehicleEngineAction(
+export async function createFitmentItemAction(
   input: unknown
 ): Promise<ActionResult<{ id: string }>> {
   return restAction(async () => {
-    const result = await api.post<{ id: string }>('/v1/commerce/fitment/engines', input);
+    const result = await api.post<{ id: string }>('/v1/commerce/fitment/items', input);
+    revalidatePath('/commerce/fitment');
+    return result;
+  });
+}
+
+export async function createFitmentVariantAction(
+  input: unknown
+): Promise<ActionResult<{ id: string }>> {
+  return restAction(async () => {
+    const result = await api.post<{ id: string }>('/v1/commerce/fitment/variants', input);
     revalidatePath('/commerce/fitment');
     return result;
   });

@@ -4,3 +4,4 @@ namespace: sparx-prod
 resources:
   - statefulset.yaml
   - service.yaml
+  - service-internal.yaml

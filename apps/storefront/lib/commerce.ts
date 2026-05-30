@@ -61,9 +61,11 @@ export interface PublicProductListItem {
   tags: string[];
   priceMinCents: number | null;
   priceMaxCents: number | null;
+  compareAtCents: number | null;
   inStock: boolean;
   averageRating: number | null;
   reviewCount: number;
+  primaryImageId: string | null;
   seoTitle: string | null;
   seoDescription: string | null;
   updatedAt: string;
@@ -193,6 +195,14 @@ export async function listCollectionProducts(
   };
 }
 
+export type ProductSort =
+  | 'relevance'
+  | 'price-asc'
+  | 'price-desc'
+  | 'title-asc'
+  | 'title-desc'
+  | 'newest';
+
 export interface ProductListFilters {
   q?: string;
   vendor?: string;
@@ -200,6 +210,10 @@ export interface ProductListFilters {
   tag?: string;
   fitmentMake?: string;
   fitmentYear?: number;
+  minPriceCents?: number;
+  maxPriceCents?: number;
+  inStock?: boolean;
+  sort?: ProductSort;
   page?: number;
   perPage?: number;
 }
@@ -208,9 +222,24 @@ export async function listProducts(
   tenantSlug: string,
   filters: ProductListFilters = {}
 ): Promise<{ items: PublicProductListItem[]; total: number; page: number; perPage: number }> {
+  const query: Record<string, string | number | undefined> = {
+    tenant: tenantSlug,
+    q: filters.q,
+    vendor: filters.vendor,
+    productType: filters.productType,
+    tag: filters.tag,
+    fitmentMake: filters.fitmentMake,
+    fitmentYear: filters.fitmentYear,
+    minPriceCents: filters.minPriceCents,
+    maxPriceCents: filters.maxPriceCents,
+    inStock: filters.inStock === undefined ? undefined : String(filters.inStock),
+    sort: filters.sort,
+    page: filters.page,
+    perPage: filters.perPage,
+  };
   const { data, meta } = await publicGet<PublicProductListItem[]>(
     '/v1/public/commerce/products',
-    { tenant: tenantSlug, ...filters },
+    query,
     [`commerce:${tenantSlug}:products`]
   );
   return {
@@ -219,6 +248,26 @@ export async function listProducts(
     page: meta?.page ?? filters.page ?? 1,
     perPage: meta?.per_page ?? filters.perPage ?? 24,
   };
+}
+
+/** Products related to the given one: same product type, self excluded.
+ *  Falls back to an empty list rather than throwing — it's a nice-to-have
+ *  section, never load-bearing. */
+export async function listRelatedProducts(
+  tenantSlug: string,
+  product: Pick<PublicProduct, 'id' | 'productType'>,
+  limit = 4
+): Promise<PublicProductListItem[]> {
+  if (!product.productType) return [];
+  try {
+    const { items } = await listProducts(tenantSlug, {
+      productType: product.productType,
+      perPage: limit + 1,
+    });
+    return items.filter((p) => p.id !== product.id).slice(0, limit);
+  } catch {
+    return [];
+  }
 }
 
 export async function getProduct(

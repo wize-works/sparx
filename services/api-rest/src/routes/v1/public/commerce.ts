@@ -197,11 +197,11 @@ const publicCommerceRoutes: FastifyPluginAsync = (app) => {
         ? {
             fitments: {
               some: {
-                ...(q.fitmentMake ? { make: { name: q.fitmentMake } } : {}),
+                ...(q.fitmentMake ? { category: { name: q.fitmentMake } } : {}),
                 ...(q.fitmentYear
                   ? {
-                      yearMin: { lte: q.fitmentYear },
-                      OR: [{ yearMax: { gte: q.fitmentYear } }, { yearMax: null }],
+                      rangeMin: { lte: q.fitmentYear },
+                      OR: [{ rangeMax: { gte: q.fitmentYear } }, { rangeMax: null }],
                     }
                   : {}),
               },
@@ -304,12 +304,13 @@ const publicCommerceRoutes: FastifyPluginAsync = (app) => {
           fitments: {
             select: {
               id: true,
-              yearMin: true,
-              yearMax: true,
+              rangeMin: true,
+              rangeMax: true,
               notes: true,
-              make: { select: { name: true } },
-              model: { select: { name: true } },
-              engine: { select: { name: true } },
+              domain: { select: { slug: true, displayName: true, rangeUnit: true } },
+              category: { select: { name: true } },
+              item: { select: { name: true } },
+              variant: { select: { name: true } },
             },
           },
         },
@@ -357,11 +358,14 @@ const publicCommerceRoutes: FastifyPluginAsync = (app) => {
       })),
       fitments: result.fitments.map((f) => ({
         id: f.id,
-        make: f.make.name,
-        model: f.model?.name ?? null,
-        engine: f.engine?.name ?? null,
-        yearMin: f.yearMin,
-        yearMax: f.yearMax,
+        domainSlug: f.domain.slug,
+        domainLabel: f.domain.displayName,
+        rangeUnit: f.domain.rangeUnit,
+        category: f.category.name,
+        item: f.item?.name ?? null,
+        variant: f.variant?.name ?? null,
+        rangeMin: f.rangeMin === null ? null : Number(f.rangeMin),
+        rangeMax: f.rangeMax === null ? null : Number(f.rangeMax),
         notes: f.notes,
       })),
     });
@@ -395,18 +399,78 @@ const publicCommerceRoutes: FastifyPluginAsync = (app) => {
 
   // ─── Fitment ───────────────────────────────────────────────────────
   //
-  // Surfaces the make list (global + tenant) so the storefront can build
-  // the vehicle-narrowing filter. Models + engines are lazy-loaded by
-  // the storefront via additional endpoints once that UI lands.
+  // Surfaces the fitment domains the tenant has access to (global + own)
+  // plus L1 categories per domain. Drives the storefront narrowing
+  // filter — vehicle Year/Make/Model/Engine for an auto shop, Pet
+  // Species/Breed for a pet store, Device Brand/Model for a phone case
+  // shop. L2/L3 are lazy-loaded as the customer drills down.
 
-  app.get('/v1/public/commerce/fitment/makes', async (request) => {
+  app.get('/v1/public/commerce/fitment/domains', async (request) => {
     const q = TenantQuery.parse(request.query);
     const tenantId = await resolveTenantBySlug(q.tenant);
-    // VehicleMake has tenantId IS NULL (global) or tenantId = ours.
-    // Bypass withTenant() for the global-or-tenant predicate.
-    const rows = await prisma.vehicleMake.findMany({
-      where: { OR: [{ tenantId: null }, { tenantId }] },
-      orderBy: { name: 'asc' },
+    const rows = await prisma.fitmentDomain.findMany({
+      where: { OR: [{ tenantId: null }, { tenantId }], deletedAt: null },
+      orderBy: [{ position: 'asc' }, { displayName: 'asc' }],
+      select: {
+        id: true,
+        slug: true,
+        displayName: true,
+        description: true,
+        iconKey: true,
+        labels: true,
+        rangeUnit: true,
+        tenantId: true,
+      },
+    });
+    return ok(
+      rows.map((r) => ({
+        id: r.id,
+        slug: r.slug,
+        displayName: r.displayName,
+        description: r.description,
+        iconKey: r.iconKey,
+        labels: r.labels,
+        rangeUnit: r.rangeUnit,
+        isGlobal: r.tenantId === null,
+      }))
+    );
+  });
+
+  app.get('/v1/public/commerce/fitment/domains/:domainId/categories', async (request) => {
+    const q = TenantQuery.parse(request.query);
+    const { domainId } = z.object({ domainId: z.string().uuid() }).parse(request.params);
+    const tenantId = await resolveTenantBySlug(q.tenant);
+    const rows = await prisma.fitmentCategory.findMany({
+      where: {
+        domainId,
+        OR: [{ tenantId: null }, { tenantId }],
+        deletedAt: null,
+      },
+      orderBy: [{ position: 'asc' }, { name: 'asc' }],
+      select: { id: true, name: true, slug: true, iconMediaId: true, tenantId: true },
+    });
+    return ok(
+      rows.map((r) => ({
+        id: r.id,
+        name: r.name,
+        slug: r.slug,
+        iconMediaId: r.iconMediaId,
+        isGlobal: r.tenantId === null,
+      }))
+    );
+  });
+
+  app.get('/v1/public/commerce/fitment/categories/:categoryId/items', async (request) => {
+    const q = TenantQuery.parse(request.query);
+    const { categoryId } = z.object({ categoryId: z.string().uuid() }).parse(request.params);
+    const tenantId = await resolveTenantBySlug(q.tenant);
+    const rows = await prisma.fitmentItem.findMany({
+      where: {
+        categoryId,
+        OR: [{ tenantId: null }, { tenantId }],
+        deletedAt: null,
+      },
+      orderBy: [{ position: 'asc' }, { name: 'asc' }],
       select: { id: true, name: true, slug: true, tenantId: true },
     });
     return ok(
@@ -414,6 +478,30 @@ const publicCommerceRoutes: FastifyPluginAsync = (app) => {
         id: r.id,
         name: r.name,
         slug: r.slug,
+        isGlobal: r.tenantId === null,
+      }))
+    );
+  });
+
+  app.get('/v1/public/commerce/fitment/items/:itemId/variants', async (request) => {
+    const q = TenantQuery.parse(request.query);
+    const { itemId } = z.object({ itemId: z.string().uuid() }).parse(request.params);
+    const tenantId = await resolveTenantBySlug(q.tenant);
+    const rows = await prisma.fitmentVariant.findMany({
+      where: {
+        itemId,
+        OR: [{ tenantId: null }, { tenantId }],
+        deletedAt: null,
+      },
+      orderBy: [{ position: 'asc' }, { name: 'asc' }],
+      select: { id: true, name: true, slug: true, attributes: true, tenantId: true },
+    });
+    return ok(
+      rows.map((r) => ({
+        id: r.id,
+        name: r.name,
+        slug: r.slug,
+        attributes: r.attributes,
         isGlobal: r.tenantId === null,
       }))
     );

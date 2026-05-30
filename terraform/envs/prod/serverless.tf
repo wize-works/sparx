@@ -288,11 +288,17 @@ module "commerce_indexer_cloudrun" {
     LOG_LEVEL               = "info"
     PUBSUB_INVOKER_SA       = google_service_account.pubsub_invoker.email
     GCS_MEDIA_PUBLIC_BUCKET = module.storage.media_public_bucket_name
-    # Typesense lives in-cluster (k8s Service); reach it via the VPC
-    # connector. Hostname matches k8s/typesense/service.yaml.
-    TYPESENSE_HOST     = "typesense.sparx-prod.svc.cluster.local"
+    # Typesense lives in-cluster. Cloud Run can't reach its ClusterIP or
+    # kube-DNS name over the VPC connector, so we target the internal
+    # LoadBalancer's reserved private IP (k8s/typesense/service-internal.yaml
+    # pins this same address via loadBalancerIP).
+    TYPESENSE_HOST     = google_compute_address.typesense_internal.address
     TYPESENSE_PORT     = "8108"
     TYPESENSE_PROTOCOL = "http"
+    # Create products/customers/orders collections on cold start if missing
+    # (idempotent — ensureSchemas retrieves first, creates only on 404). The
+    # Phase-1 typesense-api-key is the admin key, so it has create rights.
+    ENSURE_SCHEMAS_ON_BOOT = "true"
   }
 
   secrets = [

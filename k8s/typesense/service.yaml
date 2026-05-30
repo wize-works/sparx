@@ -1,7 +1,8 @@
-# Typesense in-cluster Service. Reachable from commerce-indexer (Cloud Run
-# via VPC connector) at typesense.sparx-prod.svc.cluster.local:8108, and
-# from api-rest / dashboard pods at the same hostname. ClusterIP only —
-# no external exposure.
+# Typesense in-cluster Service. Used by in-cluster consumers (api-rest,
+# dashboard ⌘K palette) at typesense.sparx-prod.svc.cluster.local:8108.
+# ClusterIP only — NOT reachable from Cloud Run, since kube-DNS names and
+# ClusterIPs don't route over the VPC connector. Cloud Run workers
+# (commerce-indexer) use the internal LoadBalancer in service-internal.yaml.
 apiVersion: v1
 kind: Service
 metadata:

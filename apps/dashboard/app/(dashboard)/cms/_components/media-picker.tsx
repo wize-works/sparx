@@ -25,6 +25,8 @@ import {
 } from '@sparx/ui';
 import { ImageIcon, Search } from 'lucide-react';
 
+import { listMediaAssetsAction } from './cms-actions';
+
 export interface PickedAsset {
   src: string;
   alt: string;
@@ -84,16 +86,13 @@ export function MediaPicker({ open, onOpenChange, onPick, accept }: MediaPickerP
     let cancelled = false;
     setLoading(true);
     setError(null);
-    fetch(`/api/internal/cms/media-assets?limit=120`, { credentials: 'include' })
-      .then((res) => res.json())
-      .then((body: ApiResponse | { error?: { message?: string } }) => {
+    listMediaAssetsAction({ limit: 120 })
+      .then((body) => {
         if (cancelled) return;
-        if ('success' in body && body.success) {
+        if (body.success) {
           setAssets(body.data);
         } else {
-          setError(
-            (body as { error?: { message?: string } }).error?.message ?? 'Failed to load assets.'
-          );
+          setError(body.error.message ?? 'Failed to load assets.');
         }
       })
       .catch((err: unknown) => {

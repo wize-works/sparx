@@ -85,10 +85,27 @@ function createAuth() {
   });
 }
 
-export const auth = globalThis.__sparxAuth ?? createAuth();
+// Construct the Better Auth server lazily, on first property access — NOT at
+// module-evaluation time. Importing `@sparx/auth` for a utility (e.g.
+// `isModuleEnabled` from ./module-gate) pulls this module in via the barrel;
+// eager construction would call betterAuth() — which throws in production when
+// BETTER_AUTH_SECRET is unset — and crash workers that never touch auth at all
+// (e.g. commerce-indexer reaches here through @sparx/commerce → @sparx/crm).
+// The Proxy is transparent: every `auth.api.*` / `auth.handler` / `auth.$context`
+// access resolves against the same cached instance, so consumers are unchanged.
+let cachedAuth: ReturnType<typeof createAuth> | undefined = globalThis.__sparxAuth;
 
-if (process.env.NODE_ENV !== 'production') {
-  globalThis.__sparxAuth = auth;
+function getAuth(): ReturnType<typeof createAuth> {
+  if (cachedAuth) return cachedAuth;
+  cachedAuth = createAuth();
+  // Survive dev HMR without leaking adapters (mirrors @sparx/db's prisma client).
+  if (process.env.NODE_ENV !== 'production') globalThis.__sparxAuth = cachedAuth;
+  return cachedAuth;
 }
 
-export type Auth = typeof auth;
+export const auth = new Proxy({} as ReturnType<typeof createAuth>, {
+  get: (_target, prop) => (getAuth() as Record<string | symbol, unknown>)[prop],
+  has: (_target, prop) => prop in (getAuth() as object),
+});
+
+export type Auth = ReturnType<typeof createAuth>;
