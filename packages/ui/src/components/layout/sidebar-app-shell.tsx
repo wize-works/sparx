@@ -6,7 +6,7 @@ import { Button } from '../primitives/button';
 import { Drawer, DrawerContent, DrawerTitle } from '../overlay/drawer';
 import { Sidebar } from '../navigation/sidebar';
 
-// AppShell is the canonical authenticated-app layout: pinned sidebar +
+// SidebarAppShell is the canonical authenticated-app layout: pinned sidebar +
 // top header + scrolling content. It owns the responsive concerns that
 // every consumer would otherwise re-implement:
 //
@@ -25,7 +25,7 @@ import { Sidebar } from '../navigation/sidebar';
 // context (header + nav + footer composed from SidebarHeader / nav
 // sections / SidebarFooter is the intended shape).
 
-export interface AppShellProps {
+export interface SidebarAppShellProps {
   /**
    * Contents of the sidebar — typically `<SidebarHeader>`, a nav region,
    * and `<SidebarFooter>`. Rendered in both the desktop sidebar and the
@@ -48,13 +48,13 @@ export interface AppShellProps {
   children: React.ReactNode;
 }
 
-export function AppShell({
+export function SidebarAppShell({
   sidebar,
   headerActions,
   pathname,
   mobileNavLabel = 'Primary navigation',
   children,
-}: AppShellProps) {
+}: SidebarAppShellProps) {
   const contentRef = React.useRef<HTMLDivElement>(null);
   const isFirstRender = React.useRef(true);
   const [mobileNavOpen, setMobileNavOpen] = React.useState(false);
@@ -80,11 +80,7 @@ export function AppShell({
       <Sidebar className="hidden md:flex">{sidebar}</Sidebar>
 
       <Drawer open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
-        <DrawerContent
-          side="left"
-          className="flex w-72 max-w-[85vw] flex-col gap-1 p-3"
-          hideClose
-        >
+        <DrawerContent side="left" className="flex w-72 max-w-[85vw] flex-col gap-1 p-3" hideClose>
           <DrawerTitle className="sr-only">{mobileNavLabel}</DrawerTitle>
           {sidebar}
         </DrawerContent>

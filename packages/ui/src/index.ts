@@ -41,6 +41,7 @@ export { Stack, type StackProps } from './components/layout/stack';
 export { Grid, type GridProps } from './components/layout/grid';
 export { Container, containerVariants, type ContainerProps } from './components/layout/container';
 export { ScrollArea, ScrollBar } from './components/layout/scroll-area';
+export { SidebarAppShell, type SidebarAppShellProps } from './components/layout/sidebar-app-shell';
 
 // ── Form ──────────────────────────────────────────────────
 export { Input, inputVariants, type InputProps } from './components/form/input';
