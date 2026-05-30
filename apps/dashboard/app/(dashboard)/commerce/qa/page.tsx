@@ -1,9 +1,6 @@
 import Link from 'next/link';
-import { HelpCircle, PackageOpen } from 'lucide-react';
+import { HelpCircle } from 'lucide-react';
 
-import { isModuleEnabled, requireSession } from '@sparx/auth';
-import { reviewService } from '@sparx/commerce';
-import { withTenant } from '@sparx/db';
 import {
   Badge,
   Card,
@@ -23,7 +20,8 @@ import {
   Text,
 } from '@sparx/ui';
 
-import { ModuleStub } from '../../../../components/module-stub';
+import { api } from '@/lib/api-rest-client';
+
 import { EntityRowLink } from '../../_components/entity-row-link';
 
 export const dynamic = 'force-dynamic';
@@ -35,29 +33,85 @@ const STATUS_FILTERS: { value: string | undefined; label: string }[] = [
   { value: 'all', label: 'All' },
 ];
 
+interface QuestionCustomer {
+  id: string;
+  firstName: string | null;
+  lastName: string | null;
+  email: string | null;
+}
+
+interface QuestionListRow {
+  id: string;
+  productId: string;
+  body: string;
+  status: string;
+  createdAt: string;
+  productTitle: string | null;
+  productHandle: string | null;
+  customer: QuestionCustomer | null;
+  // Only present in the pending endpoint:
+  displayName?: string | null;
+  customerId?: string | null;
+  answers?: unknown[];
+}
+
+interface DisplayRow {
+  id: string;
+  productId: string;
+  body: string;
+  status: string;
+  createdAt: string;
+  authorLabel: string;
+  productTitle: string | null;
+  answerCount: number | null;
+}
+
+function authorLabel(row: QuestionListRow): string {
+  if (row.displayName) return row.displayName;
+  if (row.customer) {
+    const full = `${row.customer.firstName ?? ''} ${row.customer.lastName ?? ''}`.trim();
+    if (full) return full;
+    if (row.customer.email) return row.customer.email;
+    return 'Customer';
+  }
+  if (row.customerId) return 'Customer';
+  return 'Anon';
+}
+
 export default async function QaPage({
   searchParams,
 }: {
   searchParams: Promise<{ status?: string }>;
 }) {
-  const session = await requireSession();
-  const enabled = await isModuleEnabled(session.user.tenantId, 'commerce');
-  if (!enabled) {
-    return (
-      <ModuleStub
-        icon={<PackageOpen className="h-5 w-5" />}
-        title="Commerce"
-        tagline="Customer questions."
-        description="Activate the Commerce module from Billing to manage product Q&A."
-        features={[]}
-      />
-    );
-  }
-
   const { status: statusParam } = await searchParams;
-  const ctx = { tenantId: session.user.tenantId, userId: session.user.id };
 
-  const rows = await loadQuestions(ctx, statusParam);
+  let rows: DisplayRow[] = [];
+  if (statusParam === undefined) {
+    const list = await api.get<QuestionListRow[]>('/v1/commerce/questions/pending');
+    rows = list.map((q) => ({
+      id: q.id,
+      productId: q.productId,
+      body: q.body,
+      status: q.status,
+      createdAt: q.createdAt,
+      authorLabel: authorLabel(q),
+      productTitle: q.productTitle ?? null,
+      answerCount: Array.isArray(q.answers) ? q.answers.length : null,
+    }));
+  } else {
+    const qs = statusParam === 'all' ? '?take=250' : `?status=${statusParam}&take=250`;
+    const list = await api.get<QuestionListRow[]>(`/v1/commerce/questions${qs}`);
+    rows = list.map((q) => ({
+      id: q.id,
+      productId: q.productId,
+      body: q.body,
+      status: q.status,
+      createdAt: q.createdAt,
+      authorLabel: authorLabel(q),
+      productTitle: q.productTitle ?? null,
+      answerCount: null,
+    }));
+  }
 
   return (
     <Container size="xl">
@@ -123,12 +177,14 @@ export default async function QaPage({
                         </EntityRowLink>
                       </TableCell>
                       <TableCell>
-                        <Text size="xs" className="font-mono">
-                          {q.productId.slice(0, 8)}
+                        <Text size="sm">
+                          {q.productTitle ?? (
+                            <span className="font-mono text-xs">{q.productId.slice(0, 8)}</span>
+                          )}
                         </Text>
                       </TableCell>
-                      <TableCell>{q.displayName ?? (q.customerId ? 'Customer' : 'Anon')}</TableCell>
-                      <TableCell>{q.answerCount}</TableCell>
+                      <TableCell>{q.authorLabel}</TableCell>
+                      <TableCell>{q.answerCount ?? '—'}</TableCell>
                       <TableCell>
                         <StatusBadge status={q.status} />
                       </TableCell>
@@ -143,39 +199,6 @@ export default async function QaPage({
       </Stack>
     </Container>
   );
-}
-
-async function loadQuestions(
-  ctx: { tenantId: string; userId: string },
-  statusParam: string | undefined
-) {
-  if (statusParam === undefined) {
-    const rows = await reviewService.listPendingQuestions(ctx);
-    return rows.map((q) => ({ ...q, answerCount: q.answers.length }));
-  }
-  return withTenant(ctx, async (tx) => {
-    const where =
-      statusParam === 'all'
-        ? {}
-        : { status: statusParam === 'published' ? 'published' : 'rejected' };
-    const rows = await tx.productQuestion.findMany({
-      where,
-      include: { _count: { select: { answers: true } } },
-      orderBy: { createdAt: 'desc' },
-      take: 250,
-    });
-    return rows.map((r) => ({
-      id: r.id,
-      productId: r.productId,
-      customerId: r.customerId,
-      displayName: r.displayName,
-      body: r.body,
-      status: r.status,
-      helpfulCount: r.helpfulCount,
-      createdAt: r.createdAt.toISOString(),
-      answerCount: r._count.answers,
-    }));
-  });
 }
 
 function labelFor(s: string | undefined): string {

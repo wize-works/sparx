@@ -1,9 +1,6 @@
 import { notFound } from 'next/navigation';
-import { Package2, PackageOpen } from 'lucide-react';
+import { Package2 } from 'lucide-react';
 
-import { isModuleEnabled, requireSession } from '@sparx/auth';
-import { CommerceNotFoundError, configuratorService } from '@sparx/commerce';
-import { withTenant } from '@sparx/db';
 import {
   Badge,
   Card,
@@ -15,7 +12,7 @@ import {
   Text,
 } from '@sparx/ui';
 
-import { ModuleStub } from '../../../../../components/module-stub';
+import { api, type ApiRestError } from '@/lib/api-rest-client';
 
 import {
   BundleEditor,
@@ -30,32 +27,62 @@ interface Props {
   id: string;
 }
 
+interface BundleComponent {
+  id: string;
+  variantId: string;
+  variantSku: string;
+  productTitle: string;
+  defaultQuantity: number;
+  isRequired: boolean;
+  isSwappable: boolean;
+  swappableProductId: string | null;
+  position: number;
+}
+
+interface BundleDetail {
+  id: string;
+  bundleProductId: string;
+  bundleProductTitle: string;
+  pricingMode: string;
+  fixedPriceCents: number | null;
+  percentOffSum: number | null;
+  inventoryMode: string;
+  componentCount: number;
+  updatedAt: string;
+  components: BundleComponent[];
+}
+
+interface VariantListRow {
+  id: string;
+  sku: string;
+  title: string | null;
+  priceCents: number;
+  productId: string;
+  productTitle: string;
+  productHandle: string;
+  productStatus: string;
+  archivedAt: string | null;
+}
+
 export async function BundleDetailContent({ id }: Props) {
-  const session = await requireSession();
-  const enabled = await isModuleEnabled(session.user.tenantId, 'commerce');
-  if (!enabled) {
-    return (
-      <ModuleStub
-        icon={<PackageOpen className="h-5 w-5" />}
-        title="Commerce"
-        tagline=""
-        description="Activate the Commerce module from Billing to manage bundles."
-        features={[]}
-      />
-    );
-  }
-
-  const ctx = { tenantId: session.user.tenantId, userId: session.user.id };
-
-  let bundle;
+  let bundle: BundleDetail;
   try {
-    bundle = await configuratorService.getBundle(ctx, id);
+    bundle = await api.get<BundleDetail>(`/v1/commerce/bundles/${id}`);
   } catch (err) {
-    if (err instanceof CommerceNotFoundError) notFound();
+    if ((err as ApiRestError).code === 'NOT_FOUND') notFound();
     throw err;
   }
 
-  const variants = await loadVariants(ctx);
+  const variantRows = await api.get<VariantListRow[]>('/v1/commerce/variants?take=500');
+  const variants: VariantOption[] = variantRows.map((v) => ({
+    id: v.id,
+    sku: v.sku,
+    title: v.title,
+    priceCents: v.priceCents,
+    productId: v.productId,
+    productTitle: v.productTitle,
+  }));
+
   const initialComponents: ComponentDraft[] = bundle.components.map((c) => ({
     variantId: c.variantId,
     defaultQuantity: c.defaultQuantity,
@@ -113,29 +140,4 @@ export async function BundleDetailContent({ id }: Props) {
       </Card>
     </Stack>
   );
-}
-
-async function loadVariants(ctx: { tenantId: string; userId: string }): Promise<VariantOption[]> {
-  return withTenant(ctx, async (tx) => {
-    const rows = await tx.productVariant.findMany({
-      where: { deletedAt: null },
-      orderBy: [{ product: { title: 'asc' } }, { sku: 'asc' }],
-      take: 500,
-      select: {
-        id: true,
-        sku: true,
-        title: true,
-        priceCents: true,
-        product: { select: { id: true, title: true } },
-      },
-    });
-    return rows.map((v) => ({
-      id: v.id,
-      sku: v.sku,
-      title: v.title,
-      priceCents: v.priceCents,
-      productId: v.product.id,
-      productTitle: v.product.title,
-    }));
-  });
 }

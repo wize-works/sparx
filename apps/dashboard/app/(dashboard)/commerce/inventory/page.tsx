@@ -1,9 +1,6 @@
 import Link from 'next/link';
 import { Boxes } from 'lucide-react';
 
-import { requireSession } from '@sparx/auth';
-import { inventoryService } from '@sparx/commerce';
-import { withTenant } from '@sparx/db';
 import {
   Badge,
   Button,
@@ -75,18 +72,20 @@ interface LowStockRow {
   leadTimeDays: number | null;
 }
 
-interface InventoryLevelRow {
+interface EnrichedLevelRow {
   variantId: string;
   warehouseId: string;
-  warehouseCode: string;
   onHand: number;
   allocated: number;
   available: number;
   reorderPoint: number | null;
   reorderQuantity: number | null;
-  leadTimeDays: number | null;
-  unitCostCents: number | null;
   updatedAt: string;
+  sku: string;
+  variantTitle: string | null;
+  productId: string;
+  productTitle: string;
+  productHandle: string;
 }
 
 function pickString(value: string | string[] | undefined): string | undefined {
@@ -95,8 +94,6 @@ function pickString(value: string | string[] | undefined): string | undefined {
 }
 
 export default async function InventoryPage({ searchParams }: PageProps) {
-  const session = await requireSession();
-  const ctx = { tenantId: session.user.tenantId, userId: session.user.id };
   const params = (await searchParams) ?? {};
   const warehouseFilter = pickString(params.warehouse);
   const lowStockOnly = pickString(params.low) === '1';
@@ -112,10 +109,28 @@ export default async function InventoryPage({ searchParams }: PageProps) {
   const activeWarehouse = warehouseFilter ? warehouses.find((w) => w.id === warehouseFilter) : null;
   const fallbackWarehouse = activeWarehouse ?? warehouses[0] ?? null;
 
-  // The full per-warehouse level grid. Inline-editable.
-  const grid = fallbackWarehouse
-    ? await loadLevelsWithVariant(ctx, fallbackWarehouse.id, { lowStockOnly })
-    : { items: [], total: 0 };
+  const gridItems: EnrichedLevelRow[] = fallbackWarehouse
+    ? await api.get<EnrichedLevelRow[]>(
+        `/v1/commerce/inventory/levels/warehouse/${fallbackWarehouse.id}/enriched?take=200${lowStockOnly ? '&low_stock_only=true' : ''}`
+      )
+    : [];
+  const warehouseCode = fallbackWarehouse?.code ?? '';
+  const gridRows = gridItems.map((r) => ({
+    variantId: r.variantId,
+    warehouseId: r.warehouseId,
+    warehouseCode,
+    onHand: r.onHand,
+    allocated: r.allocated,
+    available: r.available,
+    reorderPoint: r.reorderPoint,
+    reorderQuantity: r.reorderQuantity,
+    leadTimeDays: null,
+    sku: r.sku,
+    variantTitle: r.variantTitle,
+    productId: r.productId,
+    productTitle: r.productTitle,
+  }));
+  const grid = { items: gridRows, total: gridRows.length };
 
   return (
     <Container size="xl">
@@ -300,46 +315,3 @@ export default async function InventoryPage({ searchParams }: PageProps) {
   );
 }
 
-// Inventory-page grid: join the level rows to enough variant + product
-// data that the table is readable without an extra round trip per row.
-async function loadLevelsWithVariant(
-  ctx: { tenantId: string; userId: string },
-  warehouseId: string,
-  filter: { lowStockOnly?: boolean }
-) {
-  const result = await inventoryService.levelsForWarehouse(ctx, warehouseId, {
-    lowStockOnly: filter.lowStockOnly,
-    take: 200,
-  });
-  const variantIds = result.items.map((l) => l.variantId);
-  if (variantIds.length === 0) return { items: [], total: 0 };
-
-  const variants = await withTenant(ctx, (tx) =>
-    tx.productVariant.findMany({
-      where: { id: { in: variantIds } },
-      select: {
-        id: true,
-        sku: true,
-        title: true,
-        product: { select: { id: true, title: true } },
-      },
-    })
-  );
-  const variantById = new Map(variants.map((v) => [v.id, v]));
-
-  const items = result.items
-    .map((level) => {
-      const v = variantById.get(level.variantId);
-      if (!v) return null;
-      return {
-        ...level,
-        sku: v.sku,
-        variantTitle: v.title,
-        productId: v.product.id,
-        productTitle: v.product.title,
-      };
-    })
-    .filter(<T,>(x: T | null): x is T => x !== null);
-
-  return { items, total: result.total };
-}

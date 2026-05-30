@@ -1,8 +1,6 @@
 import Link from 'next/link';
-import { CreditCard, PackageOpen } from 'lucide-react';
+import { CreditCard } from 'lucide-react';
 
-import { isModuleEnabled, requireSession } from '@sparx/auth';
-import { withTenant } from '@sparx/db';
 import {
   Badge,
   Card,
@@ -22,50 +20,34 @@ import {
   Text,
 } from '@sparx/ui';
 
-import { ModuleStub } from '../../../../components/module-stub';
-import { EntityRowLink } from '../../_components/entity-row-link';
+import { api } from '@/lib/api-rest-client';
 
 export const dynamic = 'force-dynamic';
 
-// Diagnostic view — in-flight checkout sessions. Useful when a customer
-// support ticket says "checkout is stuck" — staff finds the session,
-// inspects the step + provider refs, and either waits, expires, or
-// nudges the customer.
-
 const STEP_ORDER = ['cart_review', 'contact', 'shipping', 'payment', 'review'] as const;
+
+interface CheckoutSessionRow {
+  id: string;
+  step: string;
+  channel: string;
+  currency: string;
+  customerId: string | null;
+  customerEmail: string | null;
+  subtotalCents: number;
+  totalCents: number;
+  expiresAt: string;
+  createdAt: string;
+  updatedAt: string;
+}
 
 export default async function CheckoutSessionsPage({
   searchParams,
 }: {
   searchParams: Promise<{ step?: string }>;
 }) {
-  const session = await requireSession();
-  const enabled = await isModuleEnabled(session.user.tenantId, 'commerce');
-  if (!enabled) {
-    return (
-      <ModuleStub
-        icon={<PackageOpen className="h-5 w-5" />}
-        title="Commerce"
-        tagline="Diagnostic — in-flight checkouts."
-        description="Activate the Commerce module from Billing to inspect checkout sessions."
-        features={[]}
-      />
-    );
-  }
-
   const { step } = await searchParams;
-  const ctx = { tenantId: session.user.tenantId, userId: session.user.id };
-
-  const sessions = await withTenant(ctx, async (tx) => {
-    return tx.checkoutSession.findMany({
-      where: step ? { step } : { step: { in: [...STEP_ORDER] } },
-      include: {
-        customer: { select: { email: true, name: true } },
-      },
-      orderBy: { updatedAt: 'desc' },
-      take: 200,
-    });
-  });
+  const qs = step ? `?step=${encodeURIComponent(step)}&take=200` : '?take=200';
+  const sessions = await api.get<CheckoutSessionRow[]>(`/v1/commerce/checkout-sessions${qs}`);
 
   return (
     <Container size="xl">
@@ -114,12 +96,10 @@ export default async function CheckoutSessionsPage({
                 <TableHeader>
                   <TableRow>
                     <TableHead>Session</TableHead>
-                    <TableHead>Cart</TableHead>
                     <TableHead>Customer</TableHead>
                     <TableHead>Channel</TableHead>
                     <TableHead>Step</TableHead>
                     <TableHead>Total</TableHead>
-                    <TableHead>Provider refs</TableHead>
                     <TableHead>Updated</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -131,17 +111,7 @@ export default async function CheckoutSessionsPage({
                           {s.id.slice(0, 8)}
                         </Text>
                       </TableCell>
-                      <TableCell>
-                        <EntityRowLink
-                          href={`/commerce/carts/${s.cartId}`}
-                          entityType="cart"
-                          entityId={s.cartId}
-                          className="font-mono text-xs hover:text-[var(--module-active)]"
-                        >
-                          {s.cartId.slice(0, 8)}
-                        </EntityRowLink>
-                      </TableCell>
-                      <TableCell>{s.customer?.email ?? s.customerEmail ?? '—'}</TableCell>
+                      <TableCell>{s.customerEmail ?? '—'}</TableCell>
                       <TableCell>
                         <Badge variant="outline">{s.channel}</Badge>
                       </TableCell>
@@ -150,25 +120,6 @@ export default async function CheckoutSessionsPage({
                       </TableCell>
                       <TableCell>
                         ${(s.totalCents / 100).toFixed(2)} {s.currency}
-                      </TableCell>
-                      <TableCell>
-                        <Stack gap={0}>
-                          {s.shippingProviderSlug && (
-                            <Text size="xs" className="font-mono">
-                              ship · {s.shippingProviderSlug}
-                            </Text>
-                          )}
-                          {s.paymentProviderSlug && (
-                            <Text size="xs" className="font-mono">
-                              pay · {s.paymentProviderSlug}
-                            </Text>
-                          )}
-                          {!s.shippingProviderSlug && !s.paymentProviderSlug && (
-                            <Text size="xs" variant="muted">
-                              —
-                            </Text>
-                          )}
-                        </Stack>
                       </TableCell>
                       <TableCell>{new Date(s.updatedAt).toLocaleString()}</TableCell>
                     </TableRow>

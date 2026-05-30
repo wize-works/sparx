@@ -1,8 +1,5 @@
 import { notFound } from 'next/navigation';
-import { PackageOpen } from 'lucide-react';
 
-import { isModuleEnabled, requireSession } from '@sparx/auth';
-import { withTenant } from '@sparx/db';
 import {
   Badge,
   Card,
@@ -14,7 +11,7 @@ import {
   Text,
 } from '@sparx/ui';
 
-import { ModuleStub } from '../../../../../components/module-stub';
+import { api, type ApiRestError } from '@/lib/api-rest-client';
 
 import { AnswerForm } from './_components/answer-form';
 import { QuestionModerateActions } from './_components/question-moderate-actions';
@@ -25,29 +22,48 @@ interface Props {
   id: string;
 }
 
-export async function QuestionDetailContent({ id }: Props) {
-  const session = await requireSession();
-  const enabled = await isModuleEnabled(session.user.tenantId, 'commerce');
-  if (!enabled) {
-    return (
-      <ModuleStub
-        icon={<PackageOpen className="h-5 w-5" />}
-        title="Commerce"
-        tagline=""
-        description="Activate the Commerce module from Billing to manage Q&A."
-        features={[]}
-      />
-    );
-  }
+interface AnswerRow {
+  id: string;
+  body: string;
+  isOfficial: boolean;
+  authorCustomerId: string | null;
+  authorUserId: string | null;
+  createdAt: string;
+}
 
-  const ctx = { tenantId: session.user.tenantId, userId: session.user.id };
-  const detail = await withTenant(ctx, async (tx) => {
-    return tx.productQuestion.findFirst({
-      where: { id },
-      include: { answers: { orderBy: [{ isOfficial: 'desc' }, { createdAt: 'asc' }] } },
-    });
-  });
-  if (!detail) notFound();
+interface QuestionCustomer {
+  id: string;
+  firstName: string | null;
+  lastName: string | null;
+  email: string | null;
+}
+
+interface QuestionDetail {
+  id: string;
+  productId: string;
+  body: string;
+  status: string;
+  createdAt: string;
+  productTitle: string | null;
+  productHandle: string | null;
+  customer: QuestionCustomer | null;
+  answers: AnswerRow[];
+}
+
+function displayCustomer(c: QuestionCustomer | null): string {
+  if (!c) return 'Anonymous';
+  const full = `${c.firstName ?? ''} ${c.lastName ?? ''}`.trim();
+  return full || c.email || 'Customer';
+}
+
+export async function QuestionDetailContent({ id }: Props) {
+  let detail: QuestionDetail;
+  try {
+    detail = await api.get<QuestionDetail>(`/v1/commerce/questions/${id}`);
+  } catch (err) {
+    if ((err as ApiRestError).code === 'NOT_FOUND') notFound();
+    throw err;
+  }
 
   return (
     <Stack gap={6}>
@@ -67,8 +83,7 @@ export async function QuestionDetailContent({ id }: Props) {
               {detail.status}
             </Badge>
             <Text size="sm" variant="muted">
-              {detail.displayName ?? (detail.customerId ? 'Customer' : 'Anonymous')} ·{' '}
-              {new Date(detail.createdAt).toLocaleString()}
+              {displayCustomer(detail.customer)} · {new Date(detail.createdAt).toLocaleString()}
             </Text>
           </Stack>
         </Stack>
@@ -79,7 +94,9 @@ export async function QuestionDetailContent({ id }: Props) {
         <CardHeader>
           <Stack gap={1}>
             <Heading level={3}>Question body</Heading>
-            <CardDescription>Product: {detail.productId.slice(0, 8)}</CardDescription>
+            <CardDescription>
+              Product: {detail.productTitle ?? detail.productId.slice(0, 8)}
+            </CardDescription>
           </Stack>
         </CardHeader>
         <CardContent>

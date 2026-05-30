@@ -1,250 +1,193 @@
-// fitmentService — vehicle reference data + per-product applicability.
-// Drives the auto-parts case (Gillett Diesel) end-to-end: storefront
-// filter, B2B catalog visibility, MCP search_fitment tool.
+// fitmentService — generalized "what this product fits" reference data +
+// per-product applicability. One model serves every catalog whose
+// products are filtered by what they're compatible with: vehicles,
+// pets, devices, apparel, industrial gear.
 //
-// The reference tables (VehicleMake/Model/Engine) are dual-scoped: rows
-// with tenant_id IS NULL are platform-seeded baselines visible to every
-// tenant; rows with tenant_id = current tenant are per-merchant
-// additions. The RLS policy on these tables (migration 20260603000000)
-// already encodes the `tenant_id IS NULL OR tenant_id = current` read
-// rule with the stricter `tenant_id = current` write check.
+// The reference tables (FitmentDomain/Category/Item/Variant) are
+// dual-scoped: rows with tenant_id IS NULL are platform-seeded baselines
+// visible to every tenant; rows with tenant_id = current tenant are
+// per-merchant additions. The RLS policy on these tables (migration
+// 20260606000000_fitment_generalize) encodes
+//   tenant_id IS NULL OR tenant_id = current_tenant_id()
+// on both USING + WITH CHECK — globals are read-only to tenants, and
+// the platform seed inserts run outside the RLS context.
 //
 // ProductFitment rows are pure tenant-scoped — a Gillett-specific
-// applicability rule never leaks to another tenant even if the rule
-// references a globally-seeded Make.
+// applicability rule never leaks even when it references a globally
+// seeded Category.
 
 import {
   BulkAssignFitmentInput,
-  CreateVehicleEngineInput,
-  CreateVehicleMakeInput,
-  CreateVehicleModelInput,
+  CreateFitmentCategoryInput,
+  CreateFitmentDomainInput,
+  CreateFitmentItemInput,
+  CreateFitmentVariantInput,
   FitmentLookupQuery,
   ProductFitmentInput,
 } from '@sparx/commerce-schemas';
 import { withTenant } from '@sparx/db';
-import type { Prisma, ProductFitment, VehicleEngine, VehicleMake, VehicleModel } from '@sparx/db';
+import type {
+  FitmentCategory,
+  FitmentItem,
+  FitmentVariant,
+  Prisma,
+  ProductFitment,
+} from '@sparx/db';
 
 import { writeAuditLog } from '../audit';
 import { CommerceConflictError, CommerceNotFoundError } from '../errors';
 import type { ServiceContext } from '../errors';
 import { publishCommerceEvent } from '../events';
 
+// Sparx-seeded global Vehicle domain — UUID matches the migration.
+export const VEHICLE_DOMAIN_ID = '00000000-0000-0000-0000-000000000001';
+
 // ─── Public shapes ────────────────────────────────────────────────────
 
-export interface VehicleMakeRow {
+export interface FitmentDomainRow {
   id: string;
-  name: string;
   slug: string;
-  countryOfOrigin: string | null;
-  logoMediaId: string | null;
+  displayName: string;
+  description: string | null;
+  iconKey: string | null;
+  labels: {
+    l1: string;
+    l2?: string;
+    l3?: string;
+    range?: string;
+  };
+  rangeUnit: string | null;
+  position: number;
   isGlobal: boolean;
-  modelCount: number;
+  categoryCount: number;
 }
 
-export interface VehicleModelRow {
+export interface FitmentCategoryRow {
   id: string;
-  makeId: string;
+  domainId: string;
   name: string;
   slug: string;
-  bodyStyle: string | null;
+  attributes: Record<string, unknown>;
+  iconMediaId: string | null;
+  position: number;
   isGlobal: boolean;
-  engineCount: number;
+  itemCount: number;
 }
 
-export interface VehicleEngineRow {
+export interface FitmentItemRow {
   id: string;
-  modelId: string;
+  categoryId: string;
   name: string;
-  displacementCc: number | null;
-  cylinders: number | null;
-  fuelType: string | null;
-  aspiration: string | null;
+  slug: string;
+  attributes: Record<string, unknown>;
+  position: number;
+  isGlobal: boolean;
+  variantCount: number;
+}
+
+export interface FitmentVariantRow {
+  id: string;
+  itemId: string;
+  name: string;
+  slug: string;
+  attributes: Record<string, unknown>;
+  position: number;
   isGlobal: boolean;
 }
 
 export interface ProductFitmentRow {
   id: string;
   productId: string;
-  makeId: string;
-  makeName: string;
-  modelId: string | null;
-  modelName: string | null;
-  engineId: string | null;
-  engineName: string | null;
-  yearMin: number | null;
-  yearMax: number | null;
+  domainId: string;
+  domainSlug: string;
+  categoryId: string;
+  categoryName: string;
+  itemId: string | null;
+  itemName: string | null;
+  variantId: string | null;
+  variantName: string | null;
+  rangeMin: number | null;
+  rangeMax: number | null;
   notes: string | null;
 }
 
-// ─── Reference reads ──────────────────────────────────────────────────
+// ─── Domain reads + writes ────────────────────────────────────────────
 
-export async function listMakes(ctx: ServiceContext): Promise<VehicleMakeRow[]> {
+export async function listDomains(ctx: ServiceContext): Promise<FitmentDomainRow[]> {
   return withTenant(ctx, async (tx) => {
-    const rows = await tx.vehicleMake.findMany({
-      orderBy: [{ name: 'asc' }],
-      include: { _count: { select: { models: true } } },
+    const rows = await tx.fitmentDomain.findMany({
+      where: { deletedAt: null },
+      orderBy: [{ position: 'asc' }, { displayName: 'asc' }],
+      include: { _count: { select: { categories: true } } },
     });
-    return rows.map((m) => ({
-      id: m.id,
-      name: m.name,
-      slug: m.slug,
-      countryOfOrigin: m.countryOfOrigin,
-      logoMediaId: m.logoMediaId,
-      isGlobal: m.tenantId === null,
-      modelCount: m._count.models,
+    return rows.map((d) => ({
+      id: d.id,
+      slug: d.slug,
+      displayName: d.displayName,
+      description: d.description,
+      iconKey: d.iconKey,
+      labels: (d.labels ?? {}) as FitmentDomainRow['labels'],
+      rangeUnit: d.rangeUnit,
+      position: d.position,
+      isGlobal: d.tenantId === null,
+      categoryCount: d._count.categories,
     }));
   });
 }
 
-export async function listModels(ctx: ServiceContext, makeId: string): Promise<VehicleModelRow[]> {
-  return withTenant(ctx, async (tx) => {
-    const rows = await tx.vehicleModel.findMany({
-      where: { makeId },
-      orderBy: [{ name: 'asc' }],
-      include: { _count: { select: { engines: true } } },
-    });
-    return rows.map((m) => ({
-      id: m.id,
-      makeId: m.makeId,
-      name: m.name,
-      slug: m.slug,
-      bodyStyle: m.bodyStyle,
-      isGlobal: m.tenantId === null,
-      engineCount: m._count.engines,
-    }));
-  });
-}
-
-export async function listEngines(
+export async function getDomain(
   ctx: ServiceContext,
-  modelId: string
-): Promise<VehicleEngineRow[]> {
+  domainId: string
+): Promise<FitmentDomainRow | null> {
   return withTenant(ctx, async (tx) => {
-    const rows = await tx.vehicleEngine.findMany({
-      where: { modelId },
-      orderBy: [{ name: 'asc' }],
+    const d = await tx.fitmentDomain.findFirst({
+      where: { id: domainId, deletedAt: null },
+      include: { _count: { select: { categories: true } } },
     });
-    return rows.map(toEngineRow);
+    if (!d) return null;
+    return {
+      id: d.id,
+      slug: d.slug,
+      displayName: d.displayName,
+      description: d.description,
+      iconKey: d.iconKey,
+      labels: (d.labels ?? {}) as FitmentDomainRow['labels'],
+      rangeUnit: d.rangeUnit,
+      position: d.position,
+      isGlobal: d.tenantId === null,
+      categoryCount: d._count.categories,
+    };
   });
 }
 
-// ─── Reference writes ─────────────────────────────────────────────────
-
-export async function createMake(ctx: ServiceContext, rawInput: unknown): Promise<{ id: string }> {
-  const input = CreateVehicleMakeInput.parse(rawInput);
-
-  const result = await withTenant(ctx, async (tx) => {
-    const collision = await tx.vehicleMake.findFirst({
-      where: { tenantId: ctx.tenantId, slug: input.slug },
-      select: { id: true },
-    });
-    if (collision) {
-      throw new CommerceConflictError(
-        `Make "${input.slug}" already exists for this tenant`,
-        'slug'
-      );
-    }
-
-    const created = await tx.vehicleMake.create({
-      data: {
-        tenantId: ctx.tenantId,
-        name: input.name,
-        slug: input.slug,
-        countryOfOrigin: input.countryOfOrigin ?? null,
-        logoMediaId: input.logoMediaId ?? null,
-      },
-    });
-
-    await writeAuditLog({
-      tx,
-      tenantId: ctx.tenantId,
-      actorId: ctx.userId ?? null,
-      actorType: ctx.userId ? 'user' : 'system',
-      action: 'commerce.fitment.make_created',
-      entityType: 'VehicleMake',
-      entityId: created.id,
-      diff: { after: { name: created.name, slug: created.slug } },
-    });
-
-    return created;
-  });
-
-  return { id: result.id };
-}
-
-export async function createModel(ctx: ServiceContext, rawInput: unknown): Promise<{ id: string }> {
-  const input = CreateVehicleModelInput.parse(rawInput);
-
-  const result = await withTenant(ctx, async (tx) => {
-    // Make existence — accept platform-seeded (tenant_id NULL) or
-    // tenant-owned. RLS reads already permit both, so a findFirst is
-    // sufficient.
-    const make = await tx.vehicleMake.findFirst({
-      where: { id: input.makeId },
-      select: { id: true },
-    });
-    if (!make) throw new CommerceNotFoundError('VehicleMake', input.makeId);
-
-    const collision = await tx.vehicleModel.findFirst({
-      where: { makeId: input.makeId, slug: input.slug },
-      select: { id: true },
-    });
-    if (collision) {
-      throw new CommerceConflictError(
-        `Model "${input.slug}" already exists under this make`,
-        'slug'
-      );
-    }
-
-    const created = await tx.vehicleModel.create({
-      data: {
-        tenantId: ctx.tenantId,
-        makeId: input.makeId,
-        name: input.name,
-        slug: input.slug,
-        bodyStyle: input.bodyStyle ?? null,
-      },
-    });
-
-    await writeAuditLog({
-      tx,
-      tenantId: ctx.tenantId,
-      actorId: ctx.userId ?? null,
-      actorType: ctx.userId ? 'user' : 'system',
-      action: 'commerce.fitment.model_created',
-      entityType: 'VehicleModel',
-      entityId: created.id,
-      diff: { after: { name: created.name, slug: created.slug, makeId: created.makeId } },
-    });
-
-    return created;
-  });
-
-  return { id: result.id };
-}
-
-export async function createEngine(
+export async function createDomain(
   ctx: ServiceContext,
   rawInput: unknown
 ): Promise<{ id: string }> {
-  const input = CreateVehicleEngineInput.parse(rawInput);
+  const input = CreateFitmentDomainInput.parse(rawInput);
 
   const result = await withTenant(ctx, async (tx) => {
-    const model = await tx.vehicleModel.findFirst({
-      where: { id: input.modelId },
+    const collision = await tx.fitmentDomain.findFirst({
+      where: { tenantId: ctx.tenantId, slug: input.slug, deletedAt: null },
       select: { id: true },
     });
-    if (!model) throw new CommerceNotFoundError('VehicleModel', input.modelId);
+    if (collision) {
+      throw new CommerceConflictError(
+        `Fitment domain "${input.slug}" already exists for this tenant`,
+        'slug'
+      );
+    }
 
-    const created = await tx.vehicleEngine.create({
+    const created = await tx.fitmentDomain.create({
       data: {
         tenantId: ctx.tenantId,
-        modelId: input.modelId,
-        name: input.name,
-        displacementCc: input.displacementCc ?? null,
-        cylinders: input.cylinders ?? null,
-        fuelType: input.fuelType ?? null,
-        aspiration: input.aspiration ?? null,
+        slug: input.slug,
+        displayName: input.displayName,
+        description: input.description ?? null,
+        iconKey: input.iconKey ?? null,
+        labels: input.labels as Prisma.InputJsonValue,
+        rangeUnit: input.rangeUnit ?? null,
+        position: input.position,
       },
     });
 
@@ -253,10 +196,214 @@ export async function createEngine(
       tenantId: ctx.tenantId,
       actorId: ctx.userId ?? null,
       actorType: ctx.userId ? 'user' : 'system',
-      action: 'commerce.fitment.engine_created',
-      entityType: 'VehicleEngine',
+      action: 'commerce.fitment.domain_created',
+      entityType: 'FitmentDomain',
       entityId: created.id,
-      diff: { after: { name: created.name, modelId: created.modelId } },
+      diff: { after: { slug: created.slug, displayName: created.displayName } },
+    });
+
+    return created;
+  });
+
+  return { id: result.id };
+}
+
+// ─── Category (L1) ────────────────────────────────────────────────────
+
+export async function listCategories(
+  ctx: ServiceContext,
+  domainId: string
+): Promise<FitmentCategoryRow[]> {
+  return withTenant(ctx, async (tx) => {
+    const rows = await tx.fitmentCategory.findMany({
+      where: { domainId, deletedAt: null },
+      orderBy: [{ position: 'asc' }, { name: 'asc' }],
+      include: { _count: { select: { items: true } } },
+    });
+    return rows.map(toCategoryRow);
+  });
+}
+
+export async function createCategory(
+  ctx: ServiceContext,
+  rawInput: unknown
+): Promise<{ id: string }> {
+  const input = CreateFitmentCategoryInput.parse(rawInput);
+
+  const result = await withTenant(ctx, async (tx) => {
+    const domain = await tx.fitmentDomain.findFirst({
+      where: { id: input.domainId, deletedAt: null },
+      select: { id: true },
+    });
+    if (!domain) throw new CommerceNotFoundError('FitmentDomain', input.domainId);
+
+    const collision = await tx.fitmentCategory.findFirst({
+      where: { domainId: input.domainId, slug: input.slug, deletedAt: null },
+      select: { id: true },
+    });
+    if (collision) {
+      throw new CommerceConflictError(
+        `Category "${input.slug}" already exists under this domain`,
+        'slug'
+      );
+    }
+
+    const created = await tx.fitmentCategory.create({
+      data: {
+        tenantId: ctx.tenantId,
+        domainId: input.domainId,
+        name: input.name,
+        slug: input.slug,
+        attributes: input.attributes as Prisma.InputJsonValue,
+        iconMediaId: input.iconMediaId ?? null,
+        position: input.position,
+      },
+    });
+
+    await writeAuditLog({
+      tx,
+      tenantId: ctx.tenantId,
+      actorId: ctx.userId ?? null,
+      actorType: ctx.userId ? 'user' : 'system',
+      action: 'commerce.fitment.category_created',
+      entityType: 'FitmentCategory',
+      entityId: created.id,
+      diff: { after: { name: created.name, domainId: created.domainId } },
+    });
+
+    return created;
+  });
+
+  return { id: result.id };
+}
+
+// ─── Item (L2) ────────────────────────────────────────────────────────
+
+export async function listItems(
+  ctx: ServiceContext,
+  categoryId: string
+): Promise<FitmentItemRow[]> {
+  return withTenant(ctx, async (tx) => {
+    const rows = await tx.fitmentItem.findMany({
+      where: { categoryId, deletedAt: null },
+      orderBy: [{ position: 'asc' }, { name: 'asc' }],
+      include: { _count: { select: { variants: true } } },
+    });
+    return rows.map(toItemRow);
+  });
+}
+
+export async function createItem(
+  ctx: ServiceContext,
+  rawInput: unknown
+): Promise<{ id: string }> {
+  const input = CreateFitmentItemInput.parse(rawInput);
+
+  const result = await withTenant(ctx, async (tx) => {
+    const category = await tx.fitmentCategory.findFirst({
+      where: { id: input.categoryId, deletedAt: null },
+      select: { id: true },
+    });
+    if (!category) throw new CommerceNotFoundError('FitmentCategory', input.categoryId);
+
+    const collision = await tx.fitmentItem.findFirst({
+      where: { categoryId: input.categoryId, slug: input.slug, deletedAt: null },
+      select: { id: true },
+    });
+    if (collision) {
+      throw new CommerceConflictError(
+        `Item "${input.slug}" already exists under this category`,
+        'slug'
+      );
+    }
+
+    const created = await tx.fitmentItem.create({
+      data: {
+        tenantId: ctx.tenantId,
+        categoryId: input.categoryId,
+        name: input.name,
+        slug: input.slug,
+        attributes: input.attributes as Prisma.InputJsonValue,
+        position: input.position,
+      },
+    });
+
+    await writeAuditLog({
+      tx,
+      tenantId: ctx.tenantId,
+      actorId: ctx.userId ?? null,
+      actorType: ctx.userId ? 'user' : 'system',
+      action: 'commerce.fitment.item_created',
+      entityType: 'FitmentItem',
+      entityId: created.id,
+      diff: { after: { name: created.name, categoryId: created.categoryId } },
+    });
+
+    return created;
+  });
+
+  return { id: result.id };
+}
+
+// ─── Variant (L3) ─────────────────────────────────────────────────────
+
+export async function listVariants(
+  ctx: ServiceContext,
+  itemId: string
+): Promise<FitmentVariantRow[]> {
+  return withTenant(ctx, async (tx) => {
+    const rows = await tx.fitmentVariant.findMany({
+      where: { itemId, deletedAt: null },
+      orderBy: [{ position: 'asc' }, { name: 'asc' }],
+    });
+    return rows.map(toVariantRow);
+  });
+}
+
+export async function createVariant(
+  ctx: ServiceContext,
+  rawInput: unknown
+): Promise<{ id: string }> {
+  const input = CreateFitmentVariantInput.parse(rawInput);
+
+  const result = await withTenant(ctx, async (tx) => {
+    const item = await tx.fitmentItem.findFirst({
+      where: { id: input.itemId, deletedAt: null },
+      select: { id: true },
+    });
+    if (!item) throw new CommerceNotFoundError('FitmentItem', input.itemId);
+
+    const collision = await tx.fitmentVariant.findFirst({
+      where: { itemId: input.itemId, slug: input.slug, deletedAt: null },
+      select: { id: true },
+    });
+    if (collision) {
+      throw new CommerceConflictError(
+        `Variant "${input.slug}" already exists under this item`,
+        'slug'
+      );
+    }
+
+    const created = await tx.fitmentVariant.create({
+      data: {
+        tenantId: ctx.tenantId,
+        itemId: input.itemId,
+        name: input.name,
+        slug: input.slug,
+        attributes: input.attributes as Prisma.InputJsonValue,
+        position: input.position,
+      },
+    });
+
+    await writeAuditLog({
+      tx,
+      tenantId: ctx.tenantId,
+      actorId: ctx.userId ?? null,
+      actorType: ctx.userId ? 'user' : 'system',
+      action: 'commerce.fitment.variant_created',
+      entityType: 'FitmentVariant',
+      entityId: created.id,
+      diff: { after: { name: created.name, itemId: created.itemId } },
     });
 
     return created;
@@ -274,24 +421,27 @@ export async function listForProduct(
   return withTenant(ctx, async (tx) => {
     const rows = await tx.productFitment.findMany({
       where: { productId },
-      orderBy: [{ yearMin: 'asc' }, { id: 'asc' }],
+      orderBy: [{ rangeMin: 'asc' }, { id: 'asc' }],
       include: {
-        make: { select: { name: true } },
-        model: { select: { name: true } },
-        engine: { select: { name: true } },
+        domain: { select: { slug: true } },
+        category: { select: { name: true } },
+        item: { select: { name: true } },
+        variant: { select: { name: true } },
       },
     });
     return rows.map((r) => ({
       id: r.id,
       productId: r.productId,
-      makeId: r.makeId,
-      makeName: r.make.name,
-      modelId: r.modelId,
-      modelName: r.model?.name ?? null,
-      engineId: r.engineId,
-      engineName: r.engine?.name ?? null,
-      yearMin: r.yearMin,
-      yearMax: r.yearMax,
+      domainId: r.domainId,
+      domainSlug: r.domain.slug,
+      categoryId: r.categoryId,
+      categoryName: r.category.name,
+      itemId: r.itemId,
+      itemName: r.item?.name ?? null,
+      variantId: r.variantId,
+      variantName: r.variant?.name ?? null,
+      rangeMin: r.rangeMin === null ? null : Number(r.rangeMin),
+      rangeMax: r.rangeMax === null ? null : Number(r.rangeMax),
       notes: r.notes,
     }));
   });
@@ -307,8 +457,6 @@ export async function setForProduct(
   productId: string,
   fitments: Omit<ProductFitmentInput, 'productId'>[]
 ): Promise<void> {
-  // Validate each entry against the schema (omitting productId — set
-  // server-side from the path parameter).
   const validated = fitments.map((f) => ProductFitmentInput.omit({ productId: true }).parse(f));
 
   await withTenant(ctx, async (tx) => {
@@ -324,11 +472,12 @@ export async function setForProduct(
         data: validated.map((f) => ({
           tenantId: ctx.tenantId,
           productId,
-          makeId: f.makeId,
-          modelId: f.modelId ?? null,
-          engineId: f.engineId ?? null,
-          yearMin: f.yearMin ?? null,
-          yearMax: f.yearMax ?? null,
+          domainId: f.domainId,
+          categoryId: f.categoryId,
+          itemId: f.itemId ?? null,
+          variantId: f.variantId ?? null,
+          rangeMin: f.rangeMin ?? null,
+          rangeMax: f.rangeMax ?? null,
           notes: f.notes ?? null,
         })),
       });
@@ -355,13 +504,10 @@ export async function setForProduct(
 }
 
 /**
- * Bulk-apply the same fitment set to a batch of products. Used when
- * importing an AAIA catalog or a supplier feed — the importer slices
- * the feed into "this set of products fits these vehicles" buckets and
- * fans out one call per bucket.
- *
- * Per-product audit rows are written so undo / forensics has the same
- * granularity as the single-product `setForProduct` path.
+ * Bulk-apply the same fitment set to a batch of products. Used by
+ * catalog importers (AAIA, supplier feed, merchant CSV) that slice the
+ * feed into "this set of products fits these things" buckets and fan
+ * out one call per bucket.
  */
 export async function bulkAssign(
   ctx: ServiceContext,
@@ -388,11 +534,12 @@ export async function bulkAssign(
           data: input.fitments.map((f) => ({
             tenantId: ctx.tenantId,
             productId,
-            makeId: f.makeId,
-            modelId: f.modelId ?? null,
-            engineId: f.engineId ?? null,
-            yearMin: f.yearMin ?? null,
-            yearMax: f.yearMax ?? null,
+            domainId: f.domainId,
+            categoryId: f.categoryId,
+            itemId: f.itemId ?? null,
+            variantId: f.variantId ?? null,
+            rangeMin: f.rangeMin ?? null,
+            rangeMax: f.rangeMax ?? null,
             notes: f.notes ?? null,
           })),
         });
@@ -413,9 +560,6 @@ export async function bulkAssign(
     return { rowsAffected };
   });
 
-  // One event per touched product so consumers (storefront search index,
-  // B2B catalog visibility) can re-project per-row instead of guessing
-  // the affected set.
   await Promise.all(
     input.productIds.map((productId) =>
       publishCommerceEvent({
@@ -465,30 +609,30 @@ export interface FitmentLookupResult {
 }
 
 /**
- * Resolve "what fits this vehicle?" — returns the set of product IDs
- * that have at least one fitment row matching the query. Make is
- * required; model/engine/year narrow further. Year matches when the
- * fitment's [yearMin, yearMax] range (or open ends) contains the
- * queried year.
+ * Resolve "what fits this thing?" — returns the set of product IDs that
+ * have at least one fitment row matching the query. Optional narrowing
+ * cascades: category → item → variant → range. `rangeValue` matches
+ * when the fitment's [rangeMin, rangeMax] window (or open ends) contains
+ * the queried value. Units are domain-defined (year, lb, kg, ...).
  *
- * For Phase 1.4, runs as a single SQL JOIN. Storefront search filtering
- * uses Typesense once the indexer lands (Phase 1.5) — this lookup
- * remains the source of truth for "show me everything" queries the
- * dashboard runs without the search index.
+ * Runs as a single SQL JOIN for the dashboard "show me everything"
+ * case. Storefront search filtering goes through Typesense once the
+ * indexer lands.
  */
 export async function lookup(ctx: ServiceContext, rawQuery: unknown): Promise<FitmentLookupResult> {
   const query = FitmentLookupQuery.parse(rawQuery);
 
   return withTenant(ctx, async (tx) => {
     const where: Prisma.ProductFitmentWhereInput = {
-      ...(query.makeId ? { makeId: query.makeId } : {}),
-      ...(query.modelId ? { OR: [{ modelId: query.modelId }, { modelId: null }] } : {}),
-      ...(query.engineId ? { OR: [{ engineId: query.engineId }, { engineId: null }] } : {}),
-      ...(query.year !== undefined
+      ...(query.domainId ? { domainId: query.domainId } : {}),
+      ...(query.categoryId ? { categoryId: query.categoryId } : {}),
+      ...(query.itemId ? { OR: [{ itemId: query.itemId }, { itemId: null }] } : {}),
+      ...(query.variantId ? { OR: [{ variantId: query.variantId }, { variantId: null }] } : {}),
+      ...(query.rangeValue !== undefined
         ? {
             AND: [
-              { OR: [{ yearMin: { lte: query.year } }, { yearMin: null }] },
-              { OR: [{ yearMax: { gte: query.year } }, { yearMax: null }] },
+              { OR: [{ rangeMin: { lte: query.rangeValue } }, { rangeMin: null }] },
+              { OR: [{ rangeMax: { gte: query.rangeValue } }, { rangeMax: null }] },
             ],
           }
         : {}),
@@ -508,16 +652,44 @@ export async function lookup(ctx: ServiceContext, rawQuery: unknown): Promise<Fi
 
 // ─── Internal helpers ─────────────────────────────────────────────────
 
-function toEngineRow(e: VehicleEngine): VehicleEngineRow {
+function toCategoryRow(
+  c: FitmentCategory & { _count: { items: number } }
+): FitmentCategoryRow {
   return {
-    id: e.id,
-    modelId: e.modelId,
-    name: e.name,
-    displacementCc: e.displacementCc,
-    cylinders: e.cylinders,
-    fuelType: e.fuelType,
-    aspiration: e.aspiration,
-    isGlobal: e.tenantId === null,
+    id: c.id,
+    domainId: c.domainId,
+    name: c.name,
+    slug: c.slug,
+    attributes: (c.attributes ?? {}) as Record<string, unknown>,
+    iconMediaId: c.iconMediaId,
+    position: c.position,
+    isGlobal: c.tenantId === null,
+    itemCount: c._count.items,
+  };
+}
+
+function toItemRow(i: FitmentItem & { _count: { variants: number } }): FitmentItemRow {
+  return {
+    id: i.id,
+    categoryId: i.categoryId,
+    name: i.name,
+    slug: i.slug,
+    attributes: (i.attributes ?? {}) as Record<string, unknown>,
+    position: i.position,
+    isGlobal: i.tenantId === null,
+    variantCount: i._count.variants,
+  };
+}
+
+function toVariantRow(v: FitmentVariant): FitmentVariantRow {
+  return {
+    id: v.id,
+    itemId: v.itemId,
+    name: v.name,
+    slug: v.slug,
+    attributes: (v.attributes ?? {}) as Record<string, unknown>,
+    position: v.position,
+    isGlobal: v.tenantId === null,
   };
 }
 
@@ -525,15 +697,11 @@ function serializeFitment(f: ProductFitment): Record<string, unknown> {
   return {
     id: f.id,
     productId: f.productId,
-    makeId: f.makeId,
-    modelId: f.modelId,
-    engineId: f.engineId,
-    yearMin: f.yearMin,
-    yearMax: f.yearMax,
+    domainId: f.domainId,
+    categoryId: f.categoryId,
+    itemId: f.itemId,
+    variantId: f.variantId,
+    rangeMin: f.rangeMin === null ? null : Number(f.rangeMin),
+    rangeMax: f.rangeMax === null ? null : Number(f.rangeMax),
   };
 }
-
-// Suppress unused-import warnings for types only used by callers; keeping
-// these imports stable lets TS surface narrowed Prisma payload types
-// without consumers needing parallel imports.
-export type { VehicleMake, VehicleModel };

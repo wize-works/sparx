@@ -1,8 +1,5 @@
-import { Heart, PackageOpen } from 'lucide-react';
+import { Heart } from 'lucide-react';
 
-import { isModuleEnabled, requireSession } from '@sparx/auth';
-import { reviewService } from '@sparx/commerce';
-import { withTenant } from '@sparx/db';
 import {
   Badge,
   Card,
@@ -22,46 +19,29 @@ import {
   Text,
 } from '@sparx/ui';
 
-import { ModuleStub } from '../../../../components/module-stub';
+import { api } from '@/lib/api-rest-client';
 
 export const dynamic = 'force-dynamic';
 
-// Wishlist analytics — read-only "what's most-saved" view. Useful for
-// restock prioritization, promo selection, and the abandoned-wishlist
-// recovery email (future worker).
+interface TopVariant {
+  variantId: string;
+  sku: string;
+  variantTitle: string | null;
+  productId: string;
+  productTitle: string;
+  productHandle: string;
+  saveCount: number;
+}
+
+interface WishlistAnalytics {
+  wishlistCount: number;
+  itemCount: number;
+  topVariants: TopVariant[];
+}
+
 export default async function WishlistsPage() {
-  const session = await requireSession();
-  const enabled = await isModuleEnabled(session.user.tenantId, 'commerce');
-  if (!enabled) {
-    return (
-      <ModuleStub
-        icon={<PackageOpen className="h-5 w-5" />}
-        title="Commerce"
-        tagline="Wishlist analytics."
-        description="Activate the Commerce module from Billing to see what customers are saving."
-        features={[]}
-      />
-    );
-  }
-
-  const ctx = { tenantId: session.user.tenantId, userId: session.user.id };
-  const [topVariants, wishlistCount, itemCount] = await Promise.all([
-    reviewService.topWishlistedVariants(ctx, 50),
-    withTenant(ctx, (tx) => tx.wishlist.count()),
-    withTenant(ctx, (tx) => tx.wishlistItem.count()),
-  ]);
-
-  const variantIds = topVariants.map((v) => v.variantId);
-  const variants =
-    variantIds.length > 0
-      ? await withTenant(ctx, (tx) =>
-          tx.productVariant.findMany({
-            where: { id: { in: variantIds } },
-            include: { product: { select: { title: true } } },
-          })
-        )
-      : [];
-  const byId = new Map(variants.map((v) => [v.id, v]));
+  const analytics = await api.get<WishlistAnalytics>('/v1/commerce/wishlists/analytics?take=50');
+  const { wishlistCount, itemCount, topVariants } = analytics;
 
   return (
     <Container size="xl">
@@ -107,27 +87,24 @@ export default async function WishlistsPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {topVariants.map((row) => {
-                    const v = byId.get(row.variantId);
-                    return (
-                      <TableRow key={row.variantId}>
-                        <TableCell>
-                          <Text size="xs" className="font-mono">
-                            {row.variantId.slice(0, 8)}
-                          </Text>
-                        </TableCell>
-                        <TableCell>
-                          <Text size="xs" className="font-mono">
-                            {v?.sku ?? '—'}
-                          </Text>
-                        </TableCell>
-                        <TableCell>{v?.product?.title ?? '—'}</TableCell>
-                        <TableCell className="text-right">
-                          <Badge variant="outline">{row.saveCount}</Badge>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
+                  {topVariants.map((row) => (
+                    <TableRow key={row.variantId}>
+                      <TableCell>
+                        <Text size="xs" className="font-mono">
+                          {row.variantId.slice(0, 8)}
+                        </Text>
+                      </TableCell>
+                      <TableCell>
+                        <Text size="xs" className="font-mono">
+                          {row.sku}
+                        </Text>
+                      </TableCell>
+                      <TableCell>{row.productTitle}</TableCell>
+                      <TableCell className="text-right">
+                        <Badge variant="outline">{row.saveCount}</Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))}
                 </TableBody>
               </Table>
             )}

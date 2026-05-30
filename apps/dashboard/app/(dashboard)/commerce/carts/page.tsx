@@ -1,8 +1,6 @@
 import Link from 'next/link';
-import { PackageOpen, ShoppingCart } from 'lucide-react';
+import { ShoppingCart } from 'lucide-react';
 
-import { isModuleEnabled, requireSession } from '@sparx/auth';
-import { withTenant } from '@sparx/db';
 import {
   Badge,
   Card,
@@ -22,55 +20,55 @@ import {
   Text,
 } from '@sparx/ui';
 
-import { ModuleStub } from '../../../../components/module-stub';
+import { api } from '@/lib/api-rest-client';
+
 import { EntityRowLink } from '../../_components/entity-row-link';
 
 export const dynamic = 'force-dynamic';
 
-// Diagnostic view — abandoned carts. Recovery emails will fire from the
-// cart-abandonment worker once it lands; for now this is a read-only
-// triage queue so support staff can manually nudge customers.
+interface CartCustomer {
+  id: string;
+  firstName: string | null;
+  lastName: string | null;
+  email: string | null;
+  company: string | null;
+}
+
+interface CartRow {
+  id: string;
+  channel: string;
+  currency: string;
+  customerId: string | null;
+  guestToken: string | null;
+  subtotalCents: number;
+  totalCents: number;
+  itemCount: number;
+  abandonedAt: string | null;
+  recoveredAt: string | null;
+  expiresAt: string | null;
+  updatedAt: string;
+  customer: CartCustomer | null;
+}
+
+function customerName(c: CartCustomer | null): string | null {
+  if (!c) return null;
+  const full = `${c.firstName ?? ''} ${c.lastName ?? ''}`.trim();
+  return full || c.email || null;
+}
 
 export default async function CartsPage({
   searchParams,
 }: {
   searchParams: Promise<{ filter?: string }>;
 }) {
-  const session = await requireSession();
-  const enabled = await isModuleEnabled(session.user.tenantId, 'commerce');
-  if (!enabled) {
-    return (
-      <ModuleStub
-        icon={<PackageOpen className="h-5 w-5" />}
-        title="Commerce"
-        tagline="Abandoned cart triage."
-        description="Activate the Commerce module from Billing to triage carts."
-        features={[]}
-      />
-    );
-  }
-
   const { filter } = await searchParams;
   const showRecovered = filter === 'recovered';
   const showActive = filter === 'active';
+  const filterParam = showRecovered ? 'recovered' : showActive ? 'active' : 'abandoned';
 
-  const ctx = { tenantId: session.user.tenantId, userId: session.user.id };
-
-  const carts = await withTenant(ctx, async (tx) => {
-    return tx.cart.findMany({
-      where: showRecovered
-        ? { recoveredAt: { not: null } }
-        : showActive
-          ? { abandonedAt: null, recoveredAt: null }
-          : { abandonedAt: { not: null }, recoveredAt: null },
-      include: {
-        _count: { select: { items: true } },
-        customer: { select: { email: true, name: true } },
-      },
-      orderBy: { updatedAt: 'desc' },
-      take: 250,
-    });
-  });
+  const carts = await api.get<CartRow[]>(
+    `/v1/commerce/carts?filter=${filterParam}&take=250`
+  );
 
   return (
     <Container size="xl">
@@ -126,55 +124,58 @@ export default async function CartsPage({
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {carts.map((c) => (
-                    <TableRow key={c.id}>
-                      <TableCell>
-                        <EntityRowLink
-                          href={`/commerce/carts/${c.id}`}
-                          entityType="cart"
-                          entityId={c.id}
-                          className="font-mono text-xs hover:text-[var(--module-active)]"
-                        >
-                          {c.id.slice(0, 8)}
-                        </EntityRowLink>
-                      </TableCell>
-                      <TableCell>
-                        {c.customer?.email ? (
-                          <Stack gap={0}>
-                            <Text size="sm">{c.customer.name ?? c.customer.email}</Text>
-                            {c.customer.name && (
-                              <Text size="xs" variant="muted">
-                                {c.customer.email}
-                              </Text>
-                            )}
-                          </Stack>
-                        ) : c.guestToken ? (
-                          <Text size="xs" variant="muted">
-                            guest
-                          </Text>
-                        ) : (
-                          '—'
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline">{c.channel}</Badge>
-                      </TableCell>
-                      <TableCell>{c._count.items}</TableCell>
-                      <TableCell>
-                        ${(c.totalCents / 100).toFixed(2)} {c.currency}
-                      </TableCell>
-                      <TableCell>{new Date(c.updatedAt).toLocaleString()}</TableCell>
-                      <TableCell>
-                        {c.recoveredAt ? (
-                          <Badge variant="success">recovered</Badge>
-                        ) : c.abandonedAt ? (
-                          <Badge variant="warning">abandoned</Badge>
-                        ) : (
-                          <Badge variant="outline">active</Badge>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                  {carts.map((c) => {
+                    const displayName = customerName(c.customer);
+                    return (
+                      <TableRow key={c.id}>
+                        <TableCell>
+                          <EntityRowLink
+                            href={`/commerce/carts/${c.id}`}
+                            entityType="cart"
+                            entityId={c.id}
+                            className="font-mono text-xs hover:text-[var(--module-active)]"
+                          >
+                            {c.id.slice(0, 8)}
+                          </EntityRowLink>
+                        </TableCell>
+                        <TableCell>
+                          {c.customer?.email ? (
+                            <Stack gap={0}>
+                              <Text size="sm">{displayName ?? c.customer.email}</Text>
+                              {displayName && displayName !== c.customer.email && (
+                                <Text size="xs" variant="muted">
+                                  {c.customer.email}
+                                </Text>
+                              )}
+                            </Stack>
+                          ) : c.guestToken ? (
+                            <Text size="xs" variant="muted">
+                              guest
+                            </Text>
+                          ) : (
+                            '—'
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline">{c.channel}</Badge>
+                        </TableCell>
+                        <TableCell>{c.itemCount}</TableCell>
+                        <TableCell>
+                          ${(c.totalCents / 100).toFixed(2)} {c.currency}
+                        </TableCell>
+                        <TableCell>{new Date(c.updatedAt).toLocaleString()}</TableCell>
+                        <TableCell>
+                          {c.recoveredAt ? (
+                            <Badge variant="success">recovered</Badge>
+                          ) : c.abandonedAt ? (
+                            <Badge variant="warning">abandoned</Badge>
+                          ) : (
+                            <Badge variant="outline">active</Badge>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             )}

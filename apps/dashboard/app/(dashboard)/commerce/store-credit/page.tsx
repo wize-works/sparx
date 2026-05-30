@@ -1,7 +1,5 @@
-import { CircleDollarSign, PackageOpen } from 'lucide-react';
+import { CircleDollarSign } from 'lucide-react';
 
-import { isModuleEnabled, requireSession } from '@sparx/auth';
-import { withTenant } from '@sparx/db';
 import {
   Badge,
   Card,
@@ -21,7 +19,7 @@ import {
   Text,
 } from '@sparx/ui';
 
-import { ModuleStub } from '../../../../components/module-stub';
+import { api } from '@/lib/api-rest-client';
 
 import { GrantStoreCreditForm } from './_components/grant-store-credit-form';
 
@@ -29,28 +27,49 @@ export const dynamic = 'force-dynamic';
 
 const moneyFmt = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
 
-export default async function StoreCreditPage() {
-  const session = await requireSession();
-  const enabled = await isModuleEnabled(session.user.tenantId, 'commerce');
-  if (!enabled) {
-    return (
-      <ModuleStub
-        icon={<PackageOpen className="h-5 w-5" />}
-        title="Commerce"
-        tagline="Per-customer credit balances."
-        description="Activate the Commerce module from Billing to manage store credit."
-        features={[]}
-      />
-    );
-  }
+interface StoreCreditCustomer {
+  id: string;
+  firstName: string | null;
+  lastName: string | null;
+  email: string | null;
+  company: string | null;
+}
 
-  const ctx = { tenantId: session.user.tenantId, userId: session.user.id };
-  const [balances, recentCustomers] = await Promise.all([
-    loadBalances(ctx),
-    loadRecentCustomers(ctx),
+interface StoreCreditRow {
+  id: string;
+  customerId: string;
+  balanceCents: number;
+  currency: string;
+  updatedAt: string;
+  customer: StoreCreditCustomer | null;
+}
+
+interface CrmCustomerRow {
+  id: string;
+  firstName: string | null;
+  lastName: string | null;
+  email: string | null;
+}
+
+function customerName(c: StoreCreditCustomer | null): string | null {
+  if (!c) return null;
+  const full = `${c.firstName ?? ''} ${c.lastName ?? ''}`.trim();
+  return full || c.company || c.email || null;
+}
+
+export default async function StoreCreditPage() {
+  const [balances, customersPaged] = await Promise.all([
+    api.get<StoreCreditRow[]>('/v1/commerce/store-credit?take=100'),
+    api.getPaged<CrmCustomerRow[]>('/v1/crm/customers?take=200'),
   ]);
 
   const outstandingCents = balances.reduce((acc, b) => acc + b.balanceCents, 0);
+
+  const recentCustomers = customersPaged.data.map((c) => {
+    const full = `${c.firstName ?? ''} ${c.lastName ?? ''}`.trim();
+    const name = full || c.email || c.id.slice(0, 8) + '…';
+    return { id: c.id, email: c.email, name };
+  });
 
   return (
     <Container size="xl">
@@ -100,7 +119,6 @@ export default async function StoreCreditPage() {
                     <TableHead>Customer</TableHead>
                     <TableHead>Balance</TableHead>
                     <TableHead>Currency</TableHead>
-                    <TableHead>Expires</TableHead>
                     <TableHead>Updated</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -109,20 +127,15 @@ export default async function StoreCreditPage() {
                     <TableRow key={`${b.customerId}:${b.currency}`}>
                       <TableCell>
                         <Stack gap={0}>
-                          <Text size="sm">{b.customerName ?? '—'}</Text>
+                          <Text size="sm">{customerName(b.customer) ?? '—'}</Text>
                           <Text size="xs" variant="muted">
-                            {b.customerEmail ?? b.customerId.slice(0, 8) + '…'}
+                            {b.customer?.email ?? b.customerId.slice(0, 8) + '…'}
                           </Text>
                         </Stack>
                       </TableCell>
                       <TableCell>{moneyFmt.format(b.balanceCents / 100)}</TableCell>
                       <TableCell>
                         <span className="font-mono text-xs">{b.currency}</span>
-                      </TableCell>
-                      <TableCell>
-                        <Text size="xs" variant="muted">
-                          {b.expiresAt ? new Date(b.expiresAt).toLocaleDateString() : 'never'}
-                        </Text>
                       </TableCell>
                       <TableCell>
                         <Text size="xs" variant="muted">
@@ -139,71 +152,4 @@ export default async function StoreCreditPage() {
       </Stack>
     </Container>
   );
-}
-
-interface BalanceRow {
-  customerId: string;
-  customerName: string | null;
-  customerEmail: string | null;
-  balanceCents: number;
-  currency: string;
-  expiresAt: string | null;
-  updatedAt: string;
-}
-
-async function loadBalances(ctx: { tenantId: string; userId: string }): Promise<BalanceRow[]> {
-  return withTenant(ctx, async (tx) => {
-    const rows = await tx.storeCredit.findMany({
-      where: { balanceCents: { gt: 0 } },
-      include: {
-        customer: { select: { firstName: true, lastName: true, email: true } },
-      },
-      orderBy: { balanceCents: 'desc' },
-      take: 100,
-    });
-    return rows.map((r) => ({
-      customerId: r.customerId,
-      customerName: r.customer
-        ? `${r.customer.firstName ?? ''} ${r.customer.lastName ?? ''}`.trim() || null
-        : null,
-      customerEmail: r.customer?.email ?? null,
-      balanceCents: r.balanceCents,
-      currency: r.currency,
-      expiresAt: r.expiresAt?.toISOString() ?? null,
-      updatedAt: r.updatedAt.toISOString(),
-    }));
-  });
-}
-
-interface CustomerSummary {
-  id: string;
-  email: string | null;
-  name: string;
-}
-
-async function loadRecentCustomers(ctx: {
-  tenantId: string;
-  userId: string;
-}): Promise<CustomerSummary[]> {
-  return withTenant(ctx, async (tx) => {
-    const rows = await tx.customer.findMany({
-      where: { deletedAt: null },
-      orderBy: { updatedAt: 'desc' },
-      take: 200,
-      select: {
-        id: true,
-        email: true,
-        firstName: true,
-        lastName: true,
-      },
-    });
-    return rows.map((r) => ({
-      id: r.id,
-      email: r.email,
-      name:
-        (`${r.firstName ?? ''} ${r.lastName ?? ''}`.trim() || null) ??
-        r.email ??
-        r.id.slice(0, 8) + '…',
-    }));
-  });
 }

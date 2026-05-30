@@ -9,6 +9,10 @@
 // would technically need a second endpoint that resolves by primary_domain.
 // That's deferred — for now we only handle case 2 (subdomain) and case 3
 // (dev fallback). Custom domains land when merchants need them.
+//
+// The tenant payload now also carries the merchant's storefront THEME and
+// commerce DEFAULTS so the root layout resolves colors/fonts/currency in a
+// single fetch (see app/layout.tsx + lib/theme.ts).
 
 import { headers } from 'next/headers';
 import { cache } from 'react';
@@ -16,11 +20,39 @@ import { cache } from 'react';
 const BASE_URL = process.env.SPARX_API_REST_URL ?? 'http://localhost:3100';
 const ZONE_DOMAIN = process.env.SPARX_ZONE_DOMAIN ?? 'sparx.zone';
 
+/** Per-tenant theme overrides. Every field is nullable — null means "fall
+ *  back to the default theme token" (see lib/theme.ts). Mirrors the
+ *  StorefrontTheme model. */
+export interface TenantTheme {
+  colorPrimary: string | null;
+  colorPrimaryForeground: string | null;
+  colorAccent: string | null;
+  colorBackground: string | null;
+  colorMuted: string | null;
+  fontHeading: string | null;
+  fontBody: string | null;
+  radiusBase: string | null;
+  logoMediaId: string | null;
+  logoDarkMediaId: string | null;
+  faviconMediaId: string | null;
+}
+
+/** Commerce-relevant storefront defaults (currency, locale, gating). */
+export interface TenantStorefront {
+  defaultCurrency: string;
+  defaultLocale: string;
+  showStockBelow: number;
+  hidePricesWhenSignedOut: boolean;
+  requireAuthForCheckout: boolean;
+}
+
 export interface ResolvedTenant {
   id: string;
   slug: string;
   name: string;
   settings: Record<string, unknown>;
+  theme: TenantTheme | null;
+  storefront: TenantStorefront;
 }
 
 interface TenantApiResponse {
@@ -28,6 +60,14 @@ interface TenantApiResponse {
   data?: ResolvedTenant;
   error?: { code: string; message: string };
 }
+
+const DEFAULT_STOREFRONT: TenantStorefront = {
+  defaultCurrency: 'USD',
+  defaultLocale: 'en-US',
+  showStockBelow: 10,
+  hidePricesWhenSignedOut: false,
+  requireAuthForCheckout: false,
+};
 
 // Extracts the tenant slug from a host like `acme.sparx.zone` → `acme`.
 // Returns null when the host isn't a sparx.zone subdomain. Strips port.
@@ -44,12 +84,22 @@ export function slugFromHost(host: string | null | undefined): string | null {
   return sub;
 }
 
+// Resolves the active slug: Host subdomain first, then a `?tenant=` / header
+// dev fallback so `localhost:3004/?tenant=acme` works without DNS.
+async function resolveSlug(): Promise<string | null> {
+  const hdrs = await headers();
+  // Middleware stashes the dev-fallback slug here so Server Components can
+  // read it without re-parsing searchParams on every page.
+  const fromHeader = hdrs.get('x-tenant-slug');
+  if (fromHeader) return fromHeader;
+  const host = hdrs.get('x-forwarded-host') ?? hdrs.get('host');
+  return slugFromHost(host);
+}
+
 // Cached per-request so layout + page can both resolve the tenant without a
 // double fetch. React.cache() dedupes within a single server render.
 export const resolveTenant = cache(async (): Promise<ResolvedTenant | null> => {
-  const hdrs = await headers();
-  const host = hdrs.get('x-forwarded-host') ?? hdrs.get('host');
-  const slug = slugFromHost(host);
+  const slug = await resolveSlug();
   if (!slug) return null;
 
   try {
@@ -58,7 +108,10 @@ export const resolveTenant = cache(async (): Promise<ResolvedTenant | null> => {
     });
     const json = (await res.json()) as TenantApiResponse;
     if (!res.ok || !json.success || !json.data) return null;
-    return json.data;
+    return {
+      ...json.data,
+      storefront: json.data.storefront ?? DEFAULT_STOREFRONT,
+    };
   } catch {
     return null;
   }

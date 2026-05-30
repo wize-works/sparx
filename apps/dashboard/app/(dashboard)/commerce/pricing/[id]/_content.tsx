@@ -1,9 +1,6 @@
 import { notFound } from 'next/navigation';
-import { DollarSign, PackageOpen } from 'lucide-react';
+import { DollarSign } from 'lucide-react';
 
-import { isModuleEnabled, requireSession } from '@sparx/auth';
-import { CommerceNotFoundError, pricingService } from '@sparx/commerce';
-import { withTenant } from '@sparx/db';
 import {
   Badge,
   Card,
@@ -15,7 +12,7 @@ import {
   Text,
 } from '@sparx/ui';
 
-import { ModuleStub } from '../../../../../components/module-stub';
+import { api, type ApiRestError } from '@/lib/api-rest-client';
 
 import { PriceListStatusBar } from './_components/price-list-status-bar';
 import { PriceListEntriesEditor } from './_components/price-list-entries-editor';
@@ -32,35 +29,63 @@ interface Props {
   id: string;
 }
 
+interface PriceListDetail {
+  id: string;
+  name: string;
+  description: string | null;
+  currency: string;
+  channel: string | null;
+  customerSegmentId: string | null;
+  b2bAccountId: string | null;
+  collectionId: string | null;
+  priority: number;
+  validFrom: string | null;
+  validTo: string | null;
+  status: string;
+  entryCount: number;
+  updatedAt: string;
+}
+
+interface EntryRow {
+  id: string;
+  variantId: string;
+  variantSku: string;
+  productTitle: string;
+  fixedPriceCents: number | null;
+  percentOffList: number | null;
+  minQuantity: number;
+  maxQuantity: number | null;
+}
+
+interface VariantListRow {
+  id: string;
+  sku: string;
+  title: string | null;
+  priceCents: number;
+  productTitle: string;
+}
+
 export async function PriceListDetailContent({ id }: Props) {
-  const session = await requireSession();
-  const enabled = await isModuleEnabled(session.user.tenantId, 'commerce');
-  if (!enabled) {
-    return (
-      <ModuleStub
-        icon={<PackageOpen className="h-5 w-5" />}
-        title="Commerce"
-        tagline=""
-        description="Commerce is disabled. Activate it from Billing to manage pricing."
-        features={[]}
-      />
-    );
-  }
-
-  const ctx = { tenantId: session.user.tenantId, userId: session.user.id };
-
-  let priceList;
+  let priceList: PriceListDetail;
   try {
-    priceList = await pricingService.getPriceList(ctx, id);
+    priceList = await api.get<PriceListDetail>(`/v1/commerce/price-lists/${id}`);
   } catch (err) {
-    if (err instanceof CommerceNotFoundError) notFound();
+    if ((err as ApiRestError).code === 'NOT_FOUND') notFound();
     throw err;
   }
 
-  const [entries, variantSummaries] = await Promise.all([
-    pricingService.listEntries(ctx, id),
-    loadActiveVariants(ctx),
+  const [entries, variantRows] = await Promise.all([
+    api.get<EntryRow[]>(`/v1/commerce/price-lists/${id}/entries`),
+    api.get<VariantListRow[]>('/v1/commerce/variants?take=500'),
   ]);
+
+  const variantSummaries = variantRows.map((v) => ({
+    id: v.id,
+    sku: v.sku,
+    title: v.title,
+    basePriceCents: v.priceCents,
+    productTitle: v.productTitle,
+  }));
 
   return (
     <Stack gap={6}>
@@ -112,28 +137,4 @@ export async function PriceListDetailContent({ id }: Props) {
       </Card>
     </Stack>
   );
-}
-
-async function loadActiveVariants(ctx: { tenantId: string; userId: string }) {
-  return withTenant(ctx, async (tx) => {
-    const rows = await tx.productVariant.findMany({
-      where: { deletedAt: null },
-      orderBy: [{ product: { title: 'asc' } }, { sku: 'asc' }],
-      take: 500,
-      select: {
-        id: true,
-        sku: true,
-        title: true,
-        priceCents: true,
-        product: { select: { title: true } },
-      },
-    });
-    return rows.map((v) => ({
-      id: v.id,
-      sku: v.sku,
-      title: v.title,
-      basePriceCents: v.priceCents,
-      productTitle: v.product.title,
-    }));
-  });
 }

@@ -136,11 +136,56 @@ const publicContentRoutes: FastifyPluginAsync = (app) => {
     if (tenant.id === '00000000-0000-0000-0000-000000000000') {
       throw badRequest('Reserved tenant.');
     }
+
+    // Storefront theme + commerce defaults travel with the tenant payload so
+    // the storefront's root layout resolves everything in a single fetch.
+    // Both rows are one-per-tenant (tenantId PK); a missing row means the
+    // merchant hasn't customized, so we fall back to nulls/defaults that the
+    // storefront's token layer interprets as "use the default theme".
+    const [theme, storefront] = await withTenant({ tenantId: tenant.id }, (tx) =>
+      Promise.all([
+        tx.storefrontTheme.findUnique({
+          where: { tenantId: tenant.id },
+          select: {
+            colorPrimary: true,
+            colorPrimaryForeground: true,
+            colorAccent: true,
+            colorBackground: true,
+            colorMuted: true,
+            fontHeading: true,
+            fontBody: true,
+            radiusBase: true,
+            logoMediaId: true,
+            logoDarkMediaId: true,
+            faviconMediaId: true,
+          },
+        }),
+        tx.storefrontSettings.findUnique({
+          where: { tenantId: tenant.id },
+          select: {
+            defaultCurrency: true,
+            defaultLocale: true,
+            showStockBelow: true,
+            hidePricesWhenSignedOut: true,
+            requireAuthForCheckout: true,
+          },
+        }),
+      ])
+    );
+
     return ok({
       id: tenant.id,
       slug: tenant.slug,
       name: tenant.name,
       settings: tenant.settings,
+      theme: theme ?? null,
+      storefront: storefront ?? {
+        defaultCurrency: 'USD',
+        defaultLocale: 'en-US',
+        showStockBelow: 10,
+        hidePricesWhenSignedOut: false,
+        requireAuthForCheckout: false,
+      },
     });
   });
   return Promise.resolve();

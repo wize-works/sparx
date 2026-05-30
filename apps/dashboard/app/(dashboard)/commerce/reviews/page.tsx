@@ -1,10 +1,6 @@
 import Link from 'next/link';
-import { MessageSquare, PackageOpen, Star } from 'lucide-react';
+import { MessageSquare, Star } from 'lucide-react';
 
-import { isModuleEnabled, requireSession } from '@sparx/auth';
-import { reviewService } from '@sparx/commerce';
-import type { ReviewModerationStatus } from '@sparx/commerce-schemas';
-import { withTenant } from '@sparx/db';
 import {
   Badge,
   Card,
@@ -24,12 +20,15 @@ import {
   Text,
 } from '@sparx/ui';
 
-import { ModuleStub } from '../../../../components/module-stub';
+import { api } from '@/lib/api-rest-client';
+
 import { EntityRowLink } from '../../_components/entity-row-link';
 
 export const dynamic = 'force-dynamic';
 
-const STATUS_FILTERS: { value: ReviewModerationStatus | 'queue' | undefined; label: string }[] = [
+type ReviewStatus = 'pending' | 'approved' | 'rejected' | 'flagged';
+
+const STATUS_FILTERS: { value: ReviewStatus | 'queue' | undefined; label: string }[] = [
   { value: 'queue', label: 'Moderation queue' },
   { value: undefined, label: 'All' },
   { value: 'pending', label: 'Pending' },
@@ -38,33 +37,84 @@ const STATUS_FILTERS: { value: ReviewModerationStatus | 'queue' | undefined; lab
   { value: 'flagged', label: 'Flagged' },
 ];
 
+interface ReviewCustomer {
+  id: string;
+  firstName: string | null;
+  lastName: string | null;
+  email: string | null;
+}
+
+interface ReviewListRow {
+  id: string;
+  productId: string;
+  rating: number;
+  title: string;
+  body: string;
+  status: string;
+  verifiedPurchase: boolean;
+  createdAt: string;
+  productTitle?: string | null;
+  productHandle?: string | null;
+  customer?: ReviewCustomer | null;
+  // Only present on the /pending endpoint:
+  displayName?: string | null;
+  customerId?: string | null;
+}
+
+function authorLabel(row: ReviewListRow): string {
+  if (row.displayName) return row.displayName;
+  if (row.customer) {
+    const full = `${row.customer.firstName ?? ''} ${row.customer.lastName ?? ''}`.trim();
+    if (full) return full;
+    if (row.customer.email) return row.customer.email;
+    return 'Customer';
+  }
+  if (row.customerId) return 'Customer';
+  return 'Anon';
+}
+
+type Filter =
+  | { kind: 'queue' }
+  | { kind: 'all' }
+  | { kind: 'status'; status: ReviewStatus };
+
+function parseFilter(raw: string | undefined): Filter {
+  if (raw === undefined || raw === 'queue') return { kind: 'queue' };
+  if (raw === 'all') return { kind: 'all' };
+  if (raw === 'pending' || raw === 'approved' || raw === 'rejected' || raw === 'flagged') {
+    return { kind: 'status', status: raw };
+  }
+  return { kind: 'queue' };
+}
+
+function labelFor(f: Filter): string {
+  if (f.kind === 'queue') return 'Moderation queue';
+  if (f.kind === 'all') return 'All reviews';
+  return f.status.charAt(0).toUpperCase() + f.status.slice(1);
+}
+
 export default async function ReviewsPage({
   searchParams,
 }: {
   searchParams: Promise<{ status?: string; productId?: string }>;
 }) {
-  const session = await requireSession();
-  const enabled = await isModuleEnabled(session.user.tenantId, 'commerce');
-  if (!enabled) {
-    return (
-      <ModuleStub
-        icon={<PackageOpen className="h-5 w-5" />}
-        title="Commerce"
-        tagline="Product reviews."
-        description="Activate the Commerce module from Billing to moderate reviews."
-        features={[]}
-      />
-    );
-  }
-
   const { status: statusParam, productId } = await searchParams;
   const filter = parseFilter(statusParam);
-  const ctx = { tenantId: session.user.tenantId, userId: session.user.id };
 
-  // Two modes: "queue" surfaces pending+flagged together (the default
-  // moderator view); any other status uses the per-product list. With
-  // no productId set we fall back to a global tenant-wide query.
-  const rows = await loadReviews(ctx, filter, productId);
+  let rows: ReviewListRow[] = [];
+  if (filter.kind === 'queue') {
+    rows = await api.get<ReviewListRow[]>('/v1/commerce/reviews/pending');
+  } else if (productId) {
+    const params = new URLSearchParams({ take: '250' });
+    if (filter.kind === 'status') params.set('status', filter.status);
+    rows = await api.get<ReviewListRow[]>(
+      `/v1/commerce/products/${productId}/reviews?${params.toString()}`
+    );
+  } else {
+    const params = new URLSearchParams({ take: '250' });
+    if (filter.kind === 'status') params.set('status', filter.status);
+    rows = await api.get<ReviewListRow[]>(`/v1/commerce/reviews?${params.toString()}`);
+  }
 
   return (
     <Container size="xl">
@@ -140,11 +190,13 @@ export default async function ReviewsPage({
                         </EntityRowLink>
                       </TableCell>
                       <TableCell>
-                        <Text size="xs" className="font-mono">
-                          {r.productId.slice(0, 8)}
+                        <Text size="sm">
+                          {r.productTitle ?? (
+                            <span className="font-mono text-xs">{r.productId.slice(0, 8)}</span>
+                          )}
                         </Text>
                       </TableCell>
-                      <TableCell>{r.displayName ?? (r.customerId ? 'Customer' : 'Anon')}</TableCell>
+                      <TableCell>{authorLabel(r)}</TableCell>
                       <TableCell>
                         <StatusBadge status={r.status} />
                       </TableCell>
@@ -170,75 +222,6 @@ export default async function ReviewsPage({
   );
 }
 
-type Filter =
-  | { kind: 'queue' }
-  | { kind: 'all' }
-  | { kind: 'status'; status: ReviewModerationStatus };
-
-function parseFilter(raw: string | undefined): Filter {
-  if (raw === undefined || raw === 'queue') return { kind: 'queue' };
-  if (raw === 'all') return { kind: 'all' };
-  if (raw === 'pending' || raw === 'approved' || raw === 'rejected' || raw === 'flagged') {
-    return { kind: 'status', status: raw };
-  }
-  return { kind: 'queue' };
-}
-
-function labelFor(f: Filter): string {
-  if (f.kind === 'queue') return 'Moderation queue';
-  if (f.kind === 'all') return 'All reviews';
-  return f.status.charAt(0).toUpperCase() + f.status.slice(1);
-}
-
-async function loadReviews(
-  ctx: { tenantId: string; userId: string },
-  filter: Filter,
-  productId: string | undefined
-) {
-  if (filter.kind === 'queue') {
-    return reviewService.listPendingModeration(ctx);
-  }
-  if (productId) {
-    const result = await reviewService.listReviewsForProduct(ctx, productId, {
-      ...(filter.kind === 'status' ? { status: filter.status } : {}),
-      take: 250,
-    });
-    return result.items;
-  }
-  // Tenant-wide query for All / by-status when no product is specified.
-  // Bypass the per-product service helper since it requires productId.
-  return withTenant(ctx, async (tx) => {
-    const rows = await tx.productReview.findMany({
-      where: {
-        deletedAt: null,
-        ...(filter.kind === 'status' ? { status: filter.status } : {}),
-      },
-      include: { media: { orderBy: { position: 'asc' } } },
-      orderBy: { createdAt: 'desc' },
-      take: 250,
-    });
-    return rows.map((row) => ({
-      id: row.id,
-      productId: row.productId,
-      variantId: row.variantId,
-      customerId: row.customerId,
-      orderId: row.orderId,
-      rating: row.rating,
-      title: row.title,
-      body: row.body,
-      displayName: row.displayName,
-      status: row.status as ReviewModerationStatus,
-      verifiedPurchase: row.orderId !== null,
-      helpfulCount: row.helpfulCount,
-      unhelpfulCount: row.unhelpfulCount,
-      response: row.response,
-      respondedAt: row.respondedAt?.toISOString() ?? null,
-      mediaAssetIds: row.media.map((m) => m.mediaAssetId),
-      createdAt: row.createdAt.toISOString(),
-    }));
-  });
-}
-
 function FilterLink({
   current,
   value,
@@ -246,7 +229,7 @@ function FilterLink({
   productId,
 }: {
   current: string | undefined;
-  value: ReviewModerationStatus | 'queue' | undefined;
+  value: ReviewStatus | 'queue' | undefined;
   label: string;
   productId: string | undefined;
 }) {
@@ -274,7 +257,7 @@ function FilterLink({
   );
 }
 
-function StatusBadge({ status }: { status: ReviewModerationStatus }) {
+function StatusBadge({ status }: { status: string }) {
   const variant: 'success' | 'warning' | 'outline' | 'danger' =
     status === 'approved'
       ? 'success'

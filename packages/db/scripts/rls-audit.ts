@@ -16,8 +16,11 @@
 //   • Auth tables (users, sessions, accounts, etc.) are ENABLE-only by
 //     design — Better Auth needs cross-tenant reads at sign-in time
 //     (see [memory] sparx_db_rls_pattern.md).
-//   • Public reference tables (commerce_vehicle_*) are intentionally
-//     tenant-shared.
+//   • Fitment reference tables (commerce_fitment_domains/categories/
+//     items/variants) support nullable tenant_id so Sparx-seeded global
+//     rows are visible to every tenant alongside per-tenant additions.
+//     They carry an OR-clause policy ("tenant_id IS NULL OR ...") and
+//     ENABLE — never FORCE (FORCE blocks the platform-seed insert path).
 //
 // Exit code: 0 on clean, 1 on any failure. Designed to be cheap enough
 // to run in pre-push and CI.
@@ -38,13 +41,18 @@ const ENABLE_ONLY_TABLES = new Set<string>([
   'verifications',
   'verification_tokens',
   'api_keys', // tenant-scoped at app layer; ENABLE-only to allow scoping by api_key_id
+  // Fitment reference tables — nullable tenant_id for Sparx-seeded
+  // globals; carry an OR-clause policy that permits global + own rows.
+  // FORCE would block the seed insert path.
+  'commerce_fitment_domains',
+  'commerce_fitment_categories',
+  'commerce_fitment_items',
+  'commerce_fitment_variants',
 ]);
 
 // Tables that are tenant-shared reference data — no RLS required.
 const SHARED_REFERENCE_TABLES = new Set<string>([
-  'commerce_vehicle_makes',
-  'commerce_vehicle_models',
-  'commerce_vehicle_engines',
+  // (empty — vehicle tables generalized into fitment_* with ENABLE+policy)
 ]);
 
 interface TableDef {

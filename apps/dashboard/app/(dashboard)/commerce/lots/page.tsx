@@ -1,8 +1,6 @@
 import Link from 'next/link';
 import { CircleAlert, ShieldAlert } from 'lucide-react';
 
-import { requireSession } from '@sparx/auth';
-import { withTenant } from '@sparx/db';
 import {
   Badge,
   Button,
@@ -49,17 +47,12 @@ interface LotBatchRow {
 }
 
 export default async function LotsPage() {
-  const session = await requireSession();
-  const ctx = { tenantId: session.user.tenantId, userId: session.user.id };
-
-  // Stable upper bound so SSR cache is deterministic (no Date.now in
-  // user-visible paths — matches the storefront convention).
   const horizon = new Date(2027, 5, 1).toISOString();
   const [expiringSoon, activeRecalls] = await Promise.all([
     api.get<LotBatchRow[]>(
       `/v1/commerce/inventory/lots/expiring?before=${encodeURIComponent(horizon)}`
     ),
-    listActiveRecalls(ctx),
+    api.get<ActiveRecall[]>('/v1/commerce/inventory/recalls/active'),
   ]);
 
   return (
@@ -225,35 +218,13 @@ export default async function LotsPage() {
 interface ActiveRecall {
   id: string;
   lotNumber: string;
-  warehouseCode: string;
   recallReason: string | null;
-  recalledAt: Date | null;
+  recalledAt: string | null;
+  warehouseId: string;
+  warehouseCode: string;
+  warehouseName: string;
+  variantId: string;
+  variantSku: string;
   productId: string;
   productTitle: string;
-}
-
-async function listActiveRecalls(ctx: {
-  tenantId: string;
-  userId: string;
-}): Promise<ActiveRecall[]> {
-  return withTenant(ctx, async (tx) => {
-    const rows = await tx.lotBatch.findMany({
-      where: { recallStatus: 'active' },
-      include: {
-        warehouse: { select: { code: true } },
-        variant: { select: { product: { select: { id: true, title: true } } } },
-      },
-      orderBy: { recalledAt: 'desc' },
-      take: 50,
-    });
-    return rows.map((r) => ({
-      id: r.id,
-      lotNumber: r.lotNumber,
-      warehouseCode: r.warehouse.code,
-      recallReason: r.recallReason,
-      recalledAt: r.recalledAt,
-      productId: r.variant.product.id,
-      productTitle: r.variant.product.title,
-    }));
-  });
 }

@@ -41,13 +41,12 @@ export default [
   ...rootConfig,
   {
     // Hard wall: no backing-service imports anywhere under apps/dashboard.
-    // Exceptions:
-    //   - `app/api/auth/**` — Better Auth handler (talks to its own tables).
-    //   - `app/(dashboard)/commerce/**` — temporary carve-out while the
-    //     commerce REST surface is being built. Drop this ignore the moment
-    //     services/api-rest/src/routes/v1/commerce lands.
+    // Better Auth's HTTP handler is the single exception — Better Auth needs
+    // to talk to its own user/session tables on every request, and there is
+    // no transport between it and `@sparx/db` short of moving auth itself
+    // out of Next.
     files: ['app/**/*.{ts,tsx}', 'lib/**/*.{ts,tsx}', 'components/**/*.{ts,tsx}'],
-    ignores: ['app/api/auth/**/*.{ts,tsx}', 'app/(dashboard)/commerce/**/*.{ts,tsx}'],
+    ignores: ['app/api/auth/**/*.{ts,tsx}'],
     rules: {
       'no-restricted-imports': [
         'error',

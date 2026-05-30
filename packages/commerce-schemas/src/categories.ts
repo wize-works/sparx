@@ -79,10 +79,11 @@ export const CollectionPredicate = z.discriminatedUnion('field', [
     field: z.literal('fitment'),
     op: z.literal('matches'),
     value: z.object({
-      makeId: Uuid.optional(),
-      modelId: Uuid.optional(),
-      engineId: Uuid.optional(),
-      year: z.number().int().min(1900).max(2100).optional(),
+      domainId: Uuid.optional(),
+      categoryId: Uuid.optional(),
+      itemId: Uuid.optional(),
+      variantId: Uuid.optional(),
+      rangeValue: z.number().optional(),
     }),
   }),
 ]);
