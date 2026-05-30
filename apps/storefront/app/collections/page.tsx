@@ -1,15 +1,20 @@
-// Collection index. Lists every published collection for the tenant.
-// Featured collections float to the top; both manual and rules-driven
-// collections appear here — the storefront only consumes the
-// materialized membership, so the distinction is invisible to shoppers.
+// Collection index — every published collection for the tenant, featured
+// first. Both manual and rules-driven collections appear; the storefront only
+// sees the materialized membership so the distinction is invisible to shoppers.
 
-import { notFound } from 'next/navigation';
+import type { Metadata } from 'next';
 import Link from 'next/link';
+import { notFound } from 'next/navigation';
 
+import { Breadcrumbs } from '@/components/breadcrumbs';
+import { EmptyState } from '@/components/empty-state';
 import { listCollections } from '@/lib/commerce';
+import { mediaUrl } from '@/lib/media';
 import { resolveTenant } from '@/lib/tenant';
 
 export const dynamic = 'force-dynamic';
+
+export const metadata: Metadata = { title: 'Collections' };
 
 export default async function CollectionListingPage() {
   const tenant = await resolveTenant();
@@ -18,71 +23,48 @@ export default async function CollectionListingPage() {
   const collections = await listCollections(tenant.slug);
 
   return (
-    <main style={{ maxWidth: '1200px', margin: '0 auto', padding: '3rem 1.5rem' }}>
+    <div className="sf-container">
+      <Breadcrumbs items={[{ label: 'Home', href: '/' }, { label: 'Collections' }]} />
       <header style={{ marginBottom: '2rem' }}>
-        <h1 style={{ fontSize: '2rem', fontWeight: 600, letterSpacing: '-0.02em', margin: 0 }}>
-          Collections
-        </h1>
-        <p style={{ margin: '0.5rem 0 0', color: 'var(--color-text-muted, #6b7280)' }}>
+        <h1 className="sf-h1">Collections</h1>
+        <p className="sf-muted" style={{ marginTop: '0.5rem' }}>
           Curated lineups from {tenant.name}.
         </p>
       </header>
+
       {collections.length === 0 ? (
-        <p style={{ color: 'var(--color-text-muted, #6b7280)' }}>
-          No collections yet. The merchant can create one in the dashboard.
-        </p>
+        <EmptyState
+          icon="❖"
+          title="No collections yet"
+          description="Check back soon, or browse the full catalog."
+          action={{ label: 'Shop all products', href: '/products' }}
+        />
       ) : (
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
-            gap: '1.5rem',
-          }}
-        >
-          {collections.map((collection) => (
-            <Link
-              key={collection.id}
-              href={`/collections/${collection.handle}`}
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '0.5rem',
-                padding: '1.5rem',
-                borderRadius: '12px',
-                border: '1px solid var(--color-border-default, #e5e7eb)',
-                background: 'var(--color-bg-surface, #ffffff)',
-                textDecoration: 'none',
-                color: 'inherit',
-              }}
-            >
-              {collection.featured && (
-                <span
-                  style={{
-                    fontSize: '0.7rem',
-                    letterSpacing: '0.08em',
-                    textTransform: 'uppercase',
-                    color: 'var(--color-text-accent, #6366f1)',
-                  }}
-                >
-                  Featured
-                </span>
-              )}
-              <span style={{ fontSize: '1.05rem', fontWeight: 500 }}>{collection.name}</span>
-              {collection.description && (
-                <span
-                  style={{
-                    color: 'var(--color-text-muted, #6b7280)',
-                    fontSize: '0.9rem',
-                    lineHeight: 1.5,
-                  }}
-                >
-                  {collection.description}
-                </span>
-              )}
-            </Link>
-          ))}
+        <div className="sf-grid">
+          {collections.map((c) => {
+            const hero = mediaUrl(c.heroMediaId, tenant.slug);
+            return (
+              <Link key={c.id} href={`/collections/${c.handle}`} className="sf-card">
+                <div className="sf-card__media">
+                  {c.featured ? <span className="sf-badge">Featured</span> : null}
+                  {hero ? (
+                    // eslint-disable-next-line @next/next/no-img-element -- cross-origin media via api-rest redirect
+                    <img src={hero} alt={c.name} loading="lazy" decoding="async" />
+                  ) : (
+                    <div className="sf-card__media sf-card__media--empty" aria-hidden="true">
+                      <span style={{ fontSize: '2rem' }}>❖</span>
+                    </div>
+                  )}
+                </div>
+                <div className="sf-card__body">
+                  <span className="sf-card__title">{c.name}</span>
+                  {c.description ? <span className="sf-muted">{c.description}</span> : null}
+                </div>
+              </Link>
+            );
+          })}
         </div>
       )}
-    </main>
+    </div>
   );
 }

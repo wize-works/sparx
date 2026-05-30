@@ -1,11 +1,13 @@
-// Collection detail = its products. Hero block on top, paginated grid
-// below. Reuses the shared ProductGrid component.
+// Collection detail = its products. Hero header on top, paginated grid below.
 
+import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import Link from 'next/link';
 
+import { Breadcrumbs } from '@/components/breadcrumbs';
+import { Pagination } from '@/components/pagination';
 import { ProductGrid } from '@/components/product-grid';
 import { getCollection, listCollectionProducts } from '@/lib/commerce';
+import { mediaUrl } from '@/lib/media';
 import { resolveTenant } from '@/lib/tenant';
 
 export const dynamic = 'force-dynamic';
@@ -15,12 +17,9 @@ interface PageProps {
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
 }
 
-function pickString(value: string | string[] | undefined): string | undefined {
-  if (Array.isArray(value)) return value[0];
-  return value;
-}
+const one = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v);
 
-export async function generateMetadata({ params }: PageProps) {
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const tenant = await resolveTenant();
   if (!tenant) return {};
   const { handle } = await params;
@@ -37,94 +36,83 @@ export default async function CollectionDetailPage({ params, searchParams }: Pag
   if (!tenant) notFound();
   const { handle } = await params;
   const sp = (await searchParams) ?? {};
-  const page = Number(pickString(sp.page) ?? '1');
+  const page = Math.max(1, Number(one(sp.page) ?? '1') || 1);
 
   const collection = await getCollection(tenant.slug, handle);
   if (!collection) notFound();
   const { items, total, perPage } = await listCollectionProducts(tenant.slug, handle, page, 24);
   const totalPages = Math.max(1, Math.ceil(total / perPage));
+  const { defaultCurrency: currency, defaultLocale: locale } = tenant.storefront;
+  const hero = mediaUrl(collection.heroMediaId, tenant.slug);
 
   return (
-    <main style={{ maxWidth: '1200px', margin: '0 auto', padding: '3rem 1.5rem' }}>
-      <nav style={{ fontSize: '0.85rem', marginBottom: '1.5rem' }}>
-        <Link
-          href="/collections"
-          style={{ color: 'var(--color-text-muted, #6b7280)', textDecoration: 'none' }}
-        >
-          ← All collections
-        </Link>
-      </nav>
-      <header style={{ marginBottom: '2rem' }}>
-        <h1 style={{ fontSize: '2rem', fontWeight: 600, letterSpacing: '-0.02em', margin: 0 }}>
-          {collection.name}
-        </h1>
-        {collection.description && (
-          <p
-            style={{
-              margin: '0.5rem 0 0',
-              color: 'var(--color-text-secondary, #374151)',
-              lineHeight: 1.6,
-            }}
-          >
-            {collection.description}
-          </p>
-        )}
-        <p
+    <div className="sf-container">
+      <Breadcrumbs
+        items={[
+          { label: 'Home', href: '/' },
+          { label: 'Collections', href: '/collections' },
+          { label: collection.name },
+        ]}
+      />
+
+      <header
+        style={{
+          position: 'relative',
+          borderRadius: 'var(--sf-radius-lg)',
+          overflow: 'hidden',
+          marginBottom: '2rem',
+          background: hero ? undefined : 'var(--sf-bg-subtle)',
+        }}
+      >
+        {hero ? (
+          // eslint-disable-next-line @next/next/no-img-element -- cross-origin media via api-rest redirect
+          <img
+            src={hero}
+            alt=""
+            aria-hidden="true"
+            style={{ width: '100%', height: '260px', objectFit: 'cover', display: 'block' }}
+          />
+        ) : null}
+        <div
           style={{
-            margin: '0.75rem 0 0',
-            fontSize: '0.85rem',
-            color: 'var(--color-text-muted, #6b7280)',
+            padding: hero ? '2rem' : '2.5rem 0',
+            ...(hero
+              ? {
+                  position: 'absolute',
+                  inset: 'auto 0 0 0',
+                  background: 'linear-gradient(transparent, rgb(0 0 0 / 0.6))',
+                  color: '#fff',
+                }
+              : {}),
           }}
         >
-          {total} {total === 1 ? 'product' : 'products'}
-        </p>
+          <h1 className="sf-h1" style={hero ? { color: '#fff' } : undefined}>
+            {collection.name}
+          </h1>
+          {collection.description ? (
+            <p style={{ marginTop: '0.5rem', maxWidth: '60ch', lineHeight: 1.6 }}>
+              {collection.description}
+            </p>
+          ) : null}
+        </div>
       </header>
-      <ProductGrid products={items} />
-      {totalPages > 1 && (
-        <nav
-          style={{
-            display: 'flex',
-            gap: '0.75rem',
-            justifyContent: 'center',
-            alignItems: 'center',
-            marginTop: '3rem',
-          }}
-        >
-          {page > 1 ? (
-            <Link
-              href={`/collections/${handle}?page=${page - 1}`}
-              style={{
-                padding: '0.5rem 1rem',
-                borderRadius: '6px',
-                border: '1px solid var(--color-border-default, #d1d5db)',
-                textDecoration: 'none',
-                color: 'inherit',
-                fontSize: '0.9rem',
-              }}
-            >
-              ← Previous
-            </Link>
-          ) : null}
-          <span style={{ color: 'var(--color-text-muted, #6b7280)', fontSize: '0.9rem' }}>
-            Page {page} of {totalPages}
-          </span>
-          {page < totalPages ? (
-            <Link
-              href={`/collections/${handle}?page=${page + 1}`}
-              style={{
-                padding: '0.5rem 1rem',
-                borderRadius: '6px',
-                border: '1px solid var(--color-border-default, #d1d5db)',
-                textDecoration: 'none',
-                color: 'inherit',
-                fontSize: '0.9rem',
-              }}
-            >
-              Next →
-            </Link>
-          ) : null}
-        </nav>
-      )}
-    </main>
+
+      <div className="sf-toolbar">
+        <span className="sf-toolbar__count">
+          {total} {total === 1 ? 'product' : 'products'}
+        </span>
+      </div>
+
+      <ProductGrid products={items} tenantSlug={tenant.slug} currency={currency} locale={locale} />
+
+      {totalPages > 1 ? (
+        <Pagination
+          basePath={`/collections/${handle}`}
+          currentParams={sp}
+          page={page}
+          totalPages={totalPages}
+        />
+      ) : null}
+    </div>
   );
 }

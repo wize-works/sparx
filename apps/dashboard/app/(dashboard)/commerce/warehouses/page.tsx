@@ -52,9 +52,7 @@ interface WarehouseRow {
 }
 
 export default async function WarehousesPage() {
-  const warehouses = await api.get<WarehouseRow[]>(
-    '/v1/commerce/warehouses?include_archived=true'
-  );
+  const warehouses = await api.get<WarehouseRow[]>('/v1/commerce/warehouses?include_archived=true');
 
   const active = warehouses.filter((w) => w.isActive);
   const inactive = warehouses.filter((w) => !w.isActive);

@@ -16,7 +16,15 @@ export interface ProductGridProps {
 export function ProductGrid({ products, tenantSlug, currency, locale, empty }: ProductGridProps) {
   if (products.length === 0) {
     return (
-      <>{empty ?? <EmptyState icon="🔍" title="No products found" description="Try adjusting your filters or search." />}</>
+      <>
+        {empty ?? (
+          <EmptyState
+            icon="🔍"
+            title="No products found"
+            description="Try adjusting your filters or search."
+          />
+        )}
+      </>
     );
   }
   return (

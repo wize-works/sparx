@@ -75,9 +75,7 @@ const reviewRoutes: FastifyPluginAsync = async (app) => {
     requireRole(request, 'editor');
     await requireCommerceModule(request);
     const { id } = PathId.parse(request.params);
-    const body = z
-      .object({ status: z.enum(['published', 'rejected']) })
-      .parse(request.body ?? {});
+    const body = z.object({ status: z.enum(['published', 'rejected']) }).parse(request.body ?? {});
     await reviewService.moderateQuestion(toCommerceContext(request), {
       questionId: id,
       status: body.status,

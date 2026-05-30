@@ -73,10 +73,7 @@ function authorLabel(row: ReviewListRow): string {
   return 'Anon';
 }
 
-type Filter =
-  | { kind: 'queue' }
-  | { kind: 'all' }
-  | { kind: 'status'; status: ReviewStatus };
+type Filter = { kind: 'queue' } | { kind: 'all' } | { kind: 'status'; status: ReviewStatus };
 
 function parseFilter(raw: string | undefined): Filter {
   if (raw === undefined || raw === 'queue') return { kind: 'queue' };

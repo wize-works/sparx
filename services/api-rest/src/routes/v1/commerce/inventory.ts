@@ -34,7 +34,10 @@ const inventoryRoutes: FastifyPluginAsync = async (app) => {
   app.post('/v1/commerce/warehouses', async (request, reply) => {
     requireRole(request, 'editor');
     await requireCommerceModule(request);
-    const created = await inventoryService.createWarehouse(toCommerceContext(request), request.body);
+    const created = await inventoryService.createWarehouse(
+      toCommerceContext(request),
+      request.body
+    );
     reply.code(201);
     return ok(created);
   });
@@ -117,7 +120,10 @@ const inventoryRoutes: FastifyPluginAsync = async (app) => {
   app.post('/v1/commerce/inventory/serials', async (request, reply) => {
     requireRole(request, 'editor');
     await requireCommerceModule(request);
-    const created = await inventoryService.createSerialUnit(toCommerceContext(request), request.body);
+    const created = await inventoryService.createSerialUnit(
+      toCommerceContext(request),
+      request.body
+    );
     reply.code(201);
     return ok(created);
   });

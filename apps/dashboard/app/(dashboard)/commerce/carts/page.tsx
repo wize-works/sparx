@@ -66,9 +66,7 @@ export default async function CartsPage({
   const showActive = filter === 'active';
   const filterParam = showRecovered ? 'recovered' : showActive ? 'active' : 'abandoned';
 
-  const carts = await api.get<CartRow[]>(
-    `/v1/commerce/carts?filter=${filterParam}&take=250`
-  );
+  const carts = await api.get<CartRow[]>(`/v1/commerce/carts?filter=${filterParam}&take=250`);
 
   return (
     <Container size="xl">

@@ -44,10 +44,7 @@ export async function updateVariantAction(
   input: unknown
 ): Promise<ActionResult<{ id: string }>> {
   return restAction(async () => {
-    await api.patch<{ id: string; updated: boolean }>(
-      `/v1/commerce/variants/${variantId}`,
-      input
-    );
+    await api.patch<{ id: string; updated: boolean }>(`/v1/commerce/variants/${variantId}`, input);
     revalidatePath(`/commerce/products/${productId}`);
     revalidatePath(`/commerce/products/${productId}/variants`);
     return { id: variantId };

@@ -109,7 +109,10 @@ const pricingRoutes: FastifyPluginAsync = async (app) => {
   app.post('/v1/commerce/contract-prices', async (request, reply) => {
     requireRole(request, 'editor');
     await requireCommerceModule(request);
-    const created = await pricingService.createContractPrice(toCommerceContext(request), request.body);
+    const created = await pricingService.createContractPrice(
+      toCommerceContext(request),
+      request.body
+    );
     reply.code(201);
     return ok(created);
   });

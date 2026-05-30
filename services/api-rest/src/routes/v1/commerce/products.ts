@@ -146,10 +146,7 @@ const productRoutes: FastifyPluginAsync = async (app) => {
   app.post('/v1/commerce/products/bulk-status', async (request) => {
     requireRole(request, 'editor');
     await requireCommerceModule(request);
-    const result = await productService.bulkUpdateStatus(
-      toCommerceContext(request),
-      request.body
-    );
+    const result = await productService.bulkUpdateStatus(toCommerceContext(request), request.body);
     return ok(result);
   });
 
@@ -188,7 +185,11 @@ const productRoutes: FastifyPluginAsync = async (app) => {
     requireRole(request, 'editor');
     await requireCommerceModule(request);
     const { productId } = ProductIdParam.parse(request.params);
-    const created = await variantService.create(toCommerceContext(request), productId, request.body);
+    const created = await variantService.create(
+      toCommerceContext(request),
+      productId,
+      request.body
+    );
     reply.code(201);
     return ok(created);
   });

@@ -34,10 +34,7 @@ export async function updateDiscountAction(
 
 export async function archiveDiscountAction(id: string): Promise<ActionResult<{ ok: true }>> {
   return restAction(async () => {
-    await api.post<{ id: string; archived: boolean }>(
-      `/v1/commerce/discounts/${id}/archive`,
-      {}
-    );
+    await api.post<{ id: string; archived: boolean }>(`/v1/commerce/discounts/${id}/archive`, {});
     revalidatePath('/commerce/discounts');
     return { ok: true as const };
   });
@@ -45,10 +42,7 @@ export async function archiveDiscountAction(id: string): Promise<ActionResult<{ 
 
 export async function activateDiscountAction(id: string): Promise<ActionResult<{ ok: true }>> {
   return restAction(async () => {
-    await api.post<{ id: string; activated: boolean }>(
-      `/v1/commerce/discounts/${id}/activate`,
-      {}
-    );
+    await api.post<{ id: string; activated: boolean }>(`/v1/commerce/discounts/${id}/activate`, {});
     revalidatePath('/commerce/discounts');
     return { ok: true as const };
   });

@@ -24,7 +24,10 @@ export function SiteFooter({ tenant, columns, year }: SiteFooterProps) {
         <div className="sf-footer__grid">
           <div className="sf-footer__col">
             <span className="sf-header__brand">{tenant.name}</span>
-            <p className="sf-muted" style={{ marginTop: '0.75rem', maxWidth: '34ch', lineHeight: 1.6 }}>
+            <p
+              className="sf-muted"
+              style={{ marginTop: '0.75rem', maxWidth: '34ch', lineHeight: 1.6 }}
+            >
               Quality products, fast shipping, and support that actually helps.
             </p>
           </div>

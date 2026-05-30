@@ -314,4 +314,3 @@ export default async function InventoryPage({ searchParams }: PageProps) {
     </Container>
   );
 }
-

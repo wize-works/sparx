@@ -29,10 +29,7 @@ export async function updatePriceListAction(
 
 export async function archivePriceListAction(id: string): Promise<ActionResult<{ ok: true }>> {
   return restAction(async () => {
-    await api.post<{ id: string; archived: boolean }>(
-      `/v1/commerce/price-lists/${id}/archive`,
-      {}
-    );
+    await api.post<{ id: string; archived: boolean }>(`/v1/commerce/price-lists/${id}/archive`, {});
     revalidatePath('/commerce/pricing');
     return { ok: true as const };
   });

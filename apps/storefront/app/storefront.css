@@ -300,7 +300,9 @@
   border: 1px solid var(--sf-border);
   background: var(--sf-bg-subtle);
   color: var(--sf-text);
-  transition: border-color var(--sf-ease) 140ms, background var(--sf-ease) 140ms;
+  transition:
+    border-color var(--sf-ease) 140ms,
+    background var(--sf-ease) 140ms;
 }
 .sf-search input:focus {
   outline: none;
@@ -632,7 +634,9 @@
   background: var(--sf-surface);
   color: var(--sf-text);
   cursor: pointer;
-  transition: border-color var(--sf-ease) 140ms, background var(--sf-ease) 140ms;
+  transition:
+    border-color var(--sf-ease) 140ms,
+    background var(--sf-ease) 140ms;
 }
 .sf-chip:hover {
   border-color: var(--sf-text);
@@ -658,7 +662,9 @@
 }
 .sf-swatch[aria-pressed='true'] {
   border-color: var(--sf-primary);
-  box-shadow: 0 0 0 2px var(--sf-surface), 0 0 0 4px var(--sf-primary);
+  box-shadow:
+    0 0 0 2px var(--sf-surface),
+    0 0 0 4px var(--sf-primary);
 }
 
 /* Stock + meta */

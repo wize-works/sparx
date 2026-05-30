@@ -293,10 +293,7 @@ export async function listItems(
   });
 }
 
-export async function createItem(
-  ctx: ServiceContext,
-  rawInput: unknown
-): Promise<{ id: string }> {
+export async function createItem(ctx: ServiceContext, rawInput: unknown): Promise<{ id: string }> {
   const input = CreateFitmentItemInput.parse(rawInput);
 
   const result = await withTenant(ctx, async (tx) => {
@@ -652,9 +649,7 @@ export async function lookup(ctx: ServiceContext, rawQuery: unknown): Promise<Fi
 
 // ─── Internal helpers ─────────────────────────────────────────────────
 
-function toCategoryRow(
-  c: FitmentCategory & { _count: { items: number } }
-): FitmentCategoryRow {
+function toCategoryRow(c: FitmentCategory & { _count: { items: number } }): FitmentCategoryRow {
   return {
     id: c.id,
     domainId: c.domainId,

@@ -203,11 +203,7 @@ function CategoryRowComponent({
             aria-label={expanded ? `Collapse ${category.name}` : `Expand ${category.name}`}
             className="text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"
           >
-            {expanded ? (
-              <ChevronDown className="h-4 w-4" />
-            ) : (
-              <ChevronRight className="h-4 w-4" />
-            )}
+            {expanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
           </button>
         ) : (
           <span className="inline-block h-4 w-4" />
@@ -240,12 +236,7 @@ function CategoryRowComponent({
             </Text>
           )}
           {items?.map((item) => (
-            <ItemRowComponent
-              key={item.id}
-              item={item}
-              labels={labels}
-              rangeUnit={rangeUnit}
-            />
+            <ItemRowComponent key={item.id} item={item} labels={labels} rangeUnit={rangeUnit} />
           ))}
           {labels.l2 && (
             <NewItemForm

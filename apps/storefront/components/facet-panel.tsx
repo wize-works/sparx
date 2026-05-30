@@ -77,7 +77,11 @@ export function FacetPanel({ action, makes, values }: FacetPanelProps) {
             <span className="sf-muted" style={{ fontSize: '0.78rem' }}>
               Make
             </span>
-            <select className="sf-select" name="fitmentMake" defaultValue={values.fitmentMake ?? ''}>
+            <select
+              className="sf-select"
+              name="fitmentMake"
+              defaultValue={values.fitmentMake ?? ''}
+            >
               <option value="">Any make</option>
               {makes.map((m) => (
                 <option key={m.id} value={m.name}>
@@ -86,11 +90,22 @@ export function FacetPanel({ action, makes, values }: FacetPanelProps) {
               ))}
             </select>
           </label>
-          <label style={{ flexDirection: 'column', alignItems: 'stretch', gap: '0.4rem', marginTop: '0.5rem' }}>
+          <label
+            style={{
+              flexDirection: 'column',
+              alignItems: 'stretch',
+              gap: '0.4rem',
+              marginTop: '0.5rem',
+            }}
+          >
             <span className="sf-muted" style={{ fontSize: '0.78rem' }}>
               Year
             </span>
-            <select className="sf-select" name="fitmentYear" defaultValue={values.fitmentYear ?? ''}>
+            <select
+              className="sf-select"
+              name="fitmentYear"
+              defaultValue={values.fitmentYear ?? ''}
+            >
               <option value="">Any year</option>
               {YEARS.map((y) => (
                 <option key={y} value={y}>

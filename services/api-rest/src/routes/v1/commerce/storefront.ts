@@ -21,8 +21,7 @@ const LimitedRangeQuery = RangeQuery.extend({
 
 function resolveRange(input: { from?: string; to?: string }): { from: string; to: string } {
   const to = input.to ?? new Date().toISOString();
-  const from =
-    input.from ?? new Date(new Date(to).getTime() - 30 * 24 * 60 * 60_000).toISOString();
+  const from = input.from ?? new Date(new Date(to).getTime() - 30 * 24 * 60 * 60_000).toISOString();
   return { from, to };
 }
 

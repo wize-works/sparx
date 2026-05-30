@@ -22,12 +22,19 @@ export function Breadcrumbs({ items }: { items: Crumb[] }) {
 
   return (
     <nav className="sf-crumbs" aria-label="Breadcrumb">
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       {items.map((c, i) => {
         const last = i === items.length - 1;
         return (
           <span key={`${c.label}-${i}`} style={{ display: 'inline-flex', gap: '0.5rem' }}>
-            {c.href && !last ? <Link href={c.href}>{c.label}</Link> : <span aria-current={last ? 'page' : undefined}>{c.label}</span>}
+            {c.href && !last ? (
+              <Link href={c.href}>{c.label}</Link>
+            ) : (
+              <span aria-current={last ? 'page' : undefined}>{c.label}</span>
+            )}
             {!last ? <span aria-hidden="true">/</span> : null}
           </span>
         );

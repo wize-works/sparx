@@ -20,10 +20,7 @@ export async function updateProductAction(
   input: unknown
 ): Promise<ActionResult<{ id: string }>> {
   return restAction(async () => {
-    const product = await api.patch<{ id: string }>(
-      `/v1/commerce/products/${productId}`,
-      input
-    );
+    const product = await api.patch<{ id: string }>(`/v1/commerce/products/${productId}`, input);
     revalidatePath('/commerce/products');
     revalidatePath(`/commerce/products/${productId}`);
     return { id: product.id };
@@ -88,10 +85,7 @@ export async function bulkUpdateProductStatusAction(
   input: unknown
 ): Promise<ActionResult<{ updated: number }>> {
   return restAction(async () => {
-    const result = await api.post<{ updated: number }>(
-      '/v1/commerce/products/bulk-status',
-      input
-    );
+    const result = await api.post<{ updated: number }>('/v1/commerce/products/bulk-status', input);
     revalidatePath('/commerce/products');
     return result;
   });

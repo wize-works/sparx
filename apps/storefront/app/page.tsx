@@ -31,7 +31,8 @@ export default async function StorefrontRoot({ searchParams }: RootPageProps) {
   ]);
 
   const featuredCollections = collections.filter((c) => c.featured).slice(0, 3);
-  const collectionShelf = featuredCollections.length > 0 ? featuredCollections : collections.slice(0, 3);
+  const collectionShelf =
+    featuredCollections.length > 0 ? featuredCollections : collections.slice(0, 3);
   const { defaultCurrency: currency, defaultLocale: locale } = tenant.storefront;
 
   return (

@@ -113,9 +113,7 @@ const commerceListRoutes: FastifyPluginAsync = async (app) => {
     }));
     // Filter in-process for low-stock since Prisma can't compare two columns.
     const filtered = lowStockOnly
-      ? enriched.filter(
-          (r) => r.reorderPoint !== null && r.onHand <= (r.reorderPoint ?? 0)
-        )
+      ? enriched.filter((r) => r.reorderPoint !== null && r.onHand <= (r.reorderPoint ?? 0))
       : enriched;
     return ok(filtered);
   });
