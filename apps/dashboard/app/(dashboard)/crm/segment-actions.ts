@@ -33,12 +33,15 @@ interface RecomputeResponse {
 
 function toActionError(err: unknown): ActionResult<never> {
   const restErr = err as ApiRestError;
+  const details = Array.isArray(restErr.details)
+    ? (restErr.details as { field: string; message: string }[])
+    : undefined;
   return {
     ok: false,
     error: {
-      code: restErr.code ?? 'UNKNOWN',
-      message: restErr.message ?? 'Request failed.',
-      details: restErr.details,
+      code: restErr.code ?? 'INTERNAL_ERROR',
+      message: restErr.message ?? 'Unexpected error',
+      ...(details ? { details } : {}),
     },
   };
 }
