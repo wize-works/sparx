@@ -1,0 +1,161 @@
+import { Gift, PackageOpen } from 'lucide-react';
+
+import { isModuleEnabled, requireSession } from '@sparx/auth';
+import { discountService } from '@sparx/commerce';
+import {
+  Badge,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  Container,
+  EmptyState,
+  Heading,
+  Stack,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+  Text,
+} from '@sparx/ui';
+
+import { ModuleStub } from '../../../../components/module-stub';
+
+import { IssueGiftCardForm } from './_components/issue-gift-card-form';
+
+export const dynamic = 'force-dynamic';
+
+const STATUS_VARIANT: Record<string, 'success' | 'warning' | 'outline'> = {
+  active: 'success',
+  spent: 'outline',
+  expired: 'warning',
+  cancelled: 'warning',
+};
+
+const moneyFmt = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
+
+export default async function GiftCardsPage() {
+  const session = await requireSession();
+  const enabled = await isModuleEnabled(session.user.tenantId, 'commerce');
+  if (!enabled) {
+    return (
+      <ModuleStub
+        icon={<PackageOpen className="h-5 w-5" />}
+        title="Commerce"
+        tagline="Gift cards + redemption tracking."
+        description="Activate the Commerce module from Billing to manage gift cards."
+        features={[]}
+      />
+    );
+  }
+
+  const ctx = { tenantId: session.user.tenantId, userId: session.user.id };
+  const cards = await discountService.listGiftCards(ctx, { take: 100 });
+
+  const outstandingCents = cards
+    .filter((c) => c.status === 'active')
+    .reduce((acc, c) => acc + c.balanceCents, 0);
+
+  return (
+    <Container size="xl">
+      <Stack gap={6} className="py-10">
+        <Stack gap={2}>
+          <Stack direction="row" align="center" gap={2}>
+            <Gift className="h-5 w-5" />
+            <Heading level={1}>Gift cards</Heading>
+            <Badge variant="module">{moneyFmt.format(outstandingCents / 100)} outstanding</Badge>
+          </Stack>
+          <Text variant="muted">
+            Issue, look up, and adjust gift cards. Cards sold as a product (a future Phase 4
+            sellable product type) link back to the order item so a refund revokes the unspent
+            balance.
+          </Text>
+        </Stack>
+
+        <Card>
+          <CardHeader>
+            <Stack gap={1}>
+              <Heading level={3}>Issue a new card</Heading>
+              <CardDescription>
+                Codes are auto-generated (16 alphanumeric, hyphen-grouped). Use a custom code only
+                when migrating from a legacy system.
+              </CardDescription>
+            </Stack>
+          </CardHeader>
+          <CardContent>
+            <IssueGiftCardForm />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <Heading level={3}>Issued cards</Heading>
+          </CardHeader>
+          <CardContent>
+            {cards.length === 0 ? (
+              <EmptyState
+                icon={<Gift className="h-5 w-5" />}
+                title="No gift cards yet"
+                description="Issue one above. Cards stay active until spent, expired, or cancelled."
+              />
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Code</TableHead>
+                    <TableHead>Balance</TableHead>
+                    <TableHead>Initial</TableHead>
+                    <TableHead>Recipient</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Expires</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {cards.map((card) => (
+                    <TableRow key={card.id}>
+                      <TableCell>
+                        <span className="font-mono text-xs">{card.code}</span>
+                      </TableCell>
+                      <TableCell>{moneyFmt.format(card.balanceCents / 100)}</TableCell>
+                      <TableCell>
+                        <Text size="xs" variant="muted">
+                          {moneyFmt.format(card.initialBalanceCents / 100)}
+                        </Text>
+                      </TableCell>
+                      <TableCell>
+                        {card.recipientEmail ? (
+                          <Stack gap={0}>
+                            <Text size="sm">{card.recipientName ?? '—'}</Text>
+                            <Text size="xs" variant="muted">
+                              {card.recipientEmail}
+                            </Text>
+                          </Stack>
+                        ) : (
+                          <Text size="xs" variant="muted">
+                            none
+                          </Text>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={STATUS_VARIANT[card.status] ?? 'outline'}>
+                          {card.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Text size="xs" variant="muted">
+                          {card.expiresAt ? new Date(card.expiresAt).toLocaleDateString() : 'never'}
+                        </Text>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </CardContent>
+        </Card>
+      </Stack>
+    </Container>
+  );
+}
