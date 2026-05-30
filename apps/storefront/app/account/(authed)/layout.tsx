@@ -17,8 +17,12 @@ interface AccountNavItem {
   href: string;
 }
 
-// Expanded with Orders / Addresses / Profile as those routes land.
-const NAV: AccountNavItem[] = [{ label: 'Overview', href: '/account' }];
+const NAV: AccountNavItem[] = [
+  { label: 'Overview', href: '/account' },
+  { label: 'Orders', href: '/account/orders' },
+  { label: 'Addresses', href: '/account/addresses' },
+  { label: 'Profile', href: '/account/profile' },
+];
 
 export default function AuthedAccountLayout({ children }: { children: React.ReactNode }) {
   const { customer, status, logout } = useCustomer();
@@ -50,17 +54,20 @@ export default function AuthedAccountLayout({ children }: { children: React.Reac
             <strong>{displayName}</strong>
             {customer.email ? <span className="sf-muted">{customer.email}</span> : null}
           </div>
-          {NAV.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={['sf-account__link', pathname === item.href && 'is-active']
-                .filter(Boolean)
-                .join(' ')}
-            >
-              {item.label}
-            </Link>
-          ))}
+          {NAV.map((item) => {
+            const active =
+              pathname === item.href ||
+              (item.href !== '/account' && pathname.startsWith(`${item.href}/`));
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={['sf-account__link', active && 'is-active'].filter(Boolean).join(' ')}
+              >
+                {item.label}
+              </Link>
+            );
+          })}
           <button
             type="button"
             className="sf-account__link"

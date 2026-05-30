@@ -13,6 +13,8 @@ import type { Customer } from '@/lib/customer-client';
 export type CustomerStatus = 'loading' | 'authenticated' | 'anonymous';
 
 export interface CustomerContextValue {
+  /** The active tenant slug — account pages pass it to the customer-client. */
+  tenantSlug: string;
   customer: Customer | null;
   status: CustomerStatus;
   login: (email: string, password: string) => Promise<void>;
@@ -84,8 +86,8 @@ export function CustomerProvider({
   }, [tenantSlug]);
 
   const value = useMemo<CustomerContextValue>(
-    () => ({ customer, status, login, register, logout, refresh }),
-    [customer, status, login, register, logout, refresh]
+    () => ({ tenantSlug, customer, status, login, register, logout, refresh }),
+    [tenantSlug, customer, status, login, register, logout, refresh]
   );
 
   return <CustomerContext.Provider value={value}>{children}</CustomerContext.Provider>;

@@ -88,3 +88,137 @@ export async function getMe(tenantSlug: string): Promise<Customer | null> {
   if (res.status === 401) return null;
   return (await parse<{ customer: Customer }>(res)).customer;
 }
+
+export async function updateProfile(
+  tenantSlug: string,
+  input: { firstName?: string | null; lastName?: string | null; phone?: string | null }
+): Promise<Customer> {
+  const res = await fetch(url('/v1/public/commerce/account/me', tenantSlug), {
+    method: 'PATCH',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(input),
+  });
+  return (await parse<{ customer: Customer }>(res)).customer;
+}
+
+// ── Orders ────────────────────────────────────────────────────────────────
+
+export interface OrderSummary {
+  id: string;
+  orderNumber: string;
+  status: string;
+  paymentStatus: string;
+  totalCents: number;
+  currency: string;
+  placedAt: string;
+}
+
+export interface OrderDetail extends Omit<OrderSummary, never> {
+  subtotalCents: number;
+  taxTotalCents: number;
+  shippingTotalCents: number;
+  discountTotalCents: number;
+  shippingAddress: Record<string, unknown> | null;
+  items: {
+    id: string;
+    name: string;
+    sku: string;
+    quantity: number;
+    unitPriceCents: number;
+    lineTotalCents: number;
+  }[];
+}
+
+export async function getOrders(
+  tenantSlug: string,
+  page = 1,
+  pageSize = 10
+): Promise<{ orders: OrderSummary[]; total: number; totalPages: number }> {
+  const res = await fetch(
+    `${url('/v1/public/commerce/account/orders', tenantSlug)}&page=${page}&pageSize=${pageSize}`,
+    { cache: 'no-store' }
+  );
+  const json = (await res.json().catch(() => null)) as {
+    success: boolean;
+    data?: OrderSummary[];
+    meta?: { total?: number; total_pages?: number };
+  } | null;
+  if (!res.ok || !json || json.success === false) {
+    throw new AccountError('Could not load orders.', res.status);
+  }
+  return {
+    orders: json.data ?? [],
+    total: json.meta?.total ?? 0,
+    totalPages: json.meta?.total_pages ?? 1,
+  };
+}
+
+export async function getOrder(tenantSlug: string, orderId: string): Promise<OrderDetail> {
+  const res = await fetch(
+    url(`/v1/public/commerce/account/orders/${encodeURIComponent(orderId)}`, tenantSlug),
+    { cache: 'no-store' }
+  );
+  return parse<OrderDetail>(res);
+}
+
+// ── Addresses ───────────────────────────────────────────────────────────────
+
+export interface Address {
+  id: string;
+  type: 'shipping' | 'billing' | 'both';
+  label: string | null;
+  recipientName: string | null;
+  company: string | null;
+  line1: string;
+  line2: string | null;
+  city: string;
+  region: string | null;
+  postalCode: string | null;
+  country: string;
+  phone: string | null;
+  isDefault: boolean;
+}
+
+export type AddressInput = Omit<Address, 'id'>;
+
+export async function getAddresses(tenantSlug: string): Promise<Address[]> {
+  const res = await fetch(url('/v1/public/commerce/account/addresses', tenantSlug), {
+    cache: 'no-store',
+  });
+  return (await parse<{ addresses: Address[] }>(res)).addresses;
+}
+
+export async function createAddress(
+  tenantSlug: string,
+  input: Partial<AddressInput>
+): Promise<Address> {
+  const res = await fetch(url('/v1/public/commerce/account/addresses', tenantSlug), {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(input),
+  });
+  return (await parse<{ address: Address }>(res)).address;
+}
+
+export async function updateAddress(
+  tenantSlug: string,
+  addressId: string,
+  input: Partial<AddressInput>
+): Promise<Address> {
+  const res = await fetch(
+    url(`/v1/public/commerce/account/addresses/${encodeURIComponent(addressId)}`, tenantSlug),
+    {
+      method: 'PATCH',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(input),
+    }
+  );
+  return (await parse<{ address: Address }>(res)).address;
+}
+
+export async function deleteAddress(tenantSlug: string, addressId: string): Promise<void> {
+  await fetch(
+    url(`/v1/public/commerce/account/addresses/${encodeURIComponent(addressId)}`, tenantSlug),
+    { method: 'DELETE' }
+  );
+}
