@@ -245,3 +245,42 @@ export async function deleteAddress(tenantSlug: string, addressId: string): Prom
     { method: 'DELETE' }
   );
 }
+
+// ── Wishlist ────────────────────────────────────────────────────────────────
+
+export interface WishlistItem {
+  productId: string;
+  variantId: string | null;
+  handle: string;
+  title: string;
+  imageMediaId: string | null;
+  priceMinCents: number | null;
+}
+
+export async function getWishlist(tenantSlug: string): Promise<WishlistItem[]> {
+  const res = await fetch(url('/v1/public/commerce/account/wishlist', tenantSlug), {
+    cache: 'no-store',
+  });
+  if (res.status === 401) return [];
+  return (await parse<{ items: WishlistItem[] }>(res)).items;
+}
+
+export async function addToWishlist(
+  tenantSlug: string,
+  productId: string,
+  variantId?: string
+): Promise<void> {
+  const res = await fetch(url('/v1/public/commerce/account/wishlist', tenantSlug), {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ productId, ...(variantId ? { variantId } : {}) }),
+  });
+  await parse<{ ok: true }>(res);
+}
+
+export async function removeFromWishlist(tenantSlug: string, productId: string): Promise<void> {
+  await fetch(
+    url(`/v1/public/commerce/account/wishlist/${encodeURIComponent(productId)}`, tenantSlug),
+    { method: 'DELETE' }
+  );
+}

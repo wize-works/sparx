@@ -1390,6 +1390,36 @@
   color: var(--sf-on-primary);
 }
 
+/* ── Wishlist button ───────────────────────────────────────── */
+.sf-wishbtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--sf-radius-sm);
+  border: 1px solid var(--sf-border-strong);
+  background: var(--sf-surface);
+  color: var(--sf-text-secondary);
+  cursor: pointer;
+  transition:
+    color var(--sf-ease) 140ms,
+    border-color var(--sf-ease) 140ms,
+    background var(--sf-ease) 140ms;
+}
+.sf-wishbtn:hover {
+  color: var(--sf-primary);
+  border-color: var(--sf-primary);
+}
+.sf-wishbtn.is-saved {
+  color: var(--color-danger, #e1135b);
+  border-color: color-mix(in srgb, var(--color-danger, #e1135b) 40%, transparent);
+}
+.sf-wishbtn:focus-visible {
+  outline: 2px solid var(--sf-primary);
+  outline-offset: 2px;
+}
+
 @media (max-width: 860px) {
   .sf-cart-grid,
   .sf-checkout {
