@@ -21,6 +21,7 @@ import {
   Text,
 } from '@sparx/ui';
 
+import { EntityRowLink } from '../../_components/entity-row-link';
 import { CrmTabs } from '../_components/crm-tabs';
 
 export const dynamic = 'force-dynamic';
@@ -112,12 +113,14 @@ export default async function B2bAccountsPage({ searchParams }: PageProps) {
                     return (
                       <TableRow key={a.id}>
                         <TableCell>
-                          <Link
+                          <EntityRowLink
                             href={`/crm/b2b/${a.id}`}
+                            entityType="b2b-account"
+                            entityId={a.id}
                             className="text-sm font-medium hover:text-[var(--module-active)] hover:underline"
                           >
                             {a.companyName}
-                          </Link>
+                          </EntityRowLink>
                         </TableCell>
                         <TableCell>
                           <Badge

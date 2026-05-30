@@ -1,0 +1,1333 @@
+- generic [ref=e1]:
+  - generic [ref=e4]:
+    - generic [ref=e6]:
+      - link "Skip to content" [ref=e8] [cursor=pointer]:
+        - /url: "#main"
+        - generic [ref=e9]:
+          - text: Skip to content
+          - img [ref=e10]
+      - navigation "Sidebar":
+        - generic [ref=e83]:
+          - generic [ref=e86]:
+            - generic [ref=e87]:
+              - button "B Brandon Korous’s Notion Close sidebar" [ref=e92] [cursor=pointer]:
+                - generic [ref=e93]:
+                  - img "B" [ref=e97]:
+                    - generic [ref=e98]: B
+                  - generic [ref=e103]: Brandon Korous’s Notion
+                - button "Close sidebar" [ref=e106]:
+                  - img [ref=e107]
+              - generic [ref=e111]:
+                - tablist "Sidebar navigation" [ref=e112]:
+                  - tab "Home" [selected] [ref=e115] [cursor=pointer]:
+                    - img [ref=e117]
+                    - generic [ref=e120]: Home
+                  - tab "Chat" [ref=e123] [cursor=pointer]:
+                    - img [ref=e125]
+                    - generic:
+                      - generic: Chat
+                  - tab "Meetings" [ref=e129] [cursor=pointer]:
+                    - img [ref=e131]
+                    - generic:
+                      - generic: Meetings
+                  - tab "Inbox" [ref=e137] [cursor=pointer]:
+                    - generic [ref=e138]:
+                      - img [ref=e139]
+                      - generic [ref=e141]: "2"
+                    - generic:
+                      - generic: Inbox
+                - button "Search" [ref=e144] [cursor=pointer]:
+                  - img [ref=e145]
+            - tabpanel "Home" [ref=e148]:
+              - generic [ref=e152]:
+                - generic [ref=e153]:
+                  - generic [ref=e156] [cursor=pointer]:
+                    - button "Meetings" [expanded] [ref=e157]:
+                      - generic [ref=e158]: Meetings
+                      - img [ref=e159]
+                    - generic [ref=e162]:
+                      - button "Connect your calendar See all your events and start meeting notes for them." [ref=e164]:
+                        - generic [ref=e165]:
+                          - img [ref=e167]
+                          - generic [ref=e176]:
+                            - text: Connect your calendar
+                            - generic [ref=e177]: See all your events and start meeting notes for them.
+                      - button "New AI meeting note" [ref=e179]:
+                        - generic [ref=e180]:
+                          - img [ref=e182]
+                          - generic [ref=e184]: New AI meeting note
+                  - generic [ref=e188] [cursor=pointer]:
+                    - button "Recents" [expanded] [ref=e189]:
+                      - generic [ref=e190]: Recents
+                      - img [ref=e191]
+                    - tree "Recents" [ref=e194]:
+                      - treeitem "Tasks" [ref=e196]:
+                        - generic [ref=e197]:
+                          - img "Change page icon" [ref=e205]
+                          - generic [ref=e207]: Tasks
+                      - 'treeitem "View Daily Log: Date" [ref=e209]':
+                        - generic [ref=e210]:
+                          - img "Change page icon" [ref=e218]
+                          - generic [ref=e220]: "View Daily Log: Date"
+                  - generic [ref=e224] [cursor=pointer]:
+                    - button "Favorites" [expanded] [ref=e225]:
+                      - generic [ref=e226]: Favorites
+                      - img [ref=e227]
+                    - tree "Favorites" [ref=e230]:
+                      - treeitem "Tasks" [ref=e234]:
+                        - generic [ref=e235]:
+                          - img "Change page icon" [ref=e243]
+                          - generic [ref=e245]: Tasks
+                  - generic [ref=e248] [cursor=pointer]:
+                    - button "Agents" [expanded] [ref=e249]:
+                      - generic [ref=e250]: Agents
+                      - img [ref=e251]
+                    - list "Agents" [ref=e255]:
+                      - button "New agent" [ref=e256]:
+                        - generic [ref=e257]:
+                          - img [ref=e259]
+                          - generic [ref=e261]: New agent
+                  - generic [ref=e265] [cursor=pointer]:
+                    - button "Private" [expanded] [ref=e266]:
+                      - generic [ref=e267]: Private
+                      - img [ref=e268]
+                    - tree "Private" [ref=e271]:
+                      - generic [ref=e273]:
+                        - treeitem "Getting Started" [ref=e275]:
+                          - generic [ref=e276]:
+                            - img "Change page icon" [ref=e282]:
+                              - img [ref=e283]
+                            - generic [ref=e287]: Getting Started
+                        - treeitem "Launch Tracker" [ref=e289]:
+                          - generic [ref=e290]:
+                            - img [ref=e296]
+                            - generic [ref=e299]: Launch Tracker
+                        - treeitem "WizeWorks" [ref=e301]:
+                          - generic [ref=e302]:
+                            - img "Change page icon" [ref=e310]
+                            - generic [ref=e312]: WizeWorks
+                        - treeitem "Personal Projects" [ref=e314]:
+                          - generic [ref=e315]:
+                            - img "Change page icon" [ref=e323]
+                            - generic [ref=e325]: Personal Projects
+                  - generic [ref=e328] [cursor=pointer]:
+                    - button "Teamspaces" [expanded] [ref=e329]:
+                      - generic [ref=e330]: Teamspaces
+                      - img [ref=e331]
+                    - generic [ref=e337]:
+                      - button "JobSight" [expanded] [ref=e338]:
+                        - generic [ref=e342]:
+                          - generic [ref=e352]: JobSight
+                          - generic [ref=e353]:
+                            - button "Teamspace settings and members..." [ref=e356]:
+                              - img [ref=e357]
+                            - button "Add to JobSight" [ref=e360]:
+                              - img [ref=e362]
+                      - tree "JobSight" [ref=e364]:
+                        - generic [ref=e366]:
+                          - treeitem "Teamspace Home" [ref=e368]:
+                            - generic [ref=e369]:
+                              - img "Change page icon" [ref=e377]
+                              - generic [ref=e379]: Teamspace Home
+                          - treeitem "Tasks" [ref=e381]:
+                            - generic [ref=e382]:
+                              - img "Change page icon" [ref=e390]
+                              - generic [ref=e392]: Tasks
+                          - treeitem "Brainstorm Session" [ref=e394]:
+                            - generic [ref=e395]:
+                              - img "Change page icon" [ref=e403]
+                              - generic [ref=e405]: Brainstorm Session
+                  - generic [ref=e408] [cursor=pointer]:
+                    - button "Notion apps" [expanded] [ref=e409]:
+                      - generic [ref=e410]: Notion apps
+                      - img [ref=e411]
+                    - generic [ref=e415]:
+                      - button "Notion Mail" [ref=e419]:
+                        - generic [ref=e420]:
+                          - img [ref=e422]
+                          - generic [ref=e424]: Notion Mail
+                      - button "Notion Calendar" [ref=e429]:
+                        - generic [ref=e430]:
+                          - img [ref=e432]
+                          - generic [ref=e434]: Notion Calendar
+                      - button "Notion Desktop" [ref=e438]:
+                        - generic [ref=e439]:
+                          - img [ref=e441]
+                          - generic [ref=e443]: Notion Desktop
+                - generic [ref=e445]:
+                  - button "Library" [ref=e447] [cursor=pointer]:
+                    - generic [ref=e448]:
+                      - img [ref=e451]
+                      - generic [ref=e453]: Library
+                  - link "My Tasks" [ref=e455] [cursor=pointer]:
+                    - /url: /d8af308d7f6641afa0b214ec5294d5a8?v=06b1a61480fe405481b3eb9f1e8b41e4&pvs=196
+                    - generic [ref=e456]:
+                      - img [ref=e458]
+                      - generic [ref=e461]: My Tasks
+                  - button "Marketplace" [ref=e463] [cursor=pointer]:
+                    - generic [ref=e464]:
+                      - img [ref=e466]
+                      - generic [ref=e468]: Marketplace
+                  - button "What’s new, help, contact, more…" [ref=e471] [cursor=pointer]:
+                    - generic [ref=e472]:
+                      - generic [ref=e474]:
+                        - img [ref=e475]
+                        - img "New"
+                      - generic [ref=e478]: Help
+                  - button "Trash" [ref=e482] [cursor=pointer]:
+                    - generic [ref=e483]:
+                      - img [ref=e485]
+                      - generic [ref=e488]: Trash
+            - generic [ref=e496]:
+              - img [ref=e498]
+              - generic [ref=e501]:
+                - generic [ref=e502]:
+                  - generic [ref=e503]: Keep using Notion
+                  - generic [ref=e504]: You’ve used all of this workspace’s free blocks
+                - button "Start trial" [ref=e507] [cursor=pointer]:
+                  - generic [ref=e508]:
+                    - generic [ref=e509]: Start trial
+                    - img [ref=e510]
+            - generic [ref=e513]:
+              - button "New chat" [ref=e515] [cursor=pointer]:
+                - generic [ref=e516]:
+                  - img [ref=e517]
+                  - generic [ref=e520]:
+                    - text: New chat
+                    - generic [ref=e523]: Ctrl+O
+              - button "New page" [ref=e526] [cursor=pointer]:
+                - img [ref=e527]
+          - separator "Resize with left and right arrow keys" [ref=e2859]
+      - generic [ref=e533]:
+        - banner [ref=e534]:
+          - generic [ref=e537]:
+            - generic [ref=e538]:
+              - button "JobSight" [ref=e540] [cursor=pointer]:
+                - generic [ref=e545]: JobSight
+              - img [ref=e547]
+              - button "Tasks" [ref=e550] [cursor=pointer]:
+                - generic [ref=e554]: Tasks
+            - generic [ref=e555]:
+              - button "Close panel" [ref=e557] [cursor=pointer]:
+                - img [ref=e558]
+              - generic [ref=e561]:
+                - generic [ref=e567]:
+                  - generic [ref=e574]: H
+                  - generic [ref=e581]: J
+                  - generic [ref=e588]: K
+                  - img "Brandon Korous" [ref=e595]
+                - button "Share" [ref=e598] [cursor=pointer]:
+                  - img [ref=e599]
+                  - text: Share
+                  - img [ref=e602]
+                - button "Copy link" [ref=e605] [cursor=pointer]:
+                  - img [ref=e606]
+                - button "Favorited" [ref=e611] [cursor=pointer]:
+                  - img [ref=e612]
+                - button "Actions" [ref=e616] [cursor=pointer]:
+                  - img [ref=e617]
+        - main [ref=e619]:
+          - generic [ref=e621]:
+            - generic [ref=e624]:
+              - generic [ref=e625]:
+                - img [ref=e626]
+                - generic [ref=e629]: You’ve used all of this workspace’s free blocks. Unlock unlimited blocks for 14 days.
+              - button "Start trial" [ref=e631] [cursor=pointer]:
+                - generic [ref=e632]: Start trial
+            - generic [ref=e634]:
+              - generic [ref=e636]:
+                - button "Add cover":
+                  - img
+                  - text: Add cover
+                - button "Hide description":
+                  - img
+                  - text: Hide description
+              - generic [ref=e637]:
+                - generic [ref=e638]:
+                  - button "Change page icon" [ref=e639] [cursor=pointer]
+                  - textbox [ref=e644]:
+                    - /placeholder: Tasks
+                - textbox [ref=e648]:
+                  - /placeholder: Add a description…
+            - generic [ref=e649]:
+              - generic [ref=e652]:
+                - tablist [ref=e653]:
+                  - button "By Status" [ref=e2863] [cursor=pointer]:
+                    - generic [ref=e2865]: By Status
+                    - img [ref=e2866]
+                - generic [ref=e678]:
+                  - button "Filter" [ref=e682] [cursor=pointer]:
+                    - img [ref=e683]
+                  - button "Sort" [ref=e688] [cursor=pointer]:
+                    - img [ref=e689]
+                  - button "Automations" [ref=e692] [cursor=pointer]:
+                    - img [ref=e693]
+                  - button "AI Autofill" [ref=e696] [cursor=pointer]:
+                    - img [ref=e697]
+                  - button "Search" [ref=e700] [cursor=pointer]:
+                    - img [ref=e701]
+                  - button "Settings" [ref=e706] [cursor=pointer]:
+                    - img [ref=e707]
+                  - generic [ref=e711]:
+                    - button "New" [ref=e712] [cursor=pointer]
+                    - button "More add options" [ref=e713] [cursor=pointer]:
+                      - img [ref=e714]
+              - generic [ref=e721]:
+                - generic [ref=e724]:
+                  - generic [ref=e726]:
+                    - button "Bug" [ref=e728] [cursor=pointer]:
+                      - generic [ref=e733]: Bug
+                    - button "1" [ref=e736] [cursor=pointer]
+                  - generic [ref=e738]:
+                    - button "Not started" [ref=e740] [cursor=pointer]:
+                      - generic [ref=e745]: Not started
+                    - button "5" [ref=e748] [cursor=pointer]
+                  - generic [ref=e750]:
+                    - button "In progress" [ref=e752] [cursor=pointer]:
+                      - generic [ref=e757]: In progress
+                    - button "2" [ref=e760] [cursor=pointer]
+                  - generic [ref=e762]:
+                    - button "Done" [ref=e764] [cursor=pointer]:
+                      - generic [ref=e769]: Done
+                    - button "52" [ref=e772] [cursor=pointer]
+                - generic [ref=e774]:
+                  - generic [ref=e775]:
+                    - 'link "View Daily Log: Date 100% 100 JSF-67 Open comments" [ref=e778] [cursor=pointer]':
+                      - /url: /View-Daily-Log-Date-226ed4def68380e7921ed37c096bf326?pvs=25
+                      - generic:
+                        - generic:
+                          - generic:
+                            - button:
+                              - img
+                          - generic:
+                            - button:
+                              - img
+                      - generic [ref=e779]:
+                        - button [ref=e780]
+                        - generic [ref=e783]:
+                          - generic: "View Daily Log: Date"
+                      - generic [ref=e784]:
+                        - button "100% 100" [ref=e787]:
+                          - generic [ref=e791]:
+                            - text: 100%
+                            - progressbar [ref=e792]
+                        - generic [ref=e799]: JSF-67
+                      - button "Open comments" [ref=e802]:
+                        - generic [ref=e803]:
+                          - img [ref=e804]
+                          - text: "1"
+                    - button "New project" [ref=e807] [cursor=pointer]:
+                      - img [ref=e808]
+                      - text: New project
+                  - generic [ref=e810]:
+                    - link "Start Building in n8n K Kiera 100% 100 JSF-69" [ref=e813] [cursor=pointer]:
+                      - /url: /Start-Building-in-n8n-229ed4def6838081a82bc3eb9dac3515?pvs=25
+                      - generic:
+                        - generic:
+                          - generic:
+                            - button:
+                              - img
+                          - generic:
+                            - button:
+                              - img
+                      - generic [ref=e814]:
+                        - button [ref=e815]
+                        - generic [ref=e818]:
+                          - generic: Start Building in n8n
+                      - generic [ref=e819]:
+                        - button "K Kiera" [ref=e823]:
+                          - generic [ref=e827]:
+                            - generic [ref=e832]: K
+                            - generic [ref=e833]: Kiera
+                        - button "100% 100" [ref=e836]:
+                          - generic [ref=e840]:
+                            - text: 100%
+                            - progressbar [ref=e841]
+                        - generic [ref=e848]: JSF-69
+                    - 'link "GPT: Deep Research K Kiera 100% 100 JSF-70" [ref=e850] [cursor=pointer]':
+                      - /url: /GPT-Deep-Research-229ed4def6838009961de23ebfcf2c37?pvs=25
+                      - generic:
+                        - generic:
+                          - generic:
+                            - button:
+                              - img
+                          - generic:
+                            - button:
+                              - img
+                      - generic [ref=e851]:
+                        - button [ref=e852]
+                        - generic [ref=e855]:
+                          - generic: "GPT: Deep Research"
+                      - generic [ref=e856]:
+                        - button "K Kiera" [ref=e860]:
+                          - generic [ref=e864]:
+                            - generic [ref=e869]: K
+                            - generic [ref=e870]: Kiera
+                        - button "100% 100" [ref=e873]:
+                          - generic [ref=e877]:
+                            - text: 100%
+                            - progressbar [ref=e878]
+                        - generic [ref=e885]: JSF-70
+                    - link "Images Remote Patterns Brandon Korous Brandon Korous 100% 100 JSF-71" [ref=e887] [cursor=pointer]:
+                      - /url: /Images-Remote-Patterns-22aed4def68380e7849afbbb6e1e476a?pvs=25
+                      - generic:
+                        - generic:
+                          - generic:
+                            - button:
+                              - img
+                          - generic:
+                            - button:
+                              - img
+                      - generic [ref=e888]:
+                        - button [ref=e889]
+                        - generic [ref=e892]:
+                          - generic: Images Remote Patterns
+                      - generic [ref=e893]:
+                        - button "Brandon Korous Brandon Korous" [ref=e897]:
+                          - generic [ref=e901]:
+                            - img "Brandon Korous" [ref=e906]
+                            - generic [ref=e907]: Brandon Korous
+                        - button "100% 100" [ref=e910]:
+                          - generic [ref=e914]:
+                            - text: 100%
+                            - progressbar [ref=e915]
+                        - generic [ref=e922]: JSF-71
+                    - link "AI Feedback Brandon Korous Brandon Korous 100% 100 JSF-72" [ref=e924] [cursor=pointer]:
+                      - /url: /AI-Feedback-22aed4def683803b938acc9f6ce85f6e?pvs=25
+                      - generic:
+                        - generic:
+                          - generic:
+                            - button:
+                              - img
+                          - generic:
+                            - button:
+                              - img
+                      - generic [ref=e925]:
+                        - button [ref=e926]
+                        - generic [ref=e929]:
+                          - generic: AI Feedback
+                      - generic [ref=e930]:
+                        - button "Brandon Korous Brandon Korous" [ref=e934]:
+                          - generic [ref=e938]:
+                            - img "Brandon Korous" [ref=e943]
+                            - generic [ref=e944]: Brandon Korous
+                        - button "100% 100" [ref=e947]:
+                          - generic [ref=e951]:
+                            - text: 100%
+                            - progressbar [ref=e952]
+                        - generic [ref=e959]: JSF-72
+                    - 'link "Ad: Marketplace Coming Soon K Kiera 100% 100 JSF-73" [ref=e961] [cursor=pointer]':
+                      - /url: /Ad-Marketplace-Coming-Soon-22bed4def68380b182e4c66b7c050b91?pvs=25
+                      - generic:
+                        - generic:
+                          - generic:
+                            - button:
+                              - img
+                          - generic:
+                            - button:
+                              - img
+                      - generic [ref=e962]:
+                        - button [ref=e963]
+                        - generic [ref=e966]:
+                          - generic: "Ad: Marketplace Coming Soon"
+                      - generic [ref=e967]:
+                        - button "K Kiera" [ref=e971]:
+                          - generic [ref=e975]:
+                            - generic [ref=e980]: K
+                            - generic [ref=e981]: Kiera
+                        - button "100% 100" [ref=e984]:
+                          - generic [ref=e988]:
+                            - text: 100%
+                            - progressbar [ref=e989]
+                        - generic [ref=e996]: JSF-73
+                    - button "New project" [ref=e997] [cursor=pointer]:
+                      - img [ref=e998]
+                      - text: New project
+                  - generic [ref=e1000]:
+                    - link "Reports Brandon Korous Brandon Korous 100% 100 Medium JSF-27 Open comments" [ref=e1003] [cursor=pointer]:
+                      - /url: /Reports-216ed4def6838005bde6da82db05cd1e?pvs=25
+                      - generic:
+                        - generic:
+                          - generic:
+                            - button:
+                              - img
+                          - generic:
+                            - button:
+                              - img
+                      - generic [ref=e1004]:
+                        - button [ref=e1005]
+                        - generic [ref=e1008]:
+                          - generic: Reports
+                      - generic [ref=e1009]:
+                        - button "Brandon Korous Brandon Korous" [ref=e1013]:
+                          - generic [ref=e1017]:
+                            - img "Brandon Korous" [ref=e1022]
+                            - generic [ref=e1023]: Brandon Korous
+                        - button "100% 100" [ref=e1026]:
+                          - generic [ref=e1030]:
+                            - text: 100%
+                            - progressbar [ref=e1031]
+                        - button "Medium" [ref=e1037]:
+                          - generic [ref=e1042]: Medium
+                        - generic [ref=e1046]: JSF-27
+                      - button "Open comments" [ref=e1049]:
+                        - generic [ref=e1050]:
+                          - img [ref=e1051]
+                          - text: "1"
+                    - link "When User SIgns up Brandon Korous Brandon Korous 100% 100 JSF-68" [ref=e1055] [cursor=pointer]:
+                      - /url: /When-User-SIgns-up-226ed4def68380afaa8ac6ce9b6b6808?pvs=25
+                      - generic:
+                        - generic:
+                          - generic:
+                            - button:
+                              - img
+                          - generic:
+                            - button:
+                              - img
+                      - generic [ref=e1056]:
+                        - button [ref=e1057]
+                        - generic [ref=e1060]:
+                          - generic: When User SIgns up
+                      - generic [ref=e1061]:
+                        - button "Brandon Korous Brandon Korous" [ref=e1065]:
+                          - generic [ref=e1069]:
+                            - img "Brandon Korous" [ref=e1074]
+                            - generic [ref=e1075]: Brandon Korous
+                        - button "100% 100" [ref=e1078]:
+                          - generic [ref=e1082]:
+                            - text: 100%
+                            - progressbar [ref=e1083]
+                        - generic [ref=e1090]: JSF-68
+                    - button "New project" [ref=e1091] [cursor=pointer]:
+                      - img [ref=e1092]
+                      - text: New project
+                  - generic [ref=e1094]:
+                    - link "Edit Invoice 100% 100 JSF-48 Open comments" [ref=e1097] [cursor=pointer]:
+                      - /url: /Edit-Invoice-21aed4def68380f3899afb9357f031b7?pvs=25
+                      - generic:
+                        - generic:
+                          - generic:
+                            - button:
+                              - img
+                          - generic:
+                            - button:
+                              - img
+                      - generic [ref=e1098]:
+                        - button [ref=e1099]
+                        - generic [ref=e1102]:
+                          - generic: Edit Invoice
+                      - generic [ref=e1103]:
+                        - button "100% 100" [ref=e1106]:
+                          - generic [ref=e1110]:
+                            - text: 100%
+                            - progressbar [ref=e1111]
+                        - generic [ref=e1118]: JSF-48
+                      - button "Open comments" [ref=e1121]:
+                        - generic [ref=e1122]:
+                          - img [ref=e1123]
+                          - text: "3"
+                    - link "Edit Crew 100% 100 JSF-65 Open comments" [ref=e1127] [cursor=pointer]:
+                      - /url: /Edit-Crew-226ed4def683803eac1afc426160032a?pvs=25
+                      - generic:
+                        - generic:
+                          - generic:
+                            - button:
+                              - img
+                          - generic:
+                            - button:
+                              - img
+                      - generic [ref=e1128]:
+                        - button [ref=e1129]
+                        - generic [ref=e1132]:
+                          - generic: Edit Crew
+                      - generic [ref=e1133]:
+                        - button "100% 100" [ref=e1136]:
+                          - generic [ref=e1140]:
+                            - text: 100%
+                            - progressbar [ref=e1141]
+                        - generic [ref=e1148]: JSF-65
+                      - button "Open comments" [ref=e1151]:
+                        - generic [ref=e1152]:
+                          - img [ref=e1153]
+                          - text: "4"
+                    - link "No subscription issue Brandon Korous Brandon Korous 100% 100 High JSF-64" [ref=e1157] [cursor=pointer]:
+                      - /url: /No-subscription-issue-225ed4def68380fe8105f4e772d488db?pvs=25
+                      - generic:
+                        - generic:
+                          - generic:
+                            - button:
+                              - img
+                          - generic:
+                            - button:
+                              - img
+                      - generic [ref=e1158]:
+                        - button [ref=e1159]
+                        - generic [ref=e1162]:
+                          - generic: No subscription issue
+                      - generic [ref=e1163]:
+                        - button "Brandon Korous Brandon Korous" [ref=e1167]:
+                          - generic [ref=e1171]:
+                            - img "Brandon Korous" [ref=e1176]
+                            - generic [ref=e1177]: Brandon Korous
+                        - button "100% 100" [ref=e1180]:
+                          - generic [ref=e1184]:
+                            - text: 100%
+                            - progressbar [ref=e1185]
+                        - button "High" [ref=e1191]:
+                          - generic [ref=e1196]: High
+                        - generic [ref=e1200]: JSF-64
+                    - 'link "Mobile: Add Crew Member Brandon Korous Brandon Korous 100% 100 Low JSF-63 Open comments" [ref=e1202] [cursor=pointer]':
+                      - /url: /Mobile-Add-Crew-Member-21fed4def6838097a90dc747cb031e51?pvs=25
+                      - generic:
+                        - generic:
+                          - generic:
+                            - button:
+                              - img
+                          - generic:
+                            - button:
+                              - img
+                      - generic [ref=e1203]:
+                        - button [ref=e1204]
+                        - generic [ref=e1207]:
+                          - generic: "Mobile: Add Crew Member"
+                      - generic [ref=e1208]:
+                        - button "Brandon Korous Brandon Korous" [ref=e1212]:
+                          - generic [ref=e1216]:
+                            - img "Brandon Korous" [ref=e1221]
+                            - generic [ref=e1222]: Brandon Korous
+                        - button "100% 100" [ref=e1225]:
+                          - generic [ref=e1229]:
+                            - text: 100%
+                            - progressbar [ref=e1230]
+                        - button "Low" [ref=e1236]:
+                          - generic [ref=e1241]: Low
+                        - generic [ref=e1245]: JSF-63
+                      - button "Open comments" [ref=e1248]:
+                        - generic [ref=e1249]:
+                          - img [ref=e1250]
+                          - text: "2"
+                    - link "New and Edit Equipment Modal 100% 100 JSF-38 Open comments" [ref=e1254] [cursor=pointer]:
+                      - /url: /New-and-Edit-Equipment-Modal-218ed4def6838050ae9efe288b199db7?pvs=25
+                      - generic:
+                        - generic:
+                          - generic:
+                            - button:
+                              - img
+                          - generic:
+                            - button:
+                              - img
+                      - generic [ref=e1255]:
+                        - button [ref=e1256]
+                        - generic [ref=e1259]:
+                          - generic: New and Edit Equipment Modal
+                      - generic [ref=e1260]:
+                        - button "100% 100" [ref=e1263]:
+                          - generic [ref=e1267]:
+                            - text: 100%
+                            - progressbar [ref=e1268]
+                        - generic [ref=e1275]: JSF-38
+                      - button "Open comments" [ref=e1278]:
+                        - generic [ref=e1279]:
+                          - img [ref=e1280]
+                          - text: "1"
+                    - 'link "Reports: Real Data 100% 100 JSF-8" [ref=e1284] [cursor=pointer]':
+                      - /url: /Reports-Real-Data-20aed4def68380f49b38d2ab9a8ed201?pvs=25
+                      - generic:
+                        - generic:
+                          - generic:
+                            - button:
+                              - img
+                          - generic:
+                            - button:
+                              - img
+                      - generic [ref=e1285]:
+                        - button [ref=e1286]
+                        - generic [ref=e1289]:
+                          - generic: "Reports: Real Data"
+                      - generic [ref=e1290]:
+                        - button "100% 100" [ref=e1293]:
+                          - generic [ref=e1297]:
+                            - text: 100%
+                            - progressbar [ref=e1298]
+                        - generic [ref=e1305]: JSF-8
+                    - 'link "Mobile: Business 100% 100 JSF-61 Open comments" [ref=e1307] [cursor=pointer]':
+                      - /url: /Mobile-Business-21ced4def683805dac3cd1f818472f38?pvs=25
+                      - generic:
+                        - generic:
+                          - generic:
+                            - button:
+                              - img
+                          - generic:
+                            - button:
+                              - img
+                      - generic [ref=e1308]:
+                        - button [ref=e1309]
+                        - generic [ref=e1312]:
+                          - generic: "Mobile: Business"
+                      - generic [ref=e1313]:
+                        - button "100% 100" [ref=e1316]:
+                          - generic [ref=e1320]:
+                            - text: 100%
+                            - progressbar [ref=e1321]
+                        - generic [ref=e1328]: JSF-61
+                      - button "Open comments" [ref=e1331]:
+                        - generic [ref=e1332]:
+                          - img [ref=e1333]
+                          - text: "1"
+                    - link "Notifications Page - 404 Brandon Korous Brandon Korous 100% 100 Medium JSF-25" [ref=e1337] [cursor=pointer]:
+                      - /url: /Notifications-Page-404-215ed4def683802a8b2ad233d50c09cf?pvs=25
+                      - generic:
+                        - generic:
+                          - generic:
+                            - button:
+                              - img
+                          - generic:
+                            - button:
+                              - img
+                      - generic [ref=e1338]:
+                        - button [ref=e1339]
+                        - generic [ref=e1342]:
+                          - generic: Notifications Page - 404
+                      - generic [ref=e1343]:
+                        - button "Brandon Korous Brandon Korous" [ref=e1347]:
+                          - generic [ref=e1351]:
+                            - img "Brandon Korous" [ref=e1356]
+                            - generic [ref=e1357]: Brandon Korous
+                        - button "100% 100" [ref=e1360]:
+                          - generic [ref=e1364]:
+                            - text: 100%
+                            - progressbar [ref=e1365]
+                        - button "Medium" [ref=e1371]:
+                          - generic [ref=e1376]: Medium
+                        - generic [ref=e1380]: JSF-25
+                    - link "Real time notifications 100% 100 JSF-12" [ref=e1382] [cursor=pointer]:
+                      - /url: /Real-time-notifications-20aed4def683807cb0c7f5d350ba7361?pvs=25
+                      - generic:
+                        - generic:
+                          - generic:
+                            - button:
+                              - img
+                          - generic:
+                            - button:
+                              - img
+                      - generic [ref=e1383]:
+                        - button [ref=e1384]
+                        - generic [ref=e1387]:
+                          - generic: Real time notifications
+                      - generic [ref=e1388]:
+                        - button "100% 100" [ref=e1391]:
+                          - generic [ref=e1395]:
+                            - text: 100%
+                            - progressbar [ref=e1396]
+                        - generic [ref=e1403]: JSF-12
+                    - link "Edit Task Modal 100% 100 JSF-47 Open comments" [ref=e1405] [cursor=pointer]:
+                      - /url: /Edit-Task-Modal-21aed4def683808cb45cfe9c78445838?pvs=25
+                      - generic:
+                        - generic:
+                          - generic:
+                            - button:
+                              - img
+                          - generic:
+                            - button:
+                              - img
+                      - generic [ref=e1406]:
+                        - button [ref=e1407]
+                        - generic [ref=e1410]:
+                          - generic: Edit Task Modal
+                      - generic [ref=e1411]:
+                        - button "100% 100" [ref=e1414]:
+                          - generic [ref=e1418]:
+                            - text: 100%
+                            - progressbar [ref=e1419]
+                        - generic [ref=e1426]: JSF-47
+                      - button "Open comments" [ref=e1429]:
+                        - generic [ref=e1430]:
+                          - img [ref=e1431]
+                          - text: "1"
+                    - link "Print Daily Log 100% 100 JSF-51 Open comments" [ref=e1435] [cursor=pointer]:
+                      - /url: /Print-Daily-Log-21bed4def68380e29917c2d981b76706?pvs=25
+                      - generic:
+                        - generic:
+                          - generic:
+                            - button:
+                              - img
+                          - generic:
+                            - button:
+                              - img
+                      - generic [ref=e1436]:
+                        - button [ref=e1437]
+                        - generic [ref=e1440]:
+                          - generic: Print Daily Log
+                      - generic [ref=e1441]:
+                        - button "100% 100" [ref=e1444]:
+                          - generic [ref=e1448]:
+                            - text: 100%
+                            - progressbar [ref=e1449]
+                        - generic [ref=e1456]: JSF-51
+                      - button "Open comments" [ref=e1459]:
+                        - generic [ref=e1460]:
+                          - img [ref=e1461]
+                          - text: "1"
+                    - 'link "Mobile: Edit Project Modal 100% 100 JSF-46 Open comments" [ref=e1465] [cursor=pointer]':
+                      - /url: /Mobile-Edit-Project-Modal-219ed4def68380849df8c35aeac59e01?pvs=25
+                      - generic:
+                        - generic:
+                          - generic:
+                            - button:
+                              - img
+                          - generic:
+                            - button:
+                              - img
+                      - generic [ref=e1466]:
+                        - button [ref=e1467]
+                        - generic [ref=e1470]:
+                          - generic: "Mobile: Edit Project Modal"
+                      - generic [ref=e1471]:
+                        - button "100% 100" [ref=e1474]:
+                          - generic [ref=e1478]:
+                            - text: 100%
+                            - progressbar [ref=e1479]
+                        - generic [ref=e1486]: JSF-46
+                      - button "Open comments" [ref=e1489]:
+                        - generic [ref=e1490]:
+                          - img [ref=e1491]
+                          - text: "1"
+                    - 'link "Mobile: Equipment Media 100% 100 JSF-45 Open comments" [ref=e1495] [cursor=pointer]':
+                      - /url: /Mobile-Equipment-Media-219ed4def68380459d0fc57ccbaa281d?pvs=25
+                      - generic:
+                        - generic:
+                          - generic:
+                            - button:
+                              - img
+                          - generic:
+                            - button:
+                              - img
+                      - generic [ref=e1496]:
+                        - button [ref=e1497]
+                        - generic [ref=e1500]:
+                          - generic: "Mobile: Equipment Media"
+                      - generic [ref=e1501]:
+                        - button "100% 100" [ref=e1504]:
+                          - generic [ref=e1508]:
+                            - text: 100%
+                            - progressbar [ref=e1509]
+                        - generic [ref=e1516]: JSF-45
+                      - button "Open comments" [ref=e1519]:
+                        - generic [ref=e1520]:
+                          - img [ref=e1521]
+                          - text: "1"
+                    - 'link "Mobile: Equipment Assignments 100% 100 JSF-44 Open comments" [ref=e1525] [cursor=pointer]':
+                      - /url: /Mobile-Equipment-Assignments-219ed4def68380eabb76fb3b481dcc8a?pvs=25
+                      - generic:
+                        - generic:
+                          - generic:
+                            - button:
+                              - img
+                          - generic:
+                            - button:
+                              - img
+                      - generic [ref=e1526]:
+                        - button [ref=e1527]
+                        - generic [ref=e1530]:
+                          - generic: "Mobile: Equipment Assignments"
+                      - generic [ref=e1531]:
+                        - button "100% 100" [ref=e1534]:
+                          - generic [ref=e1538]:
+                            - text: 100%
+                            - progressbar [ref=e1539]
+                        - generic [ref=e1546]: JSF-44
+                      - button "Open comments" [ref=e1549]:
+                        - generic [ref=e1550]:
+                          - img [ref=e1551]
+                          - text: "1"
+                    - link "Dashboard Issue 100% 100 JSF-62 Open comments" [ref=e1555] [cursor=pointer]:
+                      - /url: /Dashboard-Issue-21ced4def683809cb44edef6100f4cf8?pvs=25
+                      - generic:
+                        - generic:
+                          - generic:
+                            - button:
+                              - img
+                          - generic:
+                            - button:
+                              - img
+                      - generic [ref=e1556]:
+                        - button [ref=e1557]
+                        - generic [ref=e1560]:
+                          - generic: Dashboard Issue
+                      - generic [ref=e1561]:
+                        - button "100% 100" [ref=e1564]:
+                          - generic [ref=e1568]:
+                            - text: 100%
+                            - progressbar [ref=e1569]
+                        - generic [ref=e1576]: JSF-62
+                      - button "Open comments" [ref=e1579]:
+                        - generic [ref=e1580]:
+                          - img [ref=e1581]
+                          - text: "1"
+                    - 'link "Mobile: Equipment Maintenance Records 100% 100 JSF-43 Open comments" [ref=e1585] [cursor=pointer]':
+                      - /url: /Mobile-Equipment-Maintenance-Records-219ed4def6838088a4ecda5b79f33d05?pvs=25
+                      - generic:
+                        - generic:
+                          - generic:
+                            - button:
+                              - img
+                          - generic:
+                            - button:
+                              - img
+                      - generic [ref=e1586]:
+                        - button [ref=e1587]
+                        - generic [ref=e1590]:
+                          - generic: "Mobile: Equipment Maintenance Records"
+                      - generic [ref=e1591]:
+                        - button "100% 100" [ref=e1594]:
+                          - generic [ref=e1598]:
+                            - text: 100%
+                            - progressbar [ref=e1599]
+                        - generic [ref=e1606]: JSF-43
+                      - button "Open comments" [ref=e1609]:
+                        - generic [ref=e1610]:
+                          - img [ref=e1611]
+                          - text: "1"
+                    - link "New Project Brandon Korous Brandon Korous 100% 100 JSF-16 Open comments" [ref=e1615] [cursor=pointer]:
+                      - /url: /New-Project-211ed4def683806bbb6afaeea0b738a4?pvs=25
+                      - generic:
+                        - generic:
+                          - generic:
+                            - button:
+                              - img
+                          - generic:
+                            - button:
+                              - img
+                      - generic [ref=e1616]:
+                        - button [ref=e1617]
+                        - generic [ref=e1620]:
+                          - generic: New Project
+                      - generic [ref=e1621]:
+                        - button "Brandon Korous Brandon Korous" [ref=e1625]:
+                          - generic [ref=e1629]:
+                            - img "Brandon Korous" [ref=e1634]
+                            - generic [ref=e1635]: Brandon Korous
+                        - button "100% 100" [ref=e1638]:
+                          - generic [ref=e1642]:
+                            - text: 100%
+                            - progressbar [ref=e1643]
+                        - generic [ref=e1650]: JSF-16
+                      - button "Open comments" [ref=e1653]:
+                        - generic [ref=e1654]:
+                          - img [ref=e1655]
+                          - text: "1"
+                    - 'link "Media Library: Real Data 100% 100 JSF-9" [ref=e1659] [cursor=pointer]':
+                      - /url: /Media-Library-Real-Data-20aed4def683806c9312fb4631d4b695?pvs=25
+                      - generic:
+                        - generic:
+                          - generic:
+                            - button:
+                              - img
+                          - generic:
+                            - button:
+                              - img
+                      - generic [ref=e1660]:
+                        - button [ref=e1661]
+                        - generic [ref=e1664]:
+                          - generic: "Media Library: Real Data"
+                      - generic [ref=e1665]:
+                        - button "100% 100" [ref=e1668]:
+                          - generic [ref=e1672]:
+                            - text: 100%
+                            - progressbar [ref=e1673]
+                        - generic [ref=e1680]: JSF-9
+                    - link "Business Branding 100% 100 JSF-13" [ref=e1682] [cursor=pointer]:
+                      - /url: /Business-Branding-20aed4def68380b39fecefcd5ac7a60a?pvs=25
+                      - generic:
+                        - generic:
+                          - generic:
+                            - button:
+                              - img
+                          - generic:
+                            - button:
+                              - img
+                      - generic [ref=e1683]:
+                        - button [ref=e1684]
+                        - generic [ref=e1687]:
+                          - generic: Business Branding
+                      - generic [ref=e1688]:
+                        - button "100% 100" [ref=e1691]:
+                          - generic [ref=e1695]:
+                            - text: 100%
+                            - progressbar [ref=e1696]
+                        - generic [ref=e1703]: JSF-13
+                    - link "Edit/Create Project Bug Brandon Korous Brandon Korous 100% 100 High JSF-15 Open comments" [ref=e1705] [cursor=pointer]:
+                      - /url: /Edit-Create-Project-Bug-211ed4def6838023a4cfebdf55ce252e?pvs=25
+                      - generic:
+                        - generic:
+                          - generic:
+                            - button:
+                              - img
+                          - generic:
+                            - button:
+                              - img
+                      - generic [ref=e1706]:
+                        - button [ref=e1707]
+                        - generic [ref=e1710]:
+                          - generic: Edit/Create Project Bug
+                      - generic [ref=e1711]:
+                        - button "Brandon Korous Brandon Korous" [ref=e1715]:
+                          - generic [ref=e1719]:
+                            - img "Brandon Korous" [ref=e1724]
+                            - generic [ref=e1725]: Brandon Korous
+                        - button "100% 100" [ref=e1728]:
+                          - generic [ref=e1732]:
+                            - text: 100%
+                            - progressbar [ref=e1733]
+                        - button "High" [ref=e1739]:
+                          - generic [ref=e1744]: High
+                        - generic [ref=e1748]: JSF-15
+                      - button "Open comments" [ref=e1751]:
+                        - generic [ref=e1752]:
+                          - img [ref=e1753]
+                          - text: "2"
+                    - 'link "Settings: Refine and align properly 100% 100 JSF-11" [ref=e1757] [cursor=pointer]':
+                      - /url: /Settings-Refine-and-align-properly-20aed4def68380aba6baef69f389db0f?pvs=25
+                      - generic:
+                        - generic:
+                          - generic:
+                            - button:
+                              - img
+                          - generic:
+                            - button:
+                              - img
+                      - generic [ref=e1758]:
+                        - button [ref=e1759]
+                        - generic [ref=e1762]:
+                          - generic: "Settings: Refine and align properly"
+                      - generic [ref=e1763]:
+                        - button "100% 100" [ref=e1766]:
+                          - generic [ref=e1770]:
+                            - text: 100%
+                            - progressbar [ref=e1771]
+                        - generic [ref=e1778]: JSF-11
+                    - 'link "Business Page: Refine and align properly 100% 100 JSF-10" [ref=e1780] [cursor=pointer]':
+                      - /url: /Business-Page-Refine-and-align-properly-20aed4def68380ceb53aeac17b753b8c?pvs=25
+                      - generic:
+                        - generic:
+                          - generic:
+                            - button:
+                              - img
+                          - generic:
+                            - button:
+                              - img
+                      - generic [ref=e1781]:
+                        - button [ref=e1782]
+                        - generic [ref=e1785]:
+                          - generic: "Business Page: Refine and align properly"
+                      - generic [ref=e1786]:
+                        - button "100% 100" [ref=e1789]:
+                          - generic [ref=e1793]:
+                            - text: 100%
+                            - progressbar [ref=e1794]
+                        - generic [ref=e1801]: JSF-10
+                    - link "Implement Stripe Subscription Brandon Korous Brandon Korous 100% 100 High JSF-6" [ref=e1803] [cursor=pointer]:
+                      - /url: /Implement-Stripe-Subscription-20aed4def6838085affbe596f18f36bc?pvs=25
+                      - generic:
+                        - generic:
+                          - generic:
+                            - button:
+                              - img
+                          - generic:
+                            - button:
+                              - img
+                      - generic [ref=e1804]:
+                        - button [ref=e1805]
+                        - generic [ref=e1808]:
+                          - generic: Implement Stripe Subscription
+                      - generic [ref=e1809]:
+                        - button "Brandon Korous Brandon Korous" [ref=e1813]:
+                          - generic [ref=e1817]:
+                            - img "Brandon Korous" [ref=e1822]
+                            - generic [ref=e1823]: Brandon Korous
+                        - button "100% 100" [ref=e1826]:
+                          - generic [ref=e1830]:
+                            - text: 100%
+                            - progressbar [ref=e1831]
+                        - button "High" [ref=e1837]:
+                          - generic [ref=e1842]: High
+                        - generic [ref=e1846]: JSF-6
+                    - 'link "Dashboard: Real Data 100% 100 JSF-7" [ref=e1848] [cursor=pointer]':
+                      - /url: /Dashboard-Real-Data-20aed4def68380b5a217f95988575010?pvs=25
+                      - generic:
+                        - generic:
+                          - generic:
+                            - button:
+                              - img
+                          - generic:
+                            - button:
+                              - img
+                      - generic [ref=e1849]:
+                        - button [ref=e1850]
+                        - generic [ref=e1853]:
+                          - generic: "Dashboard: Real Data"
+                      - generic [ref=e1854]:
+                        - button "100% 100" [ref=e1857]:
+                          - generic [ref=e1861]:
+                            - text: 100%
+                            - progressbar [ref=e1862]
+                        - generic [ref=e1869]: JSF-7
+                    - link "Projects ‘Sort by’ Brandon Korous Brandon Korous 100% 100 Medium JSF-18" [ref=e1871] [cursor=pointer]:
+                      - /url: /Projects-Sort-by-211ed4def683808fa04be99768d35e57?pvs=25
+                      - generic:
+                        - generic:
+                          - generic:
+                            - button:
+                              - img
+                          - generic:
+                            - button:
+                              - img
+                      - generic [ref=e1872]:
+                        - button [ref=e1873]
+                        - generic [ref=e1876]:
+                          - generic: Projects ‘Sort by’
+                      - generic [ref=e1877]:
+                        - button "Brandon Korous Brandon Korous" [ref=e1881]:
+                          - generic [ref=e1885]:
+                            - img "Brandon Korous" [ref=e1890]
+                            - generic [ref=e1891]: Brandon Korous
+                        - button "100% 100" [ref=e1894]:
+                          - generic [ref=e1898]:
+                            - text: 100%
+                            - progressbar [ref=e1899]
+                        - button "Medium" [ref=e1905]:
+                          - generic [ref=e1910]: Medium
+                        - generic [ref=e1914]: JSF-18
+                    - button "New project" [ref=e1915] [cursor=pointer]:
+                      - img [ref=e1916]
+                      - text: New project
+        - region "Side Peek" [ref=e2868]:
+          - generic [ref=e2869]:
+            - separator "Resize with left and right arrow keys" [ref=e2872]
+            - generic [ref=e2875]:
+              - generic [ref=e2876]:
+                - button "Close" [ref=e2878] [cursor=pointer]:
+                  - img [ref=e2879]
+                - link "Open in full page" [ref=e2884] [cursor=pointer]:
+                  - /url: /View-Daily-Log-Date-226ed4def68380e7921ed37c096bf326?pvs=23
+                  - img [ref=e2885]
+                - generic:
+                  - generic:
+                    - generic:
+                      - generic:
+                        - button "Switch peek mode":
+                          - img
+                - generic:
+                  - generic:
+                    - button "Previous page" [disabled]:
+                      - img
+                  - generic:
+                    - button "Next page" [disabled]:
+                      - img
+              - generic [ref=e2887]:
+                - generic [ref=e2888]:
+                  - generic [ref=e2895]: K
+                  - img "Brandon Korous" [ref=e2902]
+                - button "Share" [ref=e2905] [cursor=pointer]:
+                  - img [ref=e2906]
+                  - text: Share
+                  - img [ref=e2909]
+                - button "Copy link" [ref=e2912] [cursor=pointer]:
+                  - img [ref=e2913]
+                - button "Page info" [ref=e2919] [cursor=pointer]:
+                  - img [ref=e2920]
+                - button "Comments" [ref=e2925] [cursor=pointer]:
+                  - img [ref=e2926]
+                - button "Favorite" [ref=e2930] [cursor=pointer]:
+                  - img [ref=e2931]
+                - button "Actions" [ref=e2935] [cursor=pointer]:
+                  - img [ref=e2936]
+            - generic [ref=e2939]:
+              - group [ref=e2941]:
+                - generic [ref=e2943]:
+                  - generic [ref=e2944]:
+                    - generic [ref=e2945]:
+                      - generic [ref=e2948]:
+                        - button "Add cover":
+                          - img
+                          - text: Add cover
+                        - button "Customize layout":
+                          - img
+                          - text: Customize layout
+                      - button "Change page icon" [ref=e2950] [cursor=pointer]
+                      - textbox [active] [ref=e2955]:
+                        - /placeholder: New project
+                    - generic [ref=e2962]:
+                      - generic [ref=e2963]:
+                        - generic [ref=e2964]:
+                          - cell "Status" [ref=e2969] [cursor=pointer]:
+                            - generic [ref=e2970]:
+                              - img [ref=e2976]
+                              - generic [ref=e2978]: Status
+                          - button "Bug" [ref=e2980] [cursor=pointer]:
+                            - generic [ref=e2987]: Bug
+                        - generic [ref=e2988]:
+                          - cell "Assignee" [ref=e2993] [cursor=pointer]:
+                            - generic [ref=e2994]:
+                              - img [ref=e3000]
+                              - generic [ref=e3002]: Assignee
+                              - generic [ref=e3003]:
+                                - generic:
+                                  - generic:
+                                    - img
+                          - button "Empty" [ref=e3006] [cursor=pointer]:
+                            - generic [ref=e3007]: Empty
+                        - generic [ref=e3008]:
+                          - cell "Priority" [ref=e3013] [cursor=pointer]:
+                            - generic [ref=e3014]:
+                              - img [ref=e3020]
+                              - generic [ref=e3022]: Priority
+                          - button "Empty" [ref=e3024] [cursor=pointer]:
+                            - generic [ref=e3025]: Empty
+                        - generic [ref=e3026]:
+                          - cell "End date" [ref=e3031] [cursor=pointer]:
+                            - generic [ref=e3032]:
+                              - img [ref=e3038]
+                              - generic [ref=e3040]: End date
+                          - button "Empty" [ref=e3042] [cursor=pointer]:
+                            - generic [ref=e3043]: Empty
+                      - button "Show/close details panel" [ref=e3047] [cursor=pointer]:
+                        - img [ref=e3048]
+                  - generic [ref=e3052]:
+                    - generic [ref=e3055]: Comments
+                    - generic [ref=e3058]:
+                      - generic [ref=e3061]:
+                        - generic [ref=e3063]:
+                          - generic [ref=e3066]:
+                            - generic [ref=e3071]: K
+                            - link "Kiera" [ref=e3072] [cursor=pointer]:
+                              - /url: /20aed4def683809594b5eb788366edf9?pvs=157&p=b1aed4def683830b8435816fd45b4a7b&pm=s
+                              - generic [ref=e3073]: Kiera
+                          - generic [ref=e3075]: 07/03/2025
+                        - generic [ref=e3081]: the date appears as the day before when viewing and editing, ex. 7/13/2025 appears as 7/12/2025
+                        - generic "Comment actions" [ref=e3084]:
+                          - button "Add reaction" [ref=e3086] [cursor=pointer]:
+                            - img [ref=e3087]
+                          - button "Resolve" [ref=e3091] [cursor=pointer]:
+                            - img [ref=e3092]
+                          - button "More actions" [ref=e3095] [cursor=pointer]:
+                            - img [ref=e3096]
+                      - generic [ref=e3100] [cursor=pointer]:
+                        - img "Brandon Korous" [ref=e3104]
+                        - generic [ref=e3105]:
+                          - textbox "Add a comment…" [ref=e3107]
+                          - generic:
+                            - generic:
+                              - generic:
+                                - button "Attach file":
+                                  - img
+                              - generic:
+                                - button "Mention a person, page, or date":
+                                  - img
+                              - button "Send comment" [disabled]:
+                                - img
+                  - generic [ref=e3109]:
+                    - textbox [ref=e3114]:
+                      - /placeholder: Heading 3
+                    - textbox [ref=e3120]:
+                      - /placeholder: " "
+                    - textbox [ref=e3126]:
+                      - /placeholder: " "
+                    - textbox [ref=e3131]:
+                      - /placeholder: Heading 3
+                    - generic [ref=e3135]:
+                      - checkbox [ref=e3138] [cursor=pointer]
+                      - textbox [ref=e3141]:
+                        - /placeholder: To-do
+                    - textbox [ref=e3147]:
+                      - /placeholder: " "
+                    - textbox [ref=e3152]:
+                      - /placeholder: Heading 3
+                    - button "Embed Google Drive" [ref=e3155] [cursor=pointer]:
+                      - generic [ref=e3161]: Embed Google Drive
+                    - button "Embed a PDF" [ref=e3166] [cursor=pointer]:
+                      - generic [ref=e3168]:
+                        - img [ref=e3170]
+                        - generic [ref=e3173]: Embed a PDF
+                    - button "Embed Figma" [ref=e3176] [cursor=pointer]:
+                      - generic [ref=e3182]: Embed Figma
+              - generic [ref=e3188]:
+                - generic [ref=e3190]:
+                  - img [ref=e3192]
+                  - textbox "Search properties" [ref=e3194]
+                - generic [ref=e3196]:
+                  - generic [ref=e3198]: Properties
+                  - table "Page properties" [ref=e3203]:
+                    - row "Start date" [ref=e3205]:
+                      - cell "Start date" [ref=e3210]:
+                        - generic [ref=e3211]:
+                          - img [ref=e3217]
+                          - generic [ref=e3219]: Start date
+                      - cell "Empty" [ref=e3220]:
+                        - generic [ref=e3224]: Empty
+                    - row "Start value" [ref=e3226]:
+                      - cell "Start value" [ref=e3231]:
+                        - generic [ref=e3232]:
+                          - img [ref=e3238]
+                          - generic [ref=e3240]: Start value
+                      - cell "Empty" [ref=e3241]:
+                        - generic [ref=e3245]: Empty
+                    - row "End value" [ref=e3247]:
+                      - cell "End value" [ref=e3252]:
+                        - generic [ref=e3253]:
+                          - img [ref=e3259]
+                          - generic [ref=e3261]: End value
+                      - cell "Empty" [ref=e3262]:
+                        - generic [ref=e3266]: Empty
+                    - row "Progress" [ref=e3268]:
+                      - cell "Progress" [ref=e3273]:
+                        - generic [ref=e3274]:
+                          - img [ref=e3280]
+                          - generic [ref=e3282]: Progress
+                          - generic [ref=e3283]:
+                            - generic:
+                              - generic:
+                                - img
+                      - cell "100% 100" [ref=e3284]:
+                        - generic [ref=e3291]:
+                          - text: 100%
+                          - progressbar [ref=e3293]
+                    - row "Team" [ref=e3298]:
+                      - cell "Team" [ref=e3303]:
+                        - generic [ref=e3304]:
+                          - img [ref=e3310]
+                          - generic [ref=e3312]: Team
+                      - cell "Empty" [ref=e3313]:
+                        - generic [ref=e3317]: Empty
+                    - row "Attach file" [ref=e3319]:
+                      - cell "Attach file" [ref=e3324]:
+                        - generic [ref=e3325]:
+                          - img [ref=e3331]
+                          - generic [ref=e3333]: Attach file
+                      - cell "Empty" [ref=e3334]:
+                        - generic [ref=e3339]: Empty
+                    - row "GitHub Pull Requests" [ref=e3341]:
+                      - cell "GitHub Pull Requests" [ref=e3346]:
+                        - generic [ref=e3347]:
+                          - generic [ref=e3348]:
+                            - img [ref=e3350]
+                            - img [ref=e3353]
+                          - generic [ref=e3355]: GitHub Pull Requests
+                          - button [disabled] [ref=e3358] [cursor=pointer]:
+                            - img [ref=e3359]
+                      - cell "Empty" [ref=e3365]:
+                        - generic [ref=e3370]: Empty
+                    - row "ID" [ref=e3372]:
+                      - cell "ID" [ref=e3377]:
+                        - generic [ref=e3378]:
+                          - img [ref=e3384]
+                          - generic [ref=e3386]: ID
+                      - cell "JSF-67" [ref=e3387]:
+                        - generic [ref=e3391]: JSF-67
+      - button "ai" [ref=e1923] [cursor=pointer]:
+        - img "Notion AI face" [ref=e1929]
+    - status [ref=e81]
+    - alert [ref=e82]
+  - generic: Gantt
+  - iframe [ref=e1930]:
+    

@@ -33,6 +33,11 @@ export interface ModuleEntityType {
   id: string;
   label: string;
   routePrefix: string;
+  // When true, this entity has a registered detail-content component
+  // (in apps/dashboard/_shell/detail-registry.ts) and can be opened in
+  // drawer or modal mode. When false/undefined, clicks always navigate
+  // to the full-page route regardless of the user's preferred view mode.
+  hasDetailView?: boolean;
 }
 
 // A module's static contribution to the dashboard shell. The shell never

@@ -13,6 +13,12 @@ import {
   type FavoriteRow,
   type RecentRow,
 } from './service';
+import {
+  getUserPreferences as svcGetUserPreferences,
+  setUserPreferences as svcSetUserPreferences,
+  type DefaultDetailView,
+  type UserPreferences,
+} from './preferences';
 
 // Server Actions wrapping the shell service. Every action gates on
 // requireSession() and uses the session's userId/tenantId — clients never
@@ -65,4 +71,23 @@ export async function clearRecentsAction(): Promise<void> {
   const ctx = await ctxFromSession();
   await svcClearRecents(ctx);
   revalidatePath('/', 'layout');
+}
+
+// ── Preferences ───────────────────────────────────────────
+
+export async function getUserPreferencesAction(): Promise<UserPreferences> {
+  const ctx = await ctxFromSession();
+  return svcGetUserPreferences(ctx.userId);
+}
+
+export async function setDefaultDetailViewAction(
+  next: DefaultDetailView
+): Promise<UserPreferences> {
+  const ctx = await ctxFromSession();
+  const result = await svcSetUserPreferences(ctx.userId, { defaultDetailView: next });
+  // Click-handlers throughout the dashboard read preferences from the
+  // server-rendered shell, so a preference change must rebuild the layout
+  // tree. Same revalidation pattern as favorites.
+  revalidatePath('/', 'layout');
+  return result;
 }

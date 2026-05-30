@@ -7,17 +7,23 @@
 import type { ModuleManifest } from '@sparx/ui/shell';
 import {
   Boxes,
+  CreditCard,
   FolderTree,
   Gift,
+  Inbox,
   LayoutGrid,
   Package,
   Package2,
   PackagePlus,
   Percent,
+  Plug,
+  Receipt,
+  Repeat2,
   Settings2,
   ShoppingCart,
   Tag,
   TicketPercent,
+  Truck,
   Wallet,
   Warehouse,
 } from 'lucide-react';
@@ -39,6 +45,23 @@ export const commerceManifest: ModuleManifest = {
     { id: 'configurator', label: 'Configurator', icon: Settings2, href: '/commerce/configurator' },
     { id: 'gift-cards', label: 'Gift cards', icon: Gift, href: '/commerce/gift-cards' },
     { id: 'store-credit', label: 'Store credit', icon: Wallet, href: '/commerce/store-credit' },
+    { id: 'carts', label: 'Carts', icon: ShoppingCart, href: '/commerce/carts' },
+    {
+      id: 'checkout-sessions',
+      label: 'Checkout sessions',
+      icon: CreditCard,
+      href: '/commerce/checkout-sessions',
+    },
+    {
+      id: 'subscriptions',
+      label: 'Subscriptions',
+      icon: Repeat2,
+      href: '/commerce/subscriptions',
+    },
+    { id: 'returns', label: 'Returns', icon: Inbox, href: '/commerce/returns' },
+    { id: 'shipping', label: 'Shipping', icon: Truck, href: '/commerce/shipping' },
+    { id: 'tax', label: 'Tax', icon: Receipt, href: '/commerce/tax' },
+    { id: 'providers', label: 'Providers', icon: Plug, href: '/commerce/providers' },
   ],
   actions: [
     {

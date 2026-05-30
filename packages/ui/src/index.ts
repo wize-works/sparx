@@ -12,6 +12,7 @@ export { ModuleProvider, useModule, type SparxModule } from './providers/module-
 
 // ── Hooks ─────────────────────────────────────────────────
 export { useTheme, THEME_INIT_SCRIPT, type Theme } from './hooks/use-theme';
+export { useMediaQuery } from './hooks/use-media-query';
 
 // ── Brand ────────────────────────────────────────────────
 export { Wordmark, type WordmarkProps } from './components/brand/wordmark';

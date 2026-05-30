@@ -1,12 +1,8 @@
 import Link from 'next/link';
-import { notFound } from 'next/navigation';
-import { requireSession } from '@sparx/auth';
-import { withTenant } from '@sparx/db';
-import { Badge, Button, Container, Heading, Stack, Text } from '@sparx/ui';
+import { Button, Container, Stack } from '@sparx/ui';
 import { ArrowLeft } from 'lucide-react';
-import { api, type ApiRestError } from '@/lib/api-rest-client';
 import { CmsTabs } from '../_components/cms-tabs';
-import { EditPageForm, type EditableTenantPage } from './edit-form';
+import { CmsPageDetailContent } from './_content';
 
 export const dynamic = 'force-dynamic';
 
@@ -14,64 +10,13 @@ interface PageParams {
   params: Promise<{ id: string }>;
 }
 
-interface ApiEntry {
-  id: string;
-  type_key: string;
-  slug: string | null;
-  status: string;
-  body: Record<string, unknown>;
-  seo: Record<string, unknown>;
-  published_at: string | null;
-  scheduled_at: string | null;
-  updated_at: string;
-}
-
+// Full-page route wrapper for a CMS page detail. The actual editing UI
+// lives in `_content.tsx` so it can also mount inside the dashboard
+// shell's detail panel (drawer / modal). The route adds the full-page
+// chrome the panel doesn't: width-constrained Container, intra-module
+// tabs nav, back link.
 export default async function EditCmsPage({ params }: PageParams) {
   const { id } = await params;
-  const { user } = await requireSession();
-
-  const [entryResult, tenant] = await Promise.all([
-    (async () => {
-      try {
-        return await api.getWithEtag<ApiEntry>(`/v1/content/entries/${id}`);
-      } catch (err) {
-        const e = err as ApiRestError;
-        if (e?.status === 404) notFound();
-        throw err;
-      }
-    })(),
-    withTenant({ tenantId: user.tenantId }, (tx) =>
-      tx.tenant.findUnique({ where: { id: user.tenantId }, select: { slug: true } })
-    ),
-  ]);
-  const entry = entryResult.data;
-  const initialEtag = entryResult.etag;
-
-  const docBody =
-    entry.body.body && typeof entry.body.body === 'object'
-      ? (entry.body.body as Record<string, unknown>)
-      : { type: 'doc', content: [] };
-
-  const seoVal = entry.seo ?? {};
-  const editable: EditableTenantPage = {
-    id: entry.id,
-    typeKey: entry.type_key,
-    slug: entry.slug ?? '',
-    title: typeof entry.body.title === 'string' ? entry.body.title : '',
-    status: entry.status,
-    body: docBody,
-    seo: {
-      title: typeof seoVal.title === 'string' ? seoVal.title : '',
-      description: typeof seoVal.description === 'string' ? seoVal.description : '',
-      canonical: typeof seoVal.canonical === 'string' ? seoVal.canonical : '',
-      robots: typeof seoVal.robots === 'string' ? seoVal.robots : '',
-      ogImage: typeof seoVal.ogImage === 'string' ? seoVal.ogImage : '',
-    },
-    publishedAt: entry.published_at ? new Date(entry.published_at) : null,
-    scheduledAt: entry.scheduled_at ? new Date(entry.scheduled_at) : null,
-    updatedAt: new Date(entry.updated_at),
-  };
-
   return (
     <Container size="lg">
       <Stack gap={6} className="py-10">
@@ -83,21 +28,8 @@ export default async function EditCmsPage({ params }: PageParams) {
               Back to pages
             </Link>
           </Button>
-          <Stack direction="row" align="center" gap={2}>
-            <Heading level={1}>{editable.title || 'Untitled page'}</Heading>
-            <Badge variant="module">page</Badge>
-            <Badge variant={editable.status === 'published' ? 'success' : 'outline'}>
-              {editable.status}
-            </Badge>
-          </Stack>
-          {editable.slug && (
-            <Text size="sm" variant="muted">
-              <code>/{editable.slug}</code>
-            </Text>
-          )}
         </Stack>
-
-        <EditPageForm page={editable} tenantSlug={tenant?.slug ?? null} initialEtag={initialEtag} />
+        <CmsPageDetailContent id={id} />
       </Stack>
     </Container>
   );

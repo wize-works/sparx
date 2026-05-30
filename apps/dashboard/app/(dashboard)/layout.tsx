@@ -1,6 +1,7 @@
 import { requireSession } from '@sparx/auth';
 import { withTenant } from '@sparx/db';
 import { DashboardShell } from './_components/dashboard-shell';
+import { getUserPreferences } from './_shell/preferences';
 import { listFavorites, listRecents } from './_shell/service';
 
 // Server-side session gate. requireSession() redirects to /sign-in when there
@@ -18,7 +19,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   const ctx = { userId: user.id, tenantId: user.tenantId };
 
-  const [tenant, favorites, recents] = await Promise.all([
+  const [tenant, favorites, recents, preferences] = await Promise.all([
     withTenant({ tenantId: user.tenantId }, (tx) =>
       tx.tenant.findUnique({
         where: { id: user.tenantId },
@@ -27,6 +28,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
     ),
     listFavorites(ctx),
     listRecents(ctx),
+    getUserPreferences(user.id),
   ]);
 
   return (
@@ -35,6 +37,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
       tenantName={tenant?.name ?? 'Workspace'}
       favorites={favorites}
       recents={recents}
+      preferences={preferences}
     >
       {children}
     </DashboardShell>

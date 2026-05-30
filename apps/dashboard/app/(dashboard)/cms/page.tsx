@@ -21,6 +21,7 @@ import { FileText, Plus } from 'lucide-react';
 // audit (UX-2) flagged it only as redundant *next to the H1* (the sidebar
 // item already carries that glyph). Keep it where it earns its keep.
 import { api } from '@/lib/api-rest-client';
+import { EntityRowLink } from '../_components/entity-row-link';
 import { CmsTabs } from './_components/cms-tabs';
 import { EntryListFilters } from './_components/entry-list-filters';
 
@@ -153,7 +154,9 @@ export default async function CmsPage({ searchParams }: { searchParams: Promise<
                 </CardContent>
                 <CardFooter>
                   <Button variant="module-outline" size="sm" asChild>
-                    <Link href={`/cms/${e.id}`}>Edit</Link>
+                    <EntityRowLink href={`/cms/${e.id}`} entityType="page" entityId={e.id}>
+                      Edit
+                    </EntityRowLink>
                   </Button>
                 </CardFooter>
               </Card>

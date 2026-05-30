@@ -22,6 +22,12 @@ model User {
   role        String    @default("editor") @db.VarChar(50) // owner | admin | editor | viewer | api
   lastLoginAt DateTime? @map("last_login_at") @db.Timestamptz
 
+  // Per-user preferences bag. Keep narrow — anything tenant-scoped goes
+  // on Tenant.settings; anything device-scoped goes in localStorage.
+  // Known keys (TypeScript-narrowed in apps/dashboard/_shell/preferences.ts):
+  //   defaultDetailView: 'drawer' | 'modal' | 'fullPage' | 'newTab'
+  preferences Json @default("{}")
+
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
 

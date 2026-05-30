@@ -43,6 +43,10 @@ export const cmsManifest: ModuleManifest = {
     },
   ],
   entityTypes: [
+    // CMS pages get drawer/modal rendering as the first proof of the
+    // shell's detail-view path. Other types add `hasDetailView: true` as
+    // their _content.tsx + detail-registry entries land.
+    { id: 'page', label: 'Page', routePrefix: '/cms', hasDetailView: true },
     { id: 'content-type', label: 'Content type', routePrefix: '/cms/types' },
     { id: 'media', label: 'Media', routePrefix: '/cms/media' },
     { id: 'author', label: 'Author', routePrefix: '/cms/authors' },

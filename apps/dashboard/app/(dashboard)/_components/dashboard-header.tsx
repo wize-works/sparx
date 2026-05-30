@@ -6,19 +6,21 @@ import { Clock, Moon, Sun } from 'lucide-react';
 import { ActionsMenu } from './actions-menu';
 import { StarButton } from './star-button';
 import type { FavoriteRow } from '../_shell/service';
+import type { UserPreferences } from '../_shell/preferences';
 
 // Right-side header controls. Order (left to right): last-activity, ⋯,
 // star, theme. See docs/24-dashboard-shell.md §4.5.
 
 interface DashboardHeaderProps {
   favorites: FavoriteRow[];
+  preferences: UserPreferences;
 }
 
-export function DashboardHeader({ favorites }: DashboardHeaderProps) {
+export function DashboardHeader({ favorites, preferences }: DashboardHeaderProps) {
   return (
     <>
       <LastActivityButton />
-      <ActionsMenu favorites={favorites} />
+      <ActionsMenu favorites={favorites} preferences={preferences} />
       <StarButton favorites={favorites} />
       <ThemeToggleButton />
     </>

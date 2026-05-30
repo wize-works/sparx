@@ -21,6 +21,7 @@ import {
   Text,
 } from '@sparx/ui';
 
+import { EntityRowLink } from '../_components/entity-row-link';
 import { CrmTabs } from './_components/crm-tabs';
 import { CustomerFiltersBar } from './_components/customer-filters-bar';
 
@@ -135,12 +136,14 @@ export default async function CrmPage({ searchParams }: PageProps) {
                   {customers.map((c) => (
                     <TableRow key={c.id}>
                       <TableCell>
-                        <Link
+                        <EntityRowLink
                           href={`/crm/customers/${c.id}`}
+                          entityType="customer"
+                          entityId={c.id}
                           className="text-sm font-medium text-[var(--color-text-primary)] hover:text-[var(--module-active)] hover:underline"
                         >
                           {customerDisplayName(c)}
-                        </Link>
+                        </EntityRowLink>
                         {c.doNotContact && (
                           <Badge variant="warning" className="ml-2">
                             DNC

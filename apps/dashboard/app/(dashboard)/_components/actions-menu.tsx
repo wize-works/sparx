@@ -20,10 +20,25 @@ import {
   TooltipTrigger,
   toast,
 } from '@sparx/ui';
-import { Copy, ExternalLink, MoreHorizontal, Star, StarOff } from 'lucide-react';
-import { addFavoriteAction, removeFavoriteAction } from '../_shell/actions';
+import {
+  Check,
+  Copy,
+  ExternalLink,
+  Layout,
+  MoreHorizontal,
+  PanelRight,
+  Square,
+  Star,
+  StarOff,
+} from 'lucide-react';
+import {
+  addFavoriteAction,
+  removeFavoriteAction,
+  setDefaultDetailViewAction,
+} from '../_shell/actions';
 import { findFavoritableByPath } from '../_shell/registry';
 import type { FavoriteRow } from '../_shell/service';
+import type { DefaultDetailView, UserPreferences } from '../_shell/preferences';
 
 // The `...` Actions menu — a searchable, grouped command list per
 // docs/24-dashboard-shell.md §4.6.
@@ -36,9 +51,18 @@ import type { FavoriteRow } from '../_shell/service';
 
 interface ActionsMenuProps {
   favorites: FavoriteRow[];
+  preferences: UserPreferences;
 }
 
-export function ActionsMenu({ favorites }: ActionsMenuProps) {
+const DETAIL_VIEW_OPTIONS: { value: DefaultDetailView; label: string; icon: typeof PanelRight }[] =
+  [
+    { value: 'drawer', label: 'Drawer', icon: PanelRight },
+    { value: 'modal', label: 'Modal', icon: Square },
+    { value: 'fullPage', label: 'Full page', icon: Layout },
+    { value: 'newTab', label: 'New tab', icon: ExternalLink },
+  ];
+
+export function ActionsMenu({ favorites, preferences }: ActionsMenuProps) {
   const pathname = usePathname();
   const [open, setOpen] = React.useState(false);
   const [, startTransition] = React.useTransition();
@@ -87,6 +111,21 @@ export function ActionsMenu({ favorites }: ActionsMenuProps) {
     });
   }
 
+  function handleSetDefaultView(next: DefaultDetailView) {
+    if (next === preferences.defaultDetailView) {
+      close();
+      return;
+    }
+    close();
+    startTransition(async () => {
+      try {
+        await setDefaultDetailViewAction(next);
+      } catch {
+        toast.error('Could not update preference');
+      }
+    });
+  }
+
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <Tooltip>
@@ -130,6 +169,28 @@ export function ActionsMenu({ favorites }: ActionsMenuProps) {
             </CommandGroup>
 
             <CommandSeparator />
+
+            <CommandGroup heading="Default detail view">
+              {DETAIL_VIEW_OPTIONS.map((opt) => {
+                const Icon = opt.icon;
+                const isCurrent = preferences.defaultDetailView === opt.value;
+                return (
+                  <CommandItem
+                    key={opt.value}
+                    value={`default view ${opt.label}`}
+                    onSelect={() => handleSetDefaultView(opt.value)}
+                  >
+                    <Icon className="h-4 w-4" />
+                    {opt.label}
+                    {isCurrent && (
+                      <CommandShortcut>
+                        <Check className="h-4 w-4" />
+                      </CommandShortcut>
+                    )}
+                  </CommandItem>
+                );
+              })}
+            </CommandGroup>
           </CommandList>
         </Command>
       </PopoverContent>

@@ -86,6 +86,27 @@ importers:
       '@sparx/email':
         specifier: workspace:*
         version: link:../../packages/email
+      '@sparx/integration-framework':
+        specifier: workspace:*
+        version: link:../../packages/integration-framework
+      '@sparx/provider-avalara':
+        specifier: workspace:*
+        version: link:../../packages/provider-avalara
+      '@sparx/provider-easypost':
+        specifier: workspace:*
+        version: link:../../packages/provider-easypost
+      '@sparx/provider-paypal':
+        specifier: workspace:*
+        version: link:../../packages/provider-paypal
+      '@sparx/provider-shippo':
+        specifier: workspace:*
+        version: link:../../packages/provider-shippo
+      '@sparx/provider-stripe':
+        specifier: workspace:*
+        version: link:../../packages/provider-stripe
+      '@sparx/provider-taxjar':
+        specifier: workspace:*
+        version: link:../../packages/provider-taxjar
       '@sparx/ui':
         specifier: workspace:*
         version: link:../../packages/ui

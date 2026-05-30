@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import {
   Avatar,
   DropdownMenu,
@@ -29,10 +29,13 @@ import { ChevronsUpDown, Home, LogOut, Settings, User as UserIcon } from 'lucide
 import { authClient } from '@sparx/auth/client';
 import { moduleManifests } from '../_shell/registry';
 import type { FavoriteRow, RecentRow } from '../_shell/service';
+import type { UserPreferences } from '../_shell/preferences';
 import { BreadcrumbTrail } from './breadcrumb-trail';
 import { CommandPalette } from './command-palette';
 import { DashboardHeader } from './dashboard-header';
+import { InlineDetailContent, ModalDetailContent, useDetailTarget } from './detail-panel';
 import { FavoritesSection } from './favorites-section';
+import { PreferencesProvider } from './preferences-provider';
 import { RecentsSection } from './recents-section';
 
 export interface DashboardShellProps {
@@ -40,6 +43,7 @@ export interface DashboardShellProps {
   tenantName: string;
   favorites: FavoriteRow[];
   recents: RecentRow[];
+  preferences: UserPreferences;
   children: React.ReactNode;
 }
 
@@ -48,12 +52,27 @@ export function DashboardShell({
   tenantName,
   favorites,
   recents,
+  preferences,
   children,
 }: DashboardShellProps) {
   const pathname = usePathname();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const detailTarget = useDetailTarget();
   const trimmedName = user.name?.trim();
   const emailLocal = user.email.split('@')[0] ?? user.email;
   const displayName = trimmedName && trimmedName.length > 0 ? trimmedName : emailLocal;
+
+  const closeDetail = React.useCallback(() => {
+    const next = new URLSearchParams(searchParams ?? '');
+    next.delete('drawer');
+    next.delete('modal');
+    const qs = next.toString();
+    router.replace(qs ? `${pathname}?${qs}` : (pathname ?? '/'));
+  }, [pathname, router, searchParams]);
+
+  const inlineDetail =
+    detailTarget?.mode === 'drawer' ? <InlineDetailContent target={detailTarget} /> : null;
 
   const sidebar = (
     <>
@@ -73,20 +92,27 @@ export function DashboardShell({
   );
 
   return (
-    <>
+    <PreferencesProvider value={preferences}>
       <SidebarAppShell
         pathname={pathname}
         sidebar={sidebar}
         headerStart={<BreadcrumbTrail tenantName={tenantName} />}
-        headerActions={<DashboardHeader favorites={favorites} />}
+        headerActions={<DashboardHeader favorites={favorites} preferences={preferences} />}
+        detail={inlineDetail}
+        onDetailClose={closeDetail}
       >
         {children}
       </SidebarAppShell>
+      {/* Modal overlay is rendered separately — it's not part of the
+          shell's split layout. */}
+      {detailTarget?.mode === 'modal' && (
+        <ModalDetailContent target={detailTarget} onClose={closeDetail} />
+      )}
       {/* ⌘K palette — mounted once at the shell, listens globally for the
           shortcut. Receives favorites + recents so they appear at the top
           of the search results without an extra fetch. */}
       <CommandPalette favorites={favorites} recents={recents} />
-    </>
+    </PreferencesProvider>
   );
 }
 
