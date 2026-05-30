@@ -252,12 +252,13 @@ function Details({
           ))}
         </div>
       )}
+      <StockBadge variant={defaultVariant} fallbackInStock={inStock} />
       <button
         type="button"
         disabled
         title="Cart + checkout wire in Phase 5"
         style={{
-          marginTop: '1rem',
+          marginTop: '0.5rem',
           padding: '0.85rem 1.25rem',
           borderRadius: '8px',
           background: inStock
@@ -283,6 +284,56 @@ function Details({
         available.
       </p>
     </div>
+  );
+}
+
+function StockBadge({
+  variant,
+  fallbackInStock,
+}: {
+  variant: PublicProductVariant | undefined;
+  fallbackInStock: boolean;
+}) {
+  if (!variant) return null;
+  const inStock = variant.inStock;
+  const showCount =
+    inStock && variant.available > 0 && variant.available <= 10 && variant.inventoryPolicy === 'deny';
+  const acceptsBackorder = !inStock && variant.inventoryPolicy !== 'deny';
+
+  let label = inStock ? 'In stock' : 'Out of stock';
+  if (showCount) label = `Only ${variant.available} left`;
+  if (acceptsBackorder) label = 'Available on back-order';
+
+  const color = inStock
+    ? 'var(--color-success, #16a34a)'
+    : acceptsBackorder
+      ? 'var(--color-warning, #b45309)'
+      : 'var(--color-danger, #b91c1c)';
+
+  // Acknowledge the prop so eslint stays happy + so callers always pass it.
+  void fallbackInStock;
+
+  return (
+    <span
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: '0.4rem',
+        fontSize: '0.85rem',
+        color,
+      }}
+    >
+      <span
+        aria-hidden
+        style={{
+          width: 8,
+          height: 8,
+          borderRadius: '50%',
+          background: color,
+        }}
+      />
+      {label}
+    </span>
   );
 }
 

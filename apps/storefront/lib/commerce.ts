@@ -93,6 +93,10 @@ export interface PublicProductVariant {
   isDefault: boolean;
   inventoryPolicy: string;
   optionValueIds: string[];
+  /** Summed available across every warehouse. */
+  available: number;
+  /** True when stock is available OR the variant accepts back-orders. */
+  inStock: boolean;
 }
 
 export interface PublicProductImage {

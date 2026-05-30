@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { Users, Plus, Building2, UserPlus } from 'lucide-react';
 
-import { isModuleEnabled, requireSession } from '@sparx/auth';
+import { requireSession } from '@sparx/auth';
 import { customerService } from '@sparx/crm';
 import {
   Badge,
@@ -21,7 +21,6 @@ import {
   Text,
 } from '@sparx/ui';
 
-import { ModuleStub } from '../../../components/module-stub';
 import { CrmTabs } from './_components/crm-tabs';
 import { CustomerFiltersBar } from './_components/customer-filters-bar';
 
@@ -30,6 +29,9 @@ import { CustomerFiltersBar } from './_components/customer-filters-bar';
 // Filter state lives in the URL (?type=b2b&tag=fleet&q=acme) so links and
 // the browser back-button work, and so saved-view objects can serialize
 // straight from the query string.
+//
+// The CRM module gate runs in layout.tsx — if the tenant doesn't have CRM
+// active, this page never executes (the layout returns ModuleStub instead).
 
 export const dynamic = 'force-dynamic';
 
@@ -48,32 +50,6 @@ interface PageProps {
 
 export default async function CrmPage({ searchParams }: PageProps) {
   const session = await requireSession();
-  const enabled = await isModuleEnabled(session.user.tenantId, 'crm');
-  if (!enabled) {
-    return (
-      <ModuleStub
-        icon={<Users className="h-5 w-5" />}
-        title="CRM"
-        tagline="Customers, segments, and lifecycle automation."
-        description="The CRM module unifies customer profiles across storefront, B2B, and email so you can segment, score, and re-engage them. Activate it to start tracking customers."
-        features={[
-          {
-            title: 'Customer profiles',
-            description: 'Order history, tags, notes, and engagement.',
-          },
-          { title: 'Pipeline', description: 'Kanban deal flow for B2B and high-touch sales.' },
-          { title: 'Segments', description: 'Live audiences updated incrementally by event.' },
-          {
-            title: 'Automation',
-            description: 'Trigger emails, tasks, and webhooks on customer events.',
-          },
-          { title: 'Activity log', description: 'Append-only timeline of every touchpoint.' },
-          { title: 'MCP integration', description: 'AI-readable customer intelligence surface.' },
-        ]}
-      />
-    );
-  }
-
   const params = await searchParams;
   const type = stringParam(params.type);
   const tag = stringParam(params.tag);

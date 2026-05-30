@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import {
+  Avatar,
   Badge,
   Button,
   Card,
@@ -66,16 +67,27 @@ export default async function AuthorsPage() {
                     key={a.id}
                     direction="row"
                     align="center"
-                    justify="between"
+                    gap={3}
                     className="rounded-md border border-[var(--color-border-default)] px-3 py-2"
                   >
-                    <Stack gap={0}>
-                      <Text size="sm">{a.display_name}</Text>
-                      <Text size="xs" variant="muted">
+                    <Avatar size="md" alt={a.display_name} />
+                    <Stack gap={0} className="min-w-0 flex-1">
+                      <Text size="sm" weight="medium" className="truncate">
+                        {a.display_name}
+                      </Text>
+                      <Text size="xs" variant="muted" className="truncate">
                         /{a.slug}
                         {a.bio ? ` · ${a.bio.slice(0, 80)}${a.bio.length > 80 ? '…' : ''}` : ''}
                       </Text>
                     </Stack>
+                    <Text size="xs" variant="muted" className="hidden sm:inline">
+                      Added{' '}
+                      {new Date(a.created_at).toLocaleDateString(undefined, {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric',
+                      })}
+                    </Text>
                     <Button
                       asChild
                       variant="ghost"

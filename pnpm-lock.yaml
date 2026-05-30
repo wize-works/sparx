@@ -1044,6 +1044,9 @@ importers:
       '@sparx/cms-schemas':
         specifier: workspace:*
         version: link:../../packages/cms-schemas
+      '@sparx/commerce':
+        specifier: workspace:*
+        version: link:../../packages/commerce
       '@sparx/crm':
         specifier: workspace:*
         version: link:../../packages/crm

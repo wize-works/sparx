@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   Avatar,
-  Button,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -29,7 +28,7 @@ import {
 } from '@sparx/ui';
 import {
   Building2,
-  ChevronDown,
+  ChevronsUpDown,
   FileText,
   Home,
   LayoutTemplate,
@@ -104,17 +103,13 @@ export function DashboardShell({ user, children }: DashboardShellProps) {
       </SidebarHeader>
       <NavSections pathname={pathname} />
       <SidebarFooter>
-        <UserCard user={user} displayName={displayName} />
+        <UserMenu user={user} displayName={displayName} />
       </SidebarFooter>
     </>
   );
 
   return (
-    <SidebarAppShell
-      pathname={pathname}
-      sidebar={sidebar}
-      headerActions={<UserMenu user={user} displayName={displayName} />}
-    >
+    <SidebarAppShell pathname={pathname} sidebar={sidebar}>
       {children}
     </SidebarAppShell>
   );
@@ -162,28 +157,6 @@ function NavSections({ pathname }: { pathname: string | null }) {
   );
 }
 
-function UserCard({
-  user,
-  displayName,
-}: {
-  user: DashboardShellProps['user'];
-  displayName: string;
-}) {
-  return (
-    <Stack direction="row" align="center" gap={2} className="px-2 py-1.5">
-      <Avatar size="sm" alt={displayName} />
-      <Stack gap={0} className="min-w-0 flex-1">
-        <Text size="xs" weight="medium" className="truncate">
-          {displayName}
-        </Text>
-        <Text size="xs" variant="muted" className="truncate">
-          {user.email}
-        </Text>
-      </Stack>
-    </Stack>
-  );
-}
-
 function UserMenu({
   user,
   displayName,
@@ -208,17 +181,22 @@ function UserMenu({
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button
-          variant="ghost"
-          size="sm"
-          aria-label={`Account menu for ${displayName}`}
-          rightIcon={<ChevronDown className="h-3.5 w-3.5" />}
-        >
-          {displayName}
-        </Button>
+      <DropdownMenuTrigger
+        aria-label={`Account menu for ${displayName}`}
+        className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left hover:bg-[var(--color-bg-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)]"
+      >
+        <Avatar size="sm" alt={displayName} />
+        <Stack gap={0} className="min-w-0 flex-1">
+          <Text size="xs" weight="medium" className="truncate">
+            {displayName}
+          </Text>
+          <Text size="xs" variant="muted" className="truncate">
+            {user.email}
+          </Text>
+        </Stack>
+        <ChevronsUpDown className="h-3.5 w-3.5 shrink-0 text-[var(--color-text-muted)]" />
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
+      <DropdownMenuContent align="end" side="top">
         <DropdownMenuLabel>Signed in as {user.email}</DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>

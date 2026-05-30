@@ -11,6 +11,8 @@ export type CrmSection =
   | 'segments'
   | 'tasks'
   | 'b2b'
+  | 'orders'
+  | 'quotes'
   | 'reports'
   | 'duplicates';
 
@@ -24,6 +26,8 @@ const TABS: { section: CrmSection; href: string; label: string }[] = [
   { section: 'segments', href: '/crm/segments', label: 'Segments' },
   { section: 'tasks', href: '/crm/tasks', label: 'Tasks' },
   { section: 'b2b', href: '/crm/b2b', label: 'B2B accounts' },
+  { section: 'orders', href: '/crm/orders', label: 'Orders' },
+  { section: 'quotes', href: '/crm/quotes', label: 'Quotes' },
   { section: 'reports', href: '/crm/reports', label: 'Reports' },
   { section: 'duplicates', href: '/crm/duplicates', label: 'Duplicates' },
 ];

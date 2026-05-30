@@ -25,6 +25,7 @@
     "@sparx/api-core": "workspace:*",
     "@sparx/auth": "workspace:*",
     "@sparx/cms-schemas": "workspace:*",
+    "@sparx/commerce": "workspace:*",
     "@sparx/crm": "workspace:*",
     "@sparx/crm-schemas": "workspace:*",
     "@sparx/db": "workspace:*",

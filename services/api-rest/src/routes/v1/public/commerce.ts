@@ -287,6 +287,7 @@ const publicCommerceRoutes: FastifyPluginAsync = (app) => {
               isDefault: true,
               inventoryPolicy: true,
               optionAssignments: { select: { optionValueId: true } },
+              inventoryLevels: { select: { onHand: true, allocated: true } },
             },
           },
           images: {
@@ -325,16 +326,27 @@ const publicCommerceRoutes: FastifyPluginAsync = (app) => {
           ? { lengthMm: result.lengthMm, widthMm: result.widthMm, heightMm: result.heightMm }
           : null,
       options: result.options,
-      variants: result.variants.map((v) => ({
-        id: v.id,
-        sku: v.sku,
-        title: v.title,
-        priceCents: v.priceCents,
-        compareAtPriceCents: v.compareAtPriceCents,
-        isDefault: v.isDefault,
-        inventoryPolicy: v.inventoryPolicy,
-        optionValueIds: v.optionAssignments.map((ov) => ov.optionValueId),
-      })),
+      variants: result.variants.map((v) => {
+        // Sum available across every warehouse the variant lives in.
+        // The cart engine picks the actual warehouse at reserve time;
+        // here we just want a single number the PDP can render.
+        const available = v.inventoryLevels.reduce(
+          (acc, l) => acc + Math.max(0, l.onHand - l.allocated),
+          0
+        );
+        return {
+          id: v.id,
+          sku: v.sku,
+          title: v.title,
+          priceCents: v.priceCents,
+          compareAtPriceCents: v.compareAtPriceCents,
+          isDefault: v.isDefault,
+          inventoryPolicy: v.inventoryPolicy,
+          optionValueIds: v.optionAssignments.map((ov) => ov.optionValueId),
+          available,
+          inStock: available > 0 || v.inventoryPolicy !== 'deny',
+        };
+      }),
       images: result.images.map((img) => ({
         id: img.id,
         mediaAssetId: img.mediaAssetId,

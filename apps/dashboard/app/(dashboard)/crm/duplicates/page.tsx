@@ -1,7 +1,6 @@
-import { redirect } from 'next/navigation';
 import { Users } from 'lucide-react';
 
-import { requireSession, isModuleEnabled } from '@sparx/auth';
+import { requireSession } from '@sparx/auth';
 import { customerService } from '@sparx/crm';
 import {
   Badge,
@@ -27,13 +26,6 @@ export const dynamic = 'force-dynamic';
 
 export default async function DuplicatesPage() {
   const session = await requireSession();
-  const enabled = await isModuleEnabled(session.user.tenantId, 'crm');
-  if (!enabled) {
-    // CRM disabled — bounce back to the landing page, which renders the
-    // ModuleStub explaining how to activate.
-    redirect('/crm');
-  }
-
   const groups = await customerService.findLikelyDuplicates(
     { tenantId: session.user.tenantId, userId: session.user.id },
     { limit: 5000 }

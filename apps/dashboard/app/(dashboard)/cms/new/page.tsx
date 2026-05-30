@@ -57,6 +57,10 @@ export default function NewPage() {
             </Link>
           </Button>
           <Heading level={1}>New page</Heading>
+          <Text variant="muted">
+            Saves as a draft. Publish from the editor once the content is ready — nothing goes live
+            until you say so.
+          </Text>
         </Stack>
 
         <form onSubmit={onSubmit} noValidate>
@@ -103,7 +107,7 @@ export default function NewPage() {
                 <Link href="/cms">Cancel</Link>
               </Button>
               <Button type="submit" variant="module" disabled={pending} loading={pending}>
-                Create page
+                Create draft
               </Button>
             </CardFooter>
           </Card>

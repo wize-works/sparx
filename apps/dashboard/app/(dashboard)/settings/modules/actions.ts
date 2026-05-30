@@ -76,7 +76,12 @@ export async function setModuleEnabledAction(
       await segmentService.bootstrapBuiltInSegments(ctx);
     }
 
+    // Revalidate the settings page (status pills) AND the toggled module's
+    // route group layout — the gate now lives in each module's layout.tsx,
+    // so flipping enabled needs to invalidate that layout's render cache or
+    // the next /<module>/ request would still see the old gate result.
     revalidatePath('/settings/modules');
+    revalidatePath(`/${slug}`, 'layout');
     return { ok: true, data: { slug, enabled } };
   } catch (err) {
     return { ok: false, error: { message: err instanceof Error ? err.message : String(err) } };

@@ -1,6 +1,6 @@
 import Link from 'next/link';
-import { requireSession } from '@sparx/auth';
-import { withTenant } from '@sparx/db';
+import { requireSession, isModuleEnabled, type ModuleSlug } from '@sparx/auth';
+import { prisma, withTenant } from '@sparx/db';
 import { OnboardingBanner } from './_components/onboarding-banner';
 import { loadOnboardingProgress } from './welcome/onboarding';
 import {
@@ -51,44 +51,77 @@ interface ModuleSummary {
 
 export const dynamic = 'force-dynamic';
 
-const COMING_SOON: { href: string; label: string; description: string; icon: React.ReactNode }[] = [
+// Single source of metadata for every module that can appear on the home
+// dashboard. The Active grid pulls from this filtered by enabled flag; the
+// Discover grid pulls from this filtered by the opposite. Slug values match
+// the ModuleSlug enum so they line up with /settings/modules.
+const MODULE_REGISTRY: {
+  slug: ModuleSlug;
+  id: SparxModule;
+  href: string;
+  label: string;
+  description: string;
+  icon: React.ReactNode;
+}[] = [
   {
+    slug: 'storefront',
+    id: 'storefront',
     href: '/sitebuilder',
-    label: 'Sitebuilder',
+    label: 'Storefront',
     description: 'Themes, sections, visual editor',
     icon: <LayoutTemplate className="h-4 w-4" />,
   },
   {
+    slug: 'commerce',
+    id: 'commerce',
     href: '/commerce',
     label: 'Commerce',
     description: 'Products, orders, checkout',
     icon: <ShoppingCart className="h-4 w-4" />,
   },
   {
+    slug: 'cms',
+    id: 'cms',
+    href: '/cms',
+    label: 'CMS',
+    description: 'Pages, blog posts, media library',
+    icon: <Layers className="h-4 w-4" />,
+  },
+  {
+    slug: 'crm',
+    id: 'crm',
     href: '/crm',
     label: 'CRM',
     description: 'Customers, pipeline, automation',
     icon: <Users className="h-4 w-4" />,
   },
   {
+    slug: 'email',
+    id: 'email',
     href: '/email',
     label: 'Email',
     description: 'Templates, broadcasts, flows',
     icon: <Mail className="h-4 w-4" />,
   },
   {
+    slug: 'b2b',
+    id: 'b2b',
     href: '/b2b',
     label: 'B2B',
     description: 'Wholesale, fleet, net terms',
     icon: <Building2 className="h-4 w-4" />,
   },
   {
+    slug: 'dropship',
+    id: 'dropship',
     href: '/dropship',
     label: 'Dropship',
     description: 'Suppliers, routing, reconciliation',
     icon: <Truck className="h-4 w-4" />,
   },
   {
+    slug: 'ai',
+    id: 'ai',
     href: '/ai',
     label: 'AI',
     description: 'MCP server, copilots, agents',
@@ -96,22 +129,54 @@ const COMING_SOON: { href: string; label: string; description: string; icon: Rea
   },
 ];
 
-async function loadActiveModules(tenantId: string): Promise<ModuleSummary[]> {
-  const pageCount = await withTenant({ tenantId }, (tx) => tx.page.count());
-  return [
-    {
-      id: 'cms',
-      label: 'CMS',
-      description: 'Pages, blog posts, media library',
-      metric: `${pageCount} ${pageCount === 1 ? 'page' : 'pages'}`,
-      href: '/cms',
-    },
-  ];
+// Read each module's enabled flag from tenant.settings.modules in one shot,
+// then resolve the per-module metric only for the active ones. Previously
+// this function was hardcoded to return CMS only, so the home dashboard
+// disagreed with /settings/modules — that was F-04 in the CRM audit.
+async function loadActiveModules(tenantId: string): Promise<{
+  active: ModuleSummary[];
+  inactive: typeof MODULE_REGISTRY;
+}> {
+  const flags = await Promise.all(
+    MODULE_REGISTRY.map(async (m) => ({ entry: m, enabled: await isModuleEnabled(tenantId, m.slug) }))
+  );
+  const activeEntries = flags.filter((f) => f.enabled).map((f) => f.entry);
+  const inactiveEntries = flags.filter((f) => !f.enabled).map((f) => f.entry);
+
+  const active = await Promise.all(
+    activeEntries.map(async (m) => ({
+      id: m.id,
+      label: m.label,
+      description: m.description,
+      metric: await loadModuleMetric(tenantId, m.slug),
+      href: m.href,
+    }))
+  );
+  return { active, inactive: inactiveEntries };
+}
+
+// Per-module quick-metric. Most modules will eventually have a row count or
+// a 30d aggregate; for now only the ones with shipped tables return a
+// useful number. The rest fall back to an em-dash so the card still renders
+// without claiming "0 of X" inaccurately.
+async function loadModuleMetric(tenantId: string, slug: ModuleSlug): Promise<string> {
+  switch (slug) {
+    case 'cms': {
+      const pageCount = await withTenant({ tenantId }, (tx) => tx.page.count());
+      return `${pageCount} ${pageCount === 1 ? 'page' : 'pages'}`;
+    }
+    case 'crm': {
+      const customerCount = await prisma.customer.count({ where: { tenantId, deletedAt: null } });
+      return `${customerCount} ${customerCount === 1 ? 'customer' : 'customers'}`;
+    }
+    default:
+      return '—';
+  }
 }
 
 export default async function DashboardHome() {
   const { user } = await requireSession();
-  const [activeModules, onboarding] = await Promise.all([
+  const [{ active: activeModules, inactive: discoverModules }, onboarding] = await Promise.all([
     loadActiveModules(user.tenantId),
     loadOnboardingProgress(user.tenantId),
   ]);
@@ -193,7 +258,7 @@ export default async function DashboardHome() {
         <Stack gap={3}>
           <Heading level={3}>Discover</Heading>
           <Grid cols={1} mdCols={3} gap={4}>
-            {COMING_SOON.map((m) => (
+            {discoverModules.map((m) => (
               <Link key={m.label} href={m.href} className="block">
                 <Card variant="subtle">
                   <Stack gap={2}>

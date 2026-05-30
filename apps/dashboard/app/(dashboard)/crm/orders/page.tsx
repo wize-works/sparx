@@ -21,6 +21,8 @@ import {
   Text,
 } from '@sparx/ui';
 
+import { CrmTabs } from '../_components/crm-tabs';
+
 // Orders index — sortable + filterable table. Filters live in the query
 // string so links and saved views serialize cleanly.
 
@@ -59,6 +61,7 @@ export default async function OrdersPage({ searchParams }: PageProps) {
   return (
     <Container size="xl">
       <Stack gap={6} className="py-10">
+        <CrmTabs current="orders" />
         <Stack direction="row" align="end" justify="between" wrap>
           <Stack gap={2}>
             <Stack direction="row" align="center" gap={2}>

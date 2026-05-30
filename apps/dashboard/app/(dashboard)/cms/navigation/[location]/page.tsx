@@ -7,13 +7,22 @@ import { MenuEditor, type EditableMenuItem } from './menu-editor';
 
 export const dynamic = 'force-dynamic';
 
+// IMPORTANT wire-shape note: /v1/navigation/menus and /v1/navigation/menus/:loc
+// return the raw Prisma rows (no serializer), so field names are camelCase —
+// NOT the snake_case convention the rest of api-rest uses. A previous version
+// of this interface declared snake_case keys, which silently degenerated the
+// tree builder (every item grouped under `undefined`, so menus always
+// rendered empty). Audit UX-11 surfaced this as a count-mismatch between
+// the menu listing (using `items.length`, which still worked) and the
+// editor's top-level count (which collapsed to 0 because grouping by
+// `undefined` never matches `null`).
 interface ApiMenuItem {
   id: string;
   label: string;
-  entry_id: string | null;
-  external_url: string | null;
-  open_in_new_tab: boolean;
-  parent_item_id: string | null;
+  entryId: string | null;
+  externalUrl: string | null;
+  openInNewTab: boolean;
+  parentItemId: string | null;
   position: number;
 }
 
@@ -40,9 +49,9 @@ interface PageParams {
 function buildTree(items: ApiMenuItem[]): EditableMenuItem[] {
   const byParent = new Map<string | null, ApiMenuItem[]>();
   for (const item of items) {
-    const arr = byParent.get(item.parent_item_id) ?? [];
+    const arr = byParent.get(item.parentItemId) ?? [];
     arr.push(item);
-    byParent.set(item.parent_item_id, arr);
+    byParent.set(item.parentItemId, arr);
   }
   for (const arr of byParent.values()) {
     arr.sort((a, b) => a.position - b.position);
@@ -51,10 +60,10 @@ function buildTree(items: ApiMenuItem[]): EditableMenuItem[] {
     (byParent.get(parentId) ?? []).map((row) => ({
       uid: row.id,
       label: row.label,
-      kind: row.entry_id ? 'entry' : 'external',
-      entryId: row.entry_id,
-      externalUrl: row.external_url,
-      openInNewTab: row.open_in_new_tab,
+      kind: row.entryId ? 'entry' : 'external',
+      entryId: row.entryId,
+      externalUrl: row.externalUrl,
+      openInNewTab: row.openInNewTab,
       children: recurse(row.id),
     }));
   return recurse(null);
@@ -101,8 +110,8 @@ export default async function EditNavigationMenuPage({ params }: PageParams) {
             {menu ? 'Edit' : 'Create'} <code>/{location}</code> menu
           </Heading>
           <Text variant="muted">
-            Each item must link to either a published entry or an external URL — not both.
-            Drag-and-drop landing later; use the move buttons for now.
+            Each item must link to either a published entry or an external URL — not both. Use the
+            move buttons to reorder.
           </Text>
         </Stack>
 

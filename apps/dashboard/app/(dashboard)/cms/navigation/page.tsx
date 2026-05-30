@@ -21,7 +21,16 @@ interface ApiMenu {
   id: string;
   location: string;
   name: string;
-  items: { id: string }[];
+  // api-rest /v1/navigation/menus returns items as a FLAT list spanning every
+  // depth (Prisma include is non-recursive — children + parents come back in
+  // the same array). We filter to top-level for the listing count so the
+  // number on this page matches the "{n} top-level items" the editor shows
+  // (audit UX-11).
+  items: { id: string; parentItemId: string | null }[];
+}
+
+function topLevelCount(items: ApiMenu['items']): number {
+  return items.filter((i) => i.parentItemId === null).length;
 }
 
 const PRESET_LOCATIONS: { location: string; label: string; description: string }[] = [
@@ -74,14 +83,18 @@ export default async function NavigationMenusPage() {
                     </Button>
                   </Stack>
                 </CardHeader>
-                {existing && (
-                  <CardContent>
-                    <Text size="sm" variant="muted">
-                      {existing.items.length} item{existing.items.length === 1 ? '' : 's'} ·{' '}
-                      <strong>{existing.name}</strong>
-                    </Text>
-                  </CardContent>
-                )}
+                {existing &&
+                  (() => {
+                    const topCount = topLevelCount(existing.items);
+                    return (
+                      <CardContent>
+                        <Text size="sm" variant="muted">
+                          {topCount} top-level item{topCount === 1 ? '' : 's'} ·{' '}
+                          <strong>{existing.name}</strong>
+                        </Text>
+                      </CardContent>
+                    );
+                  })()}
               </Card>
             );
           })}

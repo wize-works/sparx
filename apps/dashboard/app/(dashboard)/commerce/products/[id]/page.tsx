@@ -6,6 +6,7 @@ import { isModuleEnabled, requireSession } from '@sparx/auth';
 import {
   CommerceNotFoundError,
   fitmentService,
+  inventoryService,
   productService,
   variantService,
 } from '@sparx/commerce';
@@ -27,6 +28,7 @@ import {
 import { ModuleStub } from '../../../../../components/module-stub';
 
 import { FitmentPanel } from './_components/fitment-panel';
+import { InventoryPanel } from './_components/inventory-panel';
 import { ProductEditForm } from './_components/product-edit-form';
 import { ProductStatusBar } from './_components/product-status-bar';
 import { VariantsPanel } from './_components/variants-panel';
@@ -77,13 +79,26 @@ export default async function ProductDetailPage({ params }: PageProps) {
     throw err;
   }
 
-  // Variants tab data — fan out the two reads; both are tenant-scoped.
-  const [options, variants, fitments, makes] = await Promise.all([
+  // Pre-load every tab's primary data so client tab switches are instant.
+  const [options, variants, fitments, makes, warehouses] = await Promise.all([
     variantService.listOptions(ctx, id),
     variantService.listForProduct(ctx, id, { includeArchived: true }),
     fitmentService.listForProduct(ctx, id),
     fitmentService.listMakes(ctx),
+    inventoryService.listWarehouses(ctx, { includeInactive: false }),
   ]);
+
+  // Inventory tab: per-warehouse levels for every variant. Cheap as one
+  // query per variant when the lattice is small; the dashboard's typical
+  // product carries fewer than a dozen variants.
+  const inventoryLevels = await Promise.all(
+    variants.map(async (variant) => ({
+      variantId: variant.id,
+      sku: variant.sku,
+      variantTitle: variant.title,
+      levels: await inventoryService.levelsForVariant(ctx, variant.id),
+    }))
+  );
 
   return (
     <Container size="xl">
@@ -182,9 +197,10 @@ export default async function ProductDetailPage({ params }: PageProps) {
           </TabsContent>
 
           <TabsContent value="inventory">
-            <PhaseStub
-              title="Inventory — Phase 2"
-              description="Per-warehouse on-hand / allocated / available, low-stock thresholds, lot + serial tracking, reservation timeline."
+            <InventoryPanel
+              productId={product.id}
+              variantsWithLevels={inventoryLevels}
+              warehouses={warehouses.map((w) => ({ id: w.id, code: w.code, name: w.name }))}
             />
           </TabsContent>
 

@@ -1,0 +1,67 @@
+# Releases cart-soft inventory reservations whose TTL has elapsed.
+# Default TTL is 30 min (inventoryService.CART_TTL_SECONDS_DEFAULT); the
+# reaper runs every minute so a forgotten browser tab can't tie up stock
+# for any meaningful window.
+#
+# Costs are negligible — one indexed lookup per tenant, only updates rows
+# that are actually due. Forbid concurrency so a slow run doesn't pile up
+# duplicate work.
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: commerce-reservation-reaper
+  namespace: sparx-prod
+  labels:
+    app: commerce-cron
+    job: reservation-reaper
+spec:
+  schedule: '*/1 * * * *'
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  startingDeadlineSeconds: 60
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      ttlSecondsAfterFinished: 3600
+      template:
+        metadata:
+          labels:
+            app: commerce-cron
+            job: reservation-reaper
+        spec:
+          serviceAccountName: sparx-app
+          restartPolicy: OnFailure
+          containers:
+            - name: curl
+              image: curlimages/curl:8.10.1
+              command: ['sh', '-c']
+              args:
+                - >
+                  curl --fail-with-body --silent --show-error
+                  --max-time 60
+                  -X POST
+                  -H "X-Sparx-Internal-Cron-Token: $SPARX_INTERNAL_CRON_TOKEN"
+                  http://api-rest.sparx-prod.svc.cluster.local:3000/internal/commerce/reservation-reaper
+              env:
+                - name: SPARX_INTERNAL_CRON_TOKEN
+                  valueFrom:
+                    secretKeyRef:
+                      name: sparx-app-secrets
+                      key: SPARX_INTERNAL_CRON_TOKEN
+              resources:
+                requests:
+                  cpu: '25m'
+                  memory: '16Mi'
+                limits:
+                  cpu: '100m'
+                  memory: '32Mi'
+              securityContext:
+                runAsNonRoot: true
+                runAsUser: 1000
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop: ['ALL']
+                seccompProfile:
+                  type: RuntimeDefault

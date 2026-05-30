@@ -16,6 +16,10 @@ import {
   Text,
 } from '@sparx/ui';
 import { FileText, Plus } from 'lucide-react';
+
+// FileText is intentionally retained for the empty-state icon below — the
+// audit (UX-2) flagged it only as redundant *next to the H1* (the sidebar
+// item already carries that glyph). Keep it where it earns its keep.
 import { api } from '@/lib/api-rest-client';
 import { CmsTabs } from './_components/cms-tabs';
 import { EntryListFilters } from './_components/entry-list-filters';
@@ -90,7 +94,6 @@ export default async function CmsPage({ searchParams }: { searchParams: Promise<
         <Stack direction="row" align="end" justify="between">
           <Stack gap={2}>
             <Stack direction="row" align="center" gap={2}>
-              <FileText className="h-5 w-5" />
               <Heading level={1}>Pages</Heading>
               <Badge variant="outline">{entries.length}</Badge>
             </Stack>

@@ -12,8 +12,8 @@
 // can still grab the URL by selecting + copying manually.
 
 import * as React from 'react';
-import { Button, Stack, Text } from '@sparx/ui';
-import { Eye } from 'lucide-react';
+import { Button, Stack, Text, toast } from '@sparx/ui';
+import { Check, Eye } from 'lucide-react';
 import { mintPreviewUrl } from '../actions';
 
 const ZONE_DOMAIN = process.env.NEXT_PUBLIC_SPARX_ZONE_DOMAIN ?? 'sparx.zone';
@@ -41,16 +41,18 @@ export function PreviewButton({
   tenantSlug: string | null;
 }) {
   const [pending, startTransition] = React.useTransition();
-  const [copied, setCopied] = React.useState<string | null>(null);
-  const [error, setError] = React.useState<string | null>(null);
+  const [recentlyCopied, setRecentlyCopied] = React.useState(false);
+  // Fallback URL surfaced inline only when the Clipboard API throws — the
+  // editor can then select-and-copy by hand. Toast handles the happy path
+  // so the URL doesn't persistently clutter the action row (UX-8).
+  const [manualCopyUrl, setManualCopyUrl] = React.useState<string | null>(null);
 
   function onClick() {
-    setError(null);
-    setCopied(null);
+    setManualCopyUrl(null);
     startTransition(async () => {
       const result = await mintPreviewUrl(entryId);
       if (!result.ok || !result.data) {
-        setError(result.error ?? 'Could not mint a preview URL.');
+        toast.error(result.error ?? 'Could not mint a preview URL.');
         return;
       }
       const origin = originFor(tenantSlug);
@@ -59,10 +61,17 @@ export function PreviewButton({
 
       try {
         await navigator.clipboard.writeText(url);
-        setCopied(url);
+        toast.success('Preview link copied to clipboard');
+        setRecentlyCopied(true);
+        // Brief check-icon flash so power users get visual confirmation
+        // even with toast suppressed. Reset after a beat.
+        setTimeout(() => setRecentlyCopied(false), 2000);
       } catch {
-        // Fallback: surface the URL inline so the editor can copy by hand.
-        setCopied(url);
+        // Clipboard API blocked (insecure context, no permission). Surface
+        // the URL inline so the editor can copy by hand — single-shot, the
+        // next click clears it.
+        setManualCopyUrl(url);
+        toast.error('Clipboard blocked — copy the URL below manually.');
       }
     });
   }
@@ -71,23 +80,25 @@ export function PreviewButton({
     <Stack gap={1}>
       <Button
         type="button"
-        variant="ghost"
+        variant={recentlyCopied ? 'module-outline' : 'ghost'}
         size="sm"
-        leftIcon={<Eye className="h-3.5 w-3.5" />}
+        leftIcon={
+          recentlyCopied ? (
+            <Check className="h-3.5 w-3.5" />
+          ) : (
+            <Eye className="h-3.5 w-3.5" />
+          )
+        }
         onClick={onClick}
         disabled={pending}
         loading={pending}
+        aria-label={recentlyCopied ? 'Preview link copied' : 'Copy preview link'}
       >
-        Preview link
+        {recentlyCopied ? 'Copied' : 'Preview link'}
       </Button>
-      {copied && (
+      {manualCopyUrl && (
         <Text size="xs" variant="muted" aria-live="polite">
-          Copied: <span className="break-all">{copied}</span>
-        </Text>
-      )}
-      {error && (
-        <Text size="xs" variant="danger" aria-live="polite">
-          {error}
+          <code className="break-all">{manualCopyUrl}</code>
         </Text>
       )}
     </Stack>

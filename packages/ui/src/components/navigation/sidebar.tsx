@@ -100,28 +100,8 @@ export const SidebarItem = React.forwardRef<HTMLButtonElement, SidebarItemProps>
   ({ className, active, icon, asChild = false, children, ...props }, ref) => {
     const dataActive = active ? true : undefined;
     const ariaCurrent = active ? 'page' : undefined;
-    if (asChild) {
-      return (
-        <Slot
-          ref={ref}
-          className={cn(sidebarItemVariants({ active }), className)}
-          data-active={dataActive}
-          aria-current={ariaCurrent}
-          {...props}
-        >
-          {children}
-        </Slot>
-      );
-    }
-    return (
-      <button
-        ref={ref}
-        type="button"
-        className={cn(sidebarItemVariants({ active }), className)}
-        data-active={dataActive}
-        aria-current={ariaCurrent}
-        {...props}
-      >
+    const inner = (
+      <>
         {icon && (
           <span
             className={cn(
@@ -135,6 +115,53 @@ export const SidebarItem = React.forwardRef<HTMLButtonElement, SidebarItemProps>
           </span>
         )}
         <span className="flex-1 truncate text-left">{children}</span>
+      </>
+    );
+    if (asChild) {
+      const child = React.Children.only(children) as React.ReactElement<{
+        children?: React.ReactNode;
+      }>;
+      const wrapped = React.cloneElement(
+        child,
+        undefined,
+        <>
+          {icon && (
+            <span
+              className={cn(
+                'inline-flex h-4 w-4 shrink-0 items-center justify-center',
+                active
+                  ? 'text-[var(--module-active)]'
+                  : 'text-[var(--color-text-tertiary)] group-hover:text-[var(--color-text-secondary)]'
+              )}
+            >
+              {icon}
+            </span>
+          )}
+          <span className="flex-1 truncate text-left">{child.props.children}</span>
+        </>
+      );
+      return (
+        <Slot
+          ref={ref}
+          className={cn(sidebarItemVariants({ active }), className)}
+          data-active={dataActive}
+          aria-current={ariaCurrent}
+          {...props}
+        >
+          {wrapped}
+        </Slot>
+      );
+    }
+    return (
+      <button
+        ref={ref}
+        type="button"
+        className={cn(sidebarItemVariants({ active }), className)}
+        data-active={dataActive}
+        aria-current={ariaCurrent}
+        {...props}
+      >
+        {inner}
       </button>
     );
   }

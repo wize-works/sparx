@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { requireSession } from '@sparx/auth';
 import { withTenant } from '@sparx/db';
-import { Button, Container, Heading, Stack } from '@sparx/ui';
+import { Badge, Button, Container, Heading, Stack, Text } from '@sparx/ui';
 import { ArrowLeft } from 'lucide-react';
 import { api, type ApiRestError } from '@/lib/api-rest-client';
 import { CmsTabs } from '../_components/cms-tabs';
@@ -83,7 +83,18 @@ export default async function EditCmsPage({ params }: PageParams) {
               Back to pages
             </Link>
           </Button>
-          <Heading level={1}>Edit page</Heading>
+          <Stack direction="row" align="center" gap={2}>
+            <Heading level={1}>{editable.title || 'Untitled page'}</Heading>
+            <Badge variant="module">page</Badge>
+            <Badge variant={editable.status === 'published' ? 'success' : 'outline'}>
+              {editable.status}
+            </Badge>
+          </Stack>
+          {editable.slug && (
+            <Text size="sm" variant="muted">
+              <code>/{editable.slug}</code>
+            </Text>
+          )}
         </Stack>
 
         <EditPageForm page={editable} tenantSlug={tenant?.slug ?? null} initialEtag={initialEtag} />
