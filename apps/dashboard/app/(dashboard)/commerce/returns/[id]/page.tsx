@@ -159,7 +159,7 @@ export default async function ReturnDetailPage({ params }: { params: Promise<{ i
               <Stack gap={1}>
                 <Heading level={3}>Record inspection</Heading>
                 <CardDescription>
-                  Mark each line's condition and whether it can be restocked.
+                  Mark each line&apos;s condition and whether it can be restocked.
                 </CardDescription>
               </Stack>
             </CardHeader>

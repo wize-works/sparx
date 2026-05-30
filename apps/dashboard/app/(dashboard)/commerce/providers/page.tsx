@@ -113,8 +113,9 @@ export default async function ProvidersPage() {
           <Text variant="muted">
             Pick a payment / tax / shipping / subscription provider per environment. Sparx-branded
             options wrap a real provider underneath (Stripe for Sparx Pay, Shippo for Sparx
-            Shipping) so a merchant who doesn't want to manage carrier accounts can still transact.
-            Sandbox installs run real provider calls against the provider's test environment.
+            Shipping) so a merchant who doesn&apos;t want to manage carrier accounts can still
+            transact. Sandbox installs run real provider calls against the provider&apos;s test
+            environment.
           </Text>
         </Stack>
 

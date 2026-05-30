@@ -26,11 +26,7 @@ import { ModuleStub } from '../../../../../components/module-stub';
 
 export const dynamic = 'force-dynamic';
 
-export default async function CartDetailPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
+export default async function CartDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const session = await requireSession();
   const enabled = await isModuleEnabled(session.user.tenantId, 'commerce');
@@ -152,11 +148,7 @@ export default async function CartDetailPage({
                 label="Store credit applied"
                 value={`-${fmt(cart.totals.storeCreditAppliedCents, cart.currency)}`}
               />
-              <Row
-                label="Total"
-                value={fmt(cart.totals.totalCents, cart.currency)}
-                bold
-              />
+              <Row label="Total" value={fmt(cart.totals.totalCents, cart.currency)} bold />
               {cart.appliedDiscountCodes.length > 0 && (
                 <Stack direction="row" gap={1} wrap className="pt-1">
                   {cart.appliedDiscountCodes.map((code) => (

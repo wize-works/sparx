@@ -6,7 +6,6 @@ import { isModuleEnabled, requireSession } from '@sparx/auth';
 import { shippingService } from '@sparx/commerce';
 import {
   Badge,
-  Button,
   Card,
   CardContent,
   CardDescription,

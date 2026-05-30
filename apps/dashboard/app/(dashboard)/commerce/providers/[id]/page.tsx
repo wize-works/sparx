@@ -119,9 +119,9 @@ export default async function ProviderInstallationDetailPage({
               <Stack gap={1}>
                 <Heading level={3}>Webhook</Heading>
                 <CardDescription>
-                  Paste this URL into the provider's webhook configuration so callbacks land at the
-                  right tenant. The path's <code>:installationId</code> token is auto-filled on
-                  dispatch.
+                  Paste this URL into the provider&apos;s webhook configuration so callbacks land at
+                  the right tenant. The path&apos;s <code>:installationId</code> token is
+                  auto-filled on dispatch.
                 </CardDescription>
               </Stack>
             </CardHeader>

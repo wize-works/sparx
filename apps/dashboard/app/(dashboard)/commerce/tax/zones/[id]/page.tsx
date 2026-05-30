@@ -92,8 +92,8 @@ export default async function TaxZoneDetailPage({ params }: { params: Promise<{ 
                 <Heading level={3}>Manual rates</Heading>
               </Stack>
               <CardDescription>
-                Used when no TaxProvider is installed. Each rate's basis points (e.g. 825 = 8.25%)
-                stack additively per matching line.
+                Used when no TaxProvider is installed. Each rate&apos;s basis points (e.g. 825 =
+                8.25%) stack additively per matching line.
               </CardDescription>
             </Stack>
           </CardHeader>

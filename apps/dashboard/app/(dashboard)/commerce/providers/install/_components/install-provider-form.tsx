@@ -196,8 +196,8 @@ export function InstallProviderForm({
             {webhookPathTemplate}
           </Text>
           <Text size="xs" variant="muted">
-            After install, paste this URL into the provider's webhook configuration so callbacks
-            land at the right tenant.
+            After install, paste this URL into the provider&apos;s webhook configuration so
+            callbacks land at the right tenant.
           </Text>
         </Stack>
 

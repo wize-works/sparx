@@ -57,9 +57,7 @@ export default async function CheckoutSessionsPage({
 
   const sessions = await withTenant(ctx, async (tx) => {
     return tx.checkoutSession.findMany({
-      where: step
-        ? { step }
-        : { step: { in: [...STEP_ORDER] } },
+      where: step ? { step } : { step: { in: [...STEP_ORDER] } },
       include: {
         customer: { select: { email: true, name: true } },
       },
@@ -79,8 +77,8 @@ export default async function CheckoutSessionsPage({
           </Stack>
           <Text variant="muted">
             Read-only diagnostic. The state machine advances cart_review → contact → shipping →
-            payment → review → completed. Sessions stuck in a non-terminal step are auto-expired
-            on TTL by the worker; staff can manually expire a session from the API if needed.
+            payment → review → completed. Sessions stuck in a non-terminal step are auto-expired on
+            TTL by the worker; staff can manually expire a session from the API if needed.
           </Text>
         </Stack>
 
@@ -98,8 +96,8 @@ export default async function CheckoutSessionsPage({
             <Stack gap={1}>
               <Heading level={3}>{step ? labelForStep(step) : 'Active'}</Heading>
               <CardDescription>
-                Click a cart ID to see the items + pricing trace; the session lifecycle is the
-                table here.
+                Click a cart ID to see the items + pricing trace; the session lifecycle is the table
+                here.
               </CardDescription>
             </Stack>
           </CardHeader>
@@ -140,9 +138,7 @@ export default async function CheckoutSessionsPage({
                           {s.cartId.slice(0, 8)}
                         </Link>
                       </TableCell>
-                      <TableCell>
-                        {s.customer?.email ?? s.customerEmail ?? '—'}
-                      </TableCell>
+                      <TableCell>{s.customer?.email ?? s.customerEmail ?? '—'}</TableCell>
                       <TableCell>
                         <Badge variant="outline">{s.channel}</Badge>
                       </TableCell>

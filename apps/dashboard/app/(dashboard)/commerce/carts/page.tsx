@@ -81,9 +81,9 @@ export default async function CartsPage({
             <Badge variant="module">{carts.length} shown</Badge>
           </Stack>
           <Text variant="muted">
-            Read-only diagnostic view. Abandoned carts are flagged by the cart-abandonment
-            worker after 2 hours of inactivity; recovered carts converted into orders. Click an
-            ID to inspect the line items and pricing trace.
+            Read-only diagnostic view. Abandoned carts are flagged by the cart-abandonment worker
+            after 2 hours of inactivity; recovered carts converted into orders. Click an ID to
+            inspect the line items and pricing trace.
           </Text>
         </Stack>
 
