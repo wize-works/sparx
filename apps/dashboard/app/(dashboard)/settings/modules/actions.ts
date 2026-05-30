@@ -44,6 +44,16 @@ export async function setModuleEnabledAction(
   enabled: boolean
 ): Promise<ActionResult<{ slug: ModuleSlug; enabled: boolean }>> {
   const session = await requireSession();
+  // Diagnostic log for the CRM audit's F-01 persistence repro. If the
+  // toggle ever silently fails to persist, the pod logs will show whether
+  // we got here, what role the session had, what the SQL update returned,
+  // and which branch (assertOwner / SQL / bootstrap) blew up.
+  console.log('[setModuleEnabledAction] enter', {
+    slug,
+    enabled,
+    tenantId: session.user.tenantId,
+    role: session.user.role,
+  });
   try {
     assertOwner(session.user.role);
     if (!VALID_SLUGS.has(slug)) {
@@ -53,7 +63,7 @@ export async function setModuleEnabledAction(
     // jsonb_set creates the nested path if it doesn't exist (last arg = true).
     // Building the JSONB value via parameters avoids any string-formatting
     // injection — slug is enum-validated above.
-    await prisma.$executeRawUnsafe(
+    const rowsUpdated = await prisma.$executeRawUnsafe(
       `UPDATE tenants SET settings = jsonb_set(
          COALESCE(settings, '{}'::jsonb),
          '{modules,${slug},enabled}',
@@ -63,6 +73,7 @@ export async function setModuleEnabledAction(
       enabled,
       session.user.tenantId
     );
+    console.log('[setModuleEnabledAction] update rows', { slug, enabled, rowsUpdated });
 
     invalidateModuleCache(session.user.tenantId, slug);
 
@@ -82,8 +93,16 @@ export async function setModuleEnabledAction(
     // the next /<module>/ request would still see the old gate result.
     revalidatePath('/settings/modules');
     revalidatePath(`/${slug}`, 'layout');
+    console.log('[setModuleEnabledAction] success', { slug, enabled });
     return { ok: true, data: { slug, enabled } };
   } catch (err) {
+    console.error('[setModuleEnabledAction] failed', {
+      slug,
+      enabled,
+      tenantId: session.user.tenantId,
+      role: session.user.role,
+      err,
+    });
     return { ok: false, error: { message: err instanceof Error ? err.message : String(err) } };
   }
 }
