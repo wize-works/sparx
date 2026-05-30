@@ -62,8 +62,7 @@ export function NewTemplateForm({ products }: { products: ProductOption[] }) {
       setError(err instanceof Error ? err.message : 'Invalid JSON');
       return;
     }
-    const obj =
-      parsed && typeof parsed === 'object' ? (parsed as Record<string, unknown>) : {};
+    const obj = parsed && typeof parsed === 'object' ? (parsed as Record<string, unknown>) : {};
     const payload = {
       productId,
       name: name.trim(),

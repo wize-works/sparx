@@ -276,7 +276,7 @@ export async function redeemCode(
   const upper = input.code.toUpperCase();
   return withTenant(ctx, async (tx) => {
     const cart = await tx.cart.findFirst({
-      where: { id: input.cartId, status: 'active' },
+      where: { id: input.cartId, abandonedAt: null },
       select: { id: true, customerId: true, channel: true },
     });
     if (!cart) throw new CommerceNotFoundError('Cart', input.cartId);
@@ -490,7 +490,7 @@ export async function applyGiftCardToCart(
   const upper = input.code.toUpperCase();
   return withTenant(ctx, async (tx) => {
     const cart = await tx.cart.findFirst({
-      where: { id: input.cartId, status: 'active' },
+      where: { id: input.cartId, abandonedAt: null },
       select: { id: true, currency: true },
     });
     if (!cart) throw new CommerceNotFoundError('Cart', input.cartId);
@@ -756,7 +756,7 @@ export async function spendStoreCredit(
   const input = SpendStoreCreditInput.parse(rawInput);
   return withTenant(ctx, async (tx) => {
     const cart = await tx.cart.findFirst({
-      where: { id: input.cartId, status: 'active' },
+      where: { id: input.cartId, abandonedAt: null },
       select: { id: true, currency: true },
     });
     if (!cart) throw new CommerceNotFoundError('Cart', input.cartId);

@@ -85,7 +85,7 @@ const pauseSubscription: McpToolDefinition = {
   scope: 'write:commerce',
   confirmation: true,
   input: PauseSubscriptionInput,
-  run: (ctx, input) => subscriptionService.pause(ctx, input as never),
+  run: (ctx, input) => subscriptionService.pause(ctx, input),
 };
 
 const resumeSubscription: McpToolDefinition = {
@@ -94,7 +94,7 @@ const resumeSubscription: McpToolDefinition = {
   scope: 'write:commerce',
   confirmation: true,
   input: ResumeSubscriptionInput,
-  run: (ctx, input) => subscriptionService.resume(ctx, input as never),
+  run: (ctx, input) => subscriptionService.resume(ctx, input),
 };
 
 const cancelSubscription: McpToolDefinition = {
@@ -103,7 +103,7 @@ const cancelSubscription: McpToolDefinition = {
   scope: 'write:commerce',
   confirmation: true,
   input: CancelSubscriptionInput,
-  run: (ctx, input) => subscriptionService.cancel(ctx, input as never),
+  run: (ctx, input) => subscriptionService.cancel(ctx, input),
 };
 
 const approveReturn: McpToolDefinition = {
@@ -112,7 +112,7 @@ const approveReturn: McpToolDefinition = {
   scope: 'write:commerce',
   confirmation: true,
   input: ApproveReturnInput,
-  run: (ctx, input) => returnService.approve(ctx, input as never),
+  run: (ctx, input) => returnService.approve(ctx, input),
 };
 
 const moderateReview: McpToolDefinition = {
