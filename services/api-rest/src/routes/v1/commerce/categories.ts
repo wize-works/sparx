@@ -9,6 +9,7 @@ import { requireCommerceModule, toCommerceContext } from '../../../lib/commerce-
 
 const PathId = z.object({ id: z.string().uuid() });
 
+// eslint-disable-next-line @typescript-eslint/require-await -- FastifyPluginAsync type demands async; no top-level await needed because route registration is sync.
 const categoryRoutes: FastifyPluginAsync = async (app) => {
   // Categories
   app.get('/v1/commerce/categories', async (request) => {

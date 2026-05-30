@@ -53,7 +53,7 @@ function buildSecretReader(): SecretReader {
               `${ref} (install @google-cloud/secret-manager to enable GSM secret resolution)`
             );
           }
-          gsmClient = new mod.SecretManagerServiceClient() as unknown as typeof gsmClient;
+          gsmClient = new mod.SecretManagerServiceClient();
         }
         const [response] = (await gsmClient!.accessSecretVersion({ name: ref })) as [
           { payload?: { data?: Buffer | Uint8Array | string } },

@@ -20,6 +20,7 @@ const ItemParam = z.object({ itemId: z.string().uuid() });
 const ProductIdParam = z.object({ productId: z.string().uuid() });
 const FitmentParam = z.object({ fitmentId: z.string().uuid() });
 
+// eslint-disable-next-line @typescript-eslint/require-await -- FastifyPluginAsync type demands async; no top-level await needed because route registration is sync.
 const fitmentRoutes: FastifyPluginAsync = async (app) => {
   // ─── Domains ──────────────────────────────────────────────────────
   app.get('/v1/commerce/fitment/domains', async (request) => {

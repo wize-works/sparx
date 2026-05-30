@@ -11,6 +11,7 @@ const PathId = z.object({ id: z.string().uuid() });
 const EntryParam = z.object({ entryId: z.string().uuid() });
 const TierParam = z.object({ tierId: z.string().uuid() });
 
+// eslint-disable-next-line @typescript-eslint/require-await -- FastifyPluginAsync type demands async; no top-level await needed because route registration is sync.
 const pricingRoutes: FastifyPluginAsync = async (app) => {
   // Price lists
   app.get('/v1/commerce/price-lists', async (request) => {

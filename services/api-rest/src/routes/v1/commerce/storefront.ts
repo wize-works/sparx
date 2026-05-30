@@ -25,6 +25,7 @@ function resolveRange(input: { from?: string; to?: string }): { from: string; to
   return { from, to };
 }
 
+// eslint-disable-next-line @typescript-eslint/require-await -- FastifyPluginAsync type demands async; no top-level await needed because route registration is sync.
 const storefrontRoutes: FastifyPluginAsync = async (app) => {
   // Storefront settings
   app.get('/v1/commerce/storefront/settings', async (request) => {

@@ -11,6 +11,7 @@ const PathId = z.object({ id: z.string().uuid() });
 const VariantParam = z.object({ variantId: z.string().uuid() });
 const WarehouseParam = z.object({ warehouseId: z.string().uuid() });
 
+// eslint-disable-next-line @typescript-eslint/require-await -- FastifyPluginAsync type demands async; no top-level await needed because route registration is sync.
 const inventoryRoutes: FastifyPluginAsync = async (app) => {
   // Warehouses
   app.get('/v1/commerce/warehouses', async (request) => {

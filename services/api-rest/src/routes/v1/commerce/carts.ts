@@ -10,6 +10,7 @@ import { requireCommerceModule, toCommerceContext } from '../../../lib/commerce-
 const CartParam = z.object({ cartId: z.string().uuid() });
 const SessionParam = z.object({ sessionId: z.string().uuid() });
 
+// eslint-disable-next-line @typescript-eslint/require-await -- FastifyPluginAsync type demands async; no top-level await needed because route registration is sync.
 const cartRoutes: FastifyPluginAsync = async (app) => {
   app.get('/v1/commerce/carts/:cartId', async (request) => {
     requireRole(request, 'viewer');

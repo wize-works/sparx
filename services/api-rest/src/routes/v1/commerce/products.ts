@@ -58,6 +58,7 @@ const ListProductsQuery = z.object({
   sort_by: z.enum(['updatedAt', 'createdAt', 'title', 'priceMinCents']).optional(),
 });
 
+// eslint-disable-next-line @typescript-eslint/require-await -- FastifyPluginAsync type demands async; no top-level await needed because route registration is sync.
 const productRoutes: FastifyPluginAsync = async (app) => {
   app.get('/v1/commerce/products', async (request) => {
     requireRole(request, 'viewer');
