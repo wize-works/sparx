@@ -10,7 +10,7 @@
       "env": ["NEXT_PUBLIC_*"]
     },
     "db:generate": {
-      "inputs": ["prisma/schema.prisma"],
+      "inputs": ["prisma/schema/**", "prisma.config.ts"],
       "outputs": [
         "../../node_modules/.pnpm/@prisma+client*/node_modules/.prisma/**",
         "../../node_modules/.pnpm/@prisma+client*/node_modules/@prisma/client/**"
