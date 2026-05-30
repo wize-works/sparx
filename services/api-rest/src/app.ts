@@ -13,6 +13,7 @@ import Fastify, {
   type FastifyReply,
   type FastifyServerOptions,
 } from 'fastify';
+import cookie from '@fastify/cookie';
 import { CrmConflictError, CrmNotFoundError, CrmValidationError } from '@sparx/crm';
 import {
   CommerceConflictError,
@@ -48,6 +49,7 @@ import publicCommerceRoutes from './routes/v1/public/commerce.js';
 import publicCartRoutes from './routes/v1/public/cart.js';
 import publicCheckoutRoutes from './routes/v1/public/checkout.js';
 import publicReviewRoutes from './routes/v1/public/reviews.js';
+import publicAccountRoutes from './routes/v1/public/account.js';
 import publicMediaRoutes from './routes/v1/public/media.js';
 import uploadRoutes from './routes/v1/media/uploads.js';
 import mediaAssetRoutes from './routes/v1/media/assets.js';
@@ -259,6 +261,10 @@ export async function createApp(): Promise<FastifyInstance> {
   await app.register(createErrorsPlugin({ extraMappers: [crmErrorMapper, commerceErrorMapper] }));
   await app.register(openapiPlugin);
   await app.register(rateLimitPlugin);
+  // Cookie support — used by the storefront customer session (httpOnly
+  // sparx_customer_session). Unsigned: the session token is already a
+  // high-entropy opaque value stored only as a SHA-256 hash server-side.
+  await app.register(cookie);
   await app.register(
     createAuthPlugin({
       jwtSecret: env.SPARX_INTERNAL_JWT_SECRET,
@@ -304,6 +310,7 @@ export async function createApp(): Promise<FastifyInstance> {
   await app.register(publicCartRoutes);
   await app.register(publicCheckoutRoutes);
   await app.register(publicReviewRoutes);
+  await app.register(publicAccountRoutes);
   await app.register(publicMediaRoutes);
   await app.register(uploadRoutes);
   await app.register(mediaAssetRoutes);

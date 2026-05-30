@@ -15,6 +15,7 @@
     "clean": "rm -rf .turbo dist *.tsbuildinfo"
   },
   "dependencies": {
+    "@fastify/cookie": "^11",
     "@fastify/cors": "^11.0.1",
     "@fastify/jwt": "^9.0.4",
     "@fastify/rate-limit": "^10.3.0",
@@ -29,6 +30,7 @@
     "@sparx/commerce": "workspace:*",
     "@sparx/crm": "workspace:*",
     "@sparx/crm-schemas": "workspace:*",
+    "@sparx/customer-auth": "workspace:^",
     "@sparx/db": "workspace:*",
     "@sparx/email": "workspace:*",
     "@sparx/events": "workspace:*",

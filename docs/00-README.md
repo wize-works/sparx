@@ -109,3 +109,4 @@ Decisions locked in during the v2 documentation pass (vs. the original WizeWorks
 | 25  | Monorepo Structure                  | pnpm workspaces + Turborepo layout, bootstrap order               |
 | 26  | Domain Transfer Runbook             | GoDaddy → Cloudflare migration, ordered checklist, rollback paths |
 | 27  | Customer Accounts & Storefront Auth | Layer-2 shopper auth, tenant-scoped, Argon2id, account area       |
+| 28  | Third-Party Inventory Sync          | Generic ERP/WMS mirror, source adapters, on-prem bridge, backlog  |
