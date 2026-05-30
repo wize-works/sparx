@@ -6,9 +6,6 @@ import { usePathname, useRouter } from 'next/navigation';
 import {
   Avatar,
   Button,
-  Drawer,
-  DrawerContent,
-  DrawerTitle,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -17,10 +14,11 @@ import {
   DropdownMenuShortcut,
   DropdownMenuTrigger,
   ModuleProvider,
-  Sidebar,
+  SidebarAppShell,
   SidebarFooter,
   SidebarHeader,
   SidebarItem,
+  SidebarNav,
   SidebarSection,
   SidebarSectionLabel,
   type SparxModule,
@@ -37,7 +35,6 @@ import {
   LayoutTemplate,
   LogOut,
   Mail,
-  Menu,
   Settings,
   ShoppingCart,
   Sparkles,
@@ -95,98 +92,37 @@ export function DashboardShell({ user, children }: DashboardShellProps) {
   const emailLocal = user.email.split('@')[0] ?? user.email;
   const displayName = trimmedName && trimmedName.length > 0 ? trimmedName : emailLocal;
 
-  const contentRef = React.useRef<HTMLDivElement>(null);
-  const isFirstRender = React.useRef(true);
-  const [mobileNavOpen, setMobileNavOpen] = React.useState(false);
-
-  // H-4: Move focus to the content region on route change so keyboard users
-  // don't have to re-traverse the sidebar. Skip the initial mount — the user
-  // hasn't navigated yet and stealing focus on first paint is disorienting.
-  React.useEffect(() => {
-    if (isFirstRender.current) {
-      isFirstRender.current = false;
-      return;
-    }
-    setMobileNavOpen(false);
-    contentRef.current?.focus({ preventScroll: true });
-  }, [pathname]);
-
-  const navSections = <NavSections pathname={pathname} />;
-  const userCard = <UserCard user={user} displayName={displayName} />;
+  const sidebar = (
+    <>
+      <SidebarHeader>
+        <Stack gap={0}>
+          <Wordmark size={18} />
+          <Text size="xs" variant="muted">
+            Dashboard
+          </Text>
+        </Stack>
+      </SidebarHeader>
+      <NavSections pathname={pathname} />
+      <SidebarFooter>
+        <UserCard user={user} displayName={displayName} />
+      </SidebarFooter>
+    </>
+  );
 
   return (
-    <div className="flex h-screen overflow-hidden">
-      {/* C-3: Skip-link — first focusable element. Visually hidden until focused. */}
-      <a
-        href="#main-content"
-        className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:rounded-md focus:bg-[var(--color-bg-surface)] focus:px-3 focus:py-2 focus:text-sm focus:font-medium focus:text-[var(--color-text-primary)] focus:shadow-md focus:ring-2 focus:ring-[var(--color-border-focus)] focus:outline-none"
-      >
-        Skip to content
-      </a>
-
-      <Sidebar className="hidden md:flex">
-        <SidebarHeader>
-          <Stack gap={0}>
-            <Wordmark size={18} />
-            <Text size="xs" variant="muted">
-              Dashboard
-            </Text>
-          </Stack>
-        </SidebarHeader>
-        {navSections}
-        <SidebarFooter>{userCard}</SidebarFooter>
-      </Sidebar>
-
-      {/* C-1: Mobile drawer mirrors the desktop sidebar tree. Auto-closes on
-          route change (see useEffect above). */}
-      <Drawer open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
-        <DrawerContent side="left" className="flex w-72 max-w-[85vw] flex-col gap-1 p-3" hideClose>
-          <DrawerTitle className="sr-only">Primary navigation</DrawerTitle>
-          <SidebarHeader>
-            <Stack gap={0}>
-              <Wordmark size={18} />
-              <Text size="xs" variant="muted">
-                Dashboard
-              </Text>
-            </Stack>
-          </SidebarHeader>
-          {navSections}
-          <SidebarFooter>{userCard}</SidebarFooter>
-        </DrawerContent>
-      </Drawer>
-
-      <main className="flex min-w-0 flex-1 flex-col">
-        <header className="flex h-12 shrink-0 items-center gap-2 border-b border-[var(--color-border-default)] bg-[var(--color-bg-surface)] px-4">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="md:hidden"
-            aria-label="Open navigation menu"
-            aria-expanded={mobileNavOpen}
-            onClick={() => setMobileNavOpen(true)}
-          >
-            <Menu className="h-4 w-4" />
-          </Button>
-          <div className="flex-1" />
-          <UserMenu user={user} displayName={displayName} />
-        </header>
-        <div
-          ref={contentRef}
-          id="main-content"
-          tabIndex={-1}
-          className="min-h-0 flex-1 overflow-y-auto focus:outline-none"
-        >
-          {children}
-        </div>
-      </main>
-    </div>
+    <SidebarAppShell
+      pathname={pathname}
+      sidebar={sidebar}
+      headerActions={<UserMenu user={user} displayName={displayName} />}
+    >
+      {children}
+    </SidebarAppShell>
   );
 }
 
 function NavSections({ pathname }: { pathname: string | null }) {
   return (
-    // H-3: nav landmark with a label so screen readers can jump straight here.
-    <nav aria-label="Primary" className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto">
+    <SidebarNav>
       <SidebarSection>
         {PRIMARY_NAV.map((item) => (
           <SidebarItem key={item.href} asChild active={pathname === item.href} icon={item.icon}>
@@ -222,7 +158,7 @@ function NavSections({ pathname }: { pathname: string | null }) {
           </SidebarItem>
         ))}
       </SidebarSection>
-    </nav>
+    </SidebarNav>
   );
 }
 
