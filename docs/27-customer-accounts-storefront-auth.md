@@ -1,6 +1,6 @@
 # Sparx Platform — Customer Accounts & Storefront Authentication
 
-**Version:** 1.0
+**Version:** 1.1
 **Author:** Brandon Korous
 **Last Updated:** 2026-05-30
 
@@ -314,16 +314,20 @@ New file `services/api-rest/src/routes/v1/public/account.ts`, registered in
 | POST   | `/v1/public/commerce/account/password/forgot` | Request reset link (enumeration-safe)          |
 | POST   | `/v1/public/commerce/account/password/reset`  | Consume token, set new password                |
 
-**Session wiring.** Authenticated routes read `sparx_customer_session` from the cookie, call
-`verifyCustomerSession`, and attach `{ customerId }` to the request (a small `preHandler`).
-`register` / `login` set the cookie via `Set-Cookie` (the proxy relays it). Orders are read
-through the existing CRM/commerce read services, filtered by `customerId` inside `withTenant`.
+**Session wiring (as built).** Authenticated routes read `sparx_customer_session` from the
+cookie via `@fastify/cookie`, call `verifyCustomerSession`, and resolve `{ customerId }` inline
+(`requireCustomer`). `register` / `login` set the cookie with `reply.setCookie` (the proxy
+relays it). Orders are read through `orderService` filtered by `customerId`; `account/orders/:id`
+additionally checks `order.customerId === customerId` and returns 404 (not 403) for a foreign
+order so existence isn't leaked. CRM money (`Decimal(12,2)` dollars) is converted to integer
+cents at the boundary.
 
-**Cart merge on auth.** `register` and `login` accept the current guest `x-cart-token`. After
-the session is established, if the customer already has an active cart, we call
-`cartService.merge({ sourceCartId: guestCart, targetCartId: customerCart, conflictPolicy:
-'sum_quantities' })`; otherwise the guest cart is re-owned by setting its `customerId`. This
-reuses the merge logic verified in `cart-service.ts` — no new merge code.
+**Cart claim on auth (as built).** `register` and `login` accept the guest `x-cart-token` and
+stamp `customerId` onto the cart that token owns (`claimGuestCart`), leaving the guest token in
+place so the client's existing `x-cart-token` keeps authorizing cart calls — the cart simply
+gains an owner, so the resulting order attributes to the account. The storefront always operates
+on the guest-token cart, so this re-own is sufficient; cross-device merge via `cartService.merge`
+is a later enhancement.
 
 ---
 
@@ -366,17 +370,26 @@ Per `memory/feedback_deploy_early_deploy_small.md`, ship in independently-deploy
 
 ---
 
-## 9. Security checklist (must all hold before slice 2 ships)
+## 9. Security checklist — status
 
-- [ ] Passwords stored **only** as Argon2id hashes; no plaintext in DB, logs, or events.
-- [ ] All three tables `ENABLE + FORCE` RLS with a `tenant_isolation` policy; verified by a
-      cross-tenant test (tenant A cannot read tenant B's credential/session rows).
-- [ ] Every customer-auth query runs inside `withTenant` on the `sparx_app` (NOBYPASSRLS) role.
-- [ ] Session + reset tokens are 256-bit random, stored as SHA-256, never logged.
-- [ ] Session cookie is `httpOnly; Secure; SameSite=Lax; Path=/`.
-- [ ] Login + password-reset request are enumeration-safe and timing-flattened.
-- [ ] Rate-limiting on `register` / `login` / `password/forgot` (slice 5; tracked, not skipped).
-- [ ] No customer-auth code imports or mutates the staff `@sparx/auth` instance or its tables.
+- [x] Passwords stored **only** as Argon2id hashes; no plaintext in DB, logs, or events.
+- [x] All three tables `ENABLE + FORCE` RLS with a `tenant_isolation` policy; verified live
+      (`pg_class`/`pg_policies` query) **and** by a cross-tenant integration test (a session
+      minted for tenant A is invisible under tenant B).
+- [x] Every customer-auth query runs inside `withTenant` on the `sparx_app` (NOBYPASSRLS) role.
+- [x] Session + reset tokens are 256-bit random, stored as SHA-256, never logged.
+- [x] Session cookie is `httpOnly; SameSite=Lax; Path=/` (`Secure` in prod; off on dev http).
+- [x] Login + password-reset request are enumeration-safe; login is timing-flattened (dummy
+      verify on unknown email).
+- [x] Per-IP rate-limiting (10/min) on `register` / `login` / `password/forgot` / `password/reset`.
+- [x] No customer-auth code imports or mutates the staff `@sparx/auth` instance or its tables.
+
+**Verification status.** Unit tests (hash/session) + DB-gated integration tests (service +
+cross-tenant RLS) green; api-rest routes exercised end-to-end via `app.inject` against docker
+Postgres (register/login/logout/me, profile, orders paging + ownership-404, address CRUD,
+forgot/reset incl. replay rejection). Remaining: a browser-level Playwright E2E (register →
+guest cart → login → cart claimed → checkout → order in account) — the only verification not yet
+automated; the storefront builds + typechecks + lints clean.
 
 ---
 
