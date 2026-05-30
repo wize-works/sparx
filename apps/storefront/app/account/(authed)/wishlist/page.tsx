@@ -4,6 +4,7 @@
 // remove action that stays in sync with the shared WishlistProvider (so heart
 // buttons elsewhere update too).
 
+import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
@@ -68,7 +69,15 @@ export default function WishlistPage() {
               <div key={it.variantId} className="sf-card" style={{ overflow: 'hidden' }}>
                 <Link href={`/products/${it.handle}`} style={{ display: 'block' }}>
                   <div className="sf-line__media" style={{ aspectRatio: '1', width: '100%' }}>
-                    {img ? <img src={img} alt={it.title} /> : null}
+                    {img ? (
+                      <Image
+                        src={img}
+                        alt={it.title}
+                        fill
+                        sizes="(max-width: 520px) 50vw, 200px"
+                        style={{ objectFit: 'cover' }}
+                      />
+                    ) : null}
                   </div>
                   <div style={{ padding: '0.75rem' }}>
                     <div style={{ fontSize: '0.9rem', fontWeight: 600 }}>{it.title}</div>

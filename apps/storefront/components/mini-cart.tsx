@@ -3,6 +3,7 @@
 // Slide-in mini-cart. Mounted once in the root layout (inside CartProvider);
 // opens when an item is added or the header cart button is clicked.
 
+import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect } from 'react';
 
@@ -71,7 +72,15 @@ export function MiniCart() {
               {lines.map((line) => (
                 <div key={line.id} className="sf-line">
                   <div className="sf-line__media">
-                    {line.imageUrl ? <img src={line.imageUrl} alt={line.title} /> : null}
+                    {line.imageUrl ? (
+                      <Image
+                        src={line.imageUrl}
+                        alt={line.title}
+                        fill
+                        sizes="88px"
+                        style={{ objectFit: 'cover' }}
+                      />
+                    ) : null}
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
                     {line.productHandle ? (

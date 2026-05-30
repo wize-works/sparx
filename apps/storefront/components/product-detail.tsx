@@ -5,6 +5,7 @@
 // sync. Server-loaded product data comes in via props; all interactivity is
 // client-side with no further fetches until "add to cart".
 
+import Image from 'next/image';
 import { useMemo, useState } from 'react';
 
 import { formatMoney, formatPriceRange } from '@/lib/format';
@@ -128,10 +129,14 @@ export function ProductDetail({
       {/* Gallery */}
       <div className="sf-gallery">
         <div className="sf-gallery__main">
-          {activeImage ? (
-            <img
-              src={mediaUrl(activeImage.mediaAssetId, tenantSlug) ?? ''}
+          {activeImage && mediaUrl(activeImage.mediaAssetId, tenantSlug) ? (
+            <Image
+              src={mediaUrl(activeImage.mediaAssetId, tenantSlug)!}
               alt={activeImage.alt ?? product.title}
+              fill
+              priority
+              sizes="(max-width: 980px) 100vw, 50vw"
+              style={{ objectFit: 'cover' }}
             />
           ) : (
             <div className="sf-card__media--empty" style={{ height: '100%' }} aria-hidden="true">
@@ -150,7 +155,15 @@ export function ProductDetail({
                 aria-label={img.alt ?? 'Product image'}
                 onClick={() => setActiveImageId(img.id)}
               >
-                <img src={mediaUrl(img.mediaAssetId, tenantSlug) ?? ''} alt="" />
+                {mediaUrl(img.mediaAssetId, tenantSlug) ? (
+                  <Image
+                    src={mediaUrl(img.mediaAssetId, tenantSlug)!}
+                    alt=""
+                    fill
+                    sizes="72px"
+                    style={{ objectFit: 'cover' }}
+                  />
+                ) : null}
               </button>
             ))}
           </div>

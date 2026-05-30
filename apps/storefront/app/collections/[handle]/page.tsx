@@ -1,6 +1,7 @@
 // Collection detail = its products. Hero header on top, paginated grid below.
 
 import type { Metadata } from 'next';
+import Image from 'next/image';
 import { notFound } from 'next/navigation';
 
 import { Breadcrumbs } from '@/components/breadcrumbs';
@@ -65,10 +66,14 @@ export default async function CollectionDetailPage({ params, searchParams }: Pag
         }}
       >
         {hero ? (
-          <img
+          <Image
             src={hero}
             alt=""
             aria-hidden="true"
+            width={1280}
+            height={260}
+            priority
+            sizes="100vw"
             style={{ width: '100%', height: '260px', objectFit: 'cover', display: 'block' }}
           />
         ) : null}

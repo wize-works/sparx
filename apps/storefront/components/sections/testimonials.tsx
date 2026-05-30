@@ -1,6 +1,8 @@
 // Testimonials section — social-proof cards with an optional avatar and star
 // rating. Columns come from config; rows wrap responsively below.
 
+import Image from 'next/image';
+
 import type { TestimonialsConfig } from '@sparx/sitebuilder-schemas';
 
 import { RatingStars } from '@/components/rating-stars';
@@ -35,7 +37,14 @@ export function TestimonialsSection({
               <blockquote className="sf-sb-quote__text">{t.quote}</blockquote>
               <figcaption className="sf-sb-quote__by">
                 {avatar ? (
-                  <img className="sf-sb-quote__avatar" src={avatar} alt="" loading="lazy" />
+                  <Image
+                    className="sf-sb-quote__avatar"
+                    src={avatar}
+                    alt=""
+                    width={36}
+                    height={36}
+                    style={{ objectFit: 'cover' }}
+                  />
                 ) : null}
                 <span>
                   {t.authorName ? <strong>{t.authorName}</strong> : null}

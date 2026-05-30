@@ -3,6 +3,7 @@
 // Full cart page body. Client component — reads the live cart from context,
 // renders editable line items + an order summary with a discount-code field.
 
+import Image from 'next/image';
 import Link from 'next/link';
 
 import { formatMoney } from '@/lib/format';
@@ -45,7 +46,15 @@ export function CartView() {
         {lines.map((line) => (
           <div key={line.id} className="sf-line">
             <div className="sf-line__media">
-              {line.imageUrl ? <img src={line.imageUrl} alt={line.title} /> : null}
+              {line.imageUrl ? (
+                <Image
+                  src={line.imageUrl}
+                  alt={line.title}
+                  fill
+                  sizes="88px"
+                  style={{ objectFit: 'cover' }}
+                />
+              ) : null}
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
               {line.productHandle ? (

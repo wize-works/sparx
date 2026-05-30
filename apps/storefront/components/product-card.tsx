@@ -2,6 +2,7 @@
 // Token-driven via the .sf-card classes in storefront.css so merchant theme
 // overrides flow through automatically.
 
+import Image from 'next/image';
 import Link from 'next/link';
 
 import { formatMoney, formatPriceRange } from '@/lib/format';
@@ -34,7 +35,13 @@ export function ProductCard({
         {onSale ? <span className="sf-badge sf-badge--sale">Sale</span> : null}
         {!product.inStock ? <span className="sf-badge sf-badge--out">Sold out</span> : null}
         {img ? (
-          <img src={img} alt={product.title} loading="lazy" decoding="async" />
+          <Image
+            src={img}
+            alt={product.title}
+            fill
+            sizes="(max-width: 520px) 50vw, (max-width: 860px) 33vw, 230px"
+            style={{ objectFit: 'cover' }}
+          />
         ) : (
           <div className="sf-card__media sf-card__media--empty" aria-hidden="true">
             <span style={{ fontSize: '2rem' }}>◳</span>

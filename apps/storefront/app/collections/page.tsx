@@ -3,6 +3,7 @@
 // sees the materialized membership so the distinction is invisible to shoppers.
 
 import type { Metadata } from 'next';
+import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
@@ -48,7 +49,13 @@ export default async function CollectionListingPage() {
                 <div className="sf-card__media">
                   {c.featured ? <span className="sf-badge">Featured</span> : null}
                   {hero ? (
-                    <img src={hero} alt={c.name} loading="lazy" decoding="async" />
+                    <Image
+                      src={hero}
+                      alt={c.name}
+                      fill
+                      sizes="(max-width: 860px) 50vw, 33vw"
+                      style={{ objectFit: 'cover' }}
+                    />
                   ) : (
                     <div className="sf-card__media sf-card__media--empty" aria-hidden="true">
                       <span style={{ fontSize: '2rem' }}>❖</span>

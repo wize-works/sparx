@@ -2,6 +2,7 @@
 // merchant's featured collections or a hand-picked list (order preserved).
 // Async server component.
 
+import Image from 'next/image';
 import Link from 'next/link';
 
 import type { CollectionGridConfig } from '@sparx/sitebuilder-schemas';
@@ -51,7 +52,13 @@ export async function CollectionGridSection({
             <Link key={c.id} href={`/collections/${c.handle}`} className="sf-card">
               <div className="sf-card__media">
                 {hero ? (
-                  <img src={hero} alt={c.name} loading="lazy" decoding="async" />
+                  <Image
+                    src={hero}
+                    alt={c.name}
+                    fill
+                    sizes="(max-width: 860px) 50vw, 33vw"
+                    style={{ objectFit: 'cover' }}
+                  />
                 ) : (
                   <div className="sf-card__media sf-card__media--empty" aria-hidden="true">
                     <span style={{ fontSize: '2rem' }}>❖</span>

@@ -3,6 +3,7 @@
 // fresh-products rail. A brand-new store with no content still gets a polished
 // landing page rather than an empty shell.
 
+import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
@@ -90,7 +91,13 @@ export default async function StorefrontRoot({ searchParams }: RootPageProps) {
                 <Link key={c.id} href={`/collections/${c.handle}`} className="sf-card">
                   <div className="sf-card__media">
                     {hero ? (
-                      <img src={hero} alt={c.name} loading="lazy" decoding="async" />
+                      <Image
+                        src={hero}
+                        alt={c.name}
+                        fill
+                        sizes="(max-width: 860px) 100vw, 33vw"
+                        style={{ objectFit: 'cover' }}
+                      />
                     ) : (
                       <div className="sf-card__media sf-card__media--empty" aria-hidden="true">
                         <span style={{ fontSize: '2rem' }}>❖</span>
