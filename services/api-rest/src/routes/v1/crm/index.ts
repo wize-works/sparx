@@ -10,6 +10,8 @@ import activityRoutes from './activities.js';
 import taskRoutes from './tasks.js';
 import segmentRoutes from './segments.js';
 import reportRoutes from './reports.js';
+import orderRoutes from './orders.js';
+import quoteRoutes from './quotes.js';
 
 const crmRoutes: FastifyPluginAsync = async (app) => {
   await app.register(customerRoutes);
@@ -20,6 +22,8 @@ const crmRoutes: FastifyPluginAsync = async (app) => {
   await app.register(taskRoutes);
   await app.register(segmentRoutes);
   await app.register(reportRoutes);
+  await app.register(orderRoutes);
+  await app.register(quoteRoutes);
 };
 
 export default crmRoutes;

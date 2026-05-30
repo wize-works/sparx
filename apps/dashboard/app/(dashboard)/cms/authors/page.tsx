@@ -15,6 +15,7 @@ import {
 } from '@sparx/ui';
 import { Pencil, Users } from 'lucide-react';
 import { api } from '@/lib/api-rest-client';
+import { EntityRowLink } from '../../_components/entity-row-link';
 import { CmsTabs } from '../_components/cms-tabs';
 import { AuthorCreateForm } from './author-create-form';
 
@@ -94,7 +95,13 @@ export default async function AuthorsPage() {
                       size="xs"
                       leftIcon={<Pencil className="h-3 w-3" />}
                     >
-                      <Link href={`/cms/authors/${a.id}`}>Edit</Link>
+                      <EntityRowLink
+                        href={`/cms/authors/${a.id}`}
+                        entityType="author"
+                        entityId={a.id}
+                      >
+                        Edit
+                      </EntityRowLink>
                     </Button>
                   </Stack>
                 ))}

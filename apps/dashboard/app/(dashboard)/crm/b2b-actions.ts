@@ -1,19 +1,24 @@
 'use server';
 
-// B2B account Server Actions — thin transport over b2bAccountService.
+// B2B account Server Actions — adapters over api-rest /v1/crm/b2b-accounts.
 
 import { revalidatePath } from 'next/cache';
 
-import { b2bAccountService } from '@sparx/crm';
+import { api } from '@/lib/api-rest-client';
 
-import { type ActionResult, runAction, sessionContext } from './_action-helpers';
+import type { ActionResult } from './_action-helpers';
+import { restAction } from './_rest-action';
+
+interface B2bAccountResponse {
+  id: string;
+  status: string;
+}
 
 export async function createB2bAccountAction(
   input: unknown
 ): Promise<ActionResult<{ id: string }>> {
-  return runAction(async () => {
-    const ctx = await sessionContext();
-    const account = await b2bAccountService.create(ctx, input);
+  return restAction(async () => {
+    const account = await api.post<B2bAccountResponse>('/v1/crm/b2b-accounts', input);
     revalidatePath('/crm/b2b');
     return { id: account.id };
   });
@@ -23,9 +28,8 @@ export async function updateB2bAccountAction(
   accountId: string,
   input: unknown
 ): Promise<ActionResult<{ id: string }>> {
-  return runAction(async () => {
-    const ctx = await sessionContext();
-    const account = await b2bAccountService.update(ctx, accountId, input);
+  return restAction(async () => {
+    const account = await api.patch<B2bAccountResponse>(`/v1/crm/b2b-accounts/${accountId}`, input);
     revalidatePath('/crm/b2b');
     revalidatePath(`/crm/b2b/${accountId}`);
     return { id: account.id };
@@ -40,9 +44,10 @@ export async function setB2bAccountStatusAction(
   accountId: string,
   status: 'active' | 'credit_hold' | 'suspended' | 'inactive'
 ): Promise<ActionResult<{ id: string; status: string }>> {
-  return runAction(async () => {
-    const ctx = await sessionContext();
-    const account = await b2bAccountService.update(ctx, accountId, { status });
+  return restAction(async () => {
+    const account = await api.patch<B2bAccountResponse>(`/v1/crm/b2b-accounts/${accountId}`, {
+      status,
+    });
     revalidatePath('/crm/b2b');
     revalidatePath(`/crm/b2b/${accountId}`);
     return { id: account.id, status: account.status };

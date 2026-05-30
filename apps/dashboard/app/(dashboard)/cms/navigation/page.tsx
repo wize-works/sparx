@@ -13,6 +13,7 @@ import {
 } from '@sparx/ui';
 import { ArrowRight, Layers, Plus } from 'lucide-react';
 import { api } from '@/lib/api-rest-client';
+import { EntityRowLink } from '../../_components/entity-row-link';
 import { CmsTabs } from '../_components/cms-tabs';
 
 export const dynamic = 'force-dynamic';
@@ -76,10 +77,14 @@ export default async function NavigationMenusPage() {
                       <CardDescription>{description}</CardDescription>
                     </Stack>
                     <Button asChild variant="module" size="sm">
-                      <Link href={`/cms/navigation/${location}`}>
+                      <EntityRowLink
+                        href={`/cms/navigation/${location}`}
+                        entityType="menu"
+                        entityId={location}
+                      >
                         {existing ? 'Edit' : 'Create'}
                         <ArrowRight className="ml-1 h-3.5 w-3.5" />
-                      </Link>
+                      </EntityRowLink>
                     </Button>
                   </Stack>
                 </CardHeader>
@@ -118,7 +123,13 @@ export default async function NavigationMenusPage() {
                           </code>
                         </Stack>
                         <Button asChild variant="ghost" size="sm">
-                          <Link href={`/cms/navigation/${m.location}`}>Edit</Link>
+                          <EntityRowLink
+                            href={`/cms/navigation/${m.location}`}
+                            entityType="menu"
+                            entityId={m.location}
+                          >
+                            Edit
+                          </EntityRowLink>
                         </Button>
                       </Stack>
                     </CardHeader>

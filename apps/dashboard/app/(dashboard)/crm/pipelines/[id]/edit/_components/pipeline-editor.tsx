@@ -118,7 +118,7 @@ export function PipelineEditor({ pipeline }: PipelineEditorProps) {
             <SortableContext items={stages.map((s) => s.id)} strategy={verticalListSortingStrategy}>
               <Stack gap={2}>
                 {stages.map((s) => (
-                  <SortableStageRow key={s.id} stage={s} />
+                  <SortableStageRow key={s.id} stage={s} pipelineId={pipeline.id} />
                 ))}
               </Stack>
             </SortableContext>

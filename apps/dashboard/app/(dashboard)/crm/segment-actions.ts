@@ -12,9 +12,10 @@
 
 import { revalidatePath } from 'next/cache';
 
-import { api, type ApiRestError } from '@/lib/api-rest-client';
+import { api } from '@/lib/api-rest-client';
 
 import type { ActionResult } from './_action-helpers';
+import { restAction } from './_rest-action';
 
 interface SegmentResponse {
   id: string;
@@ -31,70 +32,46 @@ interface RecomputeResponse {
   changed: number;
 }
 
-function toActionError(err: unknown): ActionResult<never> {
-  const restErr = err as ApiRestError;
-  const details = Array.isArray(restErr.details)
-    ? (restErr.details as { field: string; message: string }[])
-    : undefined;
-  return {
-    ok: false,
-    error: {
-      code: restErr.code ?? 'INTERNAL_ERROR',
-      message: restErr.message ?? 'Unexpected error',
-      ...(details ? { details } : {}),
-    },
-  };
-}
-
 export async function createSegmentAction(input: unknown): Promise<ActionResult<{ id: string }>> {
-  try {
+  return restAction(async () => {
     const segment = await api.post<SegmentResponse>('/v1/crm/segments', input);
     revalidatePath('/crm/segments');
-    return { ok: true, data: { id: segment.id } };
-  } catch (err) {
-    return toActionError(err);
-  }
+    return { id: segment.id };
+  });
 }
 
 export async function updateSegmentAction(
   segmentId: string,
   input: unknown
 ): Promise<ActionResult<{ id: string }>> {
-  try {
+  return restAction(async () => {
     const segment = await api.patch<SegmentResponse>(`/v1/crm/segments/${segmentId}`, input);
     revalidatePath('/crm/segments');
     revalidatePath(`/crm/segments/${segmentId}`);
-    return { ok: true, data: { id: segment.id } };
-  } catch (err) {
-    return toActionError(err);
-  }
+    return { id: segment.id };
+  });
 }
 
 export async function archiveSegmentAction(
   segmentId: string
 ): Promise<ActionResult<{ id: string }>> {
-  try {
+  return restAction(async () => {
     await api.delete<void>(`/v1/crm/segments/${segmentId}`);
     revalidatePath('/crm/segments');
-    return { ok: true, data: { id: segmentId } };
-  } catch (err) {
-    return toActionError(err);
-  }
+    return { id: segmentId };
+  });
 }
 
 export async function previewSegmentCountAction(
   rule: unknown,
   sampleSize?: number
 ): Promise<ActionResult<PreviewCountResponse>> {
-  try {
-    const result = await api.post<PreviewCountResponse>('/v1/crm/segments/preview-count', {
+  return restAction(async () =>
+    api.post<PreviewCountResponse>('/v1/crm/segments/preview-count', {
       rule,
       sampleSize,
-    });
-    return { ok: true, data: result };
-  } catch (err) {
-    return toActionError(err);
-  }
+    })
+  );
 }
 
 /** Admin-only safety-net path: rebuilds segment_members from scratch
@@ -111,15 +88,10 @@ export async function recomputeSegmentsAction(
       },
     };
   }
-  try {
-    const result = await api.post<RecomputeResponse>(
-      `/v1/crm/segments/${segmentId}/recompute`,
-      {}
-    );
+  return restAction(async () => {
+    const result = await api.post<RecomputeResponse>(`/v1/crm/segments/${segmentId}/recompute`, {});
     revalidatePath('/crm/segments');
     revalidatePath(`/crm/segments/${segmentId}`);
-    return { ok: true, data: result };
-  } catch (err) {
-    return toActionError(err);
-  }
+    return result;
+  });
 }

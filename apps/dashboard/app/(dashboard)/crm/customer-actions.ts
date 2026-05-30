@@ -1,17 +1,26 @@
 'use server';
 
-// Customer Server Actions — thin transport over @sparx/crm customerService.
+// Customer Server Actions — thin adapters over api-rest /v1/crm/customers.
 
 import { revalidatePath } from 'next/cache';
 
-import { customerService } from '@sparx/crm';
+import { api } from '@/lib/api-rest-client';
 
-import { type ActionResult, runAction, sessionContext } from './_action-helpers';
+import type { ActionResult } from './_action-helpers';
+import { restAction } from './_rest-action';
+
+interface CustomerResponse {
+  id: string;
+}
+
+interface MergeResponse {
+  primary: { id: string };
+  merged: { id: string }[];
+}
 
 export async function createCustomerAction(input: unknown): Promise<ActionResult<{ id: string }>> {
-  return runAction(async () => {
-    const ctx = await sessionContext();
-    const customer = await customerService.create(ctx, input);
+  return restAction(async () => {
+    const customer = await api.post<CustomerResponse>('/v1/crm/customers', input);
     revalidatePath('/crm/customers');
     return { id: customer.id };
   });
@@ -21,9 +30,8 @@ export async function updateCustomerAction(
   customerId: string,
   input: unknown
 ): Promise<ActionResult<{ id: string }>> {
-  return runAction(async () => {
-    const ctx = await sessionContext();
-    const customer = await customerService.update(ctx, customerId, input);
+  return restAction(async () => {
+    const customer = await api.patch<CustomerResponse>(`/v1/crm/customers/${customerId}`, input);
     revalidatePath('/crm/customers');
     revalidatePath(`/crm/customers/${customerId}`);
     return { id: customer.id };
@@ -33,20 +41,18 @@ export async function updateCustomerAction(
 export async function deleteCustomerAction(
   customerId: string
 ): Promise<ActionResult<{ id: string }>> {
-  return runAction(async () => {
-    const ctx = await sessionContext();
-    const customer = await customerService.softDelete(ctx, customerId);
+  return restAction(async () => {
+    await api.delete<void>(`/v1/crm/customers/${customerId}`);
     revalidatePath('/crm/customers');
-    return { id: customer.id };
+    return { id: customerId };
   });
 }
 
 export async function mergeCustomersAction(
   input: unknown
 ): Promise<ActionResult<{ primaryId: string; mergedIds: string[] }>> {
-  return runAction(async () => {
-    const ctx = await sessionContext();
-    const result = await customerService.merge(ctx, input);
+  return restAction(async () => {
+    const result = await api.post<MergeResponse>('/v1/crm/customers/merge', input);
     revalidatePath('/crm');
     revalidatePath('/crm/customers');
     revalidatePath(`/crm/customers/${result.primary.id}`);

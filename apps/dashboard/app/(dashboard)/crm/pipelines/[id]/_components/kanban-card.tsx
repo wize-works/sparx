@@ -4,14 +4,18 @@
 // parent DndContext can pick it up. We render a click-through link to
 // /crm/deals/[id] in normal state; during drag we suppress the link via
 // pointer-events so the drag doesn't accidentally navigate.
+//
+// The label uses EntityRowLink so plain click honours the user's default
+// detail view preference (drawer / modal / full page / new tab) without
+// taking the user off the Kanban board for in-flight deal review.
 
-import Link from 'next/link';
 import { useDraggable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
 import { Calendar } from 'lucide-react';
 
 import { Badge, Stack, Text } from '@sparx/ui';
 
+import { EntityRowLink } from '../../../../_components/entity-row-link';
 import { type KanbanDeal } from './kanban-types';
 
 interface KanbanCardProps {
@@ -45,13 +49,15 @@ export function KanbanCard({ deal, dragging }: KanbanCardProps) {
               {deal.title}
             </Text>
           ) : (
-            <Link
+            <EntityRowLink
               href={`/crm/deals/${deal.id}`}
+              entityType="deal"
+              entityId={deal.id}
               className="truncate text-sm font-medium text-[var(--color-text-primary)] hover:text-[var(--module-active)] hover:underline"
               onClick={(e) => isDragging && e.preventDefault()}
             >
               {deal.title}
-            </Link>
+            </EntityRowLink>
           )}
           <Text size="xs" variant="muted" className="tabular-nums">
             ${deal.value.toLocaleString()}

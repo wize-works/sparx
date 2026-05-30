@@ -15,6 +15,7 @@ import {
 } from '@sparx/ui';
 import { Image as ImageIcon } from 'lucide-react';
 import { api } from '@/lib/api-rest-client';
+import { EntityRowLink } from '../../_components/entity-row-link';
 import { CmsTabs } from '../_components/cms-tabs';
 import { UploadButton } from './upload-button';
 
@@ -100,7 +101,12 @@ function MediaCard({ asset }: { asset: MediaAsset }) {
 
   return (
     <Card variant="module" padding="none">
-      <Link href={`/cms/media/${asset.id}`} className="block">
+      <EntityRowLink
+        href={`/cms/media/${asset.id}`}
+        entityType="media"
+        entityId={asset.id}
+        className="block"
+      >
         <div
           className="relative flex aspect-square w-full items-center justify-center overflow-hidden bg-[var(--color-bg-subtle)]"
           style={asset.dominant_color ? { backgroundColor: asset.dominant_color } : undefined}
@@ -124,7 +130,7 @@ function MediaCard({ asset }: { asset: MediaAsset }) {
             </Badge>
           )}
         </div>
-      </Link>
+      </EntityRowLink>
       <CardHeader>
         <CardTitle className="truncate text-sm">{asset.original_filename}</CardTitle>
         <CardDescription>

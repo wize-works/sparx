@@ -1,7 +1,11 @@
 import 'server-only';
 import * as React from 'react';
 import { parseDetailToken } from './detail-registry';
+import { AuthorDetailContent } from '../cms/authors/[id]/_content';
 import { CmsPageDetailContent } from '../cms/[id]/_content';
+import { MediaAssetDetailContent } from '../cms/media/[id]/_content';
+import { MenuDetailContent } from '../cms/navigation/[location]/_content';
+import { TaxonomyDetailContent } from '../cms/taxonomy/[key]/_content';
 import { B2bAccountDetailContent } from '../crm/b2b/[id]/_content';
 import { CustomerDetailContent } from '../crm/customers/[id]/_content';
 import { DealDetailContent } from '../crm/deals/[id]/_content';
@@ -21,7 +25,13 @@ import { SegmentDetailContent } from '../crm/segments/[id]/_content';
 type DetailComponent = React.ComponentType<{ id: string }>;
 
 const detailComponents: Record<string, DetailComponent> = {
+  // CMS
   page: CmsPageDetailContent,
+  media: MediaAssetDetailContent,
+  author: AuthorDetailContent,
+  menu: MenuDetailContent,
+  taxonomy: TaxonomyDetailContent,
+  // CRM
   customer: CustomerDetailContent,
   'b2b-account': B2bAccountDetailContent,
   deal: DealDetailContent,

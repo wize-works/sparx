@@ -13,6 +13,7 @@ import {
 } from '@sparx/ui';
 import { Pencil, Tag } from 'lucide-react';
 import { api } from '@/lib/api-rest-client';
+import { EntityRowLink } from '../../_components/entity-row-link';
 import { CmsTabs } from '../_components/cms-tabs';
 import { TaxonomyCreateForm } from './taxonomy-create-form';
 
@@ -84,7 +85,13 @@ export default async function TaxonomyIndexPage() {
                       size="xs"
                       leftIcon={<Pencil className="h-3 w-3" />}
                     >
-                      <Link href={`/cms/taxonomy/${t.key}`}>Manage terms</Link>
+                      <EntityRowLink
+                        href={`/cms/taxonomy/${t.key}`}
+                        entityType="taxonomy"
+                        entityId={t.key}
+                      >
+                        Manage terms
+                      </EntityRowLink>
                     </Button>
                   </Stack>
                 ))}

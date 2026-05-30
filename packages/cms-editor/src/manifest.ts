@@ -43,14 +43,18 @@ export const cmsManifest: ModuleManifest = {
     },
   ],
   entityTypes: [
-    // CMS pages get drawer/modal rendering as the first proof of the
-    // shell's detail-view path. Other types add `hasDetailView: true` as
-    // their _content.tsx + detail-registry entries land.
     { id: 'page', label: 'Page', routePrefix: '/cms', hasDetailView: true },
+    // Content-type entries (any type other than 'page') open full-page only —
+    // the drawer URL convention `?drawer=type:id` can't yet carry the
+    // typeKey + entryId pair. Tracked in [[content-entry-drawer-deferred]].
     { id: 'content-type', label: 'Content type', routePrefix: '/cms/types' },
-    { id: 'media', label: 'Media', routePrefix: '/cms/media' },
-    { id: 'author', label: 'Author', routePrefix: '/cms/authors' },
-    { id: 'menu', label: 'Menu', routePrefix: '/cms/navigation' },
+    { id: 'media', label: 'Media', routePrefix: '/cms/media', hasDetailView: true },
+    { id: 'author', label: 'Author', routePrefix: '/cms/authors', hasDetailView: true },
+    // Menus are keyed by location string, not UUID — the entity id for the
+    // detail-view URL is the location (e.g. ?drawer=menu:header).
+    { id: 'menu', label: 'Menu', routePrefix: '/cms/navigation', hasDetailView: true },
+    // Taxonomies are keyed by `key` string, not UUID — entity id is the key.
+    { id: 'taxonomy', label: 'Taxonomy', routePrefix: '/cms/taxonomy', hasDetailView: true },
     { id: 'redirect', label: 'Redirect', routePrefix: '/cms/redirects' },
   ],
 };

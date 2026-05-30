@@ -25,7 +25,7 @@ export interface StageRow {
 const SELECT_CLASS =
   'flex h-9 rounded-md border border-[var(--color-border-default)] bg-[var(--color-bg-surface)] px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)]';
 
-export function SortableStageRow({ stage }: { stage: StageRow }) {
+export function SortableStageRow({ stage, pipelineId }: { stage: StageRow; pipelineId: string }) {
   const router = useRouter();
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({
     id: stage.id,
@@ -40,7 +40,7 @@ export function SortableStageRow({ stage }: { stage: StageRow }) {
 
   function save() {
     startTransition(async () => {
-      const result = await updatePipelineStageAction(stage.id, {
+      const result = await updatePipelineStageAction(pipelineId, stage.id, {
         name,
         probability,
         stageType,
