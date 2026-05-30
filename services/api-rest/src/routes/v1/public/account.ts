@@ -19,6 +19,7 @@ import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from 'fastify';
 import { z } from 'zod';
 
 import { isModuleEnabled } from '@sparx/auth';
+import { orderService } from '@sparx/crm';
 import { withTenant } from '@sparx/db';
 import {
   authenticateCustomer,
@@ -30,7 +31,7 @@ import {
   SESSION_TTL_SECONDS,
   type CustomerAuthContext,
 } from '@sparx/customer-auth';
-import { ok } from '@sparx/api-core/envelope';
+import { ok, paged } from '@sparx/api-core/envelope';
 import {
   conflict,
   moduleDisabled,
@@ -51,6 +52,40 @@ const LoginBody = z.object({
   email: z.string().min(3).max(255),
   password: z.string().min(1).max(200),
 });
+
+const OrdersQuery = z.object({
+  tenant: z.string(),
+  page: z.coerce.number().int().positive().default(1),
+  pageSize: z.coerce.number().int().positive().max(50).default(10),
+});
+const OrderParam = z.object({ orderId: z.string().uuid() });
+const AddressParam = z.object({ addressId: z.string().uuid() });
+
+const AddressBody = z.object({
+  type: z.enum(['shipping', 'billing', 'both']).default('shipping'),
+  label: z.string().max(120).optional(),
+  recipientName: z.string().max(255).optional(),
+  company: z.string().max(255).optional(),
+  line1: z.string().min(1).max(255),
+  line2: z.string().max(255).optional(),
+  city: z.string().min(1).max(120),
+  region: z.string().max(120).optional(),
+  postalCode: z.string().max(32).optional(),
+  country: z.string().length(2),
+  phone: z.string().max(50).optional(),
+  isDefault: z.boolean().optional(),
+});
+const ProfileBody = z.object({
+  firstName: z.string().max(255).nullable().optional(),
+  lastName: z.string().max(255).nullable().optional(),
+  phone: z.string().max(50).nullable().optional(),
+});
+
+/** CRM money columns are Decimal(12,2) dollars; the storefront speaks integer
+ *  cents. Convert at the boundary. */
+function toCents(value: unknown): number {
+  return Math.round(Number(value) * 100);
+}
 
 // Cookies must not carry Secure over plaintext localhost in dev, or the browser
 // drops them. Prod storefronts are always https.
@@ -179,6 +214,140 @@ const publicAccountRoutes: FastifyPluginAsync = async (app) => {
     const customer = await loadProfile(ctx, customerId);
     if (!customer) throw notFound('Customer', customerId);
     return ok({ customer });
+  });
+
+  app.patch('/v1/public/commerce/account/me', async (request) => {
+    const body = ProfileBody.parse(request.body);
+    const ctx = await accountContext(request);
+    const customerId = await requireCustomer(request, ctx);
+    await withTenant(ctx, (tx) =>
+      tx.customer.updateMany({
+        where: { id: customerId, deletedAt: null },
+        data: {
+          ...(body.firstName !== undefined ? { firstName: body.firstName } : {}),
+          ...(body.lastName !== undefined ? { lastName: body.lastName } : {}),
+          ...(body.phone !== undefined ? { phone: body.phone } : {}),
+        },
+      })
+    );
+    return ok({ customer: await loadProfile(ctx, customerId) });
+  });
+
+  // ── Orders ────────────────────────────────────────────────────────────
+  app.get('/v1/public/commerce/account/orders', async (request) => {
+    const { page, pageSize } = OrdersQuery.parse(request.query);
+    const ctx = await accountContext(request);
+    const customerId = await requireCustomer(request, ctx);
+    const { items, total } = await orderService.list(ctx, {
+      customerId,
+      take: pageSize,
+      skip: (page - 1) * pageSize,
+    });
+    return paged(
+      items.map((o) => ({
+        id: o.id,
+        orderNumber: o.orderNumber,
+        status: o.status,
+        paymentStatus: o.paymentStatus,
+        totalCents: toCents(o.total),
+        currency: o.currency,
+        placedAt: o.placedAt.toISOString(),
+      })),
+      { page, per_page: pageSize, total, total_pages: Math.ceil(total / pageSize) }
+    );
+  });
+
+  app.get('/v1/public/commerce/account/orders/:orderId', async (request) => {
+    const { orderId } = OrderParam.parse(request.params);
+    const ctx = await accountContext(request);
+    const customerId = await requireCustomer(request, ctx);
+    const order = await orderService.get(ctx, orderId);
+    // get() scopes to tenant, not customer — enforce ownership without leaking
+    // existence of other customers' orders.
+    if (order.customerId !== customerId) throw notFound('Order', orderId);
+    return ok({
+      id: order.id,
+      orderNumber: order.orderNumber,
+      status: order.status,
+      paymentStatus: order.paymentStatus,
+      currency: order.currency,
+      placedAt: order.placedAt.toISOString(),
+      subtotalCents: toCents(order.subtotal),
+      taxTotalCents: toCents(order.taxTotal),
+      shippingTotalCents: toCents(order.shippingTotal),
+      discountTotalCents: toCents(order.discountTotal),
+      totalCents: toCents(order.total),
+      shippingAddress: order.shippingAddress ?? null,
+      items: order.items.map((it) => ({
+        id: it.id,
+        name: it.name,
+        sku: it.sku,
+        quantity: it.quantity,
+        unitPriceCents: toCents(it.unitPrice),
+        lineTotalCents: toCents(it.lineTotal),
+      })),
+    });
+  });
+
+  // ── Addresses ─────────────────────────────────────────────────────────
+  app.get('/v1/public/commerce/account/addresses', async (request) => {
+    const ctx = await accountContext(request);
+    const customerId = await requireCustomer(request, ctx);
+    const addresses = await withTenant(ctx, (tx) =>
+      tx.customerAddress.findMany({
+        where: { customerId },
+        orderBy: [{ isDefault: 'desc' }, { createdAt: 'asc' }],
+      })
+    );
+    return ok({ addresses });
+  });
+
+  app.post('/v1/public/commerce/account/addresses', async (request) => {
+    const body = AddressBody.parse(request.body);
+    const ctx = await accountContext(request);
+    const customerId = await requireCustomer(request, ctx);
+    const address = await withTenant(ctx, async (tx) => {
+      if (body.isDefault) {
+        await tx.customerAddress.updateMany({ where: { customerId }, data: { isDefault: false } });
+      }
+      return tx.customerAddress.create({
+        data: { tenantId: ctx.tenantId, customerId, ...body, country: body.country.toUpperCase() },
+      });
+    });
+    return ok({ address });
+  });
+
+  app.patch('/v1/public/commerce/account/addresses/:addressId', async (request) => {
+    const { addressId } = AddressParam.parse(request.params);
+    const body = AddressBody.partial().parse(request.body);
+    const ctx = await accountContext(request);
+    const customerId = await requireCustomer(request, ctx);
+    const updated = await withTenant(ctx, async (tx) => {
+      const owned = await tx.customerAddress.findFirst({
+        where: { id: addressId, customerId },
+        select: { id: true },
+      });
+      if (!owned) return null;
+      if (body.isDefault) {
+        await tx.customerAddress.updateMany({ where: { customerId }, data: { isDefault: false } });
+      }
+      return tx.customerAddress.update({
+        where: { id: addressId },
+        data: { ...body, ...(body.country ? { country: body.country.toUpperCase() } : {}) },
+      });
+    });
+    if (!updated) throw notFound('Address', addressId);
+    return ok({ address: updated });
+  });
+
+  app.delete('/v1/public/commerce/account/addresses/:addressId', async (request) => {
+    const { addressId } = AddressParam.parse(request.params);
+    const ctx = await accountContext(request);
+    const customerId = await requireCustomer(request, ctx);
+    await withTenant(ctx, (tx) =>
+      tx.customerAddress.deleteMany({ where: { id: addressId, customerId } })
+    );
+    return ok({ ok: true });
   });
 
   return Promise.resolve();
