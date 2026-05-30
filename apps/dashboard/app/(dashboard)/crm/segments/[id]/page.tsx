@@ -111,8 +111,9 @@ export default async function SegmentDetailPage({ params }: PageProps) {
               {JSON.stringify(segment.rules, null, 2)}
             </pre>
             <Text size="xs" variant="muted" className="mt-2">
-              Built-in segments are read-only; clone to customize. (Rule editor lands in the next
-              dashboard iteration.)
+              {segment.isBuiltIn
+                ? 'Built-in segments are read-only — clone to customize. (Visual rule editor lands in the next dashboard iteration.)'
+                : 'Visual rule editor lands in the next dashboard iteration; until then the JSON above is the source of truth and can be edited via the API.'}
             </Text>
           </CardContent>
         </Card>
@@ -130,7 +131,11 @@ export default async function SegmentDetailPage({ params }: PageProps) {
             {members.length === 0 ? (
               <EmptyState
                 title="No members yet"
-                description="Membership is updated as events flow. Place an order or import customers, then check back."
+                description={
+                  segment.isBuiltIn
+                    ? 'Membership is updated as events flow. Place an order or import customers, then check back.'
+                    : 'New segments only materialise after a recompute. Click Recompute above to evaluate every customer against the rule, then refresh.'
+                }
               />
             ) : (
               <Table>

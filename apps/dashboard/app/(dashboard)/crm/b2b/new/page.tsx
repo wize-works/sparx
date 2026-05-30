@@ -3,7 +3,7 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2 } from 'lucide-react';
 
 import {
   Button,
@@ -23,6 +23,26 @@ import {
 
 import { createB2bAccountAction } from '../../b2b-actions';
 
+interface EngineProfileDraft {
+  id: string;
+  make: string;
+  model: string;
+  year: string;
+  engine: string;
+  count: string;
+}
+
+function makeEmptyProfile(): EngineProfileDraft {
+  return {
+    id: Math.random().toString(36).slice(2),
+    make: '',
+    model: '',
+    year: '',
+    engine: '',
+    count: '',
+  };
+}
+
 const SELECT_CLASS =
   'flex h-9 w-full rounded-md border border-[var(--color-border-default)] bg-[var(--color-bg-surface)] px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)]';
 
@@ -30,6 +50,7 @@ export default function NewB2bAccountPage() {
   const router = useRouter();
   const [pending, startTransition] = React.useTransition();
   const [error, setError] = React.useState<string | null>(null);
+  const [engineProfiles, setEngineProfiles] = React.useState<EngineProfileDraft[]>([]);
 
   function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -46,6 +67,16 @@ export default function NewB2bAccountPage() {
       paymentTerms: nonEmpty(form.get('paymentTerms')),
       fleetSize: form.get('fleetSize') ? Number(form.get('fleetSize')) : undefined,
       notes: nonEmpty(form.get('notes')),
+      tags: parseTags(form.get('tags')),
+      engineProfiles: engineProfiles
+        .filter((p) => p.make.trim() && p.model.trim())
+        .map((p) => ({
+          make: p.make.trim(),
+          model: p.model.trim(),
+          ...(p.year.trim() ? { year: Number(p.year) } : {}),
+          ...(p.engine.trim() ? { engine: p.engine.trim() } : {}),
+          ...(p.count.trim() ? { count: Number(p.count) } : {}),
+        })),
     };
 
     startTransition(async () => {
@@ -170,6 +201,132 @@ export default function NewB2bAccountPage() {
                   </Stack>
                 </Stack>
                 <Stack gap={2}>
+                  <Label htmlFor="tags">Tags</Label>
+                  <Input id="tags" name="tags" placeholder="fleet, vip, midwest" />
+                  <Text size="xs" variant="muted">
+                    Comma-separated. Used by segments and reports.
+                  </Text>
+                </Stack>
+
+                <Stack gap={2}>
+                  <Stack direction="row" align="center" justify="between">
+                    <Label>Engine profiles</Label>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      leftIcon={<Plus className="h-3.5 w-3.5" />}
+                      onClick={() => setEngineProfiles((prev) => [...prev, makeEmptyProfile()])}
+                    >
+                      Add engine
+                    </Button>
+                  </Stack>
+                  {engineProfiles.length === 0 ? (
+                    <Text size="xs" variant="muted">
+                      One row per engine variant the fleet runs. Drives fitment-aware catalog
+                      filtering once Commerce lands. Optional.
+                    </Text>
+                  ) : (
+                    <Stack gap={2}>
+                      {engineProfiles.map((profile, index) => (
+                        <Stack
+                          key={profile.id}
+                          direction="row"
+                          gap={2}
+                          align="end"
+                          className="rounded-md border border-[var(--color-border-default)] p-2"
+                        >
+                          <Stack gap={1} className="w-20">
+                            {index === 0 && <Label className="text-xs">Year</Label>}
+                            <Input
+                              type="number"
+                              min="1900"
+                              max="2100"
+                              value={profile.year}
+                              onChange={(e) =>
+                                setEngineProfiles((prev) =>
+                                  prev.map((p) =>
+                                    p.id === profile.id ? { ...p, year: e.target.value } : p
+                                  )
+                                )
+                              }
+                            />
+                          </Stack>
+                          <Stack gap={1} className="flex-1">
+                            {index === 0 && <Label className="text-xs">Make</Label>}
+                            <Input
+                              value={profile.make}
+                              placeholder="Cummins"
+                              onChange={(e) =>
+                                setEngineProfiles((prev) =>
+                                  prev.map((p) =>
+                                    p.id === profile.id ? { ...p, make: e.target.value } : p
+                                  )
+                                )
+                              }
+                            />
+                          </Stack>
+                          <Stack gap={1} className="flex-1">
+                            {index === 0 && <Label className="text-xs">Model</Label>}
+                            <Input
+                              value={profile.model}
+                              placeholder="ISX15"
+                              onChange={(e) =>
+                                setEngineProfiles((prev) =>
+                                  prev.map((p) =>
+                                    p.id === profile.id ? { ...p, model: e.target.value } : p
+                                  )
+                                )
+                              }
+                            />
+                          </Stack>
+                          <Stack gap={1} className="flex-1">
+                            {index === 0 && <Label className="text-xs">Engine code</Label>}
+                            <Input
+                              value={profile.engine}
+                              placeholder="optional"
+                              onChange={(e) =>
+                                setEngineProfiles((prev) =>
+                                  prev.map((p) =>
+                                    p.id === profile.id ? { ...p, engine: e.target.value } : p
+                                  )
+                                )
+                              }
+                            />
+                          </Stack>
+                          <Stack gap={1} className="w-20">
+                            {index === 0 && <Label className="text-xs">Count</Label>}
+                            <Input
+                              type="number"
+                              min="0"
+                              value={profile.count}
+                              onChange={(e) =>
+                                setEngineProfiles((prev) =>
+                                  prev.map((p) =>
+                                    p.id === profile.id ? { ...p, count: e.target.value } : p
+                                  )
+                                )
+                              }
+                            />
+                          </Stack>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            aria-label="Remove engine profile"
+                            onClick={() =>
+                              setEngineProfiles((prev) => prev.filter((p) => p.id !== profile.id))
+                            }
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </Stack>
+                      ))}
+                    </Stack>
+                  )}
+                </Stack>
+
+                <Stack gap={2}>
                   <Label htmlFor="notes">Notes</Label>
                   <Textarea id="notes" name="notes" rows={4} />
                 </Stack>
@@ -206,4 +363,13 @@ function numOrZero(value: FormDataEntryValue | null): number {
   const s = typeof value === 'string' ? value.trim() : '';
   const n = Number(s);
   return Number.isFinite(n) ? n : 0;
+}
+
+function parseTags(value: FormDataEntryValue | null): string[] | undefined {
+  if (typeof value !== 'string') return undefined;
+  const tags = value
+    .split(',')
+    .map((t) => t.trim())
+    .filter((t) => t.length > 0);
+  return tags.length > 0 ? tags : undefined;
 }
