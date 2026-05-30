@@ -10,6 +10,7 @@ import { GeistSans } from 'geist/font/sans';
 import { GeistMono } from 'geist/font/mono';
 
 import { CartProvider } from '@/components/cart-provider';
+import { MiniCart } from '@/components/mini-cart';
 import { SiteHeader, type NavItem } from '@/components/site-header';
 import { SiteFooter, type FooterColumn } from '@/components/site-footer';
 import { listCollections } from '@/lib/commerce';
@@ -104,6 +105,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               <main className="sf-main">{children}</main>
               <SiteFooter tenant={tenant} columns={footerColumns} year={FOOTER_YEAR} />
             </div>
+            <MiniCart />
           </CartProvider>
         ) : (
           <div className="sf-frame">
