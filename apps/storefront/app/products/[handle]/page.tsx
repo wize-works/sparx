@@ -11,6 +11,7 @@ import { FitmentTable } from '@/components/fitment-table';
 import { ProductCard } from '@/components/product-card';
 import { ProductDetail } from '@/components/product-detail';
 import { RatingStars } from '@/components/rating-stars';
+import { ReviewForm } from '@/components/review-form';
 import {
   getProduct,
   listFitmentDomains,

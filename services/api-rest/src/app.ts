@@ -47,6 +47,7 @@ import publicContentRoutes from './routes/v1/public/content.js';
 import publicCommerceRoutes from './routes/v1/public/commerce.js';
 import publicCartRoutes from './routes/v1/public/cart.js';
 import publicCheckoutRoutes from './routes/v1/public/checkout.js';
+import publicReviewRoutes from './routes/v1/public/reviews.js';
 import publicMediaRoutes from './routes/v1/public/media.js';
 import uploadRoutes from './routes/v1/media/uploads.js';
 import mediaAssetRoutes from './routes/v1/media/assets.js';
@@ -302,6 +303,7 @@ export async function createApp(): Promise<FastifyInstance> {
   await app.register(publicCommerceRoutes);
   await app.register(publicCartRoutes);
   await app.register(publicCheckoutRoutes);
+  await app.register(publicReviewRoutes);
   await app.register(publicMediaRoutes);
   await app.register(uploadRoutes);
   await app.register(mediaAssetRoutes);
