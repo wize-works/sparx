@@ -32,11 +32,7 @@ export function SiteHeader({ tenant, nav, announcement }: SiteHeaderProps) {
           <MobileNav nav={nav} brand={tenant.name} />
 
           <Link href="/" className="sf-header__brand" aria-label={`${tenant.name} home`}>
-            {logo ? (
-              <img src={logo} alt={tenant.name} />
-            ) : (
-              tenant.name
-            )}
+            {logo ? <img src={logo} alt={tenant.name} /> : tenant.name}
           </Link>
 
           <nav className="sf-nav" aria-label="Primary">

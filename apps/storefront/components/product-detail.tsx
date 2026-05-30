@@ -51,16 +51,20 @@ export function ProductDetail({
   });
   const [qty, setQty] = useState(1);
   const [adding, setAdding] = useState(false);
-  const [activeImageId, setActiveImageId] = useState<string | null>(
-    product.images[0]?.id ?? null
-  );
+  const [activeImageId, setActiveImageId] = useState<string | null>(product.images[0]?.id ?? null);
 
-  const allSelected = product.options.length === 0 || Object.keys(selected).length === product.options.length;
+  const allSelected =
+    product.options.length === 0 || Object.keys(selected).length === product.options.length;
 
   const resolvedVariant = useMemo<PublicProductVariant | null>(() => {
     if (product.variants.length === 1) return product.variants[0] ?? null;
     if (!allSelected) return null;
-    return product.variants.find((v) => variantMatches(v, selected) && v.optionValueIds.length === Object.keys(selected).length) ?? null;
+    return (
+      product.variants.find(
+        (v) =>
+          variantMatches(v, selected) && v.optionValueIds.length === Object.keys(selected).length
+      ) ?? null
+    );
   }, [product.variants, selected, allSelected]);
 
   // Availability per option value: a value is selectable if some variant with
@@ -91,8 +95,7 @@ export function ProductDetail({
     return product.images;
   }, [product.images, resolvedVariant, selected]);
 
-  const activeImage =
-    galleryImages.find((i) => i.id === activeImageId) ?? galleryImages[0] ?? null;
+  const activeImage = galleryImages.find((i) => i.id === activeImageId) ?? galleryImages[0] ?? null;
 
   const priceCents = resolvedVariant?.priceCents ?? product.priceMinCents ?? 0;
   const compareAt = resolvedVariant?.compareAtPriceCents ?? null;
@@ -222,7 +225,11 @@ export function ProductDetail({
         {/* Quantity + add to cart */}
         <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
           <div className="sf-qty">
-            <button type="button" aria-label="Decrease quantity" onClick={() => setQty((q) => Math.max(1, q - 1))}>
+            <button
+              type="button"
+              aria-label="Decrease quantity"
+              onClick={() => setQty((q) => Math.max(1, q - 1))}
+            >
               −
             </button>
             <input
@@ -232,7 +239,11 @@ export function ProductDetail({
               aria-label="Quantity"
               onChange={(e) => setQty(Math.max(1, Number(e.target.value) || 1))}
             />
-            <button type="button" aria-label="Increase quantity" onClick={() => setQty((q) => q + 1)}>
+            <button
+              type="button"
+              aria-label="Increase quantity"
+              onClick={() => setQty((q) => q + 1)}
+            >
               +
             </button>
           </div>

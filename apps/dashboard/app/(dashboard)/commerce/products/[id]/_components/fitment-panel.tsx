@@ -521,11 +521,7 @@ function NewFitmentForm({ productId, fitments, domains }: NewFormProps) {
   );
 }
 
-function formatRange(
-  min: number | null,
-  max: number | null,
-  rangeUnit: string | null
-): string {
+function formatRange(min: number | null, max: number | null, rangeUnit: string | null): string {
   if (min === null && max === null) return 'any';
   const u = rangeUnit ? ` ${rangeUnitLabel(rangeUnit)}` : '';
   if (min !== null && max !== null) {
