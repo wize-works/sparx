@@ -31,7 +31,7 @@ const updateInventory: McpToolDefinition = {
   scope: 'write:commerce',
   confirmation: true,
   input: AdjustInventoryInput,
-  run: (ctx, input) => inventoryService.adjust(ctx, input as never),
+  run: (ctx, input) => inventoryService.adjust(ctx, input),
 };
 
 const publishProduct: McpToolDefinition = {
