@@ -8,7 +8,7 @@
 
 ## 1. Overview
 
-This document specifies **Layer 2 authentication** — accounts for the *shoppers* who buy
+This document specifies **Layer 2 authentication** — accounts for the _shoppers_ who buy
 from a merchant's storefront. It is deliberately separate from **Layer 1** (merchant staff
 auth, [docs/16-auth-security.md](16-auth-security.md)), which uses Better Auth and lives in
 `packages/auth`.
@@ -61,11 +61,11 @@ are worse than the alternative.
 
 ### The insight that makes it easy
 
-**For a shopper, the tenant is known *before* authentication.** It is the storefront's
+**For a shopper, the tenant is known _before_ authentication.** It is the storefront's
 hostname (`acme.sparx.zone`, or `?tenant=acme` in dev), resolved at the edge in
 [apps/storefront/middleware.ts](../apps/storefront/middleware.ts) and carried to `api-rest` as
 the `?tenant=<slug>` param the public commerce surface already uses. Staff sign-in can't do
-this — a staff member types only an email, and the tenant is *discovered* from their user row.
+this — a staff member types only an email, and the tenant is _discovered_ from their user row.
 A shopper's tenant is ambient context.
 
 Because the tenant is known up front, **every customer-auth operation runs inside
@@ -116,10 +116,10 @@ Postgres (RLS FORCE)   customer_credentials · customer_sessions · customer_pas
 Two cookies coexist on the storefront origin, never colliding with staff auth (which lives on
 `app.sparx.works`, a different origin):
 
-| Cookie                   | Set by   | Purpose                                  | Flags                                   |
-| ------------------------ | -------- | ---------------------------------------- | --------------------------------------- |
-| `sparx_cart` (token)     | existing | guest cart ownership (`x-cart-token`)    | httpOnly, SameSite=Lax, Secure          |
-| `sparx_customer_session` | this doc | authenticated shopper session            | httpOnly, SameSite=Lax, Secure, Path=/  |
+| Cookie                   | Set by   | Purpose                               | Flags                                  |
+| ------------------------ | -------- | ------------------------------------- | -------------------------------------- |
+| `sparx_cart` (token)     | existing | guest cart ownership (`x-cart-token`) | httpOnly, SameSite=Lax, Secure         |
+| `sparx_customer_session` | this doc | authenticated shopper session         | httpOnly, SameSite=Lax, Secure, Path=/ |
 
 The proxy already relays `Set-Cookie` and `cookie` in both directions
 ([apps/storefront/app/api/sparx/[...path]/route.ts](../apps/storefront/app/api/sparx/%5B...path%5D/route.ts)),
@@ -272,7 +272,7 @@ resetPassword(ctx, { token, password }) → void
 **Security properties baked in:**
 
 - `registerCustomer` rejects a duplicate `(tenantId, email)` that already has a credential with
-  `EMAIL_TAKEN`; if a `Customer` row exists *without* a credential (guest/prospect), it attaches
+  `EMAIL_TAKEN`; if a `Customer` row exists _without_ a credential (guest/prospect), it attaches
   the credential to that row rather than creating a duplicate — preserving the single-spine rule.
 - `authenticateCustomer` performs an Argon2 verify even when the email is unknown (against a
   dummy hash) to flatten the timing signal between "no such user" and "wrong password".
@@ -298,21 +298,21 @@ New file `services/api-rest/src/routes/v1/public/account.ts`, registered in
 `publicCheckoutRoutes`. All routes resolve the tenant via the existing
 `publicCommerceContext(request)` helper and gate on the Storefront module.
 
-| Method | Path                                              | Purpose                                            |
-| ------ | ------------------------------------------------- | -------------------------------------------------- |
-| POST   | `/v1/public/commerce/account/register`            | Create account, set session cookie, merge cart     |
-| POST   | `/v1/public/commerce/account/login`               | Authenticate, set session cookie, merge cart       |
-| POST   | `/v1/public/commerce/account/logout`              | Revoke session, clear cookie                        |
-| GET    | `/v1/public/commerce/account/me`                  | Current customer profile (or 401)                  |
-| PATCH  | `/v1/public/commerce/account/me`                  | Update profile (name, phone)                       |
-| GET    | `/v1/public/commerce/account/orders`              | The customer's orders (paged)                      |
-| GET    | `/v1/public/commerce/account/orders/:orderId`     | One order, scoped to the customer                  |
-| GET    | `/v1/public/commerce/account/addresses`           | Address book                                       |
-| POST   | `/v1/public/commerce/account/addresses`           | Add address                                        |
-| PATCH  | `/v1/public/commerce/account/addresses/:id`       | Edit address                                       |
-| DELETE | `/v1/public/commerce/account/addresses/:id`       | Remove address                                     |
-| POST   | `/v1/public/commerce/account/password/forgot`     | Request reset link (enumeration-safe)              |
-| POST   | `/v1/public/commerce/account/password/reset`      | Consume token, set new password                    |
+| Method | Path                                          | Purpose                                        |
+| ------ | --------------------------------------------- | ---------------------------------------------- |
+| POST   | `/v1/public/commerce/account/register`        | Create account, set session cookie, merge cart |
+| POST   | `/v1/public/commerce/account/login`           | Authenticate, set session cookie, merge cart   |
+| POST   | `/v1/public/commerce/account/logout`          | Revoke session, clear cookie                   |
+| GET    | `/v1/public/commerce/account/me`              | Current customer profile (or 401)              |
+| PATCH  | `/v1/public/commerce/account/me`              | Update profile (name, phone)                   |
+| GET    | `/v1/public/commerce/account/orders`          | The customer's orders (paged)                  |
+| GET    | `/v1/public/commerce/account/orders/:orderId` | One order, scoped to the customer              |
+| GET    | `/v1/public/commerce/account/addresses`       | Address book                                   |
+| POST   | `/v1/public/commerce/account/addresses`       | Add address                                    |
+| PATCH  | `/v1/public/commerce/account/addresses/:id`   | Edit address                                   |
+| DELETE | `/v1/public/commerce/account/addresses/:id`   | Remove address                                 |
+| POST   | `/v1/public/commerce/account/password/forgot` | Request reset link (enumeration-safe)          |
+| POST   | `/v1/public/commerce/account/password/reset`  | Consume token, set new password                |
 
 **Session wiring.** Authenticated routes read `sparx_customer_session` from the cookie, call
 `verifyCustomerSession`, and attach `{ customerId }` to the request (a small `preHandler`).
@@ -335,7 +335,7 @@ error states. New customer-session client mirrors the existing `cart-provider` p
 - `lib/customer-client.ts` — typed wrappers over `/api/sparx/.../account/*` (register, login,
   logout, me, orders, addresses, password reset), carrying cookies + `x-cart-token`.
 - `components/customer-provider.tsx` — client context exposing `{ customer, status, login,
-  register, logout, refresh }`; hydrates from `/account/me` on mount.
+register, logout, refresh }`; hydrates from `/account/me` on mount.
 - Routes under `app/account/`:
   - `app/account/login/page.tsx`, `app/account/register/page.tsx`,
     `app/account/forgot/page.tsx`, `app/account/reset/page.tsx`
@@ -345,7 +345,7 @@ error states. New customer-session client mirrors the existing `cart-provider` p
   - `app/account/layout.tsx` — guards the subtree (redirect to `/account/login` when signed out),
     renders the account nav tabs (the `.sf-account` / `.sf-tabs` CSS blocks already exist).
 - Header: the account icon links to `/account` when signed in, `/account/login` otherwise; the
-  checkout flow offers "sign in for faster checkout" without ever *requiring* it (guest checkout
+  checkout flow offers "sign in for faster checkout" without ever _requiring_ it (guest checkout
   stays first-class unless the merchant sets `requireAuthForCheckout`).
 
 ---

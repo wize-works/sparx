@@ -18,15 +18,15 @@ This is a Channel integration — part of the Commerce module, no additional mod
 
 ## 2. Implementation Timeline
 
-| Task | Start | Due | Priority |
-|------|-------|-----|----------|
-| Apply for ISV partner access | May 28 | May 31 | High |
-| OAuth connect flow | Jun 16 | Jun 20 | High |
-| Product catalog sync | Jun 20 | Jun 27 | High |
-| Order sync + fulfillment | Jun 27 | Jul 4 | High |
-| Real-time inventory sync | Jul 4 | Jul 11 | High |
-| Analytics consolidation | Jul 11 | Jul 18 | Medium |
-| Channels UI in dashboard | Jul 11 | Jul 18 | Medium |
+| Task                         | Start  | Due    | Priority |
+| ---------------------------- | ------ | ------ | -------- |
+| Apply for ISV partner access | May 28 | May 31 | High     |
+| OAuth connect flow           | Jun 16 | Jun 20 | High     |
+| Product catalog sync         | Jun 20 | Jun 27 | High     |
+| Order sync + fulfillment     | Jun 27 | Jul 4  | High     |
+| Real-time inventory sync     | Jul 4  | Jul 11 | High     |
+| Analytics consolidation      | Jul 11 | Jul 18 | Medium   |
+| Channels UI in dashboard     | Jul 11 | Jul 18 | Medium   |
 
 **Note:** Apply for ISV partner access immediately — approval takes time and the clock starts when you apply.
 
@@ -37,6 +37,7 @@ This is a Channel integration — part of the Commerce module, no additional mod
 **ISV Partner Application:** https://partner.tiktokshop.com
 
 What to prepare:
+
 - Sparx platform description and merchant value proposition
 - Tech stack overview (Next.js, Fastify, TypeScript)
 - Estimated merchant volume (honest — early stage)
@@ -53,22 +54,28 @@ TikTok Shop uses OAuth 2.0. Merchants authorize the Sparx app in TikTok, and Spa
 ```typescript
 // src/services/channels/tiktok/auth.ts
 
-const TIKTOK_AUTH_URL = 'https://auth.tiktok-shops.com/oauth/authorize'
-const TIKTOK_TOKEN_URL = 'https://auth.tiktok-shops.com/oauth/token'
+const TIKTOK_AUTH_URL = 'https://auth.tiktok-shops.com/oauth/authorize';
+const TIKTOK_TOKEN_URL = 'https://auth.tiktok-shops.com/oauth/token';
 
 export function generateAuthURL(tenantId: string): string {
-  const state = encryptState({ tenantId })
-  return `${TIKTOK_AUTH_URL}?` + new URLSearchParams({
-    app_key: process.env.TIKTOK_APP_KEY!,
-    redirect_uri: `${process.env.NEXT_PUBLIC_APP_URL}/api/channels/tiktok/callback`,
-    state,
-    scope: [
-      'product:read', 'product:write',
-      'order:read', 'order:write',
-      'inventory:read', 'inventory:write',
-      'finance:read',
-    ].join(','),
-  })
+  const state = encryptState({ tenantId });
+  return (
+    `${TIKTOK_AUTH_URL}?` +
+    new URLSearchParams({
+      app_key: process.env.TIKTOK_APP_KEY!,
+      redirect_uri: `${process.env.NEXT_PUBLIC_APP_URL}/api/channels/tiktok/callback`,
+      state,
+      scope: [
+        'product:read',
+        'product:write',
+        'order:read',
+        'order:write',
+        'inventory:read',
+        'inventory:write',
+        'finance:read',
+      ].join(','),
+    })
+  );
 }
 
 export async function exchangeCodeForToken(code: string): Promise<TikTokTokens> {
@@ -80,12 +87,13 @@ export async function exchangeCodeForToken(code: string): Promise<TikTokTokens> 
       code,
       grant_type: 'authorization_code',
     }),
-  })
-  return response.json()
+  });
+  return response.json();
 }
 ```
 
 Tokens stored in Google Secret Manager:
+
 - `tiktok/{tenantId}/access_token`
 - `tiktok/{tenantId}/refresh_token`
 - `tiktok/{tenantId}/shop_id`
@@ -102,40 +110,41 @@ Triggered by Pub/Sub events:
 
 ```typescript
 // Subscribe to product events
-pubsub.subscribe('product.created', pushProductToTikTok)
-pubsub.subscribe('product.updated', pushProductToTikTok)
-pubsub.subscribe('product.archived', deactivateTikTokListing)
+pubsub.subscribe('product.created', pushProductToTikTok);
+pubsub.subscribe('product.updated', pushProductToTikTok);
+pubsub.subscribe('product.archived', deactivateTikTokListing);
 
 async function pushProductToTikTok(event: ProductEvent) {
-  const { tenantId, productId } = event
+  const { tenantId, productId } = event;
 
   // Check if tenant has TikTok Shop connected and product opted in
   const [connection, product] = await Promise.all([
     getTikTokConnection(tenantId),
     db.product.findUnique({
       where: { id: productId },
-      include: { variants: true, images: true }
-    })
-  ])
+      include: { variants: true, images: true },
+    }),
+  ]);
 
-  if (!connection || !product?.tiktokEnabled) return
+  if (!connection || !product?.tiktokEnabled) return;
 
   await tiktokAPI.upsertProduct(connection, {
     product_name: product.title,
     description: product.description,
-    skus: product.variants.map(v => ({
+    skus: product.variants.map((v) => ({
       seller_sku: v.sku,
       sale_price: v.price,
       stock_infos: [{ available_stock: v.inventoryQuantity }],
     })),
     main_image: product.images[0]?.url,
-  })
+  });
 }
 ```
 
 ### TikTok Shop → Sparx (pull / import)
 
 Merchant initiates from dashboard:
+
 1. Dashboard fetches existing TikTok Shop listings
 2. Merchant selects listings to import
 3. Sparx creates products, matched by SKU where possible
@@ -143,16 +152,16 @@ Merchant initiates from dashboard:
 
 ### Field Mapping
 
-| Sparx | TikTok Shop |
-|-------|------------|
-| `title` | `product_name` |
-| `description` | `description` |
-| `variants[].price` | `skus[].sale_price` |
+| Sparx                           | TikTok Shop                            |
+| ------------------------------- | -------------------------------------- |
+| `title`                         | `product_name`                         |
+| `description`                   | `description`                          |
+| `variants[].price`              | `skus[].sale_price`                    |
 | `variants[].inventory_quantity` | `skus[].stock_infos[].available_stock` |
-| `variants[].sku` | `skus[].seller_sku` |
-| `images[0].url` | `main_image` |
-| `status = 'active'` | `product_status = 'ACTIVATE'` |
-| `status = 'archived'` | `product_status = 'DEACTIVATE'` |
+| `variants[].sku`                | `skus[].seller_sku`                    |
+| `images[0].url`                 | `main_image`                           |
+| `status = 'active'`             | `product_status = 'ACTIVATE'`          |
+| `status = 'archived'`           | `product_status = 'DEACTIVATE'`        |
 
 ---
 
@@ -167,12 +176,12 @@ TikTok pushes order webhooks to:
 // src/routes/channels/tiktok/webhooks.ts
 fastify.post('/api/channels/tiktok/webhooks/orders', async (req) => {
   // Verify webhook signature
-  verifyTikTokSignature(req)
+  verifyTikTokSignature(req);
 
-  const { order_id, order_status, buyer_info, order_line_items } = req.body
+  const { order_id, order_status, buyer_info, order_line_items } = req.body;
 
   // Find tenant from TikTok shop ID
-  const tenantId = await getTenantByTikTokShopId(req.body.shop_id)
+  const tenantId = await getTenantByTikTokShopId(req.body.shop_id);
 
   // Create or update order in Sparx
   await orderService.upsertFromChannel({
@@ -184,16 +193,16 @@ fastify.post('/api/channels/tiktok/webhooks/orders', async (req) => {
       email: buyer_info.email,
       name: buyer_info.display_name,
     },
-    items: order_line_items.map(item => ({
+    items: order_line_items.map((item) => ({
       sku: item.seller_sku,
       quantity: item.quantity,
       price: item.sale_price,
     })),
-  })
+  });
 
   // Decrement inventory (same pool as storefront)
-  await inventoryService.decrementForOrder(tenantId, order_line_items)
-})
+  await inventoryService.decrementForOrder(tenantId, order_line_items);
+});
 ```
 
 ### Sparx → TikTok Shop (fulfillment push)
@@ -202,18 +211,18 @@ When merchant marks order as fulfilled in Sparx:
 
 ```typescript
 pubsub.subscribe('order.fulfilled', async (event) => {
-  const order = await db.order.findUnique({ where: { id: event.orderId } })
+  const order = await db.order.findUnique({ where: { id: event.orderId } });
 
-  if (order.source !== 'tiktok_shop') return
+  if (order.source !== 'tiktok_shop') return;
 
-  const connection = await getTikTokConnection(order.tenantId)
+  const connection = await getTikTokConnection(order.tenantId);
 
   await tiktokAPI.updateOrderShipment(connection, {
     order_id: order.externalId,
     tracking_number: event.trackingNumber,
     shipping_provider: event.carrier,
-  })
-})
+  });
+});
 ```
 
 ---
@@ -225,24 +234,24 @@ Sparx DB is the single source of truth for inventory across all channels.
 ```typescript
 // Subscribe to inventory changes
 pubsub.subscribe('inventory.updated', async (event) => {
-  const { tenantId, variantId, newQuantity } = event
+  const { tenantId, variantId, newQuantity } = event;
 
-  const connection = await getTikTokConnection(tenantId)
-  if (!connection) return
+  const connection = await getTikTokConnection(tenantId);
+  if (!connection) return;
 
   const variant = await db.productVariant.findUnique({
     where: { id: variantId },
-    select: { tiktokSkuId: true }
-  })
+    select: { tiktokSkuId: true },
+  });
 
-  if (!variant?.tiktokSkuId) return
+  if (!variant?.tiktokSkuId) return;
 
   // Push new quantity to TikTok Shop
   await tiktokAPI.updateInventory(connection, {
     sku_id: variant.tiktokSkuId,
     available_stock: newQuantity,
-  })
-})
+  });
+});
 ```
 
 **Critical invariant:** inventory is decremented in Sparx first, then pushed to TikTok. This prevents overselling even if the TikTok push fails (dead letter queue retries the push, never re-increments Sparx inventory on failure).
@@ -283,6 +292,7 @@ get_channel_comparison({ period: 'this_month' })
 ```
 
 Example AI interaction:
+
 > "How does my TikTok Shop revenue compare to my storefront this month?"
 > → get_channel_comparison({ period: 'this_month' })
 > → "TikTok Shop: $12,800 (89 orders). Storefront: $48,200 (156 orders). TikTok is 13.8% of total revenue."
@@ -309,6 +319,7 @@ GMV: $12,800    Orders: 89    AOV: $143.82
 ### Product List
 
 Each product card shows TikTok Shop status:
+
 - `● Live on TikTok` — active listing
 - `○ Not on TikTok` — toggle to enable
 - `⚠ Sync error` — click for details
@@ -328,14 +339,14 @@ TikTok Shop is implemented as a channel adapter — the same pattern used for fu
 ```typescript
 // packages/channels/src/types.ts
 interface ChannelAdapter {
-  id: string                        // 'tiktok_shop'
-  name: string                      // 'TikTok Shop'
-  connect(tenantId: string): string // returns OAuth URL
-  syncProduct(tenantId: string, product: Product): Promise<void>
-  ingestOrder(payload: unknown): Promise<Order>
-  pushFulfillment(order: Order): Promise<void>
-  syncInventory(tenantId: string, variantId: string, qty: number): Promise<void>
-  getAnalytics(tenantId: string, period: Period): Promise<ChannelAnalytics>
+  id: string; // 'tiktok_shop'
+  name: string; // 'TikTok Shop'
+  connect(tenantId: string): string; // returns OAuth URL
+  syncProduct(tenantId: string, product: Product): Promise<void>;
+  ingestOrder(payload: unknown): Promise<Order>;
+  pushFulfillment(order: Order): Promise<void>;
+  syncInventory(tenantId: string, variantId: string, qty: number): Promise<void>;
+  getAnalytics(tenantId: string, period: Period): Promise<ChannelAnalytics>;
 }
 ```
 
@@ -357,6 +368,7 @@ TIKTOK_API_BASE=https://open-api.tiktokglobalshop.com
 ## 12. Rate Limits
 
 TikTok Shop Open Platform (ISV tier):
+
 - Product API: 100 requests/minute per shop
 - Order API: 100 requests/minute per shop
 - Inventory API: 50 requests/minute per shop
