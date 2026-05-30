@@ -6,10 +6,13 @@
 
 import type { ModuleManifest } from '@sparx/ui/shell';
 import {
+  BarChart3,
   Boxes,
   CreditCard,
   FolderTree,
   Gift,
+  Heart,
+  HelpCircle,
   Inbox,
   LayoutGrid,
   Package,
@@ -21,6 +24,7 @@ import {
   Repeat2,
   Settings2,
   ShoppingCart,
+  Star,
   Tag,
   TicketPercent,
   Truck,
@@ -59,9 +63,14 @@ export const commerceManifest: ModuleManifest = {
       href: '/commerce/subscriptions',
     },
     { id: 'returns', label: 'Returns', icon: Inbox, href: '/commerce/returns' },
+    { id: 'reviews', label: 'Reviews', icon: Star, href: '/commerce/reviews' },
+    { id: 'qa', label: 'Q&A', icon: HelpCircle, href: '/commerce/qa' },
+    { id: 'wishlists', label: 'Wishlists', icon: Heart, href: '/commerce/wishlists' },
+    { id: 'reports', label: 'Reports', icon: BarChart3, href: '/commerce/reports' },
     { id: 'shipping', label: 'Shipping', icon: Truck, href: '/commerce/shipping' },
     { id: 'tax', label: 'Tax', icon: Receipt, href: '/commerce/tax' },
     { id: 'providers', label: 'Providers', icon: Plug, href: '/commerce/providers' },
+    { id: 'settings', label: 'Settings', icon: Settings2, href: '/commerce/settings' },
   ],
   actions: [
     {

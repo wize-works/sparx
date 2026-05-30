@@ -28,6 +28,7 @@
     "db:seed": "tsx prisma/seed.ts",
     "db:up": "docker compose -f docker-compose.yml up -d",
     "db:down": "docker compose -f docker-compose.yml down",
+    "db:rls-audit": "tsx scripts/rls-audit.ts",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf .turbo dist *.tsbuildinfo"

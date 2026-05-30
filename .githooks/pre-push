@@ -44,4 +44,8 @@ step "pnpm -r run typecheck"
 pnpm -r --workspace-concurrency=4 run typecheck || fail "tsc found type errors — fix errors above and commit"
 ok "typecheck clean"
 
+step "pnpm --filter @sparx/db db:rls-audit"
+pnpm --filter @sparx/db db:rls-audit >/dev/null || fail "RLS audit failed — see output above; hand-edit the migration SQL to add the missing ENABLE+FORCE+POLICY clauses"
+ok "RLS audit clean"
+
 printf "${GREEN}✓ pre-push checks passed${RESET}\n"

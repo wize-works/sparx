@@ -121,7 +121,7 @@ const moderateReview: McpToolDefinition = {
   scope: 'write:commerce',
   confirmation: true,
   input: ModerateReviewInput,
-  run: (ctx, input) => reviewService.moderate(ctx, input as never),
+  run: (ctx, input) => reviewService.moderate(ctx, input),
 };
 
 export const writeTools: AnyMcpTool[] = [

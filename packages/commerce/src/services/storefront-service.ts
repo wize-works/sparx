@@ -1,14 +1,20 @@
 // storefrontService — per-tenant storefront settings + theme tokens.
+//
 // Sitebuilder owns layout; this service owns the commerce-relevant
 // defaults (currency, channels, abandonment threshold, theme overrides).
+//
+// Both settings and theme are one-row-per-tenant (tenantId is the
+// primary key) so reads and upserts are point lookups. RLS enforces
+// per-tenant isolation regardless.
 
-import type {
+import {
   UpdateStorefrontSettingsInput,
   UpdateStorefrontThemeInput,
 } from '@sparx/commerce-schemas';
+import { withTenant } from '@sparx/db';
 
+import { writeAuditLog } from '../audit';
 import type { ServiceContext } from '../errors';
-import { notImplemented } from './not-implemented';
 
 export interface StorefrontSettings {
   defaultCurrency: string;
@@ -21,24 +27,137 @@ export interface StorefrontSettings {
   requireAuthForCheckout: boolean;
 }
 
-export function getSettings(_ctx: ServiceContext): Promise<StorefrontSettings> {
-  return notImplemented('storefrontService.getSettings');
+const DEFAULTS: StorefrontSettings = {
+  defaultCurrency: 'USD',
+  defaultLocale: 'en-US',
+  defaultWarehouseId: null,
+  channelsEnabled: ['storefront'],
+  cartAbandonmentMinutes: 120,
+  showStockBelow: 10,
+  hidePricesWhenSignedOut: false,
+  requireAuthForCheckout: false,
+};
+
+export async function getSettings(ctx: ServiceContext): Promise<StorefrontSettings> {
+  return withTenant(ctx, async (tx) => {
+    const row = await tx.storefrontSettings.findUnique({
+      where: { tenantId: ctx.tenantId },
+    });
+    if (!row) return DEFAULTS;
+    return {
+      defaultCurrency: row.defaultCurrency,
+      defaultLocale: row.defaultLocale,
+      defaultWarehouseId: row.defaultWarehouseId,
+      channelsEnabled: Array.isArray(row.channelsEnabled)
+        ? (row.channelsEnabled as string[])
+        : DEFAULTS.channelsEnabled,
+      cartAbandonmentMinutes: row.cartAbandonmentMinutes,
+      showStockBelow: row.showStockBelow,
+      hidePricesWhenSignedOut: row.hidePricesWhenSignedOut,
+      requireAuthForCheckout: row.requireAuthForCheckout,
+    };
+  });
 }
 
-export function updateSettings(
-  _ctx: ServiceContext,
-  _input: UpdateStorefrontSettingsInput
+export async function updateSettings(
+  ctx: ServiceContext,
+  rawInput: unknown
 ): Promise<void> {
-  return notImplemented('storefrontService.updateSettings');
+  const input = UpdateStorefrontSettingsInput.parse(rawInput);
+
+  await withTenant(ctx, async (tx) => {
+    const before = await tx.storefrontSettings.findUnique({
+      where: { tenantId: ctx.tenantId },
+    });
+
+    await tx.storefrontSettings.upsert({
+      where: { tenantId: ctx.tenantId },
+      create: {
+        tenantId: ctx.tenantId,
+        defaultCurrency: input.defaultCurrency,
+        defaultLocale: input.defaultLocale,
+        defaultWarehouseId: input.defaultWarehouseId ?? null,
+        channelsEnabled: input.channelsEnabled,
+        cartAbandonmentMinutes: input.cartAbandonmentMinutes,
+        showStockBelow: input.showStockBelow,
+        hidePricesWhenSignedOut: input.hidePricesWhenSignedOut,
+        requireAuthForCheckout: input.requireAuthForCheckout,
+      },
+      update: {
+        defaultCurrency: input.defaultCurrency,
+        defaultLocale: input.defaultLocale,
+        defaultWarehouseId: input.defaultWarehouseId ?? null,
+        channelsEnabled: input.channelsEnabled,
+        cartAbandonmentMinutes: input.cartAbandonmentMinutes,
+        showStockBelow: input.showStockBelow,
+        hidePricesWhenSignedOut: input.hidePricesWhenSignedOut,
+        requireAuthForCheckout: input.requireAuthForCheckout,
+      },
+    });
+
+    await writeAuditLog({
+      tx,
+      tenantId: ctx.tenantId,
+      actorId: ctx.userId ?? null,
+      actorType: ctx.userId ? 'user' : 'system',
+      action: before ? 'commerce.storefront.settings.updated' : 'commerce.storefront.settings.created',
+      entityType: 'StorefrontSettings',
+      entityId: ctx.tenantId,
+      diff: { before: before as Record<string, unknown> | null, after: input },
+    });
+  });
 }
 
-export function getTheme(_ctx: ServiceContext): Promise<Record<string, string | null>> {
-  return notImplemented('storefrontService.getTheme');
+export async function getTheme(ctx: ServiceContext): Promise<Record<string, string | null>> {
+  return withTenant(ctx, async (tx) => {
+    const row = await tx.storefrontTheme.findUnique({
+      where: { tenantId: ctx.tenantId },
+    });
+    const empty: Record<string, string | null> = {};
+    if (!row) return empty;
+    return {
+      colorPrimary: row.colorPrimary,
+      colorPrimaryForeground: row.colorPrimaryForeground,
+      colorAccent: row.colorAccent,
+      colorBackground: row.colorBackground,
+      colorMuted: row.colorMuted,
+      fontHeading: row.fontHeading,
+      fontBody: row.fontBody,
+      radiusBase: row.radiusBase,
+      logoMediaId: row.logoMediaId,
+      logoDarkMediaId: row.logoDarkMediaId,
+      faviconMediaId: row.faviconMediaId,
+    };
+  });
 }
 
-export function updateTheme(
-  _ctx: ServiceContext,
-  _input: UpdateStorefrontThemeInput
-): Promise<void> {
-  return notImplemented('storefrontService.updateTheme');
+export async function updateTheme(ctx: ServiceContext, rawInput: unknown): Promise<void> {
+  const input = UpdateStorefrontThemeInput.parse(rawInput);
+
+  // Strip undefined keys so an upsert doesn't blow away an existing
+  // value the user didn't touch — the form only sends the fields that
+  // changed.
+  const cleanTokens: Record<string, string | null> = {};
+  for (const [key, value] of Object.entries(input.tokens)) {
+    cleanTokens[key] = value ?? null;
+  }
+
+  await withTenant(ctx, async (tx) => {
+    await tx.storefrontTheme.upsert({
+      where: { tenantId: ctx.tenantId },
+      create: { tenantId: ctx.tenantId, ...cleanTokens },
+      update: cleanTokens,
+    });
+
+    await writeAuditLog({
+      tx,
+      tenantId: ctx.tenantId,
+      actorId: ctx.userId ?? null,
+      actorType: ctx.userId ? 'user' : 'system',
+      action: 'commerce.storefront.theme.updated',
+      entityType: 'StorefrontTheme',
+      entityId: ctx.tenantId,
+      diff: { after: cleanTokens },
+    });
+  });
 }
