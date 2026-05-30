@@ -23,10 +23,7 @@ import { withTenant } from '@sparx/db';
 import { ok } from '@sparx/api-core/envelope';
 import { notFound } from '@sparx/api-core/errors';
 
-import {
-  assertCartToken,
-  publicCommerceContext,
-} from '../../../lib/public-commerce-context.js';
+import { assertCartToken, publicCommerceContext } from '../../../lib/public-commerce-context.js';
 
 const SessionParam = z.object({ sessionId: z.string().uuid() });
 
@@ -166,7 +163,13 @@ const publicCheckoutRoutes: FastifyPluginAsync = async (app) => {
     // (per-line hazmat handling is a future enhancement). line1/city are
     // required by ShipmentAddress but unused by the manual-rate matcher, so we
     // send placeholders for the quote step.
+    // Zone matching only reads toAddress.country; the other address fields are
+    // required by the type but unused for rate selection, so the quote passes
+    // placeholders (the real ship-from/ship-to are captured at the shipping
+    // step). signatureRequired/saturdayDelivery default to false.
+    const placeholderAddress = { line1: '—', city: '—', country: 'US' };
     const rates = await shippingService.rateShipment(ctx, {
+      fromAddress: placeholderAddress,
       toAddress: {
         line1: '—',
         city: '—',
@@ -174,12 +177,14 @@ const publicCheckoutRoutes: FastifyPluginAsync = async (app) => {
         ...(body.destinationPostal ? { postalCode: body.destinationPostal } : {}),
       },
       currency: cart.currency,
+      signatureRequired: false,
+      saturdayDelivery: false,
       packages: [
         {
           weight: totalWeight,
           dimensions: { lengthMm: 0, widthMm: 0, heightMm: 0 },
           containsHazmat: false,
-          hazmatClass: 'none',
+          hazmatClass: 'none' as const,
           declaredValueCents: totalValue,
         },
       ],
