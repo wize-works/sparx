@@ -44,10 +44,10 @@ model ProductCategory {
 // cross-referenced ones).
 
 model CategoryProduct {
-  categoryId String @map("category_id") @db.Uuid
-  productId  String @map("product_id") @db.Uuid
+  categoryId String  @map("category_id") @db.Uuid
+  productId  String  @map("product_id") @db.Uuid
   isPrimary  Boolean @default(false) @map("is_primary")
-  position   Int    @default(0)
+  position   Int     @default(0)
 
   category ProductCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   product  Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
@@ -78,10 +78,10 @@ model ProductCollection {
   updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz
   deletedAt DateTime? @map("deleted_at") @db.Timestamptz
 
-  tenant     Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  products   CollectionProduct[]
-  priceLists PriceList[]
-  discounts  Discount[]
+  tenant               Tenant                      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  products             CollectionProduct[]
+  priceLists           PriceList[]
+  discounts            Discount[]
   shippingProfileLinks ShippingProfileCollection[]
 
   @@unique([tenantId, handle], map: "product_collections_tenant_handle_unique")

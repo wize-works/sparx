@@ -125,5 +125,11 @@ export type {
   ProviderWebhookEvent,
   StorefrontSettings,
   StorefrontTheme,
+  // Sitebuilder
+  SiteConfig,
+  SiteVersion,
+  SiteSection,
+  SiteLayoutBlock,
+  SitePublishSchedule,
   Prisma,
 } from '@prisma/client';

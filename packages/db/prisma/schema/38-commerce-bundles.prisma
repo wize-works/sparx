@@ -6,15 +6,15 @@
 // cart stores on CartItem.configurationPayload.
 
 model Bundle {
-  id                  String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenantId            String @map("tenant_id") @db.Uuid
-  bundleProductId     String @map("bundle_product_id") @db.Uuid
+  id              String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId        String @map("tenant_id") @db.Uuid
+  bundleProductId String @map("bundle_product_id") @db.Uuid
 
-  pricingMode         String @default("sum_of_components") @map("pricing_mode") @db.VarChar(20)
+  pricingMode     String @default("sum_of_components") @map("pricing_mode") @db.VarChar(20)
   // ^ sum_of_components | fixed | percent_off_sum
-  fixedPriceCents     Int?   @map("fixed_price_cents")
-  percentOffSum       Float? @map("percent_off_sum")
-  inventoryMode       String @default("decrement_components") @map("inventory_mode") @db.VarChar(30)
+  fixedPriceCents Int?   @map("fixed_price_cents")
+  percentOffSum   Float? @map("percent_off_sum")
+  inventoryMode   String @default("decrement_components") @map("inventory_mode") @db.VarChar(30)
   // ^ decrement_components | decrement_bundle_sku
 
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
@@ -30,22 +30,22 @@ model Bundle {
 }
 
 model BundleComponent {
-  id                  String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenantId            String  @map("tenant_id") @db.Uuid
-  bundleId            String  @map("bundle_id") @db.Uuid
-  variantId           String  @map("variant_id") @db.Uuid
-  productIdSwappable  String? @map("product_id_swappable") @db.Uuid
+  id                 String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId           String  @map("tenant_id") @db.Uuid
+  bundleId           String  @map("bundle_id") @db.Uuid
+  variantId          String  @map("variant_id") @db.Uuid
+  productIdSwappable String? @map("product_id_swappable") @db.Uuid
   // ^ when isSwappable, the storefront can replace this variant with
   //   any variant of the linked product; null = exact-variant only
-  defaultQuantity     Int     @default(1) @map("default_quantity")
-  isRequired          Boolean @default(true) @map("is_required")
-  isSwappable         Boolean @default(false) @map("is_swappable")
-  position            Int     @default(0)
+  defaultQuantity    Int     @default(1) @map("default_quantity")
+  isRequired         Boolean @default(true) @map("is_required")
+  isSwappable        Boolean @default(false) @map("is_swappable")
+  position           Int     @default(0)
 
-  tenant   Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  bundle   Bundle          @relation(fields: [bundleId], references: [id], onDelete: Cascade)
-  variant  ProductVariant  @relation(fields: [variantId], references: [id], onDelete: Restrict)
-  swappableFromProduct Product? @relation(fields: [productIdSwappable], references: [id], onDelete: SetNull)
+  tenant               Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  bundle               Bundle         @relation(fields: [bundleId], references: [id], onDelete: Cascade)
+  variant              ProductVariant @relation(fields: [variantId], references: [id], onDelete: Restrict)
+  swappableFromProduct Product?       @relation(fields: [productIdSwappable], references: [id], onDelete: SetNull)
 
   @@index([tenantId, bundleId])
   @@map("commerce_bundle_components")
@@ -69,8 +69,8 @@ model ConfigurationTemplate {
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
 
-  tenant  Tenant                  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  product Product                 @relation(fields: [productId], references: [id], onDelete: Cascade)
+  tenant  Tenant                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  product Product               @relation(fields: [productId], references: [id], onDelete: Cascade)
   options ConfigurationOption[]
   rules   ConfigurationRule[]
   addOns  ConfigurationAddOn[]
@@ -81,24 +81,24 @@ model ConfigurationTemplate {
 }
 
 model ConfigurationOption {
-  id          String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenantId    String  @map("tenant_id") @db.Uuid
-  templateId  String  @map("template_id") @db.Uuid
-  key         String  @db.VarChar(63)
-  label       String  @db.VarChar(127)
-  helpText    String? @map("help_text") @db.Text
-  type        String  @db.VarChar(20)
+  id                String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId          String  @map("tenant_id") @db.Uuid
+  templateId        String  @map("template_id") @db.Uuid
+  key               String  @db.VarChar(63)
+  label             String  @db.VarChar(127)
+  helpText          String? @map("help_text") @db.Text
+  type              String  @db.VarChar(20)
   // ^ single_choice | multi_choice | toggle | quantity | text | color_swatch | image_picker
-  required    Boolean @default(false)
-  minSelections Int?  @map("min_selections")
-  maxSelections Int?  @map("max_selections")
-  defaultChoiceKeys Json @default("[]") @map("default_choice_keys")
-  groupHeader String? @map("group_header") @db.VarChar(127)
-  position    Int     @default(0)
+  required          Boolean @default(false)
+  minSelections     Int?    @map("min_selections")
+  maxSelections     Int?    @map("max_selections")
+  defaultChoiceKeys Json    @default("[]") @map("default_choice_keys")
+  groupHeader       String? @map("group_header") @db.VarChar(127)
+  position          Int     @default(0)
   // Choices payload kept on the option row as JSONB — small, rarely
   // queried independently. A normalized table can split out later if
   // choice-level analytics emerge.
-  choices     Json    @default("[]")
+  choices           Json    @default("[]")
 
   tenant   Tenant                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   template ConfigurationTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
@@ -109,14 +109,14 @@ model ConfigurationOption {
 }
 
 model ConfigurationRule {
-  id         String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenantId   String  @map("tenant_id") @db.Uuid
-  templateId String  @map("template_id") @db.Uuid
-  name       String  @db.VarChar(127)
-  match      String  @default("all") @db.VarChar(10) // all | any
-  conditions Json    @default("[]")
-  actions    Json    @default("[]")
-  priority   Int     @default(0)
+  id         String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId   String @map("tenant_id") @db.Uuid
+  templateId String @map("template_id") @db.Uuid
+  name       String @db.VarChar(127)
+  match      String @default("all") @db.VarChar(10) // all | any
+  conditions Json   @default("[]")
+  actions    Json   @default("[]")
+  priority   Int    @default(0)
 
   tenant   Tenant                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   template ConfigurationTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)

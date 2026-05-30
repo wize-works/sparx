@@ -96,11 +96,10 @@ const ResetBody = z.object({
   password: z.string().min(8).max(200),
 });
 
-const WishlistAddBody = z.object({
-  productId: z.string().uuid(),
-  variantId: z.string().uuid().optional(),
-});
-const WishlistParam = z.object({ productId: z.string().uuid() });
+// Wishlist items key on a variant (DB unique is (wishlistId, variantId)); the
+// UI is product-centric, so responses also carry the parent productId.
+const WishlistAddBody = z.object({ variantId: z.string().uuid() });
+const WishlistParam = z.object({ variantId: z.string().uuid() });
 
 // Tighter limits on the credential endpoints than the global rate-limit, to
 // blunt credential-stuffing / reset-spam. Per-IP via @fastify/rate-limit.
@@ -439,41 +438,52 @@ const publicAccountRoutes: FastifyPluginAsync = async (app) => {
     return ok({ ok: true });
   });
 
-  // ── Wishlist ──────────────────────────────────────────────────────────
+  // ── Wishlist (variant-keyed; responses carry the parent product) ────────
   app.get('/v1/public/commerce/account/wishlist', async (request) => {
     const ctx = await accountContext(request);
     const customerId = await requireCustomer(request, ctx);
-    const wishlist = await withTenant(ctx, (tx) =>
-      tx.wishlist.findFirst({
+    const items = await withTenant(ctx, async (tx) => {
+      const wishlist = await tx.wishlist.findFirst({
         where: { customerId },
-        orderBy: { isDefault: 'desc' },
-        include: {
-          items: {
-            orderBy: { createdAt: 'desc' },
-            include: {
-              product: {
-                select: {
-                  handle: true,
-                  title: true,
-                  images: { take: 1, orderBy: { position: 'asc' }, select: { mediaAssetId: true } },
-                  variants: { select: { basePriceCents: true, priceModifierCents: true } },
-                },
-              },
+        orderBy: { createdAt: 'asc' },
+        select: {
+          items: { orderBy: { createdAt: 'desc' }, select: { variantId: true } },
+        },
+      });
+      const variantIds = wishlist?.items.map((i) => i.variantId) ?? [];
+      if (variantIds.length === 0) return [];
+      // WishlistItem.variantId is a bare column (no relation) — resolve the
+      // variants + their product in one query, then preserve wishlist order.
+      const variants = await tx.productVariant.findMany({
+        where: { id: { in: variantIds } },
+        select: {
+          id: true,
+          priceCents: true,
+          product: {
+            select: {
+              id: true,
+              handle: true,
+              title: true,
+              images: { take: 1, orderBy: { position: 'asc' }, select: { mediaAssetId: true } },
             },
           },
         },
-      })
-    );
-    const items = (wishlist?.items ?? []).map((it) => {
-      const prices = it.product.variants.map((v) => v.basePriceCents + v.priceModifierCents);
-      return {
-        productId: it.productId,
-        variantId: it.variantId,
-        handle: it.product.handle,
-        title: it.product.title,
-        imageMediaId: it.product.images[0]?.mediaAssetId ?? null,
-        priceMinCents: prices.length ? Math.min(...prices) : null,
-      };
+      });
+      const byId = new Map(variants.map((v) => [v.id, v]));
+      return variantIds.flatMap((vid) => {
+        const v = byId.get(vid);
+        if (!v) return [];
+        return [
+          {
+            variantId: vid,
+            productId: v.product.id,
+            handle: v.product.handle,
+            title: v.product.title,
+            imageMediaId: v.product.images[0]?.mediaAssetId ?? null,
+            priceCents: v.priceCents,
+          },
+        ];
+      });
     });
     return ok({ items });
   });
@@ -483,41 +493,35 @@ const publicAccountRoutes: FastifyPluginAsync = async (app) => {
     const ctx = await accountContext(request);
     const customerId = await requireCustomer(request, ctx);
     await withTenant(ctx, async (tx) => {
-      // Find-or-create the customer's default wishlist.
       let wishlist = await tx.wishlist.findFirst({
         where: { customerId },
-        orderBy: { isDefault: 'desc' },
+        orderBy: { createdAt: 'asc' },
         select: { id: true },
       });
       wishlist ??= await tx.wishlist.create({
         data: { tenantId: ctx.tenantId, customerId },
         select: { id: true },
       });
-      // Dedupe by product (the schema has no unique on (wishlist, product)).
+      // Unique (wishlistId, variantId) — skip if already saved.
       const existing = await tx.wishlistItem.findFirst({
-        where: { wishlistId: wishlist.id, productId: body.productId },
+        where: { wishlistId: wishlist.id, variantId: body.variantId },
         select: { id: true },
       });
       if (!existing) {
         await tx.wishlistItem.create({
-          data: {
-            tenantId: ctx.tenantId,
-            wishlistId: wishlist.id,
-            productId: body.productId,
-            variantId: body.variantId ?? null,
-          },
+          data: { tenantId: ctx.tenantId, wishlistId: wishlist.id, variantId: body.variantId },
         });
       }
     });
     return ok({ ok: true });
   });
 
-  app.delete('/v1/public/commerce/account/wishlist/:productId', async (request) => {
-    const { productId } = WishlistParam.parse(request.params);
+  app.delete('/v1/public/commerce/account/wishlist/:variantId', async (request) => {
+    const { variantId } = WishlistParam.parse(request.params);
     const ctx = await accountContext(request);
     const customerId = await requireCustomer(request, ctx);
     await withTenant(ctx, (tx) =>
-      tx.wishlistItem.deleteMany({ where: { productId, wishlist: { customerId } } })
+      tx.wishlistItem.deleteMany({ where: { variantId, wishlist: { customerId } } })
     );
     return ok({ ok: true });
   });

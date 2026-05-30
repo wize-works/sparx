@@ -38,12 +38,18 @@ function fontValue(name: string): string {
  * string when the merchant hasn't customized anything — the default tokens in
  * storefront.css then apply unchanged.
  */
-export function themeToCss(theme: TenantTheme | null): string {
-  if (!theme) return '';
+export function themeToCss(theme: TenantTheme | null, presetId?: string | null): string {
+  // Resolution order (later wins): storefront.css defaults → base preset tokens
+  // → merchant overrides. `presetId` comes from tenant settings.theme.preset.
+  const preset = resolvePreset(presetId);
+  const presetTokens = preset.tokens as Record<string, string | undefined>;
+
   const decls: string[] = [];
   for (const [field, vars] of Object.entries(VAR_MAP) as [keyof TenantTheme, string[]][]) {
-    const raw = theme[field];
-    if (raw == null || raw === '' || vars.length === 0) continue;
+    if (vars.length === 0) continue;
+    const override = theme?.[field];
+    const raw = override != null && override !== '' ? override : presetTokens[field as string];
+    if (raw == null || raw === '') continue;
     const value = field === 'fontHeading' || field === 'fontBody' ? fontValue(raw) : raw;
     for (const cssVar of vars) decls.push(`${cssVar}:${value};`);
   }

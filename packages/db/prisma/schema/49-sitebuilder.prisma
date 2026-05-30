@@ -1,0 +1,139 @@
+// Sitebuilder — theme selection, page/section composition, layout slots,
+// and the draft → publish → schedule → rollback lifecycle (docs/29).
+//
+// SiteConfig is the editable source of truth (one per tenant). Publishing
+// snapshots it into an immutable SiteVersion and write-through-compiles the
+// light token subset into the commerce-owned StorefrontTheme row (the
+// storefront's existing themeToCss() read path is unchanged). Sitebuilder
+// never adds columns to commerce_storefront_themes and never writes CMS
+// navigation rows — SiteLayoutBlock only *references* a NavigationMenu.
+//
+// Tenant-scoped + FORCE RLS so a callsite that forgets withTenant() returns
+// nothing rather than leaking cross-tenant site config.
+
+// One row per tenant — the working draft + pointer to the live version.
+model SiteConfig {
+  tenantId String @id @map("tenant_id") @db.Uuid
+
+  themeKey         String @default("apex") @map("theme_key") @db.VarChar(63)
+  // light-only | dark-only | auto | toggle
+  appearancePolicy String @default("light-only") @map("appearance_policy") @db.VarChar(20)
+  // Merchant overlay: { colors: { light, dark }, typography, layout, customCss }.
+  // Shape validated by @sparx/sitebuilder-schemas, not the DB.
+  draftSettings    Json   @default("{}") @map("draft_settings")
+
+  publishedVersionId String? @unique @map("published_version_id") @db.Uuid
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  tenant           Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  publishedVersion SiteVersion? @relation("PublishedVersion", fields: [publishedVersionId], references: [id], onDelete: SetNull)
+
+  @@map("sitebuilder_configs")
+}
+
+// Immutable published snapshot. Rollback = copy a snapshot back into the
+// draft and republish (creating a new version). compiledTokens holds the
+// exact { light, dark } maps so a rollback re-writes StorefrontTheme
+// deterministically without recompiling.
+model SiteVersion {
+  id       String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId String @map("tenant_id") @db.Uuid
+
+  versionNumber    Int    @map("version_number")
+  themeKey         String @map("theme_key") @db.VarChar(63)
+  appearancePolicy String @map("appearance_policy") @db.VarChar(20)
+
+  settingsSnapshot Json @map("settings_snapshot")
+  sectionsSnapshot Json @map("sections_snapshot")
+  layoutSnapshot   Json @map("layout_snapshot")
+  compiledTokens   Json @map("compiled_tokens")
+
+  publishedById String? @map("published_by_id") @db.Uuid
+  note          String? @db.VarChar(500)
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  tenant            Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  // Back-relation for SiteConfig.publishedVersion (the currently-live snapshot).
+  publishedByConfig SiteConfig? @relation("PublishedVersion")
+
+  @@unique([tenantId, versionNumber])
+  @@index([tenantId, createdAt(sort: Desc)])
+  @@map("sitebuilder_versions")
+}
+
+// Draft page composition — one row per section instance. pageKey is "home"
+// or a CMS page slug (cross-domain reference by value, no FK). Published
+// copies are denormalized into SiteVersion.sectionsSnapshot.
+model SiteSection {
+  id       String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId String @map("tenant_id") @db.Uuid
+
+  pageKey     String  @map("page_key") @db.VarChar(255)
+  sectionType String  @map("section_type") @db.VarChar(63)
+  position    Int
+  visible     Boolean @default(true)
+  config      Json    @default("{}")
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, pageKey, position])
+  @@map("sitebuilder_sections")
+}
+
+// Header / footer / announcement composition. navigationMenuId points at a
+// CMS-owned NavigationMenu (reference only — CMS stays the sole writer of
+// nav rows). config carries slot extras (announcement text, footer social
+// links, logo placement, container width).
+model SiteLayoutBlock {
+  id       String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId String @map("tenant_id") @db.Uuid
+
+  // header | footer | announcement
+  slot             String  @db.VarChar(31)
+  navigationMenuId String? @map("navigation_menu_id") @db.Uuid
+  config           Json    @default("{}")
+  visible          Boolean @default(true)
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  tenant         Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  navigationMenu NavigationMenu? @relation(fields: [navigationMenuId], references: [id], onDelete: SetNull)
+
+  @@unique([tenantId, slot])
+  @@index([tenantId])
+  @@map("sitebuilder_layout_blocks")
+}
+
+// Scheduled publish records. The in-process tick scans (status, scheduled_at)
+// via a SECURITY DEFINER function and runs publish-service.publishNow per
+// due tenant.
+model SitePublishSchedule {
+  id       String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId String @map("tenant_id") @db.Uuid
+
+  scheduledAt DateTime @map("scheduled_at") @db.Timestamptz
+  // pending | published | cancelled | failed
+  status      String   @default("pending") @db.VarChar(20)
+  note        String?  @db.VarChar(500)
+  createdById String?  @map("created_by_id") @db.Uuid
+
+  processedAt     DateTime? @map("processed_at") @db.Timestamptz
+  resultVersionId String?   @map("result_version_id") @db.Uuid
+  error           String?   @db.Text
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([status, scheduledAt])
+  @@index([tenantId, scheduledAt(sort: Desc)])
+  @@map("sitebuilder_publish_schedules")
+}

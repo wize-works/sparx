@@ -55,8 +55,11 @@ model NavigationMenu {
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
 
-  tenant Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  items  NavigationItem[]
+  tenant           Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  items            NavigationItem[]
+  // Sitebuilder header/footer slots reference this menu (read-only — CMS
+  // remains the sole writer of nav rows). docs/29 §2.
+  siteLayoutBlocks SiteLayoutBlock[]
 
   @@unique([tenantId, location])
   @@map("navigation_menus")

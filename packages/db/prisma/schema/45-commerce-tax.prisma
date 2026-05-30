@@ -4,19 +4,19 @@
 // provider is installed.
 
 model TaxZone {
-  id              String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenantId        String  @map("tenant_id") @db.Uuid
-  country         String  @db.VarChar(2)
-  region          String? @db.VarChar(6) // ISO 3166-2 (e.g. "US-CA"); null = country-wide
-  nexusType       String  @map("nexus_type") @db.VarChar(20) // physical | economic | voluntary
-  registrationNumber String? @map("registration_number") @db.VarChar(63)
-  registeredAt    DateTime? @map("registered_at") @db.Timestamptz
-  isActive        Boolean @default(true) @map("is_active")
+  id                 String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId           String    @map("tenant_id") @db.Uuid
+  country            String    @db.VarChar(2)
+  region             String?   @db.VarChar(6) // ISO 3166-2 (e.g. "US-CA"); null = country-wide
+  nexusType          String    @map("nexus_type") @db.VarChar(20) // physical | economic | voluntary
+  registrationNumber String?   @map("registration_number") @db.VarChar(63)
+  registeredAt       DateTime? @map("registered_at") @db.Timestamptz
+  isActive           Boolean   @default(true) @map("is_active")
 
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
 
-  tenant Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   rates  TaxRate[]
 
   @@unique([tenantId, country, region], map: "tax_zones_unique")
@@ -24,13 +24,13 @@ model TaxZone {
 }
 
 model TaxRate {
-  id                 String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenantId           String  @map("tenant_id") @db.Uuid
-  zoneId             String  @map("zone_id") @db.Uuid
-  name               String  @db.VarChar(127) // "California Sales Tax"
-  rateBasisPoints    Int     @map("rate_basis_points") // 825 == 8.25%
-  appliesToShipping  Boolean @default(false) @map("applies_to_shipping")
-  productTaxClass    String? @map("product_tax_class") @db.VarChar(63)
+  id                String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId          String  @map("tenant_id") @db.Uuid
+  zoneId            String  @map("zone_id") @db.Uuid
+  name              String  @db.VarChar(127) // "California Sales Tax"
+  rateBasisPoints   Int     @map("rate_basis_points") // 825 == 8.25%
+  appliesToShipping Boolean @default(false) @map("applies_to_shipping")
+  productTaxClass   String? @map("product_tax_class") @db.VarChar(63)
 
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
@@ -48,17 +48,17 @@ model TaxRate {
 // exemption).
 
 model TaxExemption {
-  id                  String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenantId            String   @map("tenant_id") @db.Uuid
-  customerId          String?  @map("customer_id") @db.Uuid
-  b2bAccountId        String?  @map("b2b_account_id") @db.Uuid
-  jurisdiction        String   @db.VarChar(6) // "US" or "US-CA"
-  reason              String   @db.VarChar(20)
+  id                 String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId           String    @map("tenant_id") @db.Uuid
+  customerId         String?   @map("customer_id") @db.Uuid
+  b2bAccountId       String?   @map("b2b_account_id") @db.Uuid
+  jurisdiction       String    @db.VarChar(6) // "US" or "US-CA"
+  reason             String    @db.VarChar(20)
   // ^ resale | manufacturing | agricultural | government | nonprofit | diplomatic | other
-  certificateNumber   String   @map("certificate_number") @db.VarChar(127)
-  certificateMediaId  String?  @map("certificate_media_id") @db.Uuid
-  validFrom           DateTime @map("valid_from") @db.Timestamptz
-  validTo             DateTime? @map("valid_to") @db.Timestamptz
+  certificateNumber  String    @map("certificate_number") @db.VarChar(127)
+  certificateMediaId String?   @map("certificate_media_id") @db.Uuid
+  validFrom          DateTime  @map("valid_from") @db.Timestamptz
+  validTo            DateTime? @map("valid_to") @db.Timestamptz
 
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz

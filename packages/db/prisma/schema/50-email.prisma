@@ -1,0 +1,273 @@
+// Email Platform — management featureset (docs/13-email-platform-prd.md).
+//
+// The send PIPELINE already exists (email.send Pub/Sub → email-worker →
+// @sparx/email render → Mailgun). These tables are the MANAGEMENT surface the
+// PRD §3–§10 describes: settings, sending domains, templates, automations,
+// the scheduled-send queue, broadcasts, the append-only event log, and the
+// suppression list. @sparx/email stays the render lib; @sparx/email-platform
+// owns this domain logic (mirrors the packages/crm split).
+//
+// All tenant-scoped + ENABLE+FORCE RLS (tenant_isolation on current_tenant_id()).
+// Cross-module references that would couple email to CRM being enabled
+// (customerId, segmentId) are stored as plain UUIDs (soft references,
+// validated at the app layer) — mirrors CrmActivity.linkedEntityId.
+
+// One row per tenant — sender identity, CAN-SPAM footer, branding fallback.
+model EmailSettings {
+  tenantId String @id @map("tenant_id") @db.Uuid
+
+  fromName         String? @map("from_name") @db.VarChar(255)
+  fromAddress      String? @map("from_address") @db.VarChar(255)
+  replyTo          String? @map("reply_to") @db.VarChar(255)
+  // CAN-SPAM / GDPR-required physical postal address rendered in the footer.
+  physicalAddress  String? @map("physical_address") @db.Text
+  // Logo + brand colors used only when no published Site Builder snapshot
+  // exists (the resolveEmailBrand fallback overlay). { logoMediaId, colors }.
+  brandingOverride Json    @default("{}") @map("branding_override")
+
+  defaultSendingDomainId String? @map("default_sending_domain_id") @db.Uuid
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  tenant               Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  defaultSendingDomain SendingDomain? @relation("DefaultSendingDomain", fields: [defaultSendingDomainId], references: [id], onDelete: SetNull)
+
+  @@map("email_settings")
+}
+
+// A Mailgun sending domain. Provisioned via POST /v4/domains; dnsRecords holds
+// the verbatim sending_dns_records[] response (the SPF string must be copied
+// exactly — see memory/feedback_mailgun_spf_exact_string).
+model SendingDomain {
+  id       String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId String @map("tenant_id") @db.Uuid
+
+  domain          String  @db.VarChar(255)
+  mailgunDomainId String? @map("mailgun_domain_id") @db.VarChar(255)
+  region          String  @default("us") @db.VarChar(8) // us | eu
+  // pending | verifying | verified | failed | disabled
+  state           String  @default("pending") @db.VarChar(20)
+  dnsRecords      Json    @default("[]") @map("dns_records")
+  dkimSelector    String? @map("dkim_selector") @db.VarChar(63)
+  isDefault       Boolean @default(false) @map("is_default")
+
+  lastCheckedAt DateTime? @map("last_checked_at") @db.Timestamptz
+  verifiedAt    DateTime? @map("verified_at") @db.Timestamptz
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  tenant             Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  defaultForSettings EmailSettings[] @relation("DefaultSendingDomain")
+
+  @@unique([tenantId, domain])
+  @@index([tenantId, state])
+  @@map("email_sending_domains")
+}
+
+// A template record. `source` discriminates the render path:
+//   builtin   → renders via a code-defined @sparx/email React component keyed
+//               by `key`; `body` holds only the merchant's slot + branding
+//               overrides (intro/outro rich text), never structure.
+//   authored  → merchant-authored marketing body; `body` is a CMS TipTap doc
+//               now (serialized to email-safe HTML), a reorderable section
+//               list once the shared SECTION_REGISTRY ships (plan P9).
+model EmailTemplate {
+  id       String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId String @map("tenant_id") @db.Uuid
+
+  source String  @default("authored") @db.VarChar(20) // builtin | authored
+  key    String? @db.VarChar(63) // builtin id (e.g. order-confirmed); null when authored
+  kind   String  @default("marketing") @db.VarChar(20) // transactional | marketing
+
+  name      String  @db.VarChar(160)
+  subject   String? @db.VarChar(255)
+  preheader String? @db.VarChar(255)
+  body      Json    @default("{}")
+  // draft | active | archived
+  status    String  @default("draft") @db.VarChar(20)
+  version   Int     @default(1)
+
+  createdById String? @map("created_by_id") @db.Uuid
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  tenant         Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  automations    EmailAutomation[]
+  broadcasts     Broadcast[]
+  scheduledSends ScheduledSend[]
+
+  @@unique([tenantId, key])
+  @@index([tenantId, kind, status])
+  @@map("email_templates")
+}
+
+// An automation rule. Default rows (PRD §4) are seeded per tenant on module
+// activation (keyed by `key`); merchants add custom ones with key = null.
+model EmailAutomation {
+  id       String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId String @map("tenant_id") @db.Uuid
+
+  key          String? @db.VarChar(63) // builtin automation id; null for custom
+  name         String  @db.VarChar(160)
+  // The event that fires this automation (order.created, cart.abandoned,
+  // crm.customer.inactive, quote.created, b2b.account.approved, ...).
+  triggerEvent String  @map("trigger_event") @db.VarChar(63)
+  conditions   Json    @default("{}")
+  // Delay between trigger and send; 0 = immediate. Drives ScheduledSend.dueAt.
+  delaySeconds Int     @default(0) @map("delay_seconds")
+
+  templateId String? @map("template_id") @db.Uuid
+
+  enabled             Boolean @default(true)
+  canDisable          Boolean @default(true) @map("can_disable")
+  // null = no cap; otherwise min seconds between sends of this automation to
+  // the same recipient (frequency cap, PRD §6).
+  frequencyCapSeconds Int?    @map("frequency_cap_seconds")
+  // active | archived
+  status              String  @default("active") @db.VarChar(20)
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  tenant         Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  template       EmailTemplate?  @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  scheduledSends ScheduledSend[]
+
+  @@unique([tenantId, key])
+  @@index([tenantId, triggerEvent, enabled])
+  @@map("email_automations")
+}
+
+// The dispatch queue — drives delayed automation sends and scheduled/batched
+// broadcast sends. The in-process due-scan tick (services/api-rest) finds rows
+// via find_due_scheduled_sends() and publishes email.send when dueAt passes.
+// dedupeKey enforces frequency caps + idempotency.
+model ScheduledSend {
+  id       String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId String @map("tenant_id") @db.Uuid
+
+  automationId String? @map("automation_id") @db.Uuid
+  broadcastId  String? @map("broadcast_id") @db.Uuid
+  templateId   String? @map("template_id") @db.Uuid
+
+  recipient  String  @db.VarChar(255)
+  customerId String? @map("customer_id") @db.Uuid // soft reference (no FK)
+  payload    Json    @default("{}") // template props / merge variables
+
+  dueAt     DateTime  @map("due_at") @db.Timestamptz
+  // pending | sent | cancelled | failed
+  status    String    @default("pending") @db.VarChar(20)
+  dedupeKey String?   @map("dedupe_key") @db.VarChar(255)
+  attempts  Int       @default(0)
+  lastError String?   @map("last_error") @db.Text
+  sentAt    DateTime? @map("sent_at") @db.Timestamptz
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  tenant     Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  automation EmailAutomation? @relation(fields: [automationId], references: [id], onDelete: SetNull)
+  broadcast  Broadcast?       @relation(fields: [broadcastId], references: [id], onDelete: Cascade)
+  template   EmailTemplate?   @relation(fields: [templateId], references: [id], onDelete: SetNull)
+
+  @@unique([tenantId, dedupeKey])
+  @@index([status, dueAt])
+  @@index([tenantId, status, dueAt])
+  @@map("email_scheduled_sends")
+}
+
+// A marketing broadcast — segment-targeted, scheduled or immediate. campaignTag
+// is the Mailgun o:tag that joins EmailEvent rows back to this broadcast for
+// analytics.
+model Broadcast {
+  id       String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId String @map("tenant_id") @db.Uuid
+
+  name       String  @db.VarChar(160)
+  templateId String? @map("template_id") @db.Uuid
+  body       Json    @default("{}") // inline body when not using a template
+  subject    String  @db.VarChar(255)
+  preheader  String? @db.VarChar(255)
+
+  segmentId String? @map("segment_id") @db.Uuid // soft reference to CRM Segment
+  audience  Json    @default("{}") // alternate audience definition
+
+  // draft | scheduled | sending | sent | cancelled | failed
+  status          String    @default("draft") @db.VarChar(20)
+  scheduledAt     DateTime? @map("scheduled_at") @db.Timestamptz
+  sentAt          DateTime? @map("sent_at") @db.Timestamptz
+  recipientCount  Int       @default(0) @map("recipient_count")
+  campaignTag     String?   @map("campaign_tag") @db.VarChar(120)
+  sendingDomainId String?   @map("sending_domain_id") @db.Uuid
+
+  createdById String? @map("created_by_id") @db.Uuid
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  tenant         Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  template       EmailTemplate?  @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  scheduledSends ScheduledSend[]
+  events         EmailEvent[]
+
+  @@index([tenantId, status, createdAt(sort: Desc)])
+  @@index([tenantId, campaignTag])
+  @@map("email_broadcasts")
+}
+
+// Append-only delivery/engagement events from Mailgun webhooks (and our own
+// accepted/failed markers). The source of truth for analytics and the feed
+// the CRM email-events consumer mirrors into CrmActivity.
+model EmailEvent {
+  id       String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId String @map("tenant_id") @db.Uuid
+
+  messageId     String?  @map("message_id") @db.VarChar(255)
+  recipient     String   @db.VarChar(255)
+  customerId    String?  @map("customer_id") @db.Uuid // soft reference
+  broadcastId   String?  @map("broadcast_id") @db.Uuid
+  automationKey String?  @map("automation_key") @db.VarChar(63)
+  // accepted | delivered | opened | clicked | bounced | complained | unsubscribed | failed
+  type          String   @db.VarChar(20)
+  reason        String?  @db.Text
+  occurredAt    DateTime @map("occurred_at") @db.Timestamptz
+  raw           Json     @default("{}")
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  tenant    Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  broadcast Broadcast? @relation(fields: [broadcastId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, broadcastId])
+  @@index([tenantId, occurredAt(sort: Desc)])
+  @@index([tenantId, type])
+  @@index([tenantId, messageId])
+  @@map("email_events")
+}
+
+// The suppression list — mirrors Mailgun suppressions + manual entries.
+// Complements Customer.doNotContact (set by the CRM consumer on unsubscribe).
+model EmailSuppression {
+  id       String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId String @map("tenant_id") @db.Uuid
+
+  email      String  @db.VarChar(255)
+  // transactional | marketing | all
+  scope      String  @default("all") @db.VarChar(20)
+  // bounce | complaint | unsubscribe | manual
+  reason     String  @db.VarChar(20)
+  source     String? @db.VarChar(63) // mailgun | manual | import
+  customerId String? @map("customer_id") @db.Uuid // soft reference
+  note       String? @db.Text
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, email, scope])
+  @@index([tenantId, email])
+  @@map("email_suppressions")
+}

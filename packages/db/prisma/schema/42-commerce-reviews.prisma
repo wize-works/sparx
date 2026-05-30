@@ -3,45 +3,45 @@
 // `approved` so the storefront cache invalidates.
 
 model ProductReview {
-  id        String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenantId  String  @map("tenant_id") @db.Uuid
-  productId String  @map("product_id") @db.Uuid
-  variantId String? @map("variant_id") @db.Uuid
+  id         String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId   String  @map("tenant_id") @db.Uuid
+  productId  String  @map("product_id") @db.Uuid
+  variantId  String? @map("variant_id") @db.Uuid
   customerId String? @map("customer_id") @db.Uuid
-  orderId   String? @map("order_id") @db.Uuid // populated → verified-purchase badge
+  orderId    String? @map("order_id") @db.Uuid // populated → verified-purchase badge
 
-  rating Int     @db.SmallInt
-  title  String  @db.VarChar(127)
-  body   String  @db.Text
+  rating Int    @db.SmallInt
+  title  String @db.VarChar(127)
+  body   String @db.Text
 
   // Anonymous reviews use displayName; signed-in reviews fall back to the
   // customer's profile name.
   displayName String? @map("display_name") @db.VarChar(63)
 
-  status String @default("pending") @db.VarChar(20)
+  status         String    @default("pending") @db.VarChar(20)
   // ^ pending | approved | rejected | flagged
-  moderationNote String? @map("moderation_note") @db.Text
-  moderatedBy    String? @map("moderated_by") @db.Uuid
+  moderationNote String?   @map("moderation_note") @db.Text
+  moderatedBy    String?   @map("moderated_by") @db.Uuid
   moderatedAt    DateTime? @map("moderated_at") @db.Timestamptz
 
   // Merchant response — displayed beside the review.
-  response          String?  @db.Text
-  responseAuthorId  String?  @map("response_author_id") @db.Uuid
-  respondedAt       DateTime? @map("responded_at") @db.Timestamptz
+  response         String?   @db.Text
+  responseAuthorId String?   @map("response_author_id") @db.Uuid
+  respondedAt      DateTime? @map("responded_at") @db.Timestamptz
 
-  helpfulCount    Int @default(0) @map("helpful_count")
-  unhelpfulCount  Int @default(0) @map("unhelpful_count")
+  helpfulCount   Int @default(0) @map("helpful_count")
+  unhelpfulCount Int @default(0) @map("unhelpful_count")
 
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz
   updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz
   deletedAt DateTime? @map("deleted_at") @db.Timestamptz
 
-  tenant   Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  product  Product        @relation(fields: [productId], references: [id], onDelete: Cascade)
-  variant  ProductVariant? @relation(fields: [variantId], references: [id], onDelete: SetNull)
-  customer Customer?      @relation(fields: [customerId], references: [id], onDelete: SetNull)
-  media    ReviewMedia[]
-  helpfulVotes ReviewHelpfulVote[]
+  tenant        Tenant                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  product       Product               @relation(fields: [productId], references: [id], onDelete: Cascade)
+  variant       ProductVariant?       @relation(fields: [variantId], references: [id], onDelete: SetNull)
+  customer      Customer?             @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  media         ReviewMedia[]
+  helpfulVotes  ReviewHelpfulVote[]
   moderationLog ReviewModerationLog[]
 
   @@index([tenantId, productId, status])
@@ -51,11 +51,11 @@ model ProductReview {
 }
 
 model ReviewMedia {
-  id           String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenantId     String  @map("tenant_id") @db.Uuid
-  reviewId     String  @map("review_id") @db.Uuid
-  mediaAssetId String  @map("media_asset_id") @db.Uuid
-  position     Int     @default(0)
+  id           String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId     String @map("tenant_id") @db.Uuid
+  reviewId     String @map("review_id") @db.Uuid
+  mediaAssetId String @map("media_asset_id") @db.Uuid
+  position     Int    @default(0)
 
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
 
@@ -71,12 +71,12 @@ model ReviewMedia {
 // for anonymous voters; customerId carries authenticated voters.
 
 model ReviewHelpfulVote {
-  id                String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenantId          String   @map("tenant_id") @db.Uuid
-  reviewId          String   @map("review_id") @db.Uuid
-  customerId        String?  @map("customer_id") @db.Uuid
-  voterFingerprint  String   @map("voter_fingerprint") @db.VarChar(127)
-  helpful           Boolean
+  id               String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId         String  @map("tenant_id") @db.Uuid
+  reviewId         String  @map("review_id") @db.Uuid
+  customerId       String? @map("customer_id") @db.Uuid
+  voterFingerprint String  @map("voter_fingerprint") @db.VarChar(127)
+  helpful          Boolean
 
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
 
@@ -89,12 +89,12 @@ model ReviewHelpfulVote {
 }
 
 model ReviewModerationLog {
-  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenantId  String   @map("tenant_id") @db.Uuid
-  reviewId  String   @map("review_id") @db.Uuid
-  action    String   @db.VarChar(20) // submitted | approved | rejected | flagged | edited
+  id          String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId    String  @map("tenant_id") @db.Uuid
+  reviewId    String  @map("review_id") @db.Uuid
+  action      String  @db.VarChar(20) // submitted | approved | rejected | flagged | edited
   actorUserId String? @map("actor_user_id") @db.Uuid
-  note      String?  @db.Text
+  note        String? @db.Text
 
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
 
@@ -108,22 +108,22 @@ model ReviewModerationLog {
 // ─── Q&A ──────────────────────────────────────────────────────────────
 
 model ProductQuestion {
-  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenantId    String   @map("tenant_id") @db.Uuid
-  productId   String   @map("product_id") @db.Uuid
-  customerId  String?  @map("customer_id") @db.Uuid
-  displayName String?  @map("display_name") @db.VarChar(63)
-  body        String   @db.Text
-  status      String   @default("pending") @db.VarChar(20)
+  id           String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId     String  @map("tenant_id") @db.Uuid
+  productId    String  @map("product_id") @db.Uuid
+  customerId   String? @map("customer_id") @db.Uuid
+  displayName  String? @map("display_name") @db.VarChar(63)
+  body         String  @db.Text
+  status       String  @default("pending") @db.VarChar(20)
   // ^ pending | published | rejected
   helpfulCount Int     @default(0) @map("helpful_count")
 
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
 
-  tenant   Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  product  Product           @relation(fields: [productId], references: [id], onDelete: Cascade)
-  customer Customer?         @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  tenant   Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  product  Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
+  customer Customer?       @relation(fields: [customerId], references: [id], onDelete: SetNull)
   answers  ProductAnswer[]
 
   @@index([tenantId, productId, status])
@@ -131,14 +131,14 @@ model ProductQuestion {
 }
 
 model ProductAnswer {
-  id                String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenantId          String   @map("tenant_id") @db.Uuid
-  questionId        String   @map("question_id") @db.Uuid
-  body              String   @db.Text
-  isOfficial        Boolean  @default(false) @map("is_official") // merchant staff answer
-  authorCustomerId  String?  @map("author_customer_id") @db.Uuid
-  authorUserId      String?  @map("author_user_id") @db.Uuid
-  helpfulCount      Int      @default(0) @map("helpful_count")
+  id               String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId         String  @map("tenant_id") @db.Uuid
+  questionId       String  @map("question_id") @db.Uuid
+  body             String  @db.Text
+  isOfficial       Boolean @default(false) @map("is_official") // merchant staff answer
+  authorCustomerId String? @map("author_customer_id") @db.Uuid
+  authorUserId     String? @map("author_user_id") @db.Uuid
+  helpfulCount     Int     @default(0) @map("helpful_count")
 
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz

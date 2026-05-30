@@ -13,34 +13,34 @@ model Warehouse {
   code     String @db.VarChar(15)
   type     String @default("owned") @db.VarChar(20) // owned | 3pl | dropship | virtual
 
-  line1      String?  @db.VarChar(255)
-  line2      String?  @db.VarChar(255)
-  city       String?  @db.VarChar(120)
-  region     String?  @db.VarChar(120)
-  postalCode String?  @map("postal_code") @db.VarChar(32)
-  country    String?  @db.VarChar(2)
-  phone      String?  @db.VarChar(50)
+  line1      String? @db.VarChar(255)
+  line2      String? @db.VarChar(255)
+  city       String? @db.VarChar(120)
+  region     String? @db.VarChar(120)
+  postalCode String? @map("postal_code") @db.VarChar(32)
+  country    String? @db.VarChar(2)
+  phone      String? @db.VarChar(50)
   latitude   Float?
   longitude  Float?
 
   // Per-channel default — when a line item lacks an explicit warehouse,
   // the picker resolves through here. Stored as JSONB string[].
-  defaultForChannel Json    @default("[]") @map("default_for_channel")
-  hoursOfOperation  Json    @default("[]") @map("hours_of_operation")
-  metadata          Json    @default("{}")
+  defaultForChannel Json @default("[]") @map("default_for_channel")
+  hoursOfOperation  Json @default("[]") @map("hours_of_operation")
+  metadata          Json @default("{}")
 
   isActive  Boolean   @default(true) @map("is_active")
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz
   updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz
   deletedAt DateTime? @map("deleted_at") @db.Timestamptz
 
-  tenant       Tenant                  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  levels       InventoryLevel[]
-  adjustments  InventoryAdjustment[]
-  reservations InventoryReservation[]
-  lotBatches   LotBatch[]
-  serialUnits  SerialUnit[]
-  defaultForProducts Product[]         @relation("ProductDefaultWarehouse")
+  tenant             Tenant                 @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  levels             InventoryLevel[]
+  adjustments        InventoryAdjustment[]
+  reservations       InventoryReservation[]
+  lotBatches         LotBatch[]
+  serialUnits        SerialUnit[]
+  defaultForProducts Product[]              @relation("ProductDefaultWarehouse")
 
   @@unique([tenantId, code], map: "warehouses_tenant_code_unique")
   @@index([tenantId, isActive])
@@ -83,13 +83,13 @@ model InventoryLevel {
 // "who touched this stock and when".
 
 model InventoryAdjustment {
-  id            String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenantId      String @map("tenant_id") @db.Uuid
-  variantId     String @map("variant_id") @db.Uuid
-  warehouseId   String @map("warehouse_id") @db.Uuid
+  id          String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId    String @map("tenant_id") @db.Uuid
+  variantId   String @map("variant_id") @db.Uuid
+  warehouseId String @map("warehouse_id") @db.Uuid
 
-  delta         Int    // signed
-  reason        String @db.VarChar(20)
+  delta  Int // signed
+  reason String @db.VarChar(20)
   // ^ sale | return | recount | loss | damage | transfer_in | transfer_out | receive | reserve | release | manual
 
   referenceType String? @map("reference_type") @db.VarChar(63)
@@ -115,18 +115,18 @@ model InventoryAdjustment {
 // reservations carry no TTL and are released only on fulfill / cancel.
 
 model InventoryReservation {
-  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenantId    String   @map("tenant_id") @db.Uuid
-  variantId   String   @map("variant_id") @db.Uuid
-  warehouseId String   @map("warehouse_id") @db.Uuid
+  id          String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId    String @map("tenant_id") @db.Uuid
+  variantId   String @map("variant_id") @db.Uuid
+  warehouseId String @map("warehouse_id") @db.Uuid
 
   quantity   Int
   holderType String @map("holder_type") @db.VarChar(20) // cart | order | subscription
   holderId   String @map("holder_id") @db.Uuid
 
-  status     String   @default("active") @db.VarChar(20) // active | released | committed | expired
+  status     String    @default("active") @db.VarChar(20) // active | released | committed | expired
   expiresAt  DateTime? @map("expires_at") @db.Timestamptz
-  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz
   releasedAt DateTime? @map("released_at") @db.Timestamptz
 
   tenant    Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)

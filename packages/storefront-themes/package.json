@@ -1,0 +1,28 @@
+{
+  "name": "@sparx/storefront-themes",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Sparx Site Builder — storefront theme presets (Apex/Industrial/Drift/Market/Fleet/Drop), light+dark token defaults, and the token compiler (docs/29-sitebuilder-architecture.md §4).",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "files": [
+    "src"
+  ],
+  "scripts": {
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --passWithNoTests",
+    "test:watch": "vitest",
+    "clean": "rm -rf .turbo dist *.tsbuildinfo"
+  },
+  "devDependencies": {
+    "@types/node": "^25.9.1",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.7"
+  }
+}

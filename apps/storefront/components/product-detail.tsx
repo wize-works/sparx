@@ -11,6 +11,7 @@ import { formatMoney, formatPriceRange } from '@/lib/format';
 import { mediaUrl } from '@/lib/media';
 import type { PublicProduct, PublicProductVariant } from '@/lib/commerce';
 import { useCart } from './cart-provider';
+import { WishlistButton } from './wishlist-button';
 
 export interface ProductDetailProps {
   product: PublicProduct;
@@ -262,6 +263,9 @@ export function ProductDetail({
                   ? 'Adding…'
                   : 'Add to cart'}
           </button>
+          {(resolvedVariant ?? defaultVariant) ? (
+            <WishlistButton variantId={(resolvedVariant ?? defaultVariant)!.id} />
+          ) : null}
         </div>
 
         {resolvedVariant?.sku ? (

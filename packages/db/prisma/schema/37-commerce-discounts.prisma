@@ -10,34 +10,34 @@ model Discount {
   name        String  @db.VarChar(127)
   description String? @db.Text
 
-  type   String @db.VarChar(20) // percent | fixed | free_shipping | buy_x_get_y | bundle
-  scope  String @default("order") @db.VarChar(20) // order | product | collection | shipping
+  type  String @db.VarChar(20) // percent | fixed | free_shipping | buy_x_get_y | bundle
+  scope String @default("order") @db.VarChar(20) // order | product | collection | shipping
 
-  valueCents   Int?   @map("value_cents")
-  valuePercent Float? @map("value_percent")
+  valueCents   Int?    @map("value_cents")
+  valuePercent Float?  @map("value_percent")
   currency     String? @db.VarChar(3)
 
   collectionId String? @map("collection_id") @db.Uuid
   conditions   Json    @default("[]")
   // ^ discriminated union of preconditions; see commerce-schemas/discounts.
 
-  startAt           DateTime? @map("start_at") @db.Timestamptz
-  endAt             DateTime? @map("end_at") @db.Timestamptz
-  totalUsageLimit   Int?      @map("total_usage_limit")
-  perCustomerLimit  Int       @default(1) @map("per_customer_limit")
-  stacking          String    @default("none") @db.VarChar(40)
+  startAt          DateTime? @map("start_at") @db.Timestamptz
+  endAt            DateTime? @map("end_at") @db.Timestamptz
+  totalUsageLimit  Int?      @map("total_usage_limit")
+  perCustomerLimit Int       @default(1) @map("per_customer_limit")
+  stacking         String    @default("none") @db.VarChar(40)
   // ^ none | combine_with_subscribe_and_save | combine_with_loyalty | combine_with_all
-  priority          Int       @default(0)
-  status            String    @default("draft") @db.VarChar(20) // draft | active | archived
-  usageCount        Int       @default(0) @map("usage_count")
+  priority         Int       @default(0)
+  status           String    @default("draft") @db.VarChar(20) // draft | active | archived
+  usageCount       Int       @default(0) @map("usage_count")
 
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz
   updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz
   deletedAt DateTime? @map("deleted_at") @db.Timestamptz
 
-  tenant     Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  collection ProductCollection? @relation(fields: [collectionId], references: [id], onDelete: SetNull)
-  usages     DiscountUsage[]
+  tenant        Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  collection    ProductCollection? @relation(fields: [collectionId], references: [id], onDelete: SetNull)
+  usages        DiscountUsage[]
   cartDiscounts CartDiscount[]
 
   @@unique([tenantId, code], map: "discounts_tenant_code_unique")
@@ -51,14 +51,14 @@ model Discount {
 // a backstop.
 
 model DiscountUsage {
-  id         String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenantId   String  @map("tenant_id") @db.Uuid
-  discountId String  @map("discount_id") @db.Uuid
-  customerId String? @map("customer_id") @db.Uuid
-  orderId    String? @map("order_id") @db.Uuid
-  cartId     String? @map("cart_id") @db.Uuid
-  redeemedAt DateTime @default(now()) @map("redeemed_at") @db.Timestamptz
-  appliedCents Int    @default(0) @map("applied_cents")
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId     String   @map("tenant_id") @db.Uuid
+  discountId   String   @map("discount_id") @db.Uuid
+  customerId   String?  @map("customer_id") @db.Uuid
+  orderId      String?  @map("order_id") @db.Uuid
+  cartId       String?  @map("cart_id") @db.Uuid
+  redeemedAt   DateTime @default(now()) @map("redeemed_at") @db.Timestamptz
+  appliedCents Int      @default(0) @map("applied_cents")
 
   tenant   Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   discount Discount @relation(fields: [discountId], references: [id], onDelete: Cascade)
@@ -73,18 +73,18 @@ model DiscountUsage {
 // so a refund of the sale revokes any remaining balance.
 
 model GiftCard {
-  id                     String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenantId               String   @map("tenant_id") @db.Uuid
-  code                   String   @db.VarChar(63)
-  initialBalanceCents    Int      @map("initial_balance_cents")
-  balanceCents           Int      @map("balance_cents")
-  currency               String   @db.VarChar(3)
-  status                 String   @default("active") @db.VarChar(20) // active | spent | expired | cancelled
-  expiresAt              DateTime? @map("expires_at") @db.Timestamptz
-  recipientEmail         String?  @map("recipient_email") @db.VarChar(255)
-  recipientName          String?  @map("recipient_name") @db.VarChar(127)
-  message                String?  @db.Text
-  purchasingOrderItemId  String?  @map("purchasing_order_item_id") @db.Uuid
+  id                    String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId              String    @map("tenant_id") @db.Uuid
+  code                  String    @db.VarChar(63)
+  initialBalanceCents   Int       @map("initial_balance_cents")
+  balanceCents          Int       @map("balance_cents")
+  currency              String    @db.VarChar(3)
+  status                String    @default("active") @db.VarChar(20) // active | spent | expired | cancelled
+  expiresAt             DateTime? @map("expires_at") @db.Timestamptz
+  recipientEmail        String?   @map("recipient_email") @db.VarChar(255)
+  recipientName         String?   @map("recipient_name") @db.VarChar(127)
+  message               String?   @db.Text
+  purchasingOrderItemId String?   @map("purchasing_order_item_id") @db.Uuid
 
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
@@ -99,14 +99,14 @@ model GiftCard {
 }
 
 model GiftCardTransaction {
-  id         String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenantId   String  @map("tenant_id") @db.Uuid
-  giftCardId String  @map("gift_card_id") @db.Uuid
-  orderId    String? @map("order_id") @db.Uuid
-  deltaCents Int     @map("delta_cents")
-  reason     String  @db.VarChar(20) // issue | redeem | adjust | refund | expire
+  id          String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId    String  @map("tenant_id") @db.Uuid
+  giftCardId  String  @map("gift_card_id") @db.Uuid
+  orderId     String? @map("order_id") @db.Uuid
+  deltaCents  Int     @map("delta_cents")
+  reason      String  @db.VarChar(20) // issue | redeem | adjust | refund | expire
   actorUserId String? @map("actor_user_id") @db.Uuid
-  note       String? @db.Text
+  note        String? @db.Text
 
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
 
@@ -122,18 +122,18 @@ model GiftCardTransaction {
 // currency); transactions write deltas that the service sums + caches.
 
 model StoreCredit {
-  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenantId     String   @map("tenant_id") @db.Uuid
-  customerId   String   @map("customer_id") @db.Uuid
-  currency     String   @db.VarChar(3)
-  balanceCents Int      @default(0) @map("balance_cents")
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId     String    @map("tenant_id") @db.Uuid
+  customerId   String    @map("customer_id") @db.Uuid
+  currency     String    @db.VarChar(3)
+  balanceCents Int       @default(0) @map("balance_cents")
   expiresAt    DateTime? @map("expires_at") @db.Timestamptz
 
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
 
-  tenant       Tenant                    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  customer     Customer                  @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  tenant       Tenant                   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  customer     Customer                 @relation(fields: [customerId], references: [id], onDelete: Cascade)
   transactions StoreCreditTransaction[]
 
   @@unique([tenantId, customerId, currency], map: "store_credit_unique")
@@ -141,16 +141,16 @@ model StoreCredit {
 }
 
 model StoreCreditTransaction {
-  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenantId      String   @map("tenant_id") @db.Uuid
-  storeCreditId String   @map("store_credit_id") @db.Uuid
-  deltaCents    Int      @map("delta_cents")
-  reason        String   @db.VarChar(20)
+  id            String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId      String  @map("tenant_id") @db.Uuid
+  storeCreditId String  @map("store_credit_id") @db.Uuid
+  deltaCents    Int     @map("delta_cents")
+  reason        String  @db.VarChar(20)
   // ^ grant | refund | spend | adjust | expire | loyalty_conversion
-  referenceType String?  @map("reference_type") @db.VarChar(63)
-  referenceId   String?  @map("reference_id") @db.Uuid
-  actorUserId   String?  @map("actor_user_id") @db.Uuid
-  note          String?  @db.Text
+  referenceType String? @map("reference_type") @db.VarChar(63)
+  referenceId   String? @map("reference_id") @db.Uuid
+  actorUserId   String? @map("actor_user_id") @db.Uuid
+  note          String? @db.Text
 
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
 

@@ -30,10 +30,10 @@ export default function WishlistPage() {
   }, [tenantSlug]);
 
   // Reflect removals made here (or via heart buttons) without a refetch.
-  const visible = items?.filter((i) => ids.has(i.productId)) ?? null;
+  const visible = items?.filter((i) => ids.has(i.variantId)) ?? null;
 
-  async function remove(productId: string) {
-    await toggle(productId);
+  async function remove(variantId: string) {
+    await toggle(variantId);
   }
 
   return (
@@ -65,25 +65,23 @@ export default function WishlistPage() {
           {visible.map((it) => {
             const img = mediaUrl(it.imageMediaId, tenantSlug);
             return (
-              <div key={it.productId} className="sf-card" style={{ overflow: 'hidden' }}>
+              <div key={it.variantId} className="sf-card" style={{ overflow: 'hidden' }}>
                 <Link href={`/products/${it.handle}`} style={{ display: 'block' }}>
                   <div className="sf-line__media" style={{ aspectRatio: '1', width: '100%' }}>
                     {img ? <img src={img} alt={it.title} /> : null}
                   </div>
                   <div style={{ padding: '0.75rem' }}>
                     <div style={{ fontSize: '0.9rem', fontWeight: 600 }}>{it.title}</div>
-                    {it.priceMinCents != null ? (
-                      <div className="sf-muted" style={{ fontSize: '0.85rem' }}>
-                        {formatMoney(it.priceMinCents)}
-                      </div>
-                    ) : null}
+                    <div className="sf-muted" style={{ fontSize: '0.85rem' }}>
+                      {formatMoney(it.priceCents)}
+                    </div>
                   </div>
                 </Link>
                 <div style={{ padding: '0 0.75rem 0.75rem' }}>
                   <button
                     type="button"
                     className="sf-btn sf-btn--ghost"
-                    onClick={() => void remove(it.productId)}
+                    onClick={() => void remove(it.variantId)}
                   >
                     Remove
                   </button>

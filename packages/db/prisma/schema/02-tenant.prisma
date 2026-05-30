@@ -176,5 +176,22 @@ model Tenant {
   customerAuthSessions   CustomerSession[]
   customerPasswordResets CustomerPasswordReset[]
 
+  // Sitebuilder module — theme/layout/page composition + publish history (docs/29)
+  siteConfig           SiteConfig?
+  siteVersions         SiteVersion[]
+  siteSections         SiteSection[]
+  siteLayoutBlocks     SiteLayoutBlock[]
+  sitePublishSchedules SitePublishSchedule[]
+
+  // Email platform — management surface (docs/13)
+  emailSettings       EmailSettings?
+  sendingDomains      SendingDomain[]
+  emailTemplates      EmailTemplate[]
+  emailAutomations    EmailAutomation[]
+  emailScheduledSends ScheduledSend[]
+  broadcasts          Broadcast[]
+  emailEvents         EmailEvent[]
+  emailSuppressions   EmailSuppression[]
+
   @@map("tenants")
 }

@@ -14,18 +14,18 @@ model LotBatch {
   variantId   String @map("variant_id") @db.Uuid
   warehouseId String @map("warehouse_id") @db.Uuid
 
-  lotNumber          String    @map("lot_number") @db.VarChar(63)
-  manufacturedAt     DateTime? @map("manufactured_at") @db.Timestamptz
-  expiresAt          DateTime? @map("expires_at") @db.Timestamptz
-  quantity           Int       @default(0)
-  hazmatClass        String    @default("none") @map("hazmat_class") @db.VarChar(32)
-  supplierBatchRef   String?   @map("supplier_batch_ref") @db.VarChar(127)
-  certificateOfAnalysisMediaId String? @map("coa_media_id") @db.Uuid
+  lotNumber                    String    @map("lot_number") @db.VarChar(63)
+  manufacturedAt               DateTime? @map("manufactured_at") @db.Timestamptz
+  expiresAt                    DateTime? @map("expires_at") @db.Timestamptz
+  quantity                     Int       @default(0)
+  hazmatClass                  String    @default("none") @map("hazmat_class") @db.VarChar(32)
+  supplierBatchRef             String?   @map("supplier_batch_ref") @db.VarChar(127)
+  certificateOfAnalysisMediaId String?   @map("coa_media_id") @db.Uuid
 
-  recallStatus  String?  @map("recall_status") @db.VarChar(20)
+  recallStatus String?   @map("recall_status") @db.VarChar(20)
   // ^ null | pending | active | cleared
-  recallReason  String?  @map("recall_reason") @db.Text
-  recalledAt    DateTime? @map("recalled_at") @db.Timestamptz
+  recallReason String?   @map("recall_reason") @db.Text
+  recalledAt   DateTime? @map("recalled_at") @db.Timestamptz
 
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
@@ -57,7 +57,7 @@ model SerialUnit {
   status String @default("in_stock") @db.VarChar(20)
   // ^ in_stock | reserved | sold | returned | scrapped | lost
 
-  soldOnOrderItemId String?  @map("sold_on_order_item_id") @db.Uuid
+  soldOnOrderItemId String?   @map("sold_on_order_item_id") @db.Uuid
   soldAt            DateTime? @map("sold_at") @db.Timestamptz
 
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz

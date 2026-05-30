@@ -7,12 +7,12 @@
 model StorefrontSettings {
   tenantId String @id @map("tenant_id") @db.Uuid
 
-  defaultCurrency        String  @default("USD") @map("default_currency") @db.VarChar(3)
-  defaultLocale          String  @default("en-US") @map("default_locale") @db.VarChar(10)
-  defaultWarehouseId     String? @map("default_warehouse_id") @db.Uuid
-  channelsEnabled        Json    @default("[\"storefront\"]") @map("channels_enabled")
-  cartAbandonmentMinutes Int     @default(120) @map("cart_abandonment_minutes")
-  showStockBelow         Int     @default(10) @map("show_stock_below")
+  defaultCurrency         String  @default("USD") @map("default_currency") @db.VarChar(3)
+  defaultLocale           String  @default("en-US") @map("default_locale") @db.VarChar(10)
+  defaultWarehouseId      String? @map("default_warehouse_id") @db.Uuid
+  channelsEnabled         Json    @default("[\"storefront\"]") @map("channels_enabled")
+  cartAbandonmentMinutes  Int     @default(120) @map("cart_abandonment_minutes")
+  showStockBelow          Int     @default(10) @map("show_stock_below")
   hidePricesWhenSignedOut Boolean @default(false) @map("hide_prices_when_signed_out")
   requireAuthForCheckout  Boolean @default(false) @map("require_auth_for_checkout")
 
@@ -35,17 +35,17 @@ model StorefrontSettings {
 model StorefrontTheme {
   tenantId String @id @map("tenant_id") @db.Uuid
 
-  colorPrimary            String? @map("color_primary") @db.VarChar(7)
-  colorPrimaryForeground  String? @map("color_primary_foreground") @db.VarChar(7)
-  colorAccent             String? @map("color_accent") @db.VarChar(7)
-  colorBackground         String? @map("color_background") @db.VarChar(7)
-  colorMuted              String? @map("color_muted") @db.VarChar(7)
-  fontHeading             String? @map("font_heading") @db.VarChar(127)
-  fontBody                String? @map("font_body") @db.VarChar(127)
-  radiusBase              String? @map("radius_base") @db.VarChar(15)
-  logoMediaId             String? @map("logo_media_id") @db.Uuid
-  logoDarkMediaId         String? @map("logo_dark_media_id") @db.Uuid
-  faviconMediaId          String? @map("favicon_media_id") @db.Uuid
+  colorPrimary           String? @map("color_primary") @db.VarChar(7)
+  colorPrimaryForeground String? @map("color_primary_foreground") @db.VarChar(7)
+  colorAccent            String? @map("color_accent") @db.VarChar(7)
+  colorBackground        String? @map("color_background") @db.VarChar(7)
+  colorMuted             String? @map("color_muted") @db.VarChar(7)
+  fontHeading            String? @map("font_heading") @db.VarChar(127)
+  fontBody               String? @map("font_body") @db.VarChar(127)
+  radiusBase             String? @map("radius_base") @db.VarChar(15)
+  logoMediaId            String? @map("logo_media_id") @db.Uuid
+  logoDarkMediaId        String? @map("logo_dark_media_id") @db.Uuid
+  faviconMediaId         String? @map("favicon_media_id") @db.Uuid
 
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz

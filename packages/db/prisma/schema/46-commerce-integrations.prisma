@@ -5,32 +5,32 @@
 // idempotently recorded here before downstream processing.
 
 model ProviderInstallation {
-  id           String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenantId     String @map("tenant_id") @db.Uuid
-  providerSlug String @map("provider_slug") @db.VarChar(63)
-  kind         String @db.VarChar(30)
+  id           String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId     String  @map("tenant_id") @db.Uuid
+  providerSlug String  @map("provider_slug") @db.VarChar(63)
+  kind         String  @db.VarChar(30)
   // ^ payment | tax | shipping | subscription_billing | dropship | identity
-  environment  String @default("production") @db.VarChar(20) // sandbox | production
+  environment  String  @default("production") @db.VarChar(20) // sandbox | production
   enabled      Boolean @default(true)
 
   status String @default("pending_configuration") @db.VarChar(40)
   // ^ pending_configuration | pending_oauth | pending_verification |
   //   active | errored | disabled
 
-  label String? @db.VarChar(127)
+  label             String? @db.VarChar(127)
   // Encrypted configuration JSON. Secrets reference Google Secret
   // Manager paths rather than carrying the secret value directly.
-  configEncrypted Json @default("{}") @map("config_encrypted")
-  scopes          Json @default("[]")
+  configEncrypted   Json    @default("{}") @map("config_encrypted")
+  scopes            Json    @default("[]")
   // Provider-side IDs the platform needs to remember (Stripe account_id,
   // Shippo carrier_account ids, etc.).
   providerAccountId String? @map("provider_account_id") @db.VarChar(255)
 
-  lastHealthCheckAt   DateTime? @map("last_health_check_at") @db.Timestamptz
-  lastHealthStatus    String?   @map("last_health_status") @db.VarChar(40)
-  lastHealthDetail    String?   @map("last_health_detail") @db.Text
-  errorCount          Int       @default(0) @map("error_count")
-  lastErrorAt         DateTime? @map("last_error_at") @db.Timestamptz
+  lastHealthCheckAt DateTime? @map("last_health_check_at") @db.Timestamptz
+  lastHealthStatus  String?   @map("last_health_status") @db.VarChar(40)
+  lastHealthDetail  String?   @map("last_health_detail") @db.Text
+  errorCount        Int       @default(0) @map("error_count")
+  lastErrorAt       DateTime? @map("last_error_at") @db.Timestamptz
 
   installedAt   DateTime  @default(now()) @map("installed_at") @db.Timestamptz
   uninstalledAt DateTime? @map("uninstalled_at") @db.Timestamptz
@@ -38,7 +38,7 @@ model ProviderInstallation {
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
 
-  tenant       Tenant                  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant        Tenant                 @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   webhookEvents ProviderWebhookEvent[]
 
   @@unique([tenantId, providerSlug, environment, label], map: "provider_installations_unique")
@@ -51,16 +51,16 @@ model ProviderInstallation {
 // — duplicates from provider retries get dropped at insert time.
 
 model ProviderWebhookEvent {
-  id                 String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenantId           String   @map("tenant_id") @db.Uuid
-  installationId     String   @map("installation_id") @db.Uuid
-  providerSlug       String   @map("provider_slug") @db.VarChar(63)
-  providerEventId    String   @map("provider_event_id") @db.VarChar(255)
-  providerEventType  String   @map("provider_event_type") @db.VarChar(127)
+  id                  String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId            String   @map("tenant_id") @db.Uuid
+  installationId      String   @map("installation_id") @db.Uuid
+  providerSlug        String   @map("provider_slug") @db.VarChar(63)
+  providerEventId     String   @map("provider_event_id") @db.VarChar(255)
+  providerEventType   String   @map("provider_event_type") @db.VarChar(127)
   signatureVerifiedAt DateTime @map("signature_verified_at") @db.Timestamptz
-  rawPayload         Json     @map("raw_payload")
+  rawPayload          Json     @map("raw_payload")
 
-  status      String  @default("received") @db.VarChar(20)
+  status      String    @default("received") @db.VarChar(20)
   // ^ received | processing | processed | failed | discarded
   processedAt DateTime? @map("processed_at") @db.Timestamptz
   errorReason String?   @map("error_reason") @db.Text

@@ -2,10 +2,10 @@
 //
 // Storefront pages are dynamically rendered (the tenant is resolved from the
 // Host header, which opts the route out of static generation), but every read
-// to api-rest is fetch-cached with `next: { revalidate, tags }` — tagged
-// `tenant:<slug>`, `products:<slug>`, `collections:<slug>`, `content:<slug>`.
-// Those caches would otherwise only expire on their TTL; this endpoint lets the
-// platform purge them immediately when a catalog/content edit lands.
+// to api-rest is fetch-cached with `next: { revalidate, tags }` — every read
+// carries a coarse per-tenant tag (`commerce:<slug>` or `content:<slug>`) plus
+// `tenant:<slug>` on the tenant/theme read. Those caches would otherwise only
+// expire on their TTL; this endpoint purges them immediately on a catalog/content edit.
 //
 // Trigger: api-rest (or a Pub/Sub worker reacting to product.updated /
 // collection.updated / content.published) POSTs here after a mutation. Secured
@@ -23,7 +23,8 @@ import { revalidateTag } from 'next/cache';
 import { NextResponse, type NextRequest } from 'next/server';
 
 const SECRET = process.env.SPARX_REVALIDATE_SECRET ?? '';
-const SCOPES = ['products', 'collections', 'content'] as const;
+// Coarse per-tenant tags the data layer attaches (lib/commerce.ts, lib/content.ts).
+const SCOPES = ['commerce', 'content'] as const;
 type Scope = (typeof SCOPES)[number];
 
 function timingSafeEqual(a: string, b: string): boolean {
@@ -62,8 +63,11 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     : [];
   const scopes = requested.length ? requested : [...SCOPES];
 
+  // The storefront also tags every fetch with the shared 'sparx-storefront'
+  // tag; include scoped tags so a purge is targeted to this tenant.
   const purged = [`tenant:${tenant}`, ...scopes.map((s) => `${s}:${tenant}`)];
-  for (const tag of purged) revalidateTag(tag);
+  // Next 16 requires a cache-life profile; 'max' force-expires matching entries.
+  for (const tag of purged) revalidateTag(tag, 'max');
 
   return NextResponse.json({ success: true, data: { tenant, purged } });
 }

@@ -5,11 +5,11 @@
 // provider webhook events.
 
 model Subscription {
-  id            String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenantId      String  @map("tenant_id") @db.Uuid
-  customerId    String  @map("customer_id") @db.Uuid
-  channel       String  @default("storefront") @db.VarChar(20)
-  currency      String  @db.VarChar(3)
+  id         String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId   String @map("tenant_id") @db.Uuid
+  customerId String @map("customer_id") @db.Uuid
+  channel    String @default("storefront") @db.VarChar(20)
+  currency   String @db.VarChar(3)
 
   status String @default("active") @db.VarChar(20)
   // ^ trialing | active | past_due | paused | cancelled
@@ -21,27 +21,27 @@ model Subscription {
 
   // Schedule shape — the worker reads these to compute next occurrences
   // when the provider doesn't drive the cadence.
-  intervalUnit         String  @map("interval_unit") @db.VarChar(10) // day | week | month | year
-  intervalCount        Int     @map("interval_count")
-  deliveriesPerCycle   Int     @default(1) @map("deliveries_per_cycle")
-  anchorDayOfMonth     Int?    @map("anchor_day_of_month")
-  anchorDayOfWeek      Int?    @map("anchor_day_of_week")
-  endAfterOccurrences  Int?    @map("end_after_occurrences")
-  endOnDate            DateTime? @map("end_on_date") @db.Timestamptz
+  intervalUnit        String    @map("interval_unit") @db.VarChar(10) // day | week | month | year
+  intervalCount       Int       @map("interval_count")
+  deliveriesPerCycle  Int       @default(1) @map("deliveries_per_cycle")
+  anchorDayOfMonth    Int?      @map("anchor_day_of_month")
+  anchorDayOfWeek     Int?      @map("anchor_day_of_week")
+  endAfterOccurrences Int?      @map("end_after_occurrences")
+  endOnDate           DateTime? @map("end_on_date") @db.Timestamptz
 
   // Address snapshots used for renewal orders; can be changed mid-cycle
   // via subscriptionService.changeAddress.
-  shippingAddress Json @map("shipping_address")
+  shippingAddress Json  @map("shipping_address")
   billingAddress  Json? @map("billing_address")
 
   // Lifecycle timestamps.
-  startedAt           DateTime? @map("started_at") @db.Timestamptz
-  trialEndsAt         DateTime? @map("trial_ends_at") @db.Timestamptz
-  currentPeriodStart  DateTime? @map("current_period_start") @db.Timestamptz
-  currentPeriodEnd    DateTime? @map("current_period_end") @db.Timestamptz
-  nextOccurrenceAt    DateTime? @map("next_occurrence_at") @db.Timestamptz
-  pausedUntil         DateTime? @map("paused_until") @db.Timestamptz
-  cancelledAt         DateTime? @map("cancelled_at") @db.Timestamptz
+  startedAt          DateTime? @map("started_at") @db.Timestamptz
+  trialEndsAt        DateTime? @map("trial_ends_at") @db.Timestamptz
+  currentPeriodStart DateTime? @map("current_period_start") @db.Timestamptz
+  currentPeriodEnd   DateTime? @map("current_period_end") @db.Timestamptz
+  nextOccurrenceAt   DateTime? @map("next_occurrence_at") @db.Timestamptz
+  pausedUntil        DateTime? @map("paused_until") @db.Timestamptz
+  cancelledAt        DateTime? @map("cancelled_at") @db.Timestamptz
 
   // Dunning policy override per subscription; null = use tenant default.
   dunningPolicy Json? @map("dunning_policy")
@@ -52,8 +52,8 @@ model Subscription {
   tenant   Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   customer Customer @relation(fields: [customerId], references: [id], onDelete: Restrict)
 
-  items     SubscriptionItem[]
-  events    SubscriptionEvent[]
+  items           SubscriptionItem[]
+  events          SubscriptionEvent[]
   dunningAttempts DunningAttempt[]
 
   @@index([tenantId, customerId])
@@ -82,10 +82,10 @@ model SubscriptionItem {
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
 
-  tenant       Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  subscription Subscription   @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
-  variant      ProductVariant @relation(fields: [variantId], references: [id], onDelete: Restrict)
-  addonOf      SubscriptionItem? @relation("SubscriptionItemAddon", fields: [addonOfId], references: [id], onDelete: SetNull)
+  tenant       Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  subscription Subscription       @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  variant      ProductVariant     @relation(fields: [variantId], references: [id], onDelete: Restrict)
+  addonOf      SubscriptionItem?  @relation("SubscriptionItemAddon", fields: [addonOfId], references: [id], onDelete: SetNull)
   addons       SubscriptionItem[] @relation("SubscriptionItemAddon")
 
   @@index([tenantId, subscriptionId])
@@ -118,14 +118,14 @@ model SubscriptionEvent {
 // follow the policy's finalOutcome.
 
 model DunningAttempt {
-  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenantId       String   @map("tenant_id") @db.Uuid
-  subscriptionId String   @map("subscription_id") @db.Uuid
-  paymentRef     String?  @map("payment_ref") @db.VarChar(255)
-  attemptNumber  Int      @map("attempt_number")
-  outcome        String   @db.VarChar(20) // pending | succeeded | failed | retry_scheduled
-  failureReason  String?  @map("failure_reason") @db.Text
-  attemptedAt    DateTime @default(now()) @map("attempted_at") @db.Timestamptz
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId       String    @map("tenant_id") @db.Uuid
+  subscriptionId String    @map("subscription_id") @db.Uuid
+  paymentRef     String?   @map("payment_ref") @db.VarChar(255)
+  attemptNumber  Int       @map("attempt_number")
+  outcome        String    @db.VarChar(20) // pending | succeeded | failed | retry_scheduled
+  failureReason  String?   @map("failure_reason") @db.Text
+  attemptedAt    DateTime  @default(now()) @map("attempted_at") @db.Timestamptz
   nextRetryAt    DateTime? @map("next_retry_at") @db.Timestamptz
 
   tenant       Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)

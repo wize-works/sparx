@@ -25,8 +25,12 @@ async function publicGet<T>(
   for (const [key, value] of Object.entries(query)) {
     if (value !== undefined && value !== '') params.set(key, String(value));
   }
+  // Coarse per-tenant tag (`commerce:<slug>`) alongside the granular ones so a
+  // single revalidateTag('commerce:<slug>') purge clears all of a tenant's
+  // commerce reads (revalidateTag is exact-match, not prefix). See app/api/revalidate.
+  const coarse = query.tenant ? [`commerce:${String(query.tenant)}`] : [];
   const res = await fetch(`${BASE_URL}${path}?${params.toString()}`, {
-    next: { revalidate: 60, tags: ['sparx-storefront', ...tags] },
+    next: { revalidate: 60, tags: ['sparx-storefront', ...coarse, ...tags] },
   });
   const json = (await res.json()) as SuccessEnvelope<T> | ErrorEnvelope;
   if (!res.ok || 'error' in json) {

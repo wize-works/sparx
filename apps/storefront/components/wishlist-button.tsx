@@ -1,8 +1,8 @@
 'use client';
 
-// Heart toggle for saving a product to the wishlist. Signed-in shoppers toggle
-// membership (optimistic via WishlistProvider); anonymous shoppers are sent to
-// sign in and returned to where they were.
+// Heart toggle for saving a variant to the wishlist (items key on variant).
+// Signed-in shoppers toggle membership (optimistic via WishlistProvider);
+// anonymous shoppers are sent to sign in and returned to where they were.
 
 import { usePathname, useRouter } from 'next/navigation';
 
@@ -10,12 +10,10 @@ import { useCustomer } from '@/components/customer-provider';
 import { useWishlist } from '@/components/wishlist-provider';
 
 export function WishlistButton({
-  productId,
   variantId,
   className,
 }: {
-  productId: string;
-  variantId?: string;
+  variantId: string;
   className?: string;
 }) {
   const { status } = useCustomer();
@@ -23,14 +21,14 @@ export function WishlistButton({
   const router = useRouter();
   const pathname = usePathname();
 
-  const saved = has(productId);
+  const saved = has(variantId);
 
   async function onClick() {
     if (status !== 'authenticated') {
       router.push(`/account/login?redirect=${encodeURIComponent(pathname || '/')}`);
       return;
     }
-    await toggle(productId, variantId);
+    await toggle(variantId);
   }
 
   return (

@@ -12,11 +12,11 @@
 // future "lookup-only" flow).
 
 model ApiKey {
-  id        String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenantId  String @map("tenant_id") @db.Uuid
+  id       String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId String @map("tenant_id") @db.Uuid
 
   // Human-readable label set by the merchant in the dashboard.
-  name      String @db.VarChar(120)
+  name String @db.VarChar(120)
 
   // First 12 chars of the displayed key — `sk_live_<8 random>`. Stored
   // separately from the hash so the dashboard can render a recognizable
@@ -25,11 +25,11 @@ model ApiKey {
 
   // Argon2id hash of the full key minus the prefix. Verification:
   // `argon2.verify(keyHash, request_full_key.slice(prefix.length))`.
-  keyHash   String @map("key_hash") @db.Text
+  keyHash String @map("key_hash") @db.Text
 
   // Whitelisted scopes. Stored as a Postgres TEXT[] for cheap `&&` overlap
   // checks during MCP tool dispatch.
-  scopes    String[] @db.Text
+  scopes String[] @db.Text
 
   // Optional expiry the merchant sets at issuance; null = no expiry.
   expiresAt DateTime? @map("expires_at") @db.Timestamptz

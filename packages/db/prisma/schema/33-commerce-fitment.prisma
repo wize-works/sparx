@@ -49,7 +49,7 @@ model FitmentDomain {
   updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz
   deletedAt DateTime? @map("deleted_at") @db.Timestamptz
 
-  tenant     Tenant?            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant     Tenant?           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   categories FitmentCategory[]
   fitments   ProductFitment[]
 
@@ -59,16 +59,16 @@ model FitmentDomain {
 }
 
 model FitmentCategory {
-  id         String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenantId   String? @map("tenant_id") @db.Uuid // null = platform-seeded
-  domainId   String  @map("domain_id") @db.Uuid
-  name       String  @db.VarChar(127)
-  slug       String  @db.VarChar(127)
-  attributes Json    @default("{}") @db.JsonB
+  id          String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId    String? @map("tenant_id") @db.Uuid // null = platform-seeded
+  domainId    String  @map("domain_id") @db.Uuid
+  name        String  @db.VarChar(127)
+  slug        String  @db.VarChar(127)
+  attributes  Json    @default("{}") @db.JsonB
   // ^ free-form per-domain: { countryOfOrigin: "US" } for vehicle make,
   //   { taxonomyClass: "mammalia" } for pet species, etc.
   iconMediaId String? @map("icon_media_id") @db.Uuid
-  position   Int     @default(0)
+  position    Int     @default(0)
 
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz
   updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz
@@ -100,8 +100,8 @@ model FitmentItem {
   updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz
   deletedAt DateTime? @map("deleted_at") @db.Timestamptz
 
-  tenant   Tenant?           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  category FitmentCategory   @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  tenant   Tenant?          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  category FitmentCategory  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   variants FitmentVariant[]
   fitments ProductFitment[]
 
@@ -143,28 +143,28 @@ model FitmentVariant {
 // columns widen the rule.
 
 model ProductFitment {
-  id         String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenantId   String  @map("tenant_id") @db.Uuid
-  productId  String  @map("product_id") @db.Uuid
-  domainId   String  @map("domain_id") @db.Uuid
-  categoryId String  @map("category_id") @db.Uuid
-  itemId     String? @map("item_id") @db.Uuid
-  variantId  String? @map("variant_id") @db.Uuid
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId   String   @map("tenant_id") @db.Uuid
+  productId  String   @map("product_id") @db.Uuid
+  domainId   String   @map("domain_id") @db.Uuid
+  categoryId String   @map("category_id") @db.Uuid
+  itemId     String?  @map("item_id") @db.Uuid
+  variantId  String?  @map("variant_id") @db.Uuid
   rangeMin   Decimal? @map("range_min") @db.Decimal(12, 4)
   rangeMax   Decimal? @map("range_max") @db.Decimal(12, 4)
   // ^ Decimal so years (2018) and weights (12.5 lb) and shoe sizes (9.5)
   //   all fit one column. Unit lives on FitmentDomain.rangeUnit.
-  notes      String? @db.Text
+  notes      String?  @db.Text
 
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
 
-  tenant   Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  product  Product          @relation(fields: [productId], references: [id], onDelete: Cascade)
-  domain   FitmentDomain    @relation(fields: [domainId], references: [id], onDelete: Restrict)
-  category FitmentCategory  @relation(fields: [categoryId], references: [id], onDelete: Restrict)
-  item     FitmentItem?     @relation(fields: [itemId], references: [id], onDelete: SetNull)
-  variant  FitmentVariant?  @relation(fields: [variantId], references: [id], onDelete: SetNull)
+  tenant   Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  product  Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
+  domain   FitmentDomain   @relation(fields: [domainId], references: [id], onDelete: Restrict)
+  category FitmentCategory @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  item     FitmentItem?    @relation(fields: [itemId], references: [id], onDelete: SetNull)
+  variant  FitmentVariant? @relation(fields: [variantId], references: [id], onDelete: SetNull)
 
   @@index([tenantId, productId])
   @@index([tenantId, domainId, categoryId])

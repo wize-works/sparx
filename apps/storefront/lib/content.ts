@@ -42,13 +42,16 @@ async function publicGet<T>(
   if (options.previewToken) {
     headers.Authorization = `Preview ${options.previewToken}`;
   }
+  // Coarse per-tenant tag (`content:<slug>`) so revalidateTag('content:<slug>')
+  // clears all of a tenant's content reads in one purge.
+  const coarse = query.tenant ? [`content:${String(query.tenant)}`] : [];
   const res = await fetch(`${BASE_URL}${path}?${qs.toString()}`, {
     headers,
     next: options.previewToken
       ? { revalidate: 0 }
       : {
           revalidate: 300,
-          tags: options.tag ? ['sparx-storefront', options.tag] : ['sparx-storefront'],
+          tags: ['sparx-storefront', ...coarse, ...(options.tag ? [options.tag] : [])],
         },
     cache: options.previewToken ? 'no-store' : undefined,
   });

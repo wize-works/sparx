@@ -19,24 +19,24 @@ model Product {
   handle      String  @db.VarChar(127)
   description String? @db.Text // rich-text HTML allowed
 
-  status           String @default("draft") @db.VarChar(20) // draft | active | archived
-  productType      String? @map("product_type") @db.VarChar(127)
-  vendor           String? @db.VarChar(127)
-  tags             String[] @default([]) @db.VarChar(63)
-  fulfillmentType  String @default("physical") @map("fulfillment_type") @db.VarChar(20)
+  status          String   @default("draft") @db.VarChar(20) // draft | active | archived
+  productType     String?  @map("product_type") @db.VarChar(127)
+  vendor          String?  @db.VarChar(127)
+  tags            String[] @default([]) @db.VarChar(63)
+  fulfillmentType String   @default("physical") @map("fulfillment_type") @db.VarChar(20)
   // ^ physical | digital | service | configurable | bundle | subscription
 
   // Defaults inherited by variants when omitted.
-  weightGrams      Int?     @map("weight_grams")
-  lengthMm         Int?     @map("length_mm")
-  widthMm          Int?     @map("width_mm")
-  heightMm         Int?     @map("height_mm")
-  hazmatClass      String   @default("none") @map("hazmat_class") @db.VarChar(32)
-  requiresShipping Boolean  @default(true) @map("requires_shipping")
-  taxClass         String?  @map("tax_class") @db.VarChar(63)
-  originCountry    String?  @map("origin_country") @db.VarChar(2)
-  hsCode           String?  @map("hs_code") @db.VarChar(15)
-  metadata         Json     @default("{}")
+  weightGrams      Int?    @map("weight_grams")
+  lengthMm         Int?    @map("length_mm")
+  widthMm          Int?    @map("width_mm")
+  heightMm         Int?    @map("height_mm")
+  hazmatClass      String  @default("none") @map("hazmat_class") @db.VarChar(32)
+  requiresShipping Boolean @default(true) @map("requires_shipping")
+  taxClass         String? @map("tax_class") @db.VarChar(63)
+  originCountry    String? @map("origin_country") @db.VarChar(2)
+  hsCode           String? @map("hs_code") @db.VarChar(15)
+  metadata         Json    @default("{}")
 
   // SEO.
   seoTitle       String? @map("seo_title") @db.VarChar(255)
@@ -49,34 +49,34 @@ model Product {
 
   // Aggregated read columns updated by event consumers — never written
   // inline. Drives storefront sort + low-stock badges.
-  priceMinCents    Int?     @map("price_min_cents")
-  priceMaxCents    Int?     @map("price_max_cents")
-  inStock          Boolean  @default(false) @map("in_stock")
-  bestSellerRank   Int?     @map("best_seller_rank")
-  averageRating    Float?   @map("average_rating")
-  reviewCount      Int      @default(0) @map("review_count")
+  priceMinCents  Int?    @map("price_min_cents")
+  priceMaxCents  Int?    @map("price_max_cents")
+  inStock        Boolean @default(false) @map("in_stock")
+  bestSellerRank Int?    @map("best_seller_rank")
+  averageRating  Float?  @map("average_rating")
+  reviewCount    Int     @default(0) @map("review_count")
 
   createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz
   updatedAt   DateTime  @updatedAt @map("updated_at") @db.Timestamptz
   deletedAt   DateTime? @map("deleted_at") @db.Timestamptz
   publishedAt DateTime? @map("published_at") @db.Timestamptz
 
-  tenant            Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  defaultWarehouse  Warehouse?         @relation("ProductDefaultWarehouse", fields: [defaultWarehouseId], references: [id], onDelete: SetNull)
-  options           ProductOption[]
-  variants          ProductVariant[]
-  images            VariantImage[]
-  fitments          ProductFitment[]
-  collectionLinks   CollectionProduct[]
-  categoryLinks     CategoryProduct[]
-  shippingProfileLinks ShippingProfileProduct[]
-  bundlesAsWrapper  Bundle[]           @relation("BundleWrapper")
-  bundleComponents  BundleComponent[]
+  tenant                 Tenant                   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  defaultWarehouse       Warehouse?               @relation("ProductDefaultWarehouse", fields: [defaultWarehouseId], references: [id], onDelete: SetNull)
+  options                ProductOption[]
+  variants               ProductVariant[]
+  images                 VariantImage[]
+  fitments               ProductFitment[]
+  collectionLinks        CollectionProduct[]
+  categoryLinks          CategoryProduct[]
+  shippingProfileLinks   ShippingProfileProduct[]
+  bundlesAsWrapper       Bundle[]                 @relation("BundleWrapper")
+  bundleComponents       BundleComponent[]
   configurationTemplates ConfigurationTemplate[]
-  reviews           ProductReview[]
-  questions         ProductQuestion[]
-  translations      ProductTranslation[]
-  orderItems        OrderItem[]
+  reviews                ProductReview[]
+  questions              ProductQuestion[]
+  translations           ProductTranslation[]
+  orderItems             OrderItem[]
 
   @@unique([tenantId, handle], map: "products_tenant_handle_unique")
   @@index([tenantId, status])

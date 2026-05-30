@@ -29,20 +29,20 @@ model ShippingProfile {
   description String? @db.Text
 
   // Carrier service slugs the profile allows. Empty array = any.
-  allowedCarrierServices Json @default("[]") @map("allowed_carrier_services")
+  allowedCarrierServices Json    @default("[]") @map("allowed_carrier_services")
   // Hazmat classes allowed on this profile; items above these route to
   // a different profile (or freight).
-  hazmatClassesAllowed Json @default("[\"none\"]") @map("hazmat_classes_allowed")
-  requiresSignature    Boolean @default(false) @map("requires_signature")
-  requiresFreight      Boolean @default(false) @map("requires_freight")
+  hazmatClassesAllowed   Json    @default("[\"none\"]") @map("hazmat_classes_allowed")
+  requiresSignature      Boolean @default(false) @map("requires_signature")
+  requiresFreight        Boolean @default(false) @map("requires_freight")
 
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
 
-  tenant         Tenant                       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  rates          ShippingRate[]
-  productLinks   ShippingProfileProduct[]
-  variantLinks   ShippingProfileVariant[]
+  tenant          Tenant                      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  rates           ShippingRate[]
+  productLinks    ShippingProfileProduct[]
+  variantLinks    ShippingProfileVariant[]
   collectionLinks ShippingProfileCollection[]
 
   @@index([tenantId])
@@ -53,21 +53,21 @@ model ShippingProfile {
 // when a ShippingProvider installation is active.
 
 model ShippingRate {
-  id          String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenantId    String  @map("tenant_id") @db.Uuid
-  zoneId      String  @map("zone_id") @db.Uuid
-  profileId   String  @map("profile_id") @db.Uuid
-  name        String  @db.VarChar(127)
-  type        String  @db.VarChar(30)
+  id        String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId  String @map("tenant_id") @db.Uuid
+  zoneId    String @map("zone_id") @db.Uuid
+  profileId String @map("profile_id") @db.Uuid
+  name      String @db.VarChar(127)
+  type      String @db.VarChar(30)
   // ^ flat | by_weight | by_price | by_item_count | free_above_threshold
 
-  amountCents     Int?   @map("amount_cents")
-  freeAboveCents  Int?   @map("free_above_cents")
-  bands           Json?  // for by_weight / by_price / by_item_count
+  amountCents    Int?  @map("amount_cents")
+  freeAboveCents Int?  @map("free_above_cents")
+  bands          Json? // for by_weight / by_price / by_item_count
 
-  currency               String  @db.VarChar(3)
-  carrier                String? @db.VarChar(63)
-  estimatedDeliveryDays  Int?    @map("estimated_delivery_days")
+  currency              String  @db.VarChar(3)
+  carrier               String? @db.VarChar(63)
+  estimatedDeliveryDays Int?    @map("estimated_delivery_days")
 
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz

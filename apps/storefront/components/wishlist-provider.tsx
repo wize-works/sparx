@@ -11,12 +11,12 @@ import { useCustomer } from '@/components/customer-provider';
 import { addToWishlist, getWishlist, removeFromWishlist } from '@/lib/customer-client';
 
 export interface WishlistContextValue {
-  /** Product ids currently in the wishlist. */
+  /** Variant ids currently in the wishlist (items key on variant). */
   ids: Set<string>;
   ready: boolean;
-  has: (productId: string) => boolean;
-  /** Toggle membership. Returns false (and does nothing) if not signed in. */
-  toggle: (productId: string, variantId?: string) => Promise<boolean>;
+  has: (variantId: string) => boolean;
+  /** Toggle membership for a variant. Returns false (no-op) if not signed in. */
+  toggle: (variantId: string) => Promise<boolean>;
   refresh: () => Promise<void>;
 }
 
@@ -41,7 +41,7 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
     }
     try {
       const items = await getWishlist(tenantSlug);
-      setIds(new Set(items.map((i) => i.productId)));
+      setIds(new Set(items.map((i) => i.variantId)));
     } catch {
       setIds(new Set());
     } finally {
@@ -53,28 +53,28 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
     void refresh();
   }, [refresh]);
 
-  const has = useCallback((productId: string) => ids.has(productId), [ids]);
+  const has = useCallback((variantId: string) => ids.has(variantId), [ids]);
 
   const toggle = useCallback(
-    async (productId: string, variantId?: string): Promise<boolean> => {
+    async (variantId: string): Promise<boolean> => {
       if (status !== 'authenticated') return false;
-      const adding = !ids.has(productId);
+      const adding = !ids.has(variantId);
       // Optimistic.
       setIds((prev) => {
         const next = new Set(prev);
-        if (adding) next.add(productId);
-        else next.delete(productId);
+        if (adding) next.add(variantId);
+        else next.delete(variantId);
         return next;
       });
       try {
-        if (adding) await addToWishlist(tenantSlug, productId, variantId);
-        else await removeFromWishlist(tenantSlug, productId);
+        if (adding) await addToWishlist(tenantSlug, variantId);
+        else await removeFromWishlist(tenantSlug, variantId);
       } catch {
         // Roll back on failure.
         setIds((prev) => {
           const next = new Set(prev);
-          if (adding) next.delete(productId);
-          else next.add(productId);
+          if (adding) next.delete(variantId);
+          else next.add(variantId);
           return next;
         });
       }

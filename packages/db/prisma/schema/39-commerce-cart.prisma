@@ -3,12 +3,12 @@
 // created the cart freezes.
 
 model Cart {
-  id          String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenantId    String  @map("tenant_id") @db.Uuid
-  customerId  String? @map("customer_id") @db.Uuid
-  guestToken  String? @map("guest_token") @db.VarChar(127)
-  channel     String  @db.VarChar(20) // storefront | b2b_portal | admin | mcp
-  currency    String  @db.VarChar(3)
+  id         String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId   String  @map("tenant_id") @db.Uuid
+  customerId String? @map("customer_id") @db.Uuid
+  guestToken String? @map("guest_token") @db.VarChar(127)
+  channel    String  @db.VarChar(20) // storefront | b2b_portal | admin | mcp
+  currency   String  @db.VarChar(3)
 
   // Source provenance — populated when the cart was bootstrapped from
   // an existing quote or subscription. Both nullable; CRM owns the rows.
@@ -17,13 +17,13 @@ model Cart {
 
   // Cached totals; the deterministic pricing pipeline writes these on
   // every cart mutation so the storefront can render without recomputing.
-  subtotalCents          Int @default(0) @map("subtotal_cents")
-  discountTotalCents     Int @default(0) @map("discount_total_cents")
-  shippingTotalCents     Int @default(0) @map("shipping_total_cents")
-  taxTotalCents          Int @default(0) @map("tax_total_cents")
-  giftCardAppliedCents   Int @default(0) @map("gift_card_applied_cents")
+  subtotalCents           Int @default(0) @map("subtotal_cents")
+  discountTotalCents      Int @default(0) @map("discount_total_cents")
+  shippingTotalCents      Int @default(0) @map("shipping_total_cents")
+  taxTotalCents           Int @default(0) @map("tax_total_cents")
+  giftCardAppliedCents    Int @default(0) @map("gift_card_applied_cents")
   storeCreditAppliedCents Int @default(0) @map("store_credit_applied_cents")
-  totalCents             Int @default(0) @map("total_cents")
+  totalCents              Int @default(0) @map("total_cents")
 
   // Per-tenant pricing trace — every step of the resolution pipeline is
   // recorded here so the storefront can answer "why is this the price?"
@@ -37,10 +37,10 @@ model Cart {
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
 
-  tenant    Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  customer  Customer?      @relation(fields: [customerId], references: [id], onDelete: SetNull)
-  items     CartItem[]
-  discounts CartDiscount[]
+  tenant           Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  customer         Customer?         @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  items            CartItem[]
+  discounts        CartDiscount[]
   checkoutSessions CheckoutSession[]
 
   @@index([tenantId, customerId])
@@ -86,12 +86,12 @@ model CartItem {
 // (next model).
 
 model CartDiscount {
-  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenantId    String   @map("tenant_id") @db.Uuid
-  cartId      String   @map("cart_id") @db.Uuid
-  discountId  String   @map("discount_id") @db.Uuid
-  appliedCents Int     @map("applied_cents")
-  appliedAt   DateTime @default(now()) @map("applied_at") @db.Timestamptz
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId     String   @map("tenant_id") @db.Uuid
+  cartId       String   @map("cart_id") @db.Uuid
+  discountId   String   @map("discount_id") @db.Uuid
+  appliedCents Int      @map("applied_cents")
+  appliedAt    DateTime @default(now()) @map("applied_at") @db.Timestamptz
 
   tenant   Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   cart     Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)

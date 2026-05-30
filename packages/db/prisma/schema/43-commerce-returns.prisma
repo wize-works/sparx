@@ -3,33 +3,33 @@
 // settlement.
 
 model ReturnRequest {
-  id          String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenantId    String  @map("tenant_id") @db.Uuid
-  orderId     String  @map("order_id") @db.Uuid
-  requestedBy String  @map("requested_by") @db.VarChar(20) // customer | staff
+  id          String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId    String @map("tenant_id") @db.Uuid
+  orderId     String @map("order_id") @db.Uuid
+  requestedBy String @map("requested_by") @db.VarChar(20) // customer | staff
 
-  status            String @default("requested") @db.VarChar(20)
+  status           String  @default("requested") @db.VarChar(20)
   // ^ requested | approved | denied | awaiting_shipment | in_transit |
   //   received | inspecting | inspected | refunded | cancelled
-  preferredOutcome  String @default("refund") @map("preferred_outcome") @db.VarChar(20)
+  preferredOutcome String  @default("refund") @map("preferred_outcome") @db.VarChar(20)
   // ^ refund | store_credit | exchange | repair
-  staffNote         String? @map("staff_note") @db.Text
+  staffNote        String? @map("staff_note") @db.Text
 
-  refundedAmountCents     Int? @map("refunded_amount_cents")
-  restockingFeeCents      Int? @map("restocking_fee_cents")
-  refundIssuedAs          String? @map("refund_issued_as") @db.VarChar(20)
+  refundedAmountCents Int?    @map("refunded_amount_cents")
+  restockingFeeCents  Int?    @map("restocking_fee_cents")
+  refundIssuedAs      String? @map("refund_issued_as") @db.VarChar(20)
   // ^ original_payment | store_credit | gift_card
 
-  approvedBy   String?  @map("approved_by") @db.Uuid
-  approvedAt   DateTime? @map("approved_at") @db.Timestamptz
-  receivedAt   DateTime? @map("received_at") @db.Timestamptz
-  refundedAt   DateTime? @map("refunded_at") @db.Timestamptz
-  cancelledAt  DateTime? @map("cancelled_at") @db.Timestamptz
+  approvedBy  String?   @map("approved_by") @db.Uuid
+  approvedAt  DateTime? @map("approved_at") @db.Timestamptz
+  receivedAt  DateTime? @map("received_at") @db.Timestamptz
+  refundedAt  DateTime? @map("refunded_at") @db.Timestamptz
+  cancelledAt DateTime? @map("cancelled_at") @db.Timestamptz
 
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
 
-  tenant      Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant      Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   items       ReturnLineItem[]
   inspections ReturnInspection[]
   labels      ReturnLabel[]
@@ -41,17 +41,17 @@ model ReturnRequest {
 }
 
 model ReturnLineItem {
-  id                 String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenantId           String  @map("tenant_id") @db.Uuid
-  returnId           String  @map("return_id") @db.Uuid
-  orderItemId        String  @map("order_item_id") @db.Uuid
-  quantity           Int
-  approvedQuantity   Int     @default(0) @map("approved_quantity")
-  reasonCode         String  @map("reason_code") @db.VarChar(40)
+  id               String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId         String  @map("tenant_id") @db.Uuid
+  returnId         String  @map("return_id") @db.Uuid
+  orderItemId      String  @map("order_item_id") @db.Uuid
+  quantity         Int
+  approvedQuantity Int     @default(0) @map("approved_quantity")
+  reasonCode       String  @map("reason_code") @db.VarChar(40)
   // ^ wrong_item | wrong_size | defective | damaged_in_transit |
   //   not_as_described | no_longer_needed | arrived_late | other
-  customerNote       String? @map("customer_note") @db.Text
-  mediaAssetIds      Json    @default("[]") @map("media_asset_ids") // customer photos
+  customerNote     String? @map("customer_note") @db.Text
+  mediaAssetIds    Json    @default("[]") @map("media_asset_ids") // customer photos
 
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
@@ -65,22 +65,22 @@ model ReturnLineItem {
 }
 
 model ReturnInspection {
-  id                 String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenantId           String   @map("tenant_id") @db.Uuid
-  returnId           String   @map("return_id") @db.Uuid
-  returnLineItemId   String   @map("return_line_item_id") @db.Uuid
-  condition          String   @db.VarChar(20)
+  id               String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId         String  @map("tenant_id") @db.Uuid
+  returnId         String  @map("return_id") @db.Uuid
+  returnLineItemId String  @map("return_line_item_id") @db.Uuid
+  condition        String  @db.VarChar(20)
   // ^ unopened | like_new | used_good | used_acceptable | damaged | destroyed
-  restockable        Boolean
-  warehouseId        String?  @map("warehouse_id") @db.Uuid
-  photoMediaIds      Json     @default("[]") @map("photo_media_ids")
-  note               String?  @db.Text
-  inspectedBy        String?  @map("inspected_by") @db.Uuid
+  restockable      Boolean
+  warehouseId      String? @map("warehouse_id") @db.Uuid
+  photoMediaIds    Json    @default("[]") @map("photo_media_ids")
+  note             String? @db.Text
+  inspectedBy      String? @map("inspected_by") @db.Uuid
 
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
 
-  tenant    Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  return    ReturnRequest @relation(fields: [returnId], references: [id], onDelete: Cascade)
+  tenant Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  return ReturnRequest @relation(fields: [returnId], references: [id], onDelete: Cascade)
 
   @@index([tenantId, returnId])
   @@index([returnLineItemId])
@@ -88,15 +88,15 @@ model ReturnInspection {
 }
 
 model ReturnLabel {
-  id           String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenantId     String  @map("tenant_id") @db.Uuid
-  returnId     String  @map("return_id") @db.Uuid
-  providerSlug String  @map("provider_slug") @db.VarChar(63)
-  labelRef     String  @map("label_ref") @db.VarChar(255)
+  id             String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId       String  @map("tenant_id") @db.Uuid
+  returnId       String  @map("return_id") @db.Uuid
+  providerSlug   String  @map("provider_slug") @db.VarChar(63)
+  labelRef       String  @map("label_ref") @db.VarChar(255)
   trackingNumber String? @map("tracking_number") @db.VarChar(127)
   trackingUrl    String? @map("tracking_url") @db.VarChar(2048)
-  labelMediaId String? @map("label_media_id") @db.Uuid
-  costCents    Int     @default(0) @map("cost_cents")
+  labelMediaId   String? @map("label_media_id") @db.Uuid
+  costCents      Int     @default(0) @map("cost_cents")
 
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
 
