@@ -33,6 +33,7 @@ COPY packages/search ./packages/search
 COPY packages/commerce ./packages/commerce
 COPY packages/provider-stripe ./packages/provider-stripe
 COPY packages/provider-shippo ./packages/provider-shippo
+COPY packages/customer-auth ./packages/customer-auth
 COPY services/api-rest ./services/api-rest
 
 # Install only what api-rest needs (and transitive workspace deps).
