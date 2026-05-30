@@ -43,11 +43,6 @@ interface ApiAsset {
   variants?: { format: string; width: number; url: string }[];
 }
 
-interface ApiResponse {
-  success: true;
-  data: ApiAsset[];
-}
-
 export interface MediaPickerProps {
   open: boolean;
   onOpenChange: (next: boolean) => void;
