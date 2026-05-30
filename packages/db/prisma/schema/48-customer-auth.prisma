@@ -1,0 +1,75 @@
+// Customer auth — Layer 2 (storefront shoppers). See docs/27-customer-accounts-storefront-auth.md.
+//
+// Distinct from Layer 1 (staff Better Auth: users/sessions/accounts). These
+// tables hang off the CRM `customers` spine — the CRM owns the customer record;
+// auth only adds credentials + sessions + reset tokens.
+//
+// Why not Better Auth: Better Auth keys credential sign-in on a GLOBALLY unique
+// email; shoppers must register the same email at different merchants as
+// separate accounts (unique per (tenantId, email)). For a shopper the tenant is
+// known BEFORE auth (it's the storefront hostname), so every operation runs in
+// withTenant() and RLS isolates by tenant — no global-email requirement.
+//
+// Passwords are stored ONLY as Argon2id hashes. Session/reset tokens are stored
+// ONLY as SHA-256 hashes; the plaintext lives in the cookie / reset link.
+
+// One credential per registered customer. A `customers` row can exist without
+// one (guest checkout, CRM-imported prospect); the credential's presence is the
+// source of truth for "has a storefront account".
+model CustomerCredential {
+  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId      String    @map("tenant_id") @db.Uuid
+  customerId    String    @unique @map("customer_id") @db.Uuid
+  passwordHash  String    @map("password_hash") @db.Text // Argon2id — NEVER plaintext
+  emailVerified Boolean   @default(false) @map("email_verified")
+  lastLoginAt   DateTime? @map("last_login_at") @db.Timestamptz
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt     DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  tenant   Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  customer Customer          @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  sessions CustomerSession[]
+
+  @@index([tenantId])
+  @@map("customer_credentials")
+}
+
+// Opaque rotating session. `tokenHash` = SHA-256 hex of the random token in the
+// httpOnly cookie. Expiry enforced in-app and indexed for cheap cleanup.
+model CustomerSession {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId     String   @map("tenant_id") @db.Uuid
+  customerId   String   @map("customer_id") @db.Uuid
+  credentialId String   @map("credential_id") @db.Uuid
+  tokenHash    String   @unique @map("token_hash") @db.VarChar(64)
+  expiresAt    DateTime @map("expires_at") @db.Timestamptz
+  ipAddress    String?  @map("ip_address") @db.Inet
+  userAgent    String?  @map("user_agent") @db.Text
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  tenant     Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  customer   Customer           @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  credential CustomerCredential @relation(fields: [credentialId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, customerId])
+  @@index([expiresAt])
+  @@map("customer_sessions")
+}
+
+// Single-use password-reset tokens. `tokenHash` = SHA-256 hex of the token
+// mailed to the customer. Short-lived; consumed (usedAt set) on use.
+model CustomerPasswordReset {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId   String    @map("tenant_id") @db.Uuid
+  customerId String    @map("customer_id") @db.Uuid
+  tokenHash  String    @unique @map("token_hash") @db.VarChar(64)
+  expiresAt  DateTime  @map("expires_at") @db.Timestamptz
+  usedAt     DateTime? @map("used_at") @db.Timestamptz
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  tenant   Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, customerId])
+  @@map("customer_password_resets")
+}

@@ -69,6 +69,11 @@ model Customer {
   wishlists        Wishlist[]
   taxExemptions    TaxExemption[]
 
+  // Customer-auth (Layer 2) — credential + sessions + reset tokens (docs/27)
+  credential       CustomerCredential?
+  customerSessions CustomerSession[]
+  passwordResets   CustomerPasswordReset[]
+
   @@unique([tenantId, email], map: "customers_tenant_email_unique")
   @@index([tenantId, type])
   @@index([tenantId, assignedRepId])

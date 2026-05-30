@@ -171,5 +171,10 @@ model Tenant {
   storefrontSettings StorefrontSettings?
   storefrontTheme    StorefrontTheme?
 
+  // Customer-auth (Layer 2) — storefront shopper credentials/sessions (docs/27)
+  customerCredentials    CustomerCredential[]
+  customerAuthSessions   CustomerSession[]
+  customerPasswordResets CustomerPasswordReset[]
+
   @@map("tenants")
 }
