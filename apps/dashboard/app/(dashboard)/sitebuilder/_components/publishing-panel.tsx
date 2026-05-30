@@ -36,7 +36,10 @@ export function PublishingPanel({
       <section className="flex flex-col gap-3">
         <Heading level={3}>Version history</Heading>
         {versions.length === 0 ? (
-          <EmptyState title="No versions yet" description="Publish your site to create the first version." />
+          <EmptyState
+            title="No versions yet"
+            description="Publish your site to create the first version."
+          />
         ) : (
           <ul className="flex flex-col gap-2">
             {versions.map((v) => {

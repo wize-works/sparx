@@ -4,8 +4,16 @@ import { getConfig, listThemes } from './_lib/api';
 
 const SECTIONS = [
   { href: '/sitebuilder/design', title: 'Design', desc: 'Theme, colors, fonts, and live preview.' },
-  { href: '/sitebuilder/themes', title: 'Themes', desc: 'Switch between curated storefront themes.' },
-  { href: '/sitebuilder/homepage', title: 'Homepage', desc: 'Compose your homepage from sections.' },
+  {
+    href: '/sitebuilder/themes',
+    title: 'Themes',
+    desc: 'Switch between curated storefront themes.',
+  },
+  {
+    href: '/sitebuilder/homepage',
+    title: 'Homepage',
+    desc: 'Compose your homepage from sections.',
+  },
   { href: '/sitebuilder/pages', title: 'Pages', desc: 'Build section-based landing pages.' },
   {
     href: '/sitebuilder/navigation',
@@ -48,7 +56,11 @@ export default async function SitebuilderOverview() {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {SECTIONS.map((s) => (
           <Link key={s.href} href={s.href}>
-            <Card variant="module" padding="md" className="h-full hover:border-[var(--module-active)]">
+            <Card
+              variant="module"
+              padding="md"
+              className="h-full hover:border-[var(--module-active)]"
+            >
               <Heading level={4}>{s.title}</Heading>
               <Text variant="muted">{s.desc}</Text>
             </Card>

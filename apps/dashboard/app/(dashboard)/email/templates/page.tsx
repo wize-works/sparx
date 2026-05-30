@@ -81,7 +81,9 @@ export default async function TemplatesPage() {
                 <CardHeader>
                   <Stack direction="row" align="center" justify="between" gap={2}>
                     <CardTitle>{t.name}</CardTitle>
-                    <Badge variant={t.status === 'active' ? 'success' : 'outline'}>{t.status}</Badge>
+                    <Badge variant={t.status === 'active' ? 'success' : 'outline'}>
+                      {t.status}
+                    </Badge>
                   </Stack>
                   <CardDescription>Subject: {t.subject}</CardDescription>
                 </CardHeader>

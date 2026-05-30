@@ -93,17 +93,14 @@ export function Customizer({
 
   // Debounced draft save of token settings.
   const saveTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
-  const queueSave = React.useCallback(
-    (next: { light: TokenMap; dark: TokenMap; css: string }) => {
-      if (saveTimer.current) clearTimeout(saveTimer.current);
-      saveTimer.current = setTimeout(() => {
-        void updateSettings({
-          settings: { tokens: { light: next.light, dark: next.dark }, customCss: next.css },
-        });
-      }, 600);
-    },
-    []
-  );
+  const queueSave = React.useCallback((next: { light: TokenMap; dark: TokenMap; css: string }) => {
+    if (saveTimer.current) clearTimeout(saveTimer.current);
+    saveTimer.current = setTimeout(() => {
+      void updateSettings({
+        settings: { tokens: { light: next.light, dark: next.dark }, customCss: next.css },
+      });
+    }, 600);
+  }, []);
 
   const onTokenChange = (key: string, value: string) => {
     const next = { ...editing, [key]: value };
@@ -199,19 +196,12 @@ export function Customizer({
             </div>
           </Panel>
 
-          <Panel
-            title="Colors"
-            aside={
-              <ModeSwitch mode={previewMode} onChange={switchMode} />
-            }
-          >
+          <Panel title="Colors" aside={<ModeSwitch mode={previewMode} onChange={switchMode} />}>
             {colorFields.map((f) => (
               <div key={f.key} className="flex flex-col gap-1.5">
                 <Label>{f.label}</Label>
                 <ColorPicker value={tokenValue(f)} onChange={(v) => onTokenChange(f.key, v)} />
-                {f.help ? (
-                  <p className="text-xs text-[var(--color-text-muted)]">{f.help}</p>
-                ) : null}
+                {f.help ? <p className="text-xs text-[var(--color-text-muted)]">{f.help}</p> : null}
               </div>
             ))}
           </Panel>
@@ -281,9 +271,7 @@ export function Customizer({
               style={deviceWidth ? { width: deviceWidth, maxWidth: '100%' } : undefined}
             />
           </div>
-          {pending ? (
-            <p className="text-xs text-[var(--color-text-muted)]">Saving…</p>
-          ) : null}
+          {pending ? <p className="text-xs text-[var(--color-text-muted)]">Saving…</p> : null}
         </div>
       </div>
     </div>
@@ -320,7 +308,7 @@ function ModeSwitch({ mode, onChange }: { mode: Mode; onChange: (m: Mode) => voi
           onClick={() => onChange(m)}
           className={
             mode === m
-              ? 'rounded px-2 py-0.5 text-xs bg-[var(--module-active)] text-white'
+              ? 'rounded bg-[var(--module-active)] px-2 py-0.5 text-xs text-white'
               : 'rounded px-2 py-0.5 text-xs text-[var(--color-text-muted)]'
           }
         >

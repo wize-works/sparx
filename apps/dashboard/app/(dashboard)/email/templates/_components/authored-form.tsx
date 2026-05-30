@@ -48,7 +48,10 @@ export function AuthoredForm({ initial }: AuthoredFormProps) {
           router.refresh();
         } else toast.error(result.error.message);
       } else {
-        const result = await createAuthoredAction({ ...payload, preheader: payload.preheader ?? undefined });
+        const result = await createAuthoredAction({
+          ...payload,
+          preheader: payload.preheader ?? undefined,
+        });
         if (result.ok) {
           toast.success('Template created.');
           router.push(`/email/templates/${result.data.id}`);
@@ -107,8 +110,8 @@ export function AuthoredForm({ initial }: AuthoredFormProps) {
           <Label>Body</Label>
           <ContentBlockEditor value={doc} onChange={setDoc} placeholder="Write your email…" />
           <Text size="sm" variant="muted">
-            Rich text renders inside your branded email frame. Reorderable section blocks arrive with
-            the Site Builder.
+            Rich text renders inside your branded email frame. Reorderable section blocks arrive
+            with the Site Builder.
           </Text>
         </Stack>
 

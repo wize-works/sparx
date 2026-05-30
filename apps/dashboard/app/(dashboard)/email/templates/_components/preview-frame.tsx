@@ -58,7 +58,13 @@ export function PreviewFrame({ html, target }: { html: string; target: PreviewTa
             disabled={pending}
             className="w-56"
           />
-          <Button variant="outline" size="sm" onClick={sendTest} loading={pending} disabled={pending}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={sendTest}
+            loading={pending}
+            disabled={pending}
+          >
             <Send className="h-3.5 w-3.5" />
             Send test
           </Button>
@@ -70,7 +76,10 @@ export function PreviewFrame({ html, target }: { html: string; target: PreviewTa
           title="Email preview"
           srcDoc={html}
           className="h-[640px] rounded-sm border border-[var(--color-border-default)] bg-white"
-          style={{ width: width === 'mobile' ? 375 : '100%', maxWidth: width === 'mobile' ? 375 : 680 }}
+          style={{
+            width: width === 'mobile' ? 375 : '100%',
+            maxWidth: width === 'mobile' ? 375 : 680,
+          }}
         />
       </div>
       <Text size="sm" variant="muted">

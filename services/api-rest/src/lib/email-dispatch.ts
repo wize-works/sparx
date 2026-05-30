@@ -65,7 +65,7 @@ export async function runEmailDispatchTick(logger: FastifyBaseLogger): Promise<T
       try {
         const dispatch = await withTenant({ tenantId: row.tenant_id }, async (tx) => {
           const send = await tx.scheduledSend.findUnique({ where: { id: row.id } });
-          if (!send || send.status !== 'pending') return null;
+          if (send?.status !== 'pending') return null;
           const payload = (send.payload as SendPayload | null) ?? {};
           if (!payload.template) {
             await tx.scheduledSend.update({

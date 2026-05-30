@@ -46,6 +46,18 @@ export interface RenderedPreview {
   text: string;
 }
 
+export interface AutomationRow {
+  id: string;
+  key: string | null;
+  name: string;
+  triggerEvent: string;
+  delaySeconds: number;
+  frequencyCapSeconds: number | null;
+  enabled: boolean;
+  canDisable: boolean;
+  status: string;
+}
+
 export interface EmailSettingsView {
   tenantId: string;
   fromName: string | null;

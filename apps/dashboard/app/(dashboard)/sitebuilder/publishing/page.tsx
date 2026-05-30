@@ -13,7 +13,9 @@ export default async function PublishingPage() {
     <div className="flex flex-col gap-5">
       <div>
         <Heading level={1}>Publishing</Heading>
-        <Text variant="muted">Review version history, roll back, and manage scheduled publishes.</Text>
+        <Text variant="muted">
+          Review version history, roll back, and manage scheduled publishes.
+        </Text>
       </div>
       <PublishingPanel
         versions={versions}

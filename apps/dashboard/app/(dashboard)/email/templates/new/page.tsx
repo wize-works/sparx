@@ -1,6 +1,15 @@
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
-import { Button, Card, CardContent, CardHeader, CardTitle, Container, Heading, Stack } from '@sparx/ui';
+import {
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  Container,
+  Heading,
+  Stack,
+} from '@sparx/ui';
 
 import { AuthoredForm } from '../_components/authored-form';
 

@@ -8,6 +8,7 @@ import { createApp } from './app.js';
 import { env } from './env.js';
 import { startScheduledPublishLoop } from './lib/scheduled-publish.js';
 import { startSitebuilderPublishLoop } from './lib/sitebuilder-publish.js';
+import { startEmailDispatchLoop } from './lib/email-dispatch.js';
 
 async function main(): Promise<void> {
   // Hand api-core its Pub/Sub config before any route handler can call
@@ -37,11 +38,17 @@ async function main(): Promise<void> {
   // via a separate advisory lock — see @sparx/api-core/webhook-delivery.
   const stopWebhookDelivery = startWebhookDeliveryLoop(app.log);
 
+  // Background tick that publishes `email.send` for due ScheduledSend rows
+  // (delayed automation sends + scheduled broadcasts). Singleton across pods
+  // via its own advisory lock — see lib/email-dispatch.ts.
+  const stopEmailDispatch = startEmailDispatchLoop(app.log);
+
   const shutdown = (signal: NodeJS.Signals): void => {
     app.log.info({ signal }, 'shutdown received');
     stopScheduledPublish();
     stopSitebuilderPublish();
     stopWebhookDelivery();
+    stopEmailDispatch();
     void app
       .close()
       .then(() => {

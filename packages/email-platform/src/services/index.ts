@@ -16,5 +16,11 @@ export * as suppressionService from './suppression-service';
 export * as webhookService from './webhook-service';
 export * as brandService from './brand-service';
 export * as templateService from './template-service';
+export * as automationService from './automation-service';
 
 export { BUILTIN_TEMPLATES, getBuiltinTemplate, type BuiltinTemplate } from '../builtin-templates';
+export {
+  DEFAULT_AUTOMATIONS,
+  getDefaultAutomation,
+  type DefaultAutomation,
+} from '../default-automations';

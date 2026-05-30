@@ -42,7 +42,9 @@ const emailTemplateRoutes: FastifyPluginAsync = (app) => {
     requireRole(request, 'editor');
     await requireEmailModule(request);
     const { key } = KeyParam.parse(request.params);
-    return ok(await templateService.saveBuiltinOverride(toEmailContext(request), key, request.body));
+    return ok(
+      await templateService.saveBuiltinOverride(toEmailContext(request), key, request.body)
+    );
   });
 
   app.get('/v1/email/templates/builtin/:key/preview', async (request) => {
@@ -59,7 +61,11 @@ const emailTemplateRoutes: FastifyPluginAsync = (app) => {
     await requireEmailModule(request);
     const { key } = KeyParam.parse(request.params);
     return ok(
-      await templateService.testSend(toEmailContext(request), { source: 'builtin', key }, request.body)
+      await templateService.testSend(
+        toEmailContext(request),
+        { source: 'builtin', key },
+        request.body
+      )
     );
   });
 
@@ -108,7 +114,11 @@ const emailTemplateRoutes: FastifyPluginAsync = (app) => {
     await requireEmailModule(request);
     const { id } = IdParam.parse(request.params);
     return ok(
-      await templateService.testSend(toEmailContext(request), { source: 'authored', id }, request.body)
+      await templateService.testSend(
+        toEmailContext(request),
+        { source: 'authored', id },
+        request.body
+      )
     );
   });
 

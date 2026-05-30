@@ -13,19 +13,14 @@ export async function saveBuiltinOverrideAction(
   input: unknown
 ): Promise<ActionResult<BuiltinTemplateView>> {
   return restAction(async () => {
-    const view = await api.patch<BuiltinTemplateView>(
-      `/v1/email/templates/builtin/${key}`,
-      input
-    );
+    const view = await api.patch<BuiltinTemplateView>(`/v1/email/templates/builtin/${key}`, input);
     revalidatePath('/email/templates');
     revalidatePath(`/email/templates/builtin/${key}`);
     return view;
   });
 }
 
-export async function createAuthoredAction(
-  input: unknown
-): Promise<ActionResult<{ id: string }>> {
+export async function createAuthoredAction(input: unknown): Promise<ActionResult<{ id: string }>> {
   return restAction(async () => {
     const row = await api.post<AuthoredTemplateDetail>('/v1/email/templates', input);
     revalidatePath('/email/templates');
