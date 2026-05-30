@@ -21,7 +21,11 @@ import {
   type DeliveryResult,
   type TemplateSend,
 } from '@sparx/email';
-import { renderDocToHtml, type CmsDoc } from '@sparx/cms-editor';
+// Serializer from the server-safe subpath so backends (api-rest, api-mcp,
+// email-worker) don't pull the React/TipTap editor + @sparx/ui into runtime.
+// CmsDoc is type-only (erased), so importing it from the index is fine.
+import { renderDocToHtml } from '@sparx/cms-editor/serialize';
+import type { CmsDoc } from '@sparx/cms-editor';
 
 import { writeAuditLog } from '../audit';
 import { publishEmailEvent } from '../events';

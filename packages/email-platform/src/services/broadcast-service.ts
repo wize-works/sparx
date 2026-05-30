@@ -11,7 +11,8 @@
 import { withTenant } from '@sparx/db';
 import type { Broadcast, EmailTemplate } from '@sparx/db';
 import { renderAuthoredEmail } from '@sparx/email';
-import { renderDocToHtml, type CmsDoc } from '@sparx/cms-editor';
+import { renderDocToHtml } from '@sparx/cms-editor/serialize';
+import type { CmsDoc } from '@sparx/cms-editor';
 
 import { writeAuditLog } from '../audit';
 import { publishEmailEvent } from '../events';

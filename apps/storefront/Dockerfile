@@ -21,6 +21,8 @@ COPY pnpm-workspace.yaml pnpm-lock.yaml package.json tsconfig.base.json ./
 COPY apps/storefront/package.json apps/storefront/
 COPY packages/ui/package.json packages/ui/
 COPY packages/cms-editor/package.json packages/cms-editor/
+COPY packages/storefront-themes/package.json packages/storefront-themes/
+COPY packages/sitebuilder-schemas/package.json packages/sitebuilder-schemas/
 
 # Install only the @sparx/storefront subgraph (its deps + transitive workspace deps).
 RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \
@@ -28,6 +30,8 @@ RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \
 
 COPY packages/ui packages/ui
 COPY packages/cms-editor packages/cms-editor
+COPY packages/storefront-themes packages/storefront-themes
+COPY packages/sitebuilder-schemas packages/sitebuilder-schemas
 COPY apps/storefront apps/storefront
 
 # next.config.mjs has `output: 'standalone'` and outputFileTracingRoot

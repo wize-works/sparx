@@ -17,8 +17,14 @@ COPY tsconfig.base.json ./
 COPY packages/db ./packages/db
 COPY packages/auth ./packages/auth
 COPY packages/events ./packages/events
+COPY packages/email ./packages/email
 COPY packages/crm-schemas ./packages/crm-schemas
 COPY packages/crm ./packages/crm
+COPY packages/storefront-themes ./packages/storefront-themes
+COPY packages/sitebuilder-schemas ./packages/sitebuilder-schemas
+COPY packages/sitebuilder ./packages/sitebuilder
+COPY packages/cms-editor ./packages/cms-editor
+COPY packages/email-platform ./packages/email-platform
 COPY services/api-mcp ./services/api-mcp
 
 RUN pnpm install --filter @sparx/api-mcp... --frozen-lockfile --prod=false
