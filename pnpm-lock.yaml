@@ -110,6 +110,15 @@ importers:
       '@sparx/provider-taxjar':
         specifier: workspace:*
         version: link:../../packages/provider-taxjar
+      '@sparx/sitebuilder':
+        specifier: workspace:*
+        version: link:../../packages/sitebuilder
+      '@sparx/sitebuilder-schemas':
+        specifier: workspace:*
+        version: link:../../packages/sitebuilder-schemas
+      '@sparx/storefront-themes':
+        specifier: workspace:*
+        version: link:../../packages/storefront-themes
       '@sparx/ui':
         specifier: workspace:*
         version: link:../../packages/ui
@@ -171,6 +180,15 @@ importers:
       '@sparx/cms-editor':
         specifier: workspace:*
         version: link:../../packages/cms-editor
+      '@sparx/sitebuilder':
+        specifier: workspace:*
+        version: link:../../packages/sitebuilder
+      '@sparx/sitebuilder-schemas':
+        specifier: workspace:*
+        version: link:../../packages/sitebuilder-schemas
+      '@sparx/storefront-themes':
+        specifier: workspace:*
+        version: link:../../packages/storefront-themes
       '@sparx/ui':
         specifier: workspace:*
         version: link:../../packages/ui

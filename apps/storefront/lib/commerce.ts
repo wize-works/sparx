@@ -322,6 +322,27 @@ export async function listRelatedProducts(
   }
 }
 
+/** Hydrate a hand-picked set of products by id, in the requested order.
+ *  Backs Site Builder's manual featured-products source. Unknown/inactive ids
+ *  are dropped by the API. Returns [] (never throws) so a section degrades to
+ *  empty rather than erroring the whole page. */
+export async function getProductsByIds(
+  tenantSlug: string,
+  ids: string[]
+): Promise<PublicProductListItem[]> {
+  if (ids.length === 0) return [];
+  try {
+    const { data } = await publicGet<PublicProductListItem[]>(
+      '/v1/public/commerce/products/by-ids',
+      { tenant: tenantSlug, ids: ids.join(',') },
+      [`commerce:${tenantSlug}:products`]
+    );
+    return data;
+  } catch {
+    return [];
+  }
+}
+
 export async function getProduct(
   tenantSlug: string,
   handle: string

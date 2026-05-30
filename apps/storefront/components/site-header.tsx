@@ -20,16 +20,42 @@ export interface SiteHeaderProps {
   tenant: ResolvedTenant;
   nav: NavItem[];
   announcement?: string | null;
+  /** Announcement link target (when the announcement bar links somewhere). */
+  announcementHref?: string | null;
+  /** Hide the inline search box when the merchant's header config disables it. */
+  showSearch?: boolean;
+  /** Where the logo sits in the bar (Site Builder header config). */
+  logoPlacement?: 'left' | 'center';
+  /** Light/dark toggle island, rendered only when appearancePolicy = toggle. */
+  modeToggle?: React.ReactNode;
 }
 
-export function SiteHeader({ tenant, nav, announcement }: SiteHeaderProps) {
+export function SiteHeader({
+  tenant,
+  nav,
+  announcement,
+  announcementHref,
+  showSearch = true,
+  logoPlacement = 'left',
+  modeToggle,
+}: SiteHeaderProps) {
   const logo = mediaUrl(tenant.theme?.logoMediaId ?? null, tenant.slug);
 
   return (
     <header className="sf-header">
-      {announcement ? <div className="sf-announce">{announcement}</div> : null}
+      {announcement ? (
+        <div className="sf-announce">
+          {announcementHref ? (
+            <Link href={announcementHref} className="sf-announce__link">
+              {announcement}
+            </Link>
+          ) : (
+            announcement
+          )}
+        </div>
+      ) : null}
       <div className="sf-container">
-        <div className="sf-header__bar">
+        <div className="sf-header__bar" data-logo={logoPlacement}>
           <MobileNav nav={nav} brand={tenant.name} />
 
           <Link href="/" className="sf-header__brand" aria-label={`${tenant.name} home`}>
@@ -44,12 +70,15 @@ export function SiteHeader({ tenant, nav, announcement }: SiteHeaderProps) {
             ))}
           </nav>
 
-          <SearchBox tenantSlug={tenant.slug} />
+          {showSearch ? <SearchBox tenantSlug={tenant.slug} /> : null}
 
           <div className="sf-header__actions">
-            <Link href="/search" className="sf-iconbtn sf-search--mobile" aria-label="Search">
-              <SearchIcon />
-            </Link>
+            {showSearch ? (
+              <Link href="/search" className="sf-iconbtn sf-search--mobile" aria-label="Search">
+                <SearchIcon />
+              </Link>
+            ) : null}
+            {modeToggle}
             <Link href="/account" className="sf-iconbtn" aria-label="Account">
               <UserIcon />
             </Link>

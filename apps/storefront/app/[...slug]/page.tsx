@@ -6,7 +6,9 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { resolveTenant } from '@/lib/tenant';
 import { getPageBySlug } from '@/lib/content';
+import { getPublishedSite, sectionsForPage } from '@/lib/site';
 import { PageView } from '@/components/page-view';
+import { SectionRenderer } from '@/components/section-renderer';
 
 export const dynamic = 'force-dynamic';
 
@@ -46,9 +48,25 @@ export default async function StorefrontPage({ params, searchParams }: SlugPageP
 
   const slug = buildSlug((await params).slug);
   const previewToken = (await searchParams)?.sparxPreview;
-  const page = await getPageBySlug(tenant.slug, slug, previewToken ? { previewToken } : {});
+  const [page, snapshot] = await Promise.all([
+    getPageBySlug(tenant.slug, slug, previewToken ? { previewToken } : {}),
+    getPublishedSite(tenant.slug),
+  ]);
+  const sections = sectionsForPage(snapshot, slug);
 
-  if (!page) notFound();
+  // Neither a CMS page nor Site Builder sections exist for this slug.
+  if (!page && sections.length === 0) notFound();
 
-  return <PageView entry={page} />;
+  const { defaultCurrency, defaultLocale } = tenant.storefront;
+  return (
+    <>
+      {sections.length > 0 ? (
+        <SectionRenderer
+          sections={sections}
+          ctx={{ tenantSlug: tenant.slug, currency: defaultCurrency, locale: defaultLocale }}
+        />
+      ) : null}
+      {page ? <PageView entry={page} /> : null}
+    </>
+  );
 }

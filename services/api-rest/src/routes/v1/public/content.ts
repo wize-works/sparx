@@ -110,6 +110,82 @@ const publicContentRoutes: FastifyPluginAsync = (app) => {
     return ok(serializeEntry(row));
   });
 
+  // Public navigation menu read — the storefront layout resolves a header/footer
+  // SiteLayoutBlock's `navigationMenuId` into renderable links. Items are
+  // resolved to an href: an internal CMS page (entryId → published page slug)
+  // or an external URL. Unpublished / missing entries are dropped so the
+  // storefront never renders a dead link. Tree-shaped via parentItemId.
+  app.get('/v1/public/content/navigation/:id', async (request) => {
+    const { id } = z.object({ id: z.string().uuid() }).parse(request.params);
+    const q = z.object({ tenant: z.string().min(1).max(63) }).parse(request.query);
+    const tenantId = await resolveTenantBySlug(q.tenant);
+
+    const menu = await withTenant({ tenantId }, (tx) =>
+      tx.navigationMenu.findUnique({
+        where: { id },
+        select: {
+          id: true,
+          location: true,
+          name: true,
+          items: {
+            orderBy: { position: 'asc' },
+            select: {
+              id: true,
+              parentItemId: true,
+              position: true,
+              label: true,
+              externalUrl: true,
+              openInNewTab: true,
+              // Only published, non-deleted target pages resolve to a link.
+              entry: { select: { slug: true, status: true, deletedAt: true } },
+            },
+          },
+        },
+      })
+    );
+    if (!menu) throw notFound('Navigation menu', id);
+
+    interface NavNode {
+      id: string;
+      label: string;
+      href: string;
+      openInNewTab: boolean;
+      children: NavNode[];
+    }
+    const hrefFor = (item: (typeof menu.items)[number]): string | null => {
+      if (item.externalUrl) return item.externalUrl;
+      const e = item.entry;
+      if (e?.slug && e.status === 'published' && !e.deletedAt) return `/${e.slug}`;
+      return null;
+    };
+
+    // Build the tree, dropping items with no resolvable href (and, with them,
+    // any descendants — a child of a dead parent has no place to hang).
+    const byParent = new Map<string | null, typeof menu.items>();
+    for (const item of menu.items) {
+      const key = item.parentItemId;
+      const bucket = byParent.get(key) ?? [];
+      bucket.push(item);
+      byParent.set(key, bucket);
+    }
+    const build = (parentId: string | null): NavNode[] =>
+      (byParent.get(parentId) ?? []).flatMap((item) => {
+        const href = hrefFor(item);
+        if (!href) return [];
+        return [
+          {
+            id: item.id,
+            label: item.label,
+            href,
+            openInNewTab: item.openInNewTab,
+            children: build(item.id),
+          },
+        ];
+      });
+
+    return ok({ id: menu.id, location: menu.location, name: menu.name, items: build(null) });
+  });
+
   app.get('/v1/public/content/types/:key', async (request) => {
     const { key } = TypeKeyParams.parse(request.params);
     const q = TypeKeyQuery.parse(request.query);

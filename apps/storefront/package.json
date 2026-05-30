@@ -13,6 +13,9 @@
   },
   "dependencies": {
     "@sparx/cms-editor": "workspace:*",
+    "@sparx/sitebuilder": "workspace:*",
+    "@sparx/sitebuilder-schemas": "workspace:*",
+    "@sparx/storefront-themes": "workspace:*",
     "@sparx/ui": "workspace:*",
     "@stripe/react-stripe-js": "^3.7.0",
     "@stripe/stripe-js": "^5.10.0",

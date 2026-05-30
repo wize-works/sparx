@@ -229,6 +229,39 @@ const publicCommerceRoutes: FastifyPluginAsync = (app) => {
     });
   });
 
+  // Bulk hydrate a set of products by id, preserving the requested order.
+  // Drives hand-picked Site Builder sections (featured-products manual source)
+  // and is the building block for cart/wishlist hydration. Only active,
+  // non-deleted products are returned; unknown ids are silently dropped.
+  app.get('/v1/public/commerce/products/by-ids', async (request) => {
+    const q = z
+      .object({
+        tenant: z.string().min(1).max(63),
+        ids: z.string().min(1),
+      })
+      .parse(request.query);
+    const ids = q.ids
+      .split(',')
+      .map((s) => s.trim())
+      .filter((s) => z.string().uuid().safeParse(s).success)
+      .slice(0, 100);
+    if (ids.length === 0) return ok([]);
+    const tenantId = await resolveTenantBySlug(q.tenant);
+    const rows = await withTenant({ tenantId }, (tx) =>
+      tx.product.findMany({
+        where: { id: { in: ids }, status: 'active', deletedAt: null },
+        select: productSelect(),
+      })
+    );
+    // Preserve caller-requested order (Prisma's `in` does not guarantee it).
+    const byId = new Map(rows.map((r) => [r.id, r]));
+    const ordered = ids.flatMap((id) => {
+      const row = byId.get(id);
+      return row ? [publicProduct(row)] : [];
+    });
+    return ok(ordered);
+  });
+
   app.get('/v1/public/commerce/products/:handle', async (request) => {
     const { handle } = HandleParams.parse(request.params);
     const q = TenantQuery.parse(request.query);

@@ -1529,3 +1529,240 @@
     grid-column: 2;
   }
 }
+
+/* ── Site Builder sections ─────────────────────────────────────
+   Section components composed by the Site Builder snapshot. All values are
+   token-driven so merchant theme + light/dark overrides cascade in. */
+
+/* Explicit column counts (featured-products, collection-grid, testimonials)
+   from the section config. Auto-fill remains the default for grids without a
+   data-cols attribute. */
+.sf-grid[data-cols='1'] {
+  grid-template-columns: 1fr;
+}
+.sf-grid[data-cols='2'] {
+  grid-template-columns: repeat(2, 1fr);
+}
+.sf-grid[data-cols='3'] {
+  grid-template-columns: repeat(3, 1fr);
+}
+.sf-grid[data-cols='4'] {
+  grid-template-columns: repeat(4, 1fr);
+}
+@media (max-width: 860px) {
+  .sf-grid[data-cols='3'],
+  .sf-grid[data-cols='4'] {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (max-width: 520px) {
+  .sf-grid[data-cols] {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Logo placement (header config). */
+.sf-header__bar[data-logo='center'] {
+  position: relative;
+}
+.sf-header__bar[data-logo='center'] .sf-header__brand {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+/* Announcement link. */
+.sf-announce__link {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* Footer social row. */
+.sf-footer__social {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+/* Hero section (Site Builder). */
+.sf-sb-hero {
+  position: relative;
+  background-size: cover;
+  background-position: center;
+  color: var(--sf-text);
+  isolation: isolate;
+}
+.sf-sb-hero[data-has-bg='true'] {
+  color: #fff;
+}
+.sf-sb-hero__scrim {
+  position: absolute;
+  inset: 0;
+  background: #000;
+  z-index: -1;
+}
+.sf-sb-hero__inner {
+  display: grid;
+  gap: 1.25rem;
+  padding-block: clamp(3.5rem, 8vw, 7rem);
+  place-items: center;
+  text-align: center;
+}
+.sf-sb-hero[data-align='left'] .sf-sb-hero__inner {
+  place-items: start;
+  text-align: left;
+}
+.sf-sb-hero[data-align='right'] .sf-sb-hero__inner {
+  place-items: end;
+  text-align: right;
+}
+.sf-sb-hero__title {
+  font-family: var(--sf-font-heading);
+  font-size: clamp(2.25rem, 5.5vw, 4rem);
+  font-weight: 680;
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+  max-width: 18ch;
+  margin: 0;
+}
+.sf-sb-hero__sub {
+  font-size: clamp(1.05rem, 2vw, 1.3rem);
+  max-width: 52ch;
+  margin: 0;
+  line-height: 1.5;
+  opacity: 0.92;
+}
+
+/* Image banner section. */
+.sf-sb-banner {
+  position: relative;
+  display: flex;
+  align-items: center;
+  border-radius: var(--sf-radius);
+  overflow: hidden;
+  background-size: cover;
+  background-position: center;
+  background-color: var(--sf-bg-subtle);
+  padding: clamp(1.5rem, 4vw, 3rem);
+  color: #fff;
+}
+.sf-sb-banner[data-height='sm'] {
+  min-height: 220px;
+}
+.sf-sb-banner[data-height='md'] {
+  min-height: 340px;
+}
+.sf-sb-banner[data-height='lg'] {
+  min-height: 480px;
+}
+.sf-sb-banner[data-align='center'] {
+  justify-content: center;
+  text-align: center;
+}
+.sf-sb-banner[data-align='right'] {
+  justify-content: flex-end;
+  text-align: right;
+}
+.sf-sb-banner__inner {
+  position: relative;
+  display: grid;
+  gap: 1rem;
+  max-width: 46ch;
+  background: rgb(0 0 0 / 0.32);
+  padding: clamp(1rem, 3vw, 2rem);
+  border-radius: var(--sf-radius-sm);
+  backdrop-filter: blur(2px);
+}
+.sf-sb-banner__title {
+  font-family: var(--sf-font-heading);
+  font-size: clamp(1.75rem, 4vw, 2.75rem);
+  font-weight: 660;
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+.sf-sb-banner__sub {
+  margin: 0;
+  line-height: 1.5;
+  opacity: 0.95;
+}
+
+/* Rich text section. */
+.sf-sb-richtext[data-align='center'] {
+  text-align: center;
+}
+.sf-sb-richtext[data-align='right'] {
+  text-align: right;
+}
+.sf-prose {
+  line-height: 1.7;
+  color: var(--sf-text-secondary);
+}
+.sf-prose :where(h1, h2, h3) {
+  color: var(--sf-text);
+  font-family: var(--sf-font-heading);
+}
+.sf-prose :where(a) {
+  color: var(--sf-primary);
+}
+.sf-prose :where(img) {
+  max-width: 100%;
+  height: auto;
+  border-radius: var(--sf-radius-sm);
+}
+
+/* Testimonials section. */
+.sf-sb-quote {
+  display: grid;
+  gap: 0.85rem;
+  margin: 0;
+  padding: 1.5rem;
+  border-radius: var(--sf-radius);
+  background: var(--sf-surface);
+  border: 1px solid var(--sf-border);
+}
+.sf-sb-quote__text {
+  margin: 0;
+  font-size: 1.05rem;
+  line-height: 1.55;
+  color: var(--sf-text);
+}
+.sf-sb-quote__by {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  font-size: 0.9rem;
+  color: var(--sf-text-secondary);
+}
+.sf-sb-quote__avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+/* Email signup section. */
+.sf-sb-signup {
+  display: grid;
+  gap: 0.85rem;
+  justify-items: center;
+  text-align: center;
+  padding: clamp(2rem, 5vw, 3.5rem);
+  border-radius: var(--sf-radius);
+  background: var(--sf-bg-subtle);
+}
+.sf-sb-signup__form {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  justify-content: center;
+  width: min(100%, 460px);
+  margin-top: 0.5rem;
+}
+.sf-sb-signup__form .sf-input {
+  flex: 1 1 220px;
+}
+.sf-sb-signup__ok {
+  font-weight: 550;
+  color: var(--sf-primary);
+}

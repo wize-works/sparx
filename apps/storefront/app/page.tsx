@@ -8,9 +8,11 @@ import { notFound } from 'next/navigation';
 
 import { PageView } from '@/components/page-view';
 import { ProductCard } from '@/components/product-card';
+import { SectionRenderer } from '@/components/section-renderer';
 import { listCollections, listProducts } from '@/lib/commerce';
 import { getPageBySlug } from '@/lib/content';
 import { mediaUrl } from '@/lib/media';
+import { getPublishedSite, sectionsForPage } from '@/lib/site';
 import { resolveTenant } from '@/lib/tenant';
 
 export const dynamic = 'force-dynamic';
@@ -23,6 +25,20 @@ export default async function StorefrontRoot({ searchParams }: RootPageProps) {
   const tenant = await resolveTenant();
   if (!tenant) notFound();
 
+  // Site Builder home composition wins when the merchant has published one.
+  const snapshot = await getPublishedSite(tenant.slug);
+  const homeSections = sectionsForPage(snapshot, 'home');
+  if (homeSections.length > 0) {
+    const { defaultCurrency, defaultLocale } = tenant.storefront;
+    return (
+      <SectionRenderer
+        sections={homeSections}
+        ctx={{ tenantSlug: tenant.slug, currency: defaultCurrency, locale: defaultLocale }}
+      />
+    );
+  }
+
+  // Empty-store fallback: the composed commerce homepage.
   const previewToken = (await searchParams)?.sparxPreview;
   const [cmsHome, collections, fresh] = await Promise.all([
     getPageBySlug(tenant.slug, 'home', previewToken ? { previewToken } : {}).catch(() => null),
