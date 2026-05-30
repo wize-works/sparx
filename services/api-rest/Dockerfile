@@ -62,4 +62,4 @@ EXPOSE 3000
 # user — so it re-downloaded pnpm from the npm registry on every cold start.
 # `node --import tsx/esm` keeps corepack out of the runtime path entirely.
 # Fastify handles SIGTERM via the graceful-shutdown hook in src/index.ts.
-ENTRYPOINT ["node", "--import", "tsx/esm", "src/index.ts"]
+ENTRYPOINT ["node", "--import", "tsx", "src/index.ts"]

@@ -40,4 +40,4 @@ EXPOSE 8080
 # via node (matches the `start` script), not `pnpm exec` — pnpm re-invokes
 # corepack at start, re-downloading pnpm from the registry on every cold start
 # (build-time corepack cache is root-owned, unreadable by the runtime user).
-ENTRYPOINT ["dumb-init", "--", "node", "--import", "tsx/esm", "src/index.ts"]
+ENTRYPOINT ["dumb-init", "--", "node", "--import", "tsx", "src/index.ts"]

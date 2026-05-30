@@ -46,4 +46,4 @@ EXPOSE 8080
 # `pnpm exec` — pnpm re-invokes corepack at container start, re-downloading
 # pnpm from the npm registry on every cold start (build-time corepack cache is
 # root-owned, unreadable by the runtime `node` user).
-ENTRYPOINT ["dumb-init", "--", "node", "--import", "tsx/esm", "src/index.ts"]
+ENTRYPOINT ["dumb-init", "--", "node", "--import", "tsx", "src/index.ts"]

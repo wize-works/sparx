@@ -46,4 +46,4 @@ EXPOSE 3200
 # npm registry on every cold start (the build-time corepack cache is owned by
 # root, unreadable by the runtime `node` user). Fastify handles SIGTERM via the
 # graceful-shutdown hook in src/index.ts.
-ENTRYPOINT ["node", "--import", "tsx/esm", "src/index.ts"]
+ENTRYPOINT ["node", "--import", "tsx", "src/index.ts"]

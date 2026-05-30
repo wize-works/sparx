@@ -7,7 +7,7 @@
   "main": "src/index.ts",
   "scripts": {
     "dev": "tsx watch --clear-screen=false src/index.ts",
-    "start": "node --import tsx/esm src/index.ts",
+    "start": "node --import tsx src/index.ts",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run --passWithNoTests",

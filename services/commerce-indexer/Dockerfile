@@ -37,4 +37,4 @@ EXPOSE 8080
 # registry on every cold start (build-time corepack cache is root-owned and
 # unreadable by the runtime `node` user). dumb-init forwards SIGTERM to the
 # graceful-shutdown hook before exiting.
-ENTRYPOINT ["dumb-init", "--", "node", "--import", "tsx/esm", "src/index.ts"]
+ENTRYPOINT ["dumb-init", "--", "node", "--import", "tsx", "src/index.ts"]

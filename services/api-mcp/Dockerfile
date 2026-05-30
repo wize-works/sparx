@@ -46,4 +46,4 @@ EXPOSE 3000
 # pnpm re-invokes corepack at container start, which re-downloads pnpm from the
 # npm registry on every cold start (build-time corepack cache is root-owned,
 # unreadable by the runtime `node` user). This keeps corepack out of runtime.
-ENTRYPOINT ["node", "--import", "tsx/esm", "src/index.ts"]
+ENTRYPOINT ["node", "--import", "tsx", "src/index.ts"]
