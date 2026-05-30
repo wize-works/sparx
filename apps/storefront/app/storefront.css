@@ -1741,6 +1741,40 @@
   object-fit: cover;
 }
 
+/* PDP questions & answers. */
+.sf-qa__item {
+  padding: 1rem 0;
+  border-bottom: 1px solid var(--sf-border);
+}
+.sf-qa__item:first-child {
+  padding-top: 0;
+}
+.sf-qa__q {
+  margin: 0 0 0.5rem;
+  color: var(--sf-text);
+  line-height: 1.55;
+}
+.sf-qa__a {
+  margin: 0 0 0.35rem;
+  padding-left: 1rem;
+  color: var(--sf-text-secondary);
+  line-height: 1.55;
+  display: flex;
+  gap: 0.4rem;
+  align-items: baseline;
+  flex-wrap: wrap;
+}
+.sf-qa__official {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--sf-on-primary);
+  background: var(--sf-primary);
+  border-radius: var(--sf-radius-sm);
+  padding: 0.1rem 0.4rem;
+}
+
 /* Email signup section. */
 .sf-sb-signup {
   display: grid;

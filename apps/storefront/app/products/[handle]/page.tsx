@@ -12,9 +12,11 @@ import { ProductCard } from '@/components/product-card';
 import { ProductDetail } from '@/components/product-detail';
 import { RatingStars } from '@/components/rating-stars';
 import { ReviewForm } from '@/components/review-form';
+import { QuestionForm } from '@/components/question-form';
 import {
   getProduct,
   listFitmentDomains,
+  listProductQuestions,
   listRelatedProducts,
   type PublicFitmentDomain,
 } from '@/lib/commerce';
@@ -52,7 +54,10 @@ export default async function ProductDetailPage({ params }: PageProps) {
   const product = await getProduct(tenant.slug, handle);
   if (!product) notFound();
 
-  const related = await listRelatedProducts(tenant.slug, product, 4);
+  const [related, questions] = await Promise.all([
+    listRelatedProducts(tenant.slug, product, 4),
+    listProductQuestions(tenant.slug, product.handle),
+  ]);
   const { defaultCurrency: currency, defaultLocale: locale, showStockBelow } = tenant.storefront;
 
   // Fitment rows carry a domain slug + label but not the per-level labels
@@ -153,6 +158,41 @@ export default async function ProductDetailPage({ params }: PageProps) {
           </p>
         )}
         <ReviewForm tenantSlug={tenant.slug} handle={product.handle} />
+      </section>
+
+      {/* Questions & answers */}
+      <section className="sf-section">
+        <h2 className="sf-h2" style={{ marginBottom: '1rem' }}>
+          Questions &amp; answers
+        </h2>
+        {questions.length > 0 ? (
+          <ul className="sf-qa" style={{ listStyle: 'none', padding: 0, margin: '0 0 1.25rem' }}>
+            {questions.map((q) => (
+              <li key={q.id} className="sf-qa__item">
+                <p className="sf-qa__q">
+                  <strong>Q:</strong> {q.body}
+                  {q.displayName ? (
+                    <span className="sf-muted" style={{ fontWeight: 400 }}>
+                      {' '}
+                      — {q.displayName}
+                    </span>
+                  ) : null}
+                </p>
+                {q.answers.map((a) => (
+                  <p key={a.id} className="sf-qa__a">
+                    <strong>A:</strong> {a.body}
+                    {a.isOfficial ? <span className="sf-qa__official">Store</span> : null}
+                  </p>
+                ))}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="sf-muted" style={{ marginBottom: '1.25rem' }}>
+            No questions yet — ask the first one.
+          </p>
+        )}
+        <QuestionForm tenantSlug={tenant.slug} handle={product.handle} />
       </section>
 
       {/* Related */}

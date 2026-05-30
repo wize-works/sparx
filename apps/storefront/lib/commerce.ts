@@ -360,6 +360,40 @@ export async function getProduct(
   }
 }
 
+export interface PublicQuestionAnswer {
+  id: string;
+  body: string;
+  isOfficial: boolean;
+  createdAt: string;
+}
+
+export interface PublicQuestion {
+  id: string;
+  displayName: string | null;
+  body: string;
+  createdAt: string;
+  helpfulCount: number;
+  answers: PublicQuestionAnswer[];
+}
+
+/** Published Q&A for a product (questions + merchant answers). Returns [] on
+ *  failure — the PDP Q&A block is supplementary, never load-bearing. */
+export async function listProductQuestions(
+  tenantSlug: string,
+  handle: string
+): Promise<PublicQuestion[]> {
+  try {
+    const { data } = await publicGet<PublicQuestion[]>(
+      `/v1/public/commerce/products/${encodeURIComponent(handle)}/questions`,
+      { tenant: tenantSlug },
+      [`commerce:${tenantSlug}:product:${handle}:questions`]
+    );
+    return data;
+  } catch {
+    return [];
+  }
+}
+
 export async function listFitmentDomains(tenantSlug: string): Promise<PublicFitmentDomain[]> {
   const { data } = await publicGet<PublicFitmentDomain[]>(
     '/v1/public/commerce/fitment/domains',
