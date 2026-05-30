@@ -1,8 +1,6 @@
 import Link from 'next/link';
 import { Layers, Plus, Star, Archive } from 'lucide-react';
 
-import { requireSession } from '@sparx/auth';
-import { segmentService } from '@sparx/crm';
 import {
   Badge,
   Button,
@@ -15,26 +13,43 @@ import {
   Text,
 } from '@sparx/ui';
 
+import { api } from '@/lib/api-rest-client';
+
 import { EntityRowLink } from '../../_components/entity-row-link';
 import { CrmTabs } from '../_components/crm-tabs';
 import { RecomputeButton } from './_components/recompute-button';
 
 export const dynamic = 'force-dynamic';
 
+interface SegmentRow {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  isBuiltIn: boolean;
+  archivedAt: string | null;
+}
+
+interface MemberCountResponse {
+  total: number;
+}
+
 interface PageProps {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }
 
 export default async function SegmentsPage({ searchParams }: PageProps) {
-  const session = await requireSession();
   const params = await searchParams;
   const includeArchived = Boolean(params.includeArchived);
-  const ctx = { tenantId: session.user.tenantId, userId: session.user.id };
 
-  const segments = await segmentService.list(ctx, { includeArchived });
+  const segments = await api.get<SegmentRow[]>(
+    `/v1/crm/segments${includeArchived ? '?include_archived=true' : ''}`
+  );
   const counts = await Promise.all(
     segments.map((s) =>
-      segmentService.memberCount(ctx, s.id).then((count) => ({ id: s.id, count }))
+      api
+        .get<MemberCountResponse>(`/v1/crm/segments/${s.id}/member-count`)
+        .then((r) => ({ id: s.id, count: r.total }))
     )
   );
   const countById = new Map(counts.map((c) => [c.id, c.count]));

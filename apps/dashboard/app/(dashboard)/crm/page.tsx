@@ -1,8 +1,6 @@
 import Link from 'next/link';
 import { Users, Plus, Building2, UserPlus } from 'lucide-react';
 
-import { requireSession } from '@sparx/auth';
-import { customerService } from '@sparx/crm';
 import {
   Badge,
   Button,
@@ -21,9 +19,25 @@ import {
   Text,
 } from '@sparx/ui';
 
+import { api } from '@/lib/api-rest-client';
+
 import { EntityRowLink } from '../_components/entity-row-link';
 import { CrmTabs } from './_components/crm-tabs';
 import { CustomerFiltersBar } from './_components/customer-filters-bar';
+
+interface CustomerListRow {
+  id: string;
+  type: string;
+  firstName: string | null;
+  lastName: string | null;
+  company: string | null;
+  email: string | null;
+  doNotContact: boolean;
+  orderCount: number;
+  totalSpent: string | number;
+  lastOrderAt: string | null;
+  updatedAt: string;
+}
 
 // CRM landing — customer list with filter bar.
 //
@@ -50,7 +64,6 @@ interface PageProps {
 }
 
 export default async function CrmPage({ searchParams }: PageProps) {
-  const session = await requireSession();
   const params = await searchParams;
   const type = stringParam(params.type);
   const tag = stringParam(params.tag);
@@ -59,16 +72,17 @@ export default async function CrmPage({ searchParams }: PageProps) {
     ? (stringParam(params.sort) as SortKey)
     : ('updatedAt' satisfies SortKey);
 
-  const { items: customers, total } = await customerService.list(
-    { tenantId: session.user.tenantId, userId: session.user.id },
-    {
-      take: 100,
-      sortBy: sort,
-      ...(type === 'prospect' || type === 'retail' || type === 'b2b' ? { type: type } : {}),
-      ...(tag ? { tag } : {}),
-      ...(q ? { q } : {}),
-    }
+  const query = new URLSearchParams();
+  query.set('take', '100');
+  query.set('sort_by', sort);
+  if (type === 'prospect' || type === 'retail' || type === 'b2b') query.set('type', type);
+  if (tag) query.set('tag', tag);
+  if (q) query.set('q', q);
+
+  const { data: customers, meta } = await api.getPaged<CustomerListRow[]>(
+    `/v1/crm/customers?${query.toString()}`
   );
+  const total = (meta?.total as number | undefined) ?? customers.length;
 
   return (
     <Container size="xl">
@@ -173,12 +187,12 @@ export default async function CrmPage({ searchParams }: PageProps) {
                       </TableCell>
                       <TableCell>
                         <Text size="sm" variant="muted">
-                          {c.lastOrderAt ? c.lastOrderAt.toLocaleDateString() : '—'}
+                          {c.lastOrderAt ? new Date(c.lastOrderAt).toLocaleDateString() : '—'}
                         </Text>
                       </TableCell>
                       <TableCell>
                         <Text size="sm" variant="muted">
-                          {c.updatedAt.toLocaleDateString()}
+                          {new Date(c.updatedAt).toLocaleDateString()}
                         </Text>
                       </TableCell>
                     </TableRow>

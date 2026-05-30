@@ -1,8 +1,6 @@
 import Link from 'next/link';
 import { Building2, Plus, AlertTriangle } from 'lucide-react';
 
-import { requireSession } from '@sparx/auth';
-import { b2bAccountService } from '@sparx/crm';
 import {
   Badge,
   Button,
@@ -21,8 +19,20 @@ import {
   Text,
 } from '@sparx/ui';
 
+import { api } from '@/lib/api-rest-client';
+
 import { EntityRowLink } from '../../_components/entity-row-link';
 import { CrmTabs } from '../_components/crm-tabs';
+
+interface B2bAccountRow {
+  id: string;
+  companyName: string;
+  status: string;
+  pricingTier: string | null;
+  creditLimit: string | number;
+  creditUsed: string | number;
+  fleetSize: number | null;
+}
 
 export const dynamic = 'force-dynamic';
 
@@ -39,21 +49,18 @@ const STATUS_VARIANT: Record<string, 'success' | 'warning' | 'outline' | 'danger
 const STATUS_VALUES = ['active', 'credit_hold', 'suspended', 'inactive'] as const;
 
 export default async function B2bAccountsPage({ searchParams }: PageProps) {
-  const session = await requireSession();
   const params = await searchParams;
   const status = stringParam(params.status);
   const q = stringParam(params.q);
 
-  const { items: accounts, total } = await b2bAccountService.list(
-    { tenantId: session.user.tenantId, userId: session.user.id },
-    {
-      take: 100,
-      ...(status && (STATUS_VALUES as readonly string[]).includes(status)
-        ? { status: status as (typeof STATUS_VALUES)[number] }
-        : {}),
-      ...(q ? { q } : {}),
-    }
+  const query = new URLSearchParams({ take: '100' });
+  if (status && (STATUS_VALUES as readonly string[]).includes(status)) query.set('status', status);
+  if (q) query.set('q', q);
+
+  const { data: accounts, meta } = await api.getPaged<B2bAccountRow[]>(
+    `/v1/crm/b2b-accounts?${query.toString()}`
   );
+  const total = (meta?.total as number | undefined) ?? accounts.length;
 
   return (
     <Container size="xl">
