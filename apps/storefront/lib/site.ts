@@ -37,7 +37,10 @@ export async function getPublishedSite(tenantSlug: string): Promise<PublishedSna
       {
         // Site config changes on publish; the publish flow purges these tags
         // (see app/api/revalidate — `site:<slug>` scope). Falls back to TTL.
-        next: { revalidate: 300, tags: ['sparx-storefront', `tenant:${tenantSlug}`, `site:${tenantSlug}`] },
+        next: {
+          revalidate: 300,
+          tags: ['sparx-storefront', `tenant:${tenantSlug}`, `site:${tenantSlug}`],
+        },
       }
     );
     const json = (await res.json()) as SuccessEnvelope<PublishedSnapshot | null> | ErrorEnvelope;
@@ -78,14 +81,16 @@ interface NavMenu {
 
 /** Resolve a CMS NavigationMenu id into renderable, href-resolved nav nodes.
  *  Returns [] on any failure so the layout falls back to its default links. */
-export async function getNavigationMenu(
-  tenantSlug: string,
-  menuId: string
-): Promise<NavNode[]> {
+export async function getNavigationMenu(tenantSlug: string, menuId: string): Promise<NavNode[]> {
   try {
     const res = await fetch(
       `${BASE_URL}/v1/public/content/navigation/${encodeURIComponent(menuId)}?tenant=${encodeURIComponent(tenantSlug)}`,
-      { next: { revalidate: 300, tags: ['sparx-storefront', `content:${tenantSlug}`, `site:${tenantSlug}`] } }
+      {
+        next: {
+          revalidate: 300,
+          tags: ['sparx-storefront', `content:${tenantSlug}`, `site:${tenantSlug}`],
+        },
+      }
     );
     const json = (await res.json()) as SuccessEnvelope<NavMenu> | ErrorEnvelope;
     if (!res.ok || 'error' in json) return [];

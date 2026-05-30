@@ -11,11 +11,11 @@ check, ack/nack model). The scope mapping (`planRevalidation` in
 
 ## Event → scope mapping
 
-| Event prefix | Scope | Purges (coarse per-tenant tag) |
-| --- | --- | --- |
+| Event prefix                                        | Scope      | Purges (coarse per-tenant tag)      |
+| --------------------------------------------------- | ---------- | ----------------------------------- |
 | `product.*`, `variant.*`, `inventory.*`, `review.*` | `commerce` | `commerce:<slug>` + `tenant:<slug>` |
-| `content.*`, `content_type.*`, `redirect.*` | `content` | `content:<slug>` |
-| `sitebuilder.*` | `site` | `site:<slug>` |
+| `content.*`, `content_type.*`, `redirect.*`         | `content`  | `content:<slug>`                    |
+| `sitebuilder.*`                                     | `site`     | `site:<slug>`                       |
 
 A single coarse `commerce:<slug>` purge clears every commerce read (products,
 collections, Q&A) for the tenant — the right blast radius for a catalog edit.

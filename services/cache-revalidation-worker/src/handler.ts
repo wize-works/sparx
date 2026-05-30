@@ -40,7 +40,11 @@ export function planRevalidation(type: string): RevalidateScope | null {
   ) {
     return 'commerce';
   }
-  if (type.startsWith('content.') || type.startsWith('content_type.') || type.startsWith('redirect.')) {
+  if (
+    type.startsWith('content.') ||
+    type.startsWith('content_type.') ||
+    type.startsWith('redirect.')
+  ) {
     return 'content';
   }
   // Site Builder publish events route here once they're on Pub/Sub (Phase 1
@@ -78,7 +82,10 @@ async function postRevalidate(slug: string, scope: RevalidateScope): Promise<voi
   }
 }
 
-export async function handleEvent(event: CacheEventEnvelope, logger: Logger): Promise<HandleResult> {
+export async function handleEvent(
+  event: CacheEventEnvelope,
+  logger: Logger
+): Promise<HandleResult> {
   const scope = planRevalidation(event.type);
   if (!scope) return { revalidated: false, reason: 'unmapped-type' };
 

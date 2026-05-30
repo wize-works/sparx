@@ -38,7 +38,12 @@ async function resolveProducts(
   const { items } = await listProducts(tenantSlug, {
     sort: 'newest',
     perPage: config.limit,
-  }).catch(() => ({ items: [] as PublicProductListItem[], total: 0, page: 1, perPage: config.limit }));
+  }).catch(() => ({
+    items: [] as PublicProductListItem[],
+    total: 0,
+    page: 1,
+    perPage: config.limit,
+  }));
   return items;
 }
 

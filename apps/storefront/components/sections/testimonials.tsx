@@ -31,9 +31,7 @@ export function TestimonialsSection({
           const avatar = mediaUrl(t.avatarMediaId ?? null, ctx.tenantSlug);
           return (
             <figure key={i} className="sf-sb-quote">
-              {typeof t.rating === 'number' ? (
-                <RatingStars rating={t.rating} compact />
-              ) : null}
+              {typeof t.rating === 'number' ? <RatingStars rating={t.rating} compact /> : null}
               <blockquote className="sf-sb-quote__text">{t.quote}</blockquote>
               <figcaption className="sf-sb-quote__by">
                 {avatar ? (
@@ -48,9 +46,7 @@ export function TestimonialsSection({
                 ) : null}
                 <span>
                   {t.authorName ? <strong>{t.authorName}</strong> : null}
-                  {t.authorTitle ? (
-                    <span className="sf-muted"> · {t.authorTitle}</span>
-                  ) : null}
+                  {t.authorTitle ? <span className="sf-muted"> · {t.authorTitle}</span> : null}
                 </span>
               </figcaption>
             </figure>

@@ -15,7 +15,9 @@ export function ImageBannerSection({
   ctx: SectionContext;
 }) {
   const img = mediaUrl(config.imageMediaId ?? null, ctx.tenantSlug);
-  const hasText = Boolean(config.heading || config.subheading || (config.ctaLabel && config.ctaUrl));
+  const hasText = Boolean(
+    config.heading || config.subheading || (config.ctaLabel && config.ctaUrl)
+  );
 
   return (
     <section className="sf-container sf-section">

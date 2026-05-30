@@ -30,7 +30,12 @@ import { listCollections } from '@/lib/commerce';
 import { mediaUrl } from '@/lib/media';
 import { resolveTenant } from '@/lib/tenant';
 import { themeToCss } from '@/lib/theme';
-import { getPublishedSite, getNavigationMenu, type NavNode, type PublishedSnapshot } from '@/lib/site';
+import {
+  getPublishedSite,
+  getNavigationMenu,
+  type NavNode,
+  type PublishedSnapshot,
+} from '@/lib/site';
 
 import './globals.css';
 import './storefront.css';

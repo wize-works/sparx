@@ -20,11 +20,7 @@ export function HeroSection({ config, ctx }: { config: HeroConfig; ctx: SectionC
       style={bg ? { backgroundImage: `url("${bg}")` } : undefined}
     >
       {bg ? (
-        <div
-          className="sf-sb-hero__scrim"
-          style={{ opacity: overlay }}
-          aria-hidden="true"
-        />
+        <div className="sf-sb-hero__scrim" style={{ opacity: overlay }} aria-hidden="true" />
       ) : null}
       <div className="sf-container sf-sb-hero__inner">
         {config.heading ? <h1 className="sf-sb-hero__title">{config.heading}</h1> : null}
