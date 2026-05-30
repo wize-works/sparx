@@ -23,6 +23,7 @@ import {
 } from '@sparx/ui';
 
 import { ModuleStub } from '../../../../components/module-stub';
+import { EntityRowLink } from '../../_components/entity-row-link';
 
 // Collections — the merchandising surface ("Featured", "New for Spring",
 // "Diesel Service Specials"). Two flavors: manual (hand-curated product

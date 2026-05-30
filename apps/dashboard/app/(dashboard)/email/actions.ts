@@ -1,13 +1,11 @@
 'use server';
 
-import { sendTemplate, lastConsoleSend, type ConsoleSend } from '@sparx/email';
 import { z } from 'zod';
-import { requireSession } from '@sparx/auth';
+import { api, type ApiRestError } from '@/lib/api-rest-client';
 
-// Test-send action for /email. Lets an authed staff user fire either of the
-// shipping templates at any recipient — useful for QAing both the rendering
-// and the provider wiring (console in dev, Postal in prod). All sends are
-// audit-logged via the provider; nothing tenant-scoped writes to the DB.
+// Test-send action for /email. Now forwards to api-rest
+// (`POST /v1/email/test-send`, `GET /v1/email/last-console-send`) — the
+// dashboard doesn't import `@sparx/email` anymore.
 
 const TestSendSchema = z.object({
   to: z.string().email('Enter a valid recipient email.'),
@@ -27,8 +25,6 @@ export interface TestSendResult {
 }
 
 export async function sendTestEmail(formData: FormData): Promise<TestSendResult> {
-  const { user } = await requireSession();
-
   const parsed = TestSendSchema.safeParse({
     to: typeof formData.get('to') === 'string' ? formData.get('to') : '',
     template:
@@ -39,47 +35,36 @@ export async function sendTestEmail(formData: FormData): Promise<TestSendResult>
   }
 
   try {
-    let result;
-    if (parsed.data.template === 'welcome-merchant') {
-      result = await sendTemplate({
-        template: 'welcome-merchant',
-        to: parsed.data.to,
-        props: {
-          name: user.name ?? undefined,
-          storeName: 'Your Sparx store',
-          dashboardUrl:
-            (process.env.BETTER_AUTH_URL ?? 'http://localhost:3001').replace(/\/$/, '') +
-            '/welcome',
-        },
-      });
-    } else {
-      result = await sendTemplate({
-        template: 'password-reset',
-        to: parsed.data.to,
-        props: {
-          name: user.name ?? undefined,
-          resetUrl: 'https://example.test/reset?token=test-token',
-          expiresInMinutes: 60,
-        },
-      });
-    }
-
-    return {
-      ok: true,
-      send: {
-        id: result.id,
-        provider: result.provider,
-        acceptedAt: result.acceptedAt,
-        templateId: parsed.data.template,
-        to: parsed.data.to,
-      },
-    };
+    const send = await api.post<{
+      id: string;
+      provider: string;
+      acceptedAt: string;
+      templateId: string;
+      to: string;
+    }>('/v1/email/test-send', parsed.data);
+    return { ok: true, send };
   } catch (err) {
     return {
       ok: false,
-      error: err instanceof Error ? err.message : 'Send failed.',
+      error: (err as ApiRestError).message ?? 'Send failed.',
     };
   }
+}
+
+// Shape mirrors `lastConsoleSend()` from @sparx/email — kept here so the
+// /email page UI stays unchanged. The provider type is wide on purpose;
+// production runs return null for non-console providers.
+export interface ConsoleSend {
+  id: string;
+  provider: string;
+  acceptedAt: string;
+  to: string | string[];
+  from?: string;
+  subject?: string;
+  html?: string;
+  text?: string;
+  template?: string;
+  props?: Record<string, unknown>;
 }
 
 export interface DevLastSend {
@@ -88,10 +73,5 @@ export interface DevLastSend {
 }
 
 export async function readLastDevSend(): Promise<DevLastSend> {
-  await requireSession();
-  const provider = (process.env.SPARX_EMAIL_PROVIDER ?? 'console').toLowerCase();
-  if (provider !== 'console') {
-    return { enabled: false, send: null };
-  }
-  return { enabled: true, send: lastConsoleSend() };
+  return api.get<DevLastSend>('/v1/email/last-console-send');
 }

@@ -1,6 +1,4 @@
 import { notFound } from 'next/navigation';
-import { requireSession } from '@sparx/auth';
-import { withTenant } from '@sparx/db';
 import { Badge, Heading, Stack, Text } from '@sparx/ui';
 import { api, type ApiRestError } from '@/lib/api-rest-client';
 import { EditPageForm, type EditableTenantPage } from './edit-form';
@@ -32,8 +30,6 @@ interface CmsPageDetailContentProps {
 }
 
 export async function CmsPageDetailContent({ id }: CmsPageDetailContentProps) {
-  const { user } = await requireSession();
-
   const [entryResult, tenant] = await Promise.all([
     (async () => {
       try {
@@ -44,9 +40,7 @@ export async function CmsPageDetailContent({ id }: CmsPageDetailContentProps) {
         throw err;
       }
     })(),
-    withTenant({ tenantId: user.tenantId }, (tx) =>
-      tx.tenant.findUnique({ where: { id: user.tenantId }, select: { slug: true } })
-    ),
+    api.get<{ slug: string }>('/v1/tenant'),
   ]);
   const entry = entryResult.data;
   const initialEtag = entryResult.etag;

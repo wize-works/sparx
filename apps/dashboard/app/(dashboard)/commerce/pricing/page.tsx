@@ -24,6 +24,7 @@ import {
 } from '@sparx/ui';
 
 import { ModuleStub } from '../../../../components/module-stub';
+import { EntityRowLink } from '../../_components/entity-row-link';
 
 // Pricing — price lists, contract prices, bulk tiers.
 // Resolution order is locked: contract → price list → bulk tier → base

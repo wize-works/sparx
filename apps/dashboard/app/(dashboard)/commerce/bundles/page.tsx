@@ -24,6 +24,7 @@ import {
 } from '@sparx/ui';
 
 import { ModuleStub } from '../../../../components/module-stub';
+import { EntityRowLink } from '../../_components/entity-row-link';
 
 // Bundles — kit / pack / gift-set wrappers around N component variants.
 // One wrapper product = one bundle, set via `bundleProductId`. The

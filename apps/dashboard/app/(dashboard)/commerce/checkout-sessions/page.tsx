@@ -23,6 +23,7 @@ import {
 } from '@sparx/ui';
 
 import { ModuleStub } from '../../../../components/module-stub';
+import { EntityRowLink } from '../../_components/entity-row-link';
 
 export const dynamic = 'force-dynamic';
 
@@ -131,12 +132,14 @@ export default async function CheckoutSessionsPage({
                         </Text>
                       </TableCell>
                       <TableCell>
-                        <Link
+                        <EntityRowLink
                           href={`/commerce/carts/${s.cartId}`}
+                          entityType="cart"
+                          entityId={s.cartId}
                           className="font-mono text-xs hover:text-[var(--module-active)]"
                         >
                           {s.cartId.slice(0, 8)}
-                        </Link>
+                        </EntityRowLink>
                       </TableCell>
                       <TableCell>{s.customer?.email ?? s.customerEmail ?? '—'}</TableCell>
                       <TableCell>

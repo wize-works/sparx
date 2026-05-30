@@ -24,6 +24,7 @@ import {
 } from '@sparx/ui';
 
 import { ModuleStub } from '../../../../components/module-stub';
+import { EntityRowLink } from '../../_components/entity-row-link';
 
 export const dynamic = 'force-dynamic';
 
@@ -113,12 +114,14 @@ export default async function TaxPage() {
                   {zones.map((z) => (
                     <TableRow key={z.id}>
                       <TableCell>
-                        <Link
+                        <EntityRowLink
                           href={`/commerce/tax/zones/${z.id}`}
+                          entityType="tax-zone"
+                          entityId={z.id}
                           className="font-medium hover:text-[var(--module-active)]"
                         >
                           {z.country}
-                        </Link>
+                        </EntityRowLink>
                       </TableCell>
                       <TableCell>
                         {z.region ?? (

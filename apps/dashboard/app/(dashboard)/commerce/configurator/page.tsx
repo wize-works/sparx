@@ -23,6 +23,7 @@ import {
 } from '@sparx/ui';
 
 import { ModuleStub } from '../../../../components/module-stub';
+import { EntityRowLink } from '../../_components/entity-row-link';
 
 // Configurator — option-matrix-with-rules templates that resolve a
 // storefront selection into a ResolvedConfiguration. Per-product

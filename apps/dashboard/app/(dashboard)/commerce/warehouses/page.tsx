@@ -24,6 +24,7 @@ import {
 } from '@sparx/ui';
 
 import { ModuleStub } from '../../../../components/module-stub';
+import { EntityRowLink } from '../../_components/entity-row-link';
 
 // Warehouses — the per-tenant physical/virtual stock locations the
 // inventory picker selects between. Phase 2: list + create + archive.

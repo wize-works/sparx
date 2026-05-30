@@ -2,7 +2,6 @@ import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 
 import { requireSession } from '@sparx/auth';
-import { prisma } from '@sparx/db';
 import { Button, Container, Heading, Stack, Text } from '@sparx/ui';
 
 import { api } from '@/lib/api-rest-client';
@@ -19,27 +18,25 @@ interface CustomerLite {
   email: string | null;
 }
 
+interface TenantUser {
+  id: string;
+  name: string | null;
+  email: string | null;
+}
+
 interface PageProps {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }
 
 export default async function NewTaskPage({ searchParams }: PageProps) {
-  // requireSession stays — we need currentUserId for the form, and the tenant
-  // user-list query (Better Auth's users table) has no REST equivalent yet.
+  // requireSession stays — we need currentUserId for the form prop. Customers
+  // and users both load from api-rest now.
   const session = await requireSession();
   const sp = await searchParams;
 
   const [customers, users] = await Promise.all([
     api.getPaged<CustomerLite[]>('/v1/crm/customers?take=200').then((r) => r.data),
-    prisma.$transaction(async (tx) => {
-      await tx.$executeRawUnsafe(`SET LOCAL app.tenant_id = '${session.user.tenantId}'`);
-      return tx.user.findMany({
-        where: { tenantId: session.user.tenantId },
-        select: { id: true, name: true, email: true },
-        orderBy: { name: 'asc' },
-        take: 100,
-      });
-    }),
+    api.get<TenantUser[]>('/v1/users?take=100'),
   ]);
 
   return (
