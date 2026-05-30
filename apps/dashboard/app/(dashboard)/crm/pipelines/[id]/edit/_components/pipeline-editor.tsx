@@ -9,7 +9,16 @@ import { useRouter } from 'next/navigation';
 import { DndContext, PointerSensor, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core';
 import { SortableContext, arrayMove, verticalListSortingStrategy } from '@dnd-kit/sortable';
 
-import { Badge, Card, CardContent, CardHeader, CardTitle, Stack, toast } from '@sparx/ui';
+import {
+  Badge,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  Stack,
+  toast,
+  useConfirm,
+} from '@sparx/ui';
 
 import {
   archivePipelineAction,
@@ -26,6 +35,7 @@ interface PipelineEditorProps {
 
 export function PipelineEditor({ pipeline }: PipelineEditorProps) {
   const router = useRouter();
+  const confirm = useConfirm();
   const [pending, startTransition] = React.useTransition();
   const [stages, setStages] = React.useState<StageRow[]>(pipeline.stages);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
@@ -66,14 +76,15 @@ export function PipelineEditor({ pipeline }: PipelineEditorProps) {
     });
   }
 
-  function archive() {
-    if (
-      !confirm(
-        'Archive this pipeline? Existing deals stay on it; new deals can no longer be added.'
-      )
-    ) {
-      return;
-    }
+  async function archive() {
+    const ok = await confirm({
+      title: 'Archive this pipeline?',
+      description:
+        'Existing deals stay on it, but new deals can no longer be added. You can restore it later.',
+      confirmLabel: 'Archive pipeline',
+      tone: 'warning',
+    });
+    if (!ok) return;
     startTransition(async () => {
       const result = await archivePipelineAction(pipeline.id);
       if (!result.ok) {
@@ -90,7 +101,7 @@ export function PipelineEditor({ pipeline }: PipelineEditorProps) {
       <PipelineHeaderCard
         pipeline={pipeline}
         onSave={patchHeader}
-        onArchive={archive}
+        onArchive={() => void archive()}
         pending={pending}
       />
 

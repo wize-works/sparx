@@ -8,21 +8,24 @@ import * as React from 'react';
 import { useRouter } from 'next/navigation';
 import { RefreshCw } from 'lucide-react';
 
-import { Button, toast } from '@sparx/ui';
+import { Button, toast, useConfirm } from '@sparx/ui';
 
 import { recomputeSegmentsAction } from '../../segment-actions';
 
 export function RecomputeButton({ segmentId }: { segmentId?: string } = {}) {
   const router = useRouter();
+  const confirm = useConfirm();
   const [pending, startTransition] = React.useTransition();
 
-  function run() {
-    if (
-      !confirm(
-        'Recompute segments across every customer? Safe to run, but may take a while on large tenants.'
-      )
-    )
-      return;
+  async function run() {
+    const ok = await confirm({
+      title: 'Recompute segments?',
+      description:
+        'Safe to run, but may take a while on large tenants. We will re-evaluate every customer against every active segment.',
+      confirmLabel: 'Recompute',
+      tone: 'module',
+    });
+    if (!ok) return;
     startTransition(async () => {
       const result = await recomputeSegmentsAction(segmentId);
       if (!result.ok) {
@@ -40,7 +43,7 @@ export function RecomputeButton({ segmentId }: { segmentId?: string } = {}) {
     <Button
       variant="ghost"
       size="sm"
-      onClick={run}
+      onClick={() => void run()}
       disabled={pending}
       loading={pending}
       leftIcon={!pending ? <RefreshCw className="h-3.5 w-3.5" /> : undefined}
