@@ -30,7 +30,9 @@ export default async function GeneralSettingsPage() {
           <Heading level={1}>General settings</Heading>
           <Text variant="muted">Update how your merchant account presents itself.</Text>
         </Stack>
-        <GeneralForm tenant={{ name: tenant.name, email: tenant.email, slug: tenant.slug, plan: tenant.plan }} />
+        <GeneralForm
+          tenant={{ name: tenant.name, email: tenant.email, slug: tenant.slug, plan: tenant.plan }}
+        />
       </Stack>
     </Container>
   );

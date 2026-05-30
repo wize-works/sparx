@@ -42,7 +42,7 @@ export function RecentsSection({ recents, favorites }: RecentsSectionProps) {
 
     setLocalRecents((prev) => {
       const filtered = prev.filter((r) => r.actionId !== item.id);
-      return [{ actionId: item.id, lastVisitedAt: new Date() }, ...filtered];
+      return [{ actionId: item.id, lastVisitedAt: new Date().toISOString() }, ...filtered];
     });
 
     // Fire and forget. Failures are non-fatal — the local state still

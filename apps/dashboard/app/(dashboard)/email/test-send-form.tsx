@@ -98,7 +98,7 @@ export function TestSendForm({ devLastSend }: TestSendFormProps) {
             Last dev send
           </Text>
           <Text size="xs" variant="muted">
-            <Code>{devLastSend.send.templateId ?? 'unknown'}</Code> → {devLastSend.send.to} ·{' '}
+            <Code>{devLastSend.send.template ?? 'unknown'}</Code> → {devLastSend.send.to} ·{' '}
             {new Date(devLastSend.send.acceptedAt).toLocaleString()}
           </Text>
           <Text size="xs" variant="muted">

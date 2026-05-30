@@ -8,8 +8,52 @@
 
 import rootConfig from '../../eslint.config.js';
 
+// Backing-service packages the dashboard is NOT allowed to import directly.
+// Everything tenant-scoped must go through api.sparx.works (api-rest). The
+// auth handler is a deliberate exception — Better Auth needs the User row
+// on every request, and there is no transport between it and `@sparx/db`
+// short of moving auth itself out of Next.
+const BANNED_SERVICE_PACKAGES = [
+  '@sparx/db',
+  '@sparx/cms',
+  '@sparx/cms-editor',
+  '@sparx/commerce',
+  '@sparx/crm',
+  '@sparx/email',
+  '@sparx/b2b',
+  '@sparx/dropship',
+  '@sparx/ai',
+  '@sparx/onboarding',
+  '@sparx/integrations',
+];
+
+// Manifest sub-paths (e.g. `@sparx/commerce/manifest`) are presentation
+// metadata, not backing services — they stay allowed via the
+// `allowTypeImports`-free pattern check below: the no-restricted-imports
+// rule matches the exact module specifier, so `@sparx/commerce/manifest`
+// is not affected by a ban on `@sparx/commerce`.
+
 export default [
   ...rootConfig,
+  {
+    // Hard wall: no backing-service imports anywhere under apps/dashboard.
+    // The Better Auth handler is the single exception (it talks to its own
+    // tables directly via @sparx/auth's prisma adapter).
+    files: ['app/**/*.{ts,tsx}', 'lib/**/*.{ts,tsx}', 'components/**/*.{ts,tsx}'],
+    ignores: ['app/api/auth/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: BANNED_SERVICE_PACKAGES.map((name) => ({
+            name,
+            message:
+              'apps/dashboard must call api.sparx.works (lib/api-rest-client). Direct service imports are banned — add a route to services/api-rest instead.',
+          })),
+        },
+      ],
+    },
+  },
   {
     files: ['app/**/*.{ts,tsx}', 'components/**/*.{ts,tsx}'],
     rules: {
