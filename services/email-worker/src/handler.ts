@@ -26,12 +26,15 @@ import {
 } from '@sparx/email';
 import { brandService } from '@sparx/email-platform';
 
+const Variables = z.record(z.string(), z.string()).optional();
+
 const TemplateSendSchema = z.discriminatedUnion('template', [
   z.object({
     template: z.literal('password-reset'),
     to: z.string().email(),
     from: z.string().optional(),
     replyTo: z.string().optional(),
+    variables: Variables,
     props: z.object({
       name: z.string().optional(),
       resetUrl: z.string().url(),
@@ -45,6 +48,7 @@ const TemplateSendSchema = z.discriminatedUnion('template', [
     to: z.string().email(),
     from: z.string().optional(),
     replyTo: z.string().optional(),
+    variables: Variables,
     props: z.object({
       name: z.string().optional(),
       storeName: z.string().min(1),
@@ -55,12 +59,27 @@ const TemplateSendSchema = z.discriminatedUnion('template', [
   }),
 ]);
 
+// Pre-rendered "raw" send — used by broadcasts (render once, send to many) and
+// authored-template sends. The body is already HTML/text; the worker delivers
+// it as-is (no template render, no brand resolution).
+const RawSendSchema = z.object({
+  kind: z.literal('raw'),
+  to: z.string().email(),
+  from: z.string().optional(),
+  replyTo: z.string().optional(),
+  subject: z.string(),
+  html: z.string(),
+  text: z.string(),
+  templateId: z.string().optional(),
+  variables: Variables,
+});
+
 const EmailSendEvent = z.object({
   type: z.literal('email.send'),
   tenantId: z.string().min(1),
   actorId: z.string().nullable(),
   occurredAt: z.string(),
-  data: TemplateSendSchema,
+  data: z.union([RawSendSchema, TemplateSendSchema]),
 });
 
 export type EmailSendEvent = z.infer<typeof EmailSendEvent>;
@@ -79,35 +98,48 @@ export function parseEvent(raw: unknown): EmailSendEvent | null {
 }
 
 export async function handle(event: EmailSendEvent, logger: Logger): Promise<HandleOutcome> {
+  const data = event.data;
   const childLog = logger.child({
     tenantId: event.tenantId,
-    template: event.data.template,
+    template: 'kind' in data ? 'raw' : data.template,
   });
 
   try {
-    // Resolve the tenant's email brand so transactional mail renders in their
-    // storefront colors/logo. Null → @sparx/email's Sparx defaults. Best-effort:
-    // a brand-resolution failure must not block delivery.
-    let brand = null;
-    try {
-      brand = await brandService.resolveEmailBrand({ tenantId: event.tenantId });
-    } catch (brandErr) {
-      childLog.warn({ err: brandErr }, 'brand resolution failed — rendering with defaults');
+    let rendered;
+    if ('kind' in data) {
+      // Pre-rendered — deliver as-is.
+      rendered = {
+        from: data.from ?? defaultRawFrom(),
+        to: data.to,
+        replyTo: data.replyTo,
+        subject: data.subject,
+        html: data.html,
+        text: data.text,
+        templateId: data.templateId,
+      };
+    } else {
+      // Resolve the tenant's email brand so transactional mail renders in their
+      // storefront colors/logo. Null → Sparx defaults. Best-effort: a brand
+      // failure must not block delivery.
+      let brand = null;
+      try {
+        brand = await brandService.resolveEmailBrand({ tenantId: event.tenantId });
+      } catch (brandErr) {
+        childLog.warn({ err: brandErr }, 'brand resolution failed — rendering with defaults');
+      }
+      rendered = await renderTemplate(data, { brand: brand ?? undefined });
     }
 
-    const rendered = await renderTemplate(event.data, { brand: brand ?? undefined });
-    // Stamp the tenant onto the message as a Mailgun user variable so the
-    // webhook receiver can attribute delivery/engagement events back to it
-    // (works even on the shared sending domain, where From doesn't identify
-    // the merchant). Broadcast/automation ids ride in event.data later.
+    // Stamp tenant_id (+ any caller variables: broadcast_id, automation_key) so
+    // the webhook receiver can attribute delivery/engagement events.
     const result = await getEmailProvider().send({
       ...rendered,
-      variables: { ...rendered.variables, tenant_id: event.tenantId },
+      variables: { ...data.variables, tenant_id: event.tenantId },
     });
     return {
       status: 'sent',
       messageId: result.id,
-      recipient: event.data.to,
+      recipient: data.to,
     };
   } catch (err) {
     if (isPermanent(err)) {
@@ -115,13 +147,17 @@ export async function handle(event: EmailSendEvent, logger: Logger): Promise<Han
       return {
         status: 'rejected',
         messageId: '',
-        recipient: event.data.to,
+        recipient: data.to,
         errorMessage: err instanceof Error ? err.message : String(err),
       };
     }
     // Transient — re-throw so the caller nacks and Pub/Sub redelivers.
     throw err;
   }
+}
+
+function defaultRawFrom(): string {
+  return process.env.SPARX_EMAIL_FROM ?? 'Sparx <noreply@sparx.email>';
 }
 
 function isPermanent(err: unknown): boolean {

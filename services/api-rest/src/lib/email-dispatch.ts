@@ -28,6 +28,10 @@ interface SendPayload {
   template?: string;
   props?: Record<string, unknown>;
   automationKey?: string | null;
+  /** Pre-rendered broadcast/authored body — delivered as-is by the worker. */
+  raw?: { subject: string; html: string; text: string; templateId?: string };
+  /** Extra Mailgun user variables (broadcast_id, automation_key, campaign). */
+  variables?: Record<string, string>;
 }
 
 export interface TickResult {
@@ -67,10 +71,10 @@ export async function runEmailDispatchTick(logger: FastifyBaseLogger): Promise<T
           const send = await tx.scheduledSend.findUnique({ where: { id: row.id } });
           if (send?.status !== 'pending') return null;
           const payload = (send.payload as SendPayload | null) ?? {};
-          if (!payload.template) {
+          if (!payload.template && !payload.raw) {
             await tx.scheduledSend.update({
               where: { id: send.id },
-              data: { status: 'failed', lastError: 'No template in payload' },
+              data: { status: 'failed', lastError: 'No template or raw body in payload' },
             });
             return null;
           }
@@ -83,8 +87,7 @@ export async function runEmailDispatchTick(logger: FastifyBaseLogger): Promise<T
           });
           return {
             to: send.recipient,
-            template: payload.template,
-            props: payload.props ?? {},
+            payload,
             from: buildFrom(settings?.fromName ?? null, settings?.fromAddress ?? null),
             replyTo: settings?.replyTo ?? undefined,
           };
@@ -92,16 +95,28 @@ export async function runEmailDispatchTick(logger: FastifyBaseLogger): Promise<T
 
         if (!dispatch) continue;
 
-        // email.send envelope data is the TemplateSend shape (worker validates
-        // it). Unknown templates are acked by the worker until the component
-        // ships, so configured-but-not-yet-built automations are harmless.
-        await publish(logger, 'email.send', row.tenant_id, null, {
-          template: dispatch.template,
-          to: dispatch.to,
-          props: dispatch.props,
-          from: dispatch.from,
-          ...(dispatch.replyTo ? { replyTo: dispatch.replyTo } : {}),
-        });
+        const { payload, to, from, replyTo } = dispatch;
+        const common = {
+          to,
+          from,
+          ...(replyTo ? { replyTo } : {}),
+          ...(payload.variables ? { variables: payload.variables } : {}),
+        };
+        // Raw (broadcast / authored) → delivered as-is; template → worker
+        // renders + brands. Unknown templates are acked by the worker until the
+        // component ships, so configured-but-not-yet-built automations are safe.
+        const data = payload.raw
+          ? {
+              kind: 'raw',
+              subject: payload.raw.subject,
+              html: payload.raw.html,
+              text: payload.raw.text,
+              ...(payload.raw.templateId ? { templateId: payload.raw.templateId } : {}),
+              ...common,
+            }
+          : { template: payload.template, props: payload.props ?? {}, ...common };
+
+        await publish(logger, 'email.send', row.tenant_id, null, data);
 
         processed += 1;
       } catch (err) {

@@ -122,7 +122,7 @@ async function handlePush(req: IncomingMessage, res: ServerResponse): Promise<vo
     logger.info(
       {
         messageId,
-        template: event.data.template,
+        template: 'kind' in event.data ? 'raw' : event.data.template,
         outcome: outcome.status,
         providerMessageId: outcome.messageId,
       },
