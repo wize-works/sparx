@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import {
   Button,
   Command,
@@ -64,6 +64,7 @@ const DETAIL_VIEW_OPTIONS: { value: DefaultDetailView; label: string; icon: type
 
 export function ActionsMenu({ favorites, preferences }: ActionsMenuProps) {
   const pathname = usePathname();
+  const router = useRouter();
   const [open, setOpen] = React.useState(false);
   const [, startTransition] = React.useTransition();
 
@@ -120,6 +121,14 @@ export function ActionsMenu({ favorites, preferences }: ActionsMenuProps) {
     startTransition(async () => {
       try {
         await setDefaultDetailViewAction(next);
+        // revalidatePath() in the action invalidates the server cache, but
+        // PreferencesProvider in the client tree was hydrated once with the
+        // old value — refresh the route so the new preference reaches
+        // EntityRowLink's resolveMode immediately.
+        router.refresh();
+        const label =
+          DETAIL_VIEW_OPTIONS.find((o) => o.value === next)?.label.toLowerCase() ?? next;
+        toast.success(`Default detail view set to ${label}`);
       } catch {
         toast.error('Could not update preference');
       }

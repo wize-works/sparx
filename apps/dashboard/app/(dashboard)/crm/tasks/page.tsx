@@ -2,7 +2,6 @@ import Link from 'next/link';
 import { CheckSquare, Plus, Calendar, AlertCircle } from 'lucide-react';
 
 import { requireSession } from '@sparx/auth';
-import { taskService } from '@sparx/crm';
 import {
   Badge,
   Button,
@@ -17,8 +16,21 @@ import {
   Text,
 } from '@sparx/ui';
 
+import { api } from '@/lib/api-rest-client';
+
 import { CrmTabs } from '../_components/crm-tabs';
 import { TaskRow } from './_components/task-row';
+
+interface TaskListItem {
+  id: string;
+  title: string;
+  status: string;
+  priority: string;
+  dueAt: string | null;
+  customerId: string | null;
+  dealId: string | null;
+  assignedToUserId: string;
+}
 
 export const dynamic = 'force-dynamic';
 
@@ -30,13 +42,13 @@ export default async function TasksPage({ searchParams }: PageProps) {
   const session = await requireSession();
   const params = await searchParams;
   const scope = stringParam(params.scope) ?? 'me';
-  const ctx = { tenantId: session.user.tenantId, userId: session.user.id };
 
-  const filterForMine = scope === 'all' ? {} : { assignedToUserId: session.user.id };
+  const mine = scope === 'me' ? `&assigned_to_user_id=${session.user.id}` : '';
+  const overdueQuery = scope === 'me' ? `?user_id=${session.user.id}` : '';
   const [openTasks, overdueTasks, completedTasks] = await Promise.all([
-    taskService.list(ctx, { ...filterForMine, status: 'open', take: 100 }),
-    taskService.getOverdue(ctx, scope === 'all' ? {} : { userId: session.user.id }),
-    taskService.list(ctx, { ...filterForMine, status: 'completed', take: 25 }),
+    api.get<TaskListItem[]>(`/v1/crm/tasks?status=open&take=100${mine}`),
+    api.get<TaskListItem[]>(`/v1/crm/tasks/overdue${overdueQuery}`),
+    api.get<TaskListItem[]>(`/v1/crm/tasks?status=completed&take=25${mine}`),
   ]);
 
   return (
@@ -135,22 +147,13 @@ export default async function TasksPage({ searchParams }: PageProps) {
   );
 }
 
-function serializeTask(task: {
-  id: string;
-  title: string;
-  status: string;
-  priority: string;
-  dueAt: Date | null;
-  customerId: string | null;
-  dealId: string | null;
-  assignedToUserId: string;
-}) {
+function serializeTask(task: TaskListItem) {
   return {
     id: task.id,
     title: task.title,
     status: task.status,
     priority: task.priority,
-    dueAt: task.dueAt?.toISOString() ?? null,
+    dueAt: task.dueAt,
     customerId: task.customerId,
     dealId: task.dealId,
     assignedToUserId: task.assignedToUserId,

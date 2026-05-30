@@ -1,8 +1,6 @@
 import { notFound } from 'next/navigation';
 import { Building2, AlertTriangle, Globe } from 'lucide-react';
 
-import { requireSession } from '@sparx/auth';
-import { CrmNotFoundError, b2bAccountService } from '@sparx/crm';
 import {
   Badge,
   Card,
@@ -15,7 +13,22 @@ import {
   Text,
 } from '@sparx/ui';
 
+import { api, type ApiRestError } from '@/lib/api-rest-client';
+
 import { CreditHoldToggle } from './_components/credit-hold-toggle';
+
+interface B2bAccount {
+  id: string;
+  companyName: string;
+  status: string;
+  pricingTier: string | null;
+  website: string | null;
+  creditLimit: string | number;
+  creditUsed: string | number;
+  discountPercent: string | number;
+  engineProfiles: unknown;
+  notes: string | null;
+}
 
 // Detail content for a B2B account. Mounted by the full-page route and by
 // the dashboard shell's drawer / modal. Full-page chrome lives in
@@ -35,14 +48,11 @@ interface Props {
 }
 
 export async function B2bAccountDetailContent({ id }: Props) {
-  const session = await requireSession();
-  const ctx = { tenantId: session.user.tenantId, userId: session.user.id };
-
-  let account;
+  let account: B2bAccount;
   try {
-    account = await b2bAccountService.get(ctx, id);
+    account = await api.get<B2bAccount>(`/v1/crm/b2b-accounts/${id}`);
   } catch (err) {
-    if (err instanceof CrmNotFoundError) notFound();
+    if ((err as ApiRestError).code === 'NOT_FOUND') notFound();
     throw err;
   }
 
@@ -50,7 +60,7 @@ export async function B2bAccountDetailContent({ id }: Props) {
   const used = Number(account.creditUsed);
   const remaining = Math.max(0, limit - used);
   const utilization = limit > 0 ? (used / limit) * 100 : 0;
-  const profiles = Array.isArray(account.engineProfiles) ? account.engineProfiles : [];
+  const profiles: unknown[] = Array.isArray(account.engineProfiles) ? account.engineProfiles : [];
 
   return (
     <Stack gap={6}>
@@ -143,7 +153,7 @@ export async function B2bAccountDetailContent({ id }: Props) {
           </CardHeader>
           <CardContent>
             <Stack gap={2}>
-              {profiles.map((p, idx) => (
+              {profiles.map((p: unknown, idx: number) => (
                 <Stack
                   key={idx}
                   direction="row"
