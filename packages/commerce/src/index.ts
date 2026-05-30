@@ -23,3 +23,9 @@ export {
   CommerceValidationError,
 } from './errors';
 export { writeAuditLog } from './audit';
+export {
+  envSecretReader,
+  mapSecretReader,
+  setSecretReader,
+  getSecretReader,
+} from './lib/secret-reader';

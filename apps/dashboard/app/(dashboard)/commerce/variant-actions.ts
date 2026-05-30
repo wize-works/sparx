@@ -1,23 +1,25 @@
 'use server';
 
-// Variant Server Actions — thin transport over @sparx/commerce variantService.
-
 import { revalidatePath } from 'next/cache';
-
-import { variantService } from '@sparx/commerce';
-
-import { type ActionResult, runAction, sessionContext } from './_action-helpers';
+import { api } from '@/lib/api-rest-client';
+import type { ActionResult } from './_action-helpers';
+import { restAction } from './_rest-action';
 
 export async function setProductOptionsAction(
   productId: string,
   input: unknown
 ): Promise<ActionResult<{ optionCount: number }>> {
-  return runAction(async () => {
-    const ctx = await sessionContext();
-    const options = await variantService.setOptions(ctx, productId, input);
+  return restAction(async () => {
+    await api.post<{ productId: string; updated: boolean }>(
+      `/v1/commerce/products/${productId}/variants/options`,
+      input
+    );
     revalidatePath(`/commerce/products/${productId}`);
     revalidatePath(`/commerce/products/${productId}/variants`);
-    return { optionCount: options.length };
+    // Original returned the option count derived from setOptions result.
+    // The REST surface is fire-and-forget; we re-read on the next page render
+    // so the count surfaces there instead.
+    return { optionCount: 0 };
   });
 }
 
@@ -25,9 +27,11 @@ export async function createVariantAction(
   productId: string,
   input: unknown
 ): Promise<ActionResult<{ id: string; sku: string }>> {
-  return runAction(async () => {
-    const ctx = await sessionContext();
-    const result = await variantService.create(ctx, productId, input);
+  return restAction(async () => {
+    const result = await api.post<{ id: string; sku: string }>(
+      `/v1/commerce/products/${productId}/variants`,
+      input
+    );
     revalidatePath(`/commerce/products/${productId}`);
     revalidatePath(`/commerce/products/${productId}/variants`);
     return result;
@@ -39,9 +43,11 @@ export async function updateVariantAction(
   productId: string,
   input: unknown
 ): Promise<ActionResult<{ id: string }>> {
-  return runAction(async () => {
-    const ctx = await sessionContext();
-    await variantService.update(ctx, variantId, input);
+  return restAction(async () => {
+    await api.patch<{ id: string; updated: boolean }>(
+      `/v1/commerce/variants/${variantId}`,
+      input
+    );
     revalidatePath(`/commerce/products/${productId}`);
     revalidatePath(`/commerce/products/${productId}/variants`);
     return { id: variantId };
@@ -53,9 +59,8 @@ export async function renameVariantSkuAction(
   productId: string,
   input: unknown
 ): Promise<ActionResult<{ id: string }>> {
-  return runAction(async () => {
-    const ctx = await sessionContext();
-    await variantService.renameSku(ctx, variantId, input);
+  return restAction(async () => {
+    await api.post<{ id: string }>(`/v1/commerce/variants/${variantId}/rename-sku`, input);
     revalidatePath(`/commerce/products/${productId}/variants`);
     return { id: variantId };
   });
@@ -65,9 +70,8 @@ export async function assignVariantOptionValuesAction(
   productId: string,
   input: unknown
 ): Promise<ActionResult<{ ok: true }>> {
-  return runAction(async () => {
-    const ctx = await sessionContext();
-    await variantService.assignOptionValues(ctx, input);
+  return restAction(async () => {
+    await api.post<{ assigned: boolean }>('/v1/commerce/variants/assign-options', input);
     revalidatePath(`/commerce/products/${productId}/variants`);
     return { ok: true as const };
   });
@@ -77,9 +81,8 @@ export async function setDefaultVariantAction(
   variantId: string,
   productId: string
 ): Promise<ActionResult<{ id: string }>> {
-  return runAction(async () => {
-    const ctx = await sessionContext();
-    await variantService.setDefault(ctx, variantId);
+  return restAction(async () => {
+    await api.post<{ id: string }>(`/v1/commerce/variants/${variantId}/default`, {});
     revalidatePath(`/commerce/products/${productId}/variants`);
     return { id: variantId };
   });
@@ -89,9 +92,8 @@ export async function archiveVariantAction(
   variantId: string,
   productId: string
 ): Promise<ActionResult<{ id: string }>> {
-  return runAction(async () => {
-    const ctx = await sessionContext();
-    await variantService.archive(ctx, variantId);
+  return restAction(async () => {
+    await api.post<{ id: string }>(`/v1/commerce/variants/${variantId}/archive`, {});
     revalidatePath(`/commerce/products/${productId}/variants`);
     return { id: variantId };
   });
@@ -101,9 +103,8 @@ export async function restoreVariantAction(
   variantId: string,
   productId: string
 ): Promise<ActionResult<{ id: string }>> {
-  return runAction(async () => {
-    const ctx = await sessionContext();
-    await variantService.restore(ctx, variantId);
+  return restAction(async () => {
+    await api.post<{ id: string }>(`/v1/commerce/variants/${variantId}/restore`, {});
     revalidatePath(`/commerce/products/${productId}/variants`);
     return { id: variantId };
   });
@@ -113,9 +114,8 @@ export async function addVariantImageAction(
   productId: string,
   input: unknown
 ): Promise<ActionResult<{ id: string }>> {
-  return runAction(async () => {
-    const ctx = await sessionContext();
-    const result = await variantService.addImage(ctx, input);
+  return restAction(async () => {
+    const result = await api.post<{ id: string }>('/v1/commerce/variants/images', input);
     revalidatePath(`/commerce/products/${productId}/variants`);
     return result;
   });
@@ -125,9 +125,8 @@ export async function setVariantImageBindingsAction(
   productId: string,
   input: unknown
 ): Promise<ActionResult<{ ok: true }>> {
-  return runAction(async () => {
-    const ctx = await sessionContext();
-    await variantService.setImageBindings(ctx, input);
+  return restAction(async () => {
+    await api.put<{ updated: boolean }>('/v1/commerce/variant-image-bindings', input);
     revalidatePath(`/commerce/products/${productId}/variants`);
     return { ok: true as const };
   });
@@ -137,9 +136,8 @@ export async function removeVariantImageAction(
   productId: string,
   variantImageId: string
 ): Promise<ActionResult<{ ok: true }>> {
-  return runAction(async () => {
-    const ctx = await sessionContext();
-    await variantService.removeImage(ctx, variantImageId);
+  return restAction(async () => {
+    await api.delete<void>(`/v1/commerce/variant-images/${variantImageId}`);
     revalidatePath(`/commerce/products/${productId}/variants`);
     return { ok: true as const };
   });

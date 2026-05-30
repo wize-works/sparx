@@ -1,10 +1,6 @@
 import Link from 'next/link';
 import { PackageOpen, Plus, Search } from 'lucide-react';
 
-import { isModuleEnabled, requireSession } from '@sparx/auth';
-import { productService } from '@sparx/commerce';
-
-type ListProductsFilter = NonNullable<Parameters<typeof productService.list>[1]>;
 import {
   Badge,
   Button,
@@ -24,8 +20,21 @@ import {
   Text,
 } from '@sparx/ui';
 
-import { ModuleStub } from '../../../../components/module-stub';
+import { api } from '@/lib/api-rest-client';
 import { EntityRowLink } from '../../_components/entity-row-link';
+
+interface ProductListItem {
+  id: string;
+  title: string;
+  handle: string;
+  status: string;
+  vendor: string | null;
+  productType: string | null;
+  variantCount: number;
+  priceMinCents: number | null;
+  priceMaxCents: number | null;
+  updatedAt: string;
+}
 
 // Products index — list view + filter chips + search. Filters live in the
 // query string so saved views / shared links serialize cleanly.
@@ -48,20 +57,6 @@ const STATUS_VARIANT: Record<string, 'success' | 'warning' | 'outline'> = {
 };
 
 export default async function ProductsPage({ searchParams }: PageProps) {
-  const session = await requireSession();
-  const enabled = await isModuleEnabled(session.user.tenantId, 'commerce');
-  if (!enabled) {
-    return (
-      <ModuleStub
-        icon={<PackageOpen className="h-5 w-5" />}
-        title="Commerce"
-        tagline="Products, orders, and checkout for your storefront."
-        description="Activate the Commerce module from Billing to start adding products."
-        features={[]}
-      />
-    );
-  }
-
   const params = await searchParams;
   const status = parseStatus(stringParam(params.status));
   const vendor = stringParam(params.vendor);
@@ -70,21 +65,21 @@ export default async function ProductsPage({ searchParams }: PageProps) {
   const q = stringParam(params.q);
   const includeArchived = stringParam(params.archived) === '1';
 
-  const filter: ListProductsFilter = {
-    take: 100,
-    sortBy: 'updatedAt',
-    includeArchived,
+  const query = new URLSearchParams({
+    take: '100',
+    sort_by: 'updatedAt',
+    ...(includeArchived ? { include_archived: 'true' } : {}),
     ...(status ? { status } : {}),
     ...(vendor ? { vendor } : {}),
     ...(tag ? { tag } : {}),
-    ...(productType ? { productType } : {}),
+    ...(productType ? { product_type: productType } : {}),
     ...(q ? { q } : {}),
-  };
+  });
 
-  const { items: products, total } = await productService.list(
-    { tenantId: session.user.tenantId, userId: session.user.id },
-    filter
+  const { data: products, meta } = await api.getPaged<ProductListItem[]>(
+    `/v1/commerce/products?${query.toString()}`
   );
+  const total = (meta?.total as number | undefined) ?? products.length;
 
   return (
     <Container size="xl">

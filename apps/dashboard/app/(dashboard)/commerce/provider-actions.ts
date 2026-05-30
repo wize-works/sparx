@@ -1,22 +1,23 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-
-import { providerService } from '@sparx/commerce';
+import { api } from '@/lib/api-rest-client';
 import type {
   InstallProviderInput,
   SetProviderEnabledInput,
   UpdateProviderConfigInput,
 } from '@sparx/commerce-schemas';
-
-import { runAction, sessionContext, type ActionResult } from './_action-helpers';
+import type { ActionResult } from './_action-helpers';
+import { restAction } from './_rest-action';
 
 export async function installProviderAction(
   input: InstallProviderInput
 ): Promise<ActionResult<{ installationId: string }>> {
-  return runAction(async () => {
-    const ctx = await sessionContext();
-    const result = await providerService.install(ctx, input);
+  return restAction(async () => {
+    const result = await api.post<{ installationId: string }>(
+      '/v1/commerce/providers/install',
+      input
+    );
     revalidatePath('/commerce/providers');
     return { installationId: result.installationId };
   });
@@ -25,9 +26,11 @@ export async function installProviderAction(
 export async function updateProviderConfigAction(
   input: UpdateProviderConfigInput
 ): Promise<ActionResult<void>> {
-  return runAction(async () => {
-    const ctx = await sessionContext();
-    await providerService.updateConfig(ctx, input);
+  return restAction(async () => {
+    await api.patch<{ id: string }>(
+      `/v1/commerce/providers/installations/${input.installationId}/config`,
+      input
+    );
     revalidatePath('/commerce/providers');
     revalidatePath(`/commerce/providers/${input.installationId}`);
   });
@@ -36,18 +39,19 @@ export async function updateProviderConfigAction(
 export async function setProviderEnabledAction(
   input: SetProviderEnabledInput
 ): Promise<ActionResult<void>> {
-  return runAction(async () => {
-    const ctx = await sessionContext();
-    await providerService.setEnabled(ctx, input);
+  return restAction(async () => {
+    await api.post<{ id: string }>(
+      `/v1/commerce/providers/installations/${input.installationId}/enabled`,
+      input
+    );
     revalidatePath('/commerce/providers');
     revalidatePath(`/commerce/providers/${input.installationId}`);
   });
 }
 
 export async function uninstallProviderAction(installationId: string): Promise<ActionResult<void>> {
-  return runAction(async () => {
-    const ctx = await sessionContext();
-    await providerService.uninstall(ctx, installationId);
+  return restAction(async () => {
+    await api.delete<void>(`/v1/commerce/providers/installations/${installationId}`);
     revalidatePath('/commerce/providers');
   });
 }
@@ -55,8 +59,10 @@ export async function uninstallProviderAction(installationId: string): Promise<A
 export async function testProviderAction(
   installationId: string
 ): Promise<ActionResult<{ ok: boolean; details: string }>> {
-  return runAction(async () => {
-    const ctx = await sessionContext();
-    return providerService.test(ctx, { installationId });
+  return restAction(async () => {
+    return api.post<{ ok: boolean; details: string }>(
+      `/v1/commerce/providers/installations/${installationId}/test`,
+      {}
+    );
   });
 }

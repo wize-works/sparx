@@ -20,12 +20,34 @@ import {
 } from '@sparx/commerce-schemas';
 import { withTenant } from '@sparx/db';
 import type { Prisma, ProviderInstallation, TxClient } from '@sparx/db';
-import { getProvider, listProviders, type ProviderBundle } from '@sparx/integration-framework';
+import {
+  getProvider,
+  listProviders,
+  ProviderConfigurationError,
+  ProviderHardError,
+  ProviderTransientError,
+  WebhookVerificationError,
+  type CustomerAttachInput,
+  type PaymentIntent,
+  type PaymentIntentInput,
+  type PaymentResult,
+  type ProviderBundle,
+  type ProviderCustomerRef,
+  type ProviderRunContext,
+  type RefundResult,
+  type WebhookEvent,
+} from '@sparx/integration-framework';
 
 import { writeAuditLog } from '../audit';
-import { CommerceConflictError, CommerceNotFoundError, CommerceValidationError } from '../errors';
+import {
+  CommerceConflictError,
+  CommerceNotFoundError,
+  CommerceProviderError,
+  CommerceValidationError,
+} from '../errors';
 import type { ServiceContext } from '../errors';
 import { publishCommerceEvent } from '../events';
+import { getSecretReader } from '../lib/secret-reader';
 
 // ─── Marketplace catalog ─────────────────────────────────────────────
 
@@ -346,6 +368,196 @@ export async function recordHealth(
         detail: input.detail,
       },
     });
+  }
+}
+
+// ─── Payment runner ──────────────────────────────────────────────────
+//
+// Bridges from the storefront/REST layer (which knows nothing about
+// provider plugins) to the active PaymentProvider bundle. Resolves the
+// install row, decrypts the config, builds a ProviderRunContext, and
+// invokes the bundle method. All provider errors are translated into
+// CommerceProviderError so transports map them uniformly.
+
+interface RunPaymentOpts {
+  /** Override the install resolution; needed by webhook handlers that
+   *  already know which install fired the event. */
+  installationId?: string;
+  /** Forwarded to the provider as its idempotency key — used so retried
+   *  HTTP requests don't double-charge. */
+  idempotencyKey?: string;
+}
+
+async function loadPaymentBundle(
+  ctx: ServiceContext,
+  opts: RunPaymentOpts
+): Promise<{ bundle: ProviderBundle; runCtx: ProviderRunContext; installationId: string }> {
+  const installation = opts.installationId
+    ? await withTenant(ctx, (tx) =>
+        tx.providerInstallation.findFirst({
+          where: { id: opts.installationId, uninstalledAt: null },
+        })
+      )
+    : await withTenant(ctx, (tx) =>
+        tx.providerInstallation.findFirst({
+          where: { kind: 'payment', enabled: true, status: 'active', uninstalledAt: null },
+          orderBy: { installedAt: 'desc' },
+        })
+      );
+  if (!installation) {
+    throw new CommerceNotFoundError(
+      'ProviderInstallation',
+      opts.installationId ?? 'kind=payment'
+    );
+  }
+  const bundle = getProvider(installation.providerSlug);
+  if (!bundle?.payment) {
+    throw new CommerceProviderError(
+      installation.providerSlug,
+      `Provider "${installation.providerSlug}" is not registered or does not implement payment`
+    );
+  }
+  const runCtx: ProviderRunContext = {
+    tenantId: ctx.tenantId,
+    installationId: installation.id,
+    environment: installation.environment as 'sandbox' | 'production',
+    config: (installation.configEncrypted as Record<string, unknown> | null) ?? {},
+    secrets: getSecretReader(),
+    ...(opts.idempotencyKey ? { idempotencyKey: opts.idempotencyKey } : {}),
+  };
+  return { bundle, runCtx, installationId: installation.id };
+}
+
+function mapProviderError(err: unknown, slug: string): CommerceProviderError {
+  if (err instanceof ProviderConfigurationError || err instanceof ProviderHardError) {
+    return new CommerceProviderError(slug, err.message, {
+      ...(err instanceof ProviderHardError && err.providerErrorCode
+        ? { providerErrorCode: err.providerErrorCode }
+        : {}),
+      retryable: false,
+    });
+  }
+  if (err instanceof ProviderTransientError) {
+    return new CommerceProviderError(slug, err.message, { retryable: true });
+  }
+  if (err instanceof WebhookVerificationError) {
+    return new CommerceProviderError(slug, err.message, { retryable: false });
+  }
+  return new CommerceProviderError(
+    slug,
+    err instanceof Error ? err.message : 'Unknown provider error',
+    { retryable: false }
+  );
+}
+
+export interface RunPaymentCreateResult extends PaymentIntent {
+  installationId: string;
+  providerSlug: string;
+}
+
+export async function runPaymentCreate(
+  ctx: ServiceContext,
+  input: PaymentIntentInput,
+  opts: RunPaymentOpts = {}
+): Promise<RunPaymentCreateResult> {
+  const { bundle, runCtx, installationId } = await loadPaymentBundle(ctx, opts);
+  try {
+    const intent = await bundle.payment!.createPaymentIntent(runCtx, input);
+    return { ...intent, installationId, providerSlug: bundle.metadata.slug };
+  } catch (err) {
+    throw mapProviderError(err, bundle.metadata.slug);
+  }
+}
+
+export async function runPaymentCapture(
+  ctx: ServiceContext,
+  input: { paymentRef: string; amountCents?: number; installationId?: string },
+  opts: { idempotencyKey?: string } = {}
+): Promise<PaymentResult> {
+  const { bundle, runCtx } = await loadPaymentBundle(ctx, {
+    ...(input.installationId ? { installationId: input.installationId } : {}),
+    ...(opts.idempotencyKey ? { idempotencyKey: opts.idempotencyKey } : {}),
+  });
+  try {
+    return await bundle.payment!.capturePayment(runCtx, input.paymentRef, input.amountCents);
+  } catch (err) {
+    throw mapProviderError(err, bundle.metadata.slug);
+  }
+}
+
+export async function runPaymentRefund(
+  ctx: ServiceContext,
+  input: {
+    paymentRef: string;
+    amountCents: number;
+    reason?: string;
+    installationId?: string;
+  },
+  opts: { idempotencyKey?: string } = {}
+): Promise<RefundResult> {
+  const { bundle, runCtx } = await loadPaymentBundle(ctx, {
+    ...(input.installationId ? { installationId: input.installationId } : {}),
+    ...(opts.idempotencyKey ? { idempotencyKey: opts.idempotencyKey } : {}),
+  });
+  try {
+    return await bundle.payment!.refund(runCtx, {
+      paymentRef: input.paymentRef,
+      amountCents: input.amountCents,
+      ...(input.reason ? { reason: input.reason } : {}),
+    });
+  } catch (err) {
+    throw mapProviderError(err, bundle.metadata.slug);
+  }
+}
+
+export async function runPaymentAttachCustomer(
+  ctx: ServiceContext,
+  input: CustomerAttachInput & { installationId?: string }
+): Promise<ProviderCustomerRef> {
+  const { bundle, runCtx } = await loadPaymentBundle(ctx, {
+    ...(input.installationId ? { installationId: input.installationId } : {}),
+  });
+  try {
+    return await bundle.payment!.attachCustomer(runCtx, {
+      customerId: input.customerId,
+      email: input.email,
+      ...(input.name ? { name: input.name } : {}),
+      ...(input.phone ? { phone: input.phone } : {}),
+    });
+  } catch (err) {
+    throw mapProviderError(err, bundle.metadata.slug);
+  }
+}
+
+/** Verify a webhook + ingest the canonical event record. Called by the
+ *  provider-webhook-worker (and the api-rest fallback route). The caller
+ *  has already pulled the installation by URL slug; we resolve the
+ *  webhook signing secret via configEncrypted.webhookSecretRef. */
+export async function verifyPaymentWebhook(
+  ctx: ServiceContext,
+  input: { installationId: string; rawBody: string; signature: string }
+): Promise<{ event: WebhookEvent; providerSlug: string }> {
+  const { bundle, runCtx } = await loadPaymentBundle(ctx, {
+    installationId: input.installationId,
+  });
+  const config = runCtx.config as { webhookSecretRef?: string };
+  if (!config.webhookSecretRef) {
+    throw new CommerceProviderError(
+      bundle.metadata.slug,
+      'Installation is missing webhookSecretRef — set it in the install config before enabling webhooks',
+      { retryable: false }
+    );
+  }
+  const secret = await runCtx.secrets.read(config.webhookSecretRef);
+  try {
+    const event = bundle.payment!.verifyWebhook({
+      rawBody: input.rawBody,
+      signature: input.signature,
+      secret,
+    });
+    return { event, providerSlug: bundle.metadata.slug };
+  } catch (err) {
+    throw mapProviderError(err, bundle.metadata.slug);
   }
 }
 

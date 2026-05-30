@@ -14,6 +14,14 @@ import Fastify, {
   type FastifyServerOptions,
 } from 'fastify';
 import { CrmConflictError, CrmNotFoundError, CrmValidationError } from '@sparx/crm';
+import {
+  CommerceConflictError,
+  CommerceNotFoundError,
+  CommerceOutOfStockError,
+  CommercePricingError,
+  CommerceProviderError,
+  CommerceValidationError,
+} from '@sparx/commerce';
 import { createAuthPlugin } from '@sparx/api-core/auth';
 import { createErrorsPlugin, type ErrorEnvelope } from '@sparx/api-core/errors-plugin';
 import { env } from './env.js';
@@ -41,11 +49,13 @@ import publicMediaRoutes from './routes/v1/public/media.js';
 import uploadRoutes from './routes/v1/media/uploads.js';
 import mediaAssetRoutes from './routes/v1/media/assets.js';
 import crmRoutes from './routes/v1/crm/index.js';
+import commerceRoutes from './routes/v1/commerce/index.js';
 import tenantRoutes from './routes/v1/tenant.js';
 import meRoutes from './routes/v1/me.js';
 import userRoutes from './routes/v1/users.js';
 import emailTestRoutes from './routes/v1/email/test.js';
 import dashboardRoutes from './routes/v1/dashboard.js';
+import { bootstrapProviders } from './lib/providers-bootstrap.js';
 
 function loggerOptions(): FastifyServerOptions['logger'] {
   if (env.NODE_ENV === 'test') return false;
@@ -113,7 +123,104 @@ function crmErrorMapper(
   return undefined;
 }
 
+// Commerce service-layer errors — same envelope vocabulary as CRM (decision
+// #7: one error language across modules). Out-of-stock + pricing-error +
+// provider-error get distinct codes since the storefront / dashboard have
+// specific recovery paths for each.
+function commerceErrorMapper(
+  err: unknown,
+  request: { id: string },
+  reply: FastifyReply
+): FastifyReply | undefined {
+  const requestId = request.id;
+  if (err instanceof CommerceNotFoundError) {
+    const body: ErrorEnvelope = {
+      success: false,
+      error: {
+        code: 'NOT_FOUND',
+        message: err.message,
+        details: { entityType: err.entityType, entityId: err.entityId },
+        request_id: requestId,
+      },
+    };
+    return reply.code(404).send(body);
+  }
+  if (err instanceof CommerceValidationError) {
+    const body: ErrorEnvelope = {
+      success: false,
+      error: {
+        code: 'VALIDATION_ERROR',
+        message: err.message,
+        details: err.details,
+        request_id: requestId,
+      },
+    };
+    return reply.code(422).send(body);
+  }
+  if (err instanceof CommerceConflictError) {
+    const body: ErrorEnvelope = {
+      success: false,
+      error: {
+        code: 'CONFLICT',
+        message: err.message,
+        ...(err.field !== undefined ? { details: { field: err.field } } : {}),
+        request_id: requestId,
+      },
+    };
+    return reply.code(409).send(body);
+  }
+  if (err instanceof CommerceOutOfStockError) {
+    const body: ErrorEnvelope = {
+      success: false,
+      error: {
+        code: 'OUT_OF_STOCK',
+        message: err.message,
+        details: {
+          variantId: err.variantId,
+          requested: err.requested,
+          available: err.available,
+        },
+        request_id: requestId,
+      },
+    };
+    return reply.code(409).send(body);
+  }
+  if (err instanceof CommercePricingError) {
+    const body: ErrorEnvelope = {
+      success: false,
+      error: {
+        code: 'PRICING_ERROR',
+        message: err.message,
+        details: { reason: err.reason, trace: err.trace },
+        request_id: requestId,
+      },
+    };
+    return reply.code(422).send(body);
+  }
+  if (err instanceof CommerceProviderError) {
+    const body: ErrorEnvelope = {
+      success: false,
+      error: {
+        code: 'PROVIDER_ERROR',
+        message: err.message,
+        details: {
+          providerSlug: err.providerSlug,
+          providerErrorCode: err.providerErrorCode,
+          retryable: err.retryable,
+        },
+        request_id: requestId,
+      },
+    };
+    return reply.code(502).send(body);
+  }
+  return undefined;
+}
+
 export async function createApp(): Promise<FastifyInstance> {
+  // Populate the integration-framework registry + wire the SecretReader
+  // before any route can call providerService.runPayment*.
+  bootstrapProviders();
+
   const app = Fastify({
     logger: loggerOptions(),
     // Per docs/06-api-specification.md every error response carries a
@@ -146,7 +253,7 @@ export async function createApp(): Promise<FastifyInstance> {
   // handler must be registered first so it catches anything that throws
   // from the others. OpenAPI must be initialised before routes register so
   // each route's schema is recorded.
-  await app.register(createErrorsPlugin({ extraMappers: [crmErrorMapper] }));
+  await app.register(createErrorsPlugin({ extraMappers: [crmErrorMapper, commerceErrorMapper] }));
   await app.register(openapiPlugin);
   await app.register(rateLimitPlugin);
   await app.register(
@@ -195,6 +302,7 @@ export async function createApp(): Promise<FastifyInstance> {
   await app.register(uploadRoutes);
   await app.register(mediaAssetRoutes);
   await app.register(crmRoutes);
+  await app.register(commerceRoutes);
   await app.register(tenantRoutes);
   await app.register(meRoutes);
   await app.register(userRoutes);

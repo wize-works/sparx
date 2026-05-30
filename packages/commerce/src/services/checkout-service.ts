@@ -28,6 +28,7 @@ import type { ServiceContext } from '../errors';
 import { publishCommerceEvent } from '../events';
 
 import * as discountService from './discount-service';
+import * as providerService from './provider-service';
 
 const DEFAULT_SESSION_TTL_MIN = 60; // 1 hour
 
@@ -237,6 +238,100 @@ export async function submitPayment(ctx: ServiceContext, rawInput: unknown): Pro
       },
     });
   });
+}
+
+// ─── payment intent ──────────────────────────────────────────────────
+//
+// Storefront calls this after the customer reaches the payment step.
+// It (a) resolves the active payment provider, (b) creates a real
+// payment intent against the merchant's account, (c) persists the
+// resulting paymentRef + providerSlug on the session, and (d) returns
+// the clientSecret so Stripe Elements (or equivalent) can confirm in
+// the browser. Idempotency: re-calls on the same session return the
+// existing paymentRef instead of opening a parallel intent.
+
+export interface CreatePaymentIntentResult {
+  paymentRef: string;
+  providerSlug: string;
+  installationId: string;
+  clientSecret?: string;
+  amountCents: number;
+  currency: string;
+  status: 'requires_payment_method' | 'requires_confirmation' | 'processing' | 'succeeded';
+}
+
+export async function createPaymentIntent(
+  ctx: ServiceContext,
+  input: { sessionId: string; idempotencyKey?: string }
+): Promise<CreatePaymentIntentResult> {
+  const session = await withTenant(ctx, (tx) =>
+    tx.checkoutSession.findFirst({ where: { id: input.sessionId } })
+  );
+  if (!session) throw new CommerceNotFoundError('CheckoutSession', input.sessionId);
+  if (session.step === 'completed' || session.step === 'expired') {
+    throw new CommerceConflictError(`Cannot create payment intent on a ${session.step} session`);
+  }
+  if (session.totalCents <= 0) {
+    throw new CommerceValidationError('Cannot create payment intent on a zero-total session');
+  }
+  if (!session.customerEmail) {
+    throw new CommerceValidationError('Submit contact information before creating a payment intent');
+  }
+
+  // Stable order hash so the provider can spot tampering between
+  // intent creation + confirmation. Quick + deterministic; the worker
+  // re-derives it from the session and compares on webhook receipt.
+  const orderHash = `${session.cartId}:${session.totalCents}:${session.currency}`;
+
+  const intent = await providerService.runPaymentCreate(
+    ctx,
+    {
+      amountCents: session.totalCents,
+      currency: session.currency as Parameters<typeof providerService.runPaymentCreate>[1]['currency'],
+      orderHash,
+      description: `Sparx order — checkout session ${session.id.slice(0, 8)}`,
+      metadata: {
+        sparx_checkout_session_id: session.id,
+        sparx_cart_id: session.cartId,
+        sparx_channel: session.channel,
+      },
+    },
+    {
+      ...(input.idempotencyKey ? { idempotencyKey: input.idempotencyKey } : {}),
+    }
+  );
+
+  await withTenant(ctx, async (tx) => {
+    await tx.checkoutSession.update({
+      where: { id: session.id },
+      data: {
+        paymentProviderSlug: intent.providerSlug,
+        paymentRef: intent.paymentRef,
+      },
+    });
+    await writeAuditLog({
+      tx,
+      tenantId: ctx.tenantId,
+      actorId: ctx.userId ?? null,
+      actorType: ctx.userId ? 'user' : 'customer',
+      action: 'commerce.checkout.payment_intent_created',
+      entityType: 'CheckoutSession',
+      entityId: session.id,
+      diff: {
+        after: { paymentProviderSlug: intent.providerSlug, paymentRef: intent.paymentRef },
+      },
+    });
+  });
+
+  return {
+    paymentRef: intent.paymentRef,
+    providerSlug: intent.providerSlug,
+    installationId: intent.installationId,
+    ...(intent.clientSecret ? { clientSecret: intent.clientSecret } : {}),
+    amountCents: session.totalCents,
+    currency: session.currency,
+    status: intent.status,
+  };
 }
 
 // ─── complete ────────────────────────────────────────────────────────

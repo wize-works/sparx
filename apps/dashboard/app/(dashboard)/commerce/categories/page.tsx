@@ -1,7 +1,5 @@
-import { FolderTree, PackageOpen, Plus } from 'lucide-react';
+import { FolderTree, Plus } from 'lucide-react';
 
-import { isModuleEnabled, requireSession } from '@sparx/auth';
-import { categoryService } from '@sparx/commerce';
 import {
   Badge,
   Card,
@@ -15,9 +13,30 @@ import {
   Text,
 } from '@sparx/ui';
 
-import { ModuleStub } from '../../../../components/module-stub';
+import { api } from '@/lib/api-rest-client';
 
 import { CategoriesEditor, NewCategoryForm } from './_components/categories-editor';
+
+interface CategoryTreeNode {
+  id: string;
+  name: string;
+  handle: string;
+  description: string | null;
+  parentId: string | null;
+  path: string;
+  position: number;
+  featured: boolean;
+  iconMediaId: string | null;
+  heroMediaId: string | null;
+  productCount: number;
+  seoTitle: string | null;
+  seoDescription: string | null;
+  ogImageId: string | null;
+  createdAt: string;
+  updatedAt: string;
+  depth: number;
+  children: CategoryTreeNode[];
+}
 
 // Categories — nested tree editor. Categories are the organizational
 // taxonomy ("Auto Parts > Engine > Fuel Injection"); the merchandising
@@ -32,22 +51,7 @@ import { CategoriesEditor, NewCategoryForm } from './_components/categories-edit
 export const dynamic = 'force-dynamic';
 
 export default async function CategoriesPage() {
-  const session = await requireSession();
-  const enabled = await isModuleEnabled(session.user.tenantId, 'commerce');
-  if (!enabled) {
-    return (
-      <ModuleStub
-        icon={<PackageOpen className="h-5 w-5" />}
-        title="Commerce"
-        tagline="Categories organize your catalog."
-        description="Activate the Commerce module from Billing to start adding categories."
-        features={[]}
-      />
-    );
-  }
-
-  const ctx = { tenantId: session.user.tenantId, userId: session.user.id };
-  const tree = await categoryService.tree(ctx);
+  const tree = await api.get<CategoryTreeNode[]>('/v1/commerce/categories');
 
   return (
     <Container size="xl">
@@ -108,9 +112,9 @@ export default async function CategoriesPage() {
   );
 }
 
-function countTree(nodes: Awaited<ReturnType<typeof categoryService.tree>>): number {
+function countTree(nodes: CategoryTreeNode[]): number {
   let total = 0;
-  function walk(list: typeof nodes): void {
+  function walk(list: CategoryTreeNode[]): void {
     for (const node of list) {
       total++;
       walk(node.children);

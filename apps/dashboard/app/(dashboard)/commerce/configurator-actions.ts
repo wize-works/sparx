@@ -1,20 +1,15 @@
 'use server';
 
-// Configurator Server Actions — thin transport over @sparx/commerce
-// configuratorService. Covers bundles + configuration templates.
-
 import { revalidatePath } from 'next/cache';
-
-import { configuratorService } from '@sparx/commerce';
-
-import { type ActionResult, runAction, sessionContext } from './_action-helpers';
+import { api } from '@/lib/api-rest-client';
+import type { ActionResult } from './_action-helpers';
+import { restAction } from './_rest-action';
 
 // ─── Bundles ──────────────────────────────────────────────────────────
 
 export async function createBundleAction(input: unknown): Promise<ActionResult<{ id: string }>> {
-  return runAction(async () => {
-    const ctx = await sessionContext();
-    const result = await configuratorService.createBundle(ctx, input);
+  return restAction(async () => {
+    const result = await api.post<{ id: string }>('/v1/commerce/bundles', input);
     revalidatePath('/commerce/bundles');
     return result;
   });
@@ -24,9 +19,8 @@ export async function updateBundleAction(
   id: string,
   input: unknown
 ): Promise<ActionResult<{ ok: true }>> {
-  return runAction(async () => {
-    const ctx = await sessionContext();
-    await configuratorService.updateBundle(ctx, id, input);
+  return restAction(async () => {
+    await api.patch<{ id: string }>(`/v1/commerce/bundles/${id}`, input);
     revalidatePath('/commerce/bundles');
     revalidatePath(`/commerce/bundles/${id}`);
     return { ok: true as const };
@@ -34,9 +28,8 @@ export async function updateBundleAction(
 }
 
 export async function deleteBundleAction(id: string): Promise<ActionResult<{ ok: true }>> {
-  return runAction(async () => {
-    const ctx = await sessionContext();
-    await configuratorService.deleteBundle(ctx, id);
+  return restAction(async () => {
+    await api.delete<void>(`/v1/commerce/bundles/${id}`);
     revalidatePath('/commerce/bundles');
     return { ok: true as const };
   });
@@ -45,9 +38,8 @@ export async function deleteBundleAction(id: string): Promise<ActionResult<{ ok:
 // ─── Configuration templates ─────────────────────────────────────────
 
 export async function createTemplateAction(input: unknown): Promise<ActionResult<{ id: string }>> {
-  return runAction(async () => {
-    const ctx = await sessionContext();
-    const result = await configuratorService.createTemplate(ctx, input);
+  return restAction(async () => {
+    const result = await api.post<{ id: string }>('/v1/commerce/configurator-templates', input);
     revalidatePath('/commerce/configurator');
     if (
       typeof input === 'object' &&
@@ -65,9 +57,8 @@ export async function updateTemplateAction(
   id: string,
   input: unknown
 ): Promise<ActionResult<{ ok: true }>> {
-  return runAction(async () => {
-    const ctx = await sessionContext();
-    await configuratorService.updateTemplate(ctx, id, input);
+  return restAction(async () => {
+    await api.patch<{ id: string }>(`/v1/commerce/configurator-templates/${id}`, input);
     revalidatePath('/commerce/configurator');
     revalidatePath(`/commerce/configurator/${id}`);
     return { ok: true as const };
@@ -75,9 +66,8 @@ export async function updateTemplateAction(
 }
 
 export async function deleteTemplateAction(id: string): Promise<ActionResult<{ ok: true }>> {
-  return runAction(async () => {
-    const ctx = await sessionContext();
-    await configuratorService.deleteTemplate(ctx, id);
+  return restAction(async () => {
+    await api.delete<void>(`/v1/commerce/configurator-templates/${id}`);
     revalidatePath('/commerce/configurator');
     return { ok: true as const };
   });

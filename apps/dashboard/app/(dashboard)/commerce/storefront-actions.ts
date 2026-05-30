@@ -1,21 +1,19 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-
-import { storefrontService } from '@sparx/commerce';
+import { api } from '@/lib/api-rest-client';
 import type {
   UpdateStorefrontSettingsInput,
   UpdateStorefrontThemeInput,
 } from '@sparx/commerce-schemas';
-
-import { runAction, sessionContext, type ActionResult } from './_action-helpers';
+import type { ActionResult } from './_action-helpers';
+import { restAction } from './_rest-action';
 
 export async function updateStorefrontSettingsAction(
   input: UpdateStorefrontSettingsInput
 ): Promise<ActionResult<void>> {
-  return runAction(async () => {
-    const ctx = await sessionContext();
-    await storefrontService.updateSettings(ctx, input);
+  return restAction(async () => {
+    await api.patch<{ updated: boolean }>('/v1/commerce/storefront/settings', input);
     revalidatePath('/commerce/settings');
   });
 }
@@ -23,9 +21,8 @@ export async function updateStorefrontSettingsAction(
 export async function updateStorefrontThemeAction(
   input: UpdateStorefrontThemeInput
 ): Promise<ActionResult<void>> {
-  return runAction(async () => {
-    const ctx = await sessionContext();
-    await storefrontService.updateTheme(ctx, input);
+  return restAction(async () => {
+    await api.patch<{ updated: boolean }>('/v1/commerce/storefront/theme', input);
     revalidatePath('/commerce/settings');
   });
 }

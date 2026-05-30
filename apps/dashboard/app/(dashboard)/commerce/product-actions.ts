@@ -1,25 +1,15 @@
 'use server';
 
-// Product Server Actions — thin transport over @sparx/commerce productService.
-//
-// Each action runs through `runAction()` so the module gate + error
-// envelope stay consistent with the REST and GraphQL transports. Bulk
-// status / tag operations live alongside single-row writes so the
-// dashboard list view can wire one ⌘K command set without flipping
-// between barrels.
-
 import { revalidatePath } from 'next/cache';
-
-import { productService } from '@sparx/commerce';
-
-import { type ActionResult, runAction, sessionContext } from './_action-helpers';
+import { api } from '@/lib/api-rest-client';
+import type { ActionResult } from './_action-helpers';
+import { restAction } from './_rest-action';
 
 export async function createProductAction(
   input: unknown
 ): Promise<ActionResult<{ id: string; handle: string }>> {
-  return runAction(async () => {
-    const ctx = await sessionContext();
-    const result = await productService.create(ctx, input);
+  return restAction(async () => {
+    const result = await api.post<{ id: string; handle: string }>('/v1/commerce/products', input);
     revalidatePath('/commerce/products');
     return result;
   });
@@ -29,9 +19,11 @@ export async function updateProductAction(
   productId: string,
   input: unknown
 ): Promise<ActionResult<{ id: string }>> {
-  return runAction(async () => {
-    const ctx = await sessionContext();
-    const product = await productService.update(ctx, productId, input);
+  return restAction(async () => {
+    const product = await api.patch<{ id: string }>(
+      `/v1/commerce/products/${productId}`,
+      input
+    );
     revalidatePath('/commerce/products');
     revalidatePath(`/commerce/products/${productId}`);
     return { id: product.id };
@@ -41,9 +33,8 @@ export async function updateProductAction(
 export async function publishProductAction(
   productId: string
 ): Promise<ActionResult<{ id: string }>> {
-  return runAction(async () => {
-    const ctx = await sessionContext();
-    await productService.publish(ctx, productId);
+  return restAction(async () => {
+    await api.post<{ id: string }>(`/v1/commerce/products/${productId}/publish`, {});
     revalidatePath('/commerce/products');
     revalidatePath(`/commerce/products/${productId}`);
     return { id: productId };
@@ -53,9 +44,8 @@ export async function publishProductAction(
 export async function unpublishProductAction(
   productId: string
 ): Promise<ActionResult<{ id: string }>> {
-  return runAction(async () => {
-    const ctx = await sessionContext();
-    await productService.unpublish(ctx, productId);
+  return restAction(async () => {
+    await api.post<{ id: string }>(`/v1/commerce/products/${productId}/unpublish`, {});
     revalidatePath('/commerce/products');
     revalidatePath(`/commerce/products/${productId}`);
     return { id: productId };
@@ -65,9 +55,8 @@ export async function unpublishProductAction(
 export async function archiveProductAction(
   productId: string
 ): Promise<ActionResult<{ id: string }>> {
-  return runAction(async () => {
-    const ctx = await sessionContext();
-    await productService.archive(ctx, productId);
+  return restAction(async () => {
+    await api.post<{ id: string }>(`/v1/commerce/products/${productId}/archive`, {});
     revalidatePath('/commerce/products');
     revalidatePath(`/commerce/products/${productId}`);
     return { id: productId };
@@ -77,9 +66,8 @@ export async function archiveProductAction(
 export async function restoreProductAction(
   productId: string
 ): Promise<ActionResult<{ id: string }>> {
-  return runAction(async () => {
-    const ctx = await sessionContext();
-    await productService.restore(ctx, productId);
+  return restAction(async () => {
+    await api.post<{ id: string }>(`/v1/commerce/products/${productId}/restore`, {});
     revalidatePath('/commerce/products');
     revalidatePath(`/commerce/products/${productId}`);
     return { id: productId };
@@ -89,9 +77,8 @@ export async function restoreProductAction(
 export async function deleteProductAction(
   productId: string
 ): Promise<ActionResult<{ id: string }>> {
-  return runAction(async () => {
-    const ctx = await sessionContext();
-    await productService.softDelete(ctx, productId);
+  return restAction(async () => {
+    await api.delete<void>(`/v1/commerce/products/${productId}`);
     revalidatePath('/commerce/products');
     return { id: productId };
   });
@@ -100,9 +87,11 @@ export async function deleteProductAction(
 export async function bulkUpdateProductStatusAction(
   input: unknown
 ): Promise<ActionResult<{ updated: number }>> {
-  return runAction(async () => {
-    const ctx = await sessionContext();
-    const result = await productService.bulkUpdateStatus(ctx, input);
+  return restAction(async () => {
+    const result = await api.post<{ updated: number }>(
+      '/v1/commerce/products/bulk-status',
+      input
+    );
     revalidatePath('/commerce/products');
     return result;
   });
@@ -111,9 +100,8 @@ export async function bulkUpdateProductStatusAction(
 export async function bulkTagProductsAction(
   input: unknown
 ): Promise<ActionResult<{ updated: number }>> {
-  return runAction(async () => {
-    const ctx = await sessionContext();
-    const result = await productService.bulkTag(ctx, input);
+  return restAction(async () => {
+    const result = await api.post<{ updated: number }>('/v1/commerce/products/bulk-tag', input);
     revalidatePath('/commerce/products');
     return result;
   });

@@ -1,43 +1,46 @@
 'use server';
 
-// Fitment Server Actions — thin transport over @sparx/commerce fitmentService.
-
 import { revalidatePath } from 'next/cache';
+import { api } from '@/lib/api-rest-client';
+import type { ActionResult } from './_action-helpers';
+import { restAction } from './_rest-action';
 
-import { fitmentService } from '@sparx/commerce';
+interface VehicleModelRow {
+  id: string;
+  makeId: string;
+  name: string;
+  yearStart: number | null;
+  yearEnd: number | null;
+}
 
-import { type ActionResult, runAction, sessionContext } from './_action-helpers';
-
-// Lazy reads — drive the tree's expand-on-click without round-tripping
-// through a separate REST surface.
+interface VehicleEngineRow {
+  id: string;
+  modelId: string;
+  name: string;
+  liters: string | number | null;
+}
 
 export async function listVehicleModelsAction(
   makeId: string
-): Promise<ActionResult<Awaited<ReturnType<typeof fitmentService.listModels>>>> {
-  return runAction(async () => {
-    const ctx = await sessionContext();
-    return fitmentService.listModels(ctx, makeId);
+): Promise<ActionResult<VehicleModelRow[]>> {
+  return restAction(async () => {
+    return api.get<VehicleModelRow[]>(`/v1/commerce/fitment/makes/${makeId}/models`);
   });
 }
 
 export async function listVehicleEnginesAction(
   modelId: string
-): Promise<ActionResult<Awaited<ReturnType<typeof fitmentService.listEngines>>>> {
-  return runAction(async () => {
-    const ctx = await sessionContext();
-    return fitmentService.listEngines(ctx, modelId);
+): Promise<ActionResult<VehicleEngineRow[]>> {
+  return restAction(async () => {
+    return api.get<VehicleEngineRow[]>(`/v1/commerce/fitment/models/${modelId}/engines`);
   });
 }
-
-// Reference data writes — fit into the per-tenant override flow on top
-// of platform-seeded makes/models/engines.
 
 export async function createVehicleMakeAction(
   input: unknown
 ): Promise<ActionResult<{ id: string }>> {
-  return runAction(async () => {
-    const ctx = await sessionContext();
-    const result = await fitmentService.createMake(ctx, input);
+  return restAction(async () => {
+    const result = await api.post<{ id: string }>('/v1/commerce/fitment/makes', input);
     revalidatePath('/commerce/fitment');
     return result;
   });
@@ -46,9 +49,8 @@ export async function createVehicleMakeAction(
 export async function createVehicleModelAction(
   input: unknown
 ): Promise<ActionResult<{ id: string }>> {
-  return runAction(async () => {
-    const ctx = await sessionContext();
-    const result = await fitmentService.createModel(ctx, input);
+  return restAction(async () => {
+    const result = await api.post<{ id: string }>('/v1/commerce/fitment/models', input);
     revalidatePath('/commerce/fitment');
     return result;
   });
@@ -57,23 +59,22 @@ export async function createVehicleModelAction(
 export async function createVehicleEngineAction(
   input: unknown
 ): Promise<ActionResult<{ id: string }>> {
-  return runAction(async () => {
-    const ctx = await sessionContext();
-    const result = await fitmentService.createEngine(ctx, input);
+  return restAction(async () => {
+    const result = await api.post<{ id: string }>('/v1/commerce/fitment/engines', input);
     revalidatePath('/commerce/fitment');
     return result;
   });
 }
 
-// Per-product fitment writes.
-
 export async function setProductFitmentAction(
   productId: string,
   fitments: unknown[]
 ): Promise<ActionResult<{ ok: true }>> {
-  return runAction(async () => {
-    const ctx = await sessionContext();
-    await fitmentService.setForProduct(ctx, productId, fitments as never);
+  return restAction(async () => {
+    await api.put<{ productId: string; updated: boolean }>(
+      `/v1/commerce/products/${productId}/fitment`,
+      { fitments }
+    );
     revalidatePath(`/commerce/products/${productId}`);
     return { ok: true as const };
   });
@@ -82,9 +83,11 @@ export async function setProductFitmentAction(
 export async function bulkAssignFitmentAction(
   input: unknown
 ): Promise<ActionResult<{ rowsAffected: number }>> {
-  return runAction(async () => {
-    const ctx = await sessionContext();
-    const result = await fitmentService.bulkAssign(ctx, input);
+  return restAction(async () => {
+    const result = await api.post<{ rowsAffected: number }>(
+      '/v1/commerce/fitment/bulk-assign',
+      input
+    );
     revalidatePath('/commerce/products');
     return result;
   });
@@ -94,9 +97,8 @@ export async function deleteFitmentAction(
   productId: string,
   fitmentId: string
 ): Promise<ActionResult<{ id: string }>> {
-  return runAction(async () => {
-    const ctx = await sessionContext();
-    await fitmentService.deleteFitment(ctx, fitmentId);
+  return restAction(async () => {
+    await api.delete<void>(`/v1/commerce/fitment/${fitmentId}`);
     revalidatePath(`/commerce/products/${productId}`);
     return { id: fitmentId };
   });

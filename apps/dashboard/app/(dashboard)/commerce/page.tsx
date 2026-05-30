@@ -15,8 +15,7 @@ import {
   Warehouse,
 } from 'lucide-react';
 
-import { isModuleEnabled, requireSession } from '@sparx/auth';
-import { reportingService } from '@sparx/commerce';
+import { requireSession } from '@sparx/auth';
 import {
   Badge,
   Button,
@@ -30,49 +29,53 @@ import {
   Text,
 } from '@sparx/ui';
 
-import { ModuleStub } from '../../../components/module-stub';
+import { api } from '@/lib/api-rest-client';
 
-// Commerce landing — KPI strip + quick-actions grid.
-//
-// The reporting service surfaces are stubbed during Phase 0; calls
-// fail-soft to "—" so the page renders without hard-erroring. Real
-// queries land in Phase 1 (catalog) and Phase 9 (analytics).
+// Commerce landing — KPI strip + quick-actions grid. Module gate lives in
+// the parent layout; by the time we hit this page Commerce is active. All
+// reporting service stubs are hit through /v1/commerce/reports/* and the
+// page fails-soft on each call ("—" when a metric isn't computable yet).
 
 export const dynamic = 'force-dynamic';
 
-const moduleStubProps = {
-  icon: <ShoppingCart className="h-5 w-5" />,
-  title: 'Commerce',
-  tagline: 'Products, orders, and checkout for your storefront.',
-  description:
-    'The Commerce module turns on product catalogs, inventory, pricing rules, and checkout. Activate it from Billing to get started.',
-  features: [
-    { title: 'Products', description: 'Variants, options, media, SEO, and bulk imports.' },
-    { title: 'Orders', description: 'Fulfilment, refunds, and customer-visible status.' },
-    { title: 'Checkout', description: 'Stripe-powered checkout with abandoned cart recovery.' },
-    { title: 'Inventory', description: 'Stock levels, low-stock alerts, multi-location.' },
-    { title: 'Discounts', description: 'Codes, automatic discounts, and B2B price lists.' },
-    { title: 'Shipping', description: 'Rate tables, real-time carrier rates, label printing.' },
-  ],
-};
+interface RevenueSummary {
+  netRevenueCents: number;
+  averageOrderValueCents: number;
+  ordersCount: number;
+  currency: string;
+}
+
+interface ConversionFunnel {
+  sessions: number;
+  ordersPlaced: number;
+  overallConversion: number;
+}
+
+interface SubscriptionMetrics {
+  mrrCents: number;
+  currency: string;
+  activeCount: number;
+  newThisPeriod: number;
+  churnedThisPeriod: number;
+}
+
+interface AbandonedCarts {
+  abandonedCount: number;
+  recoveredCount: number;
+  recoveryRate: number;
+}
 
 export default async function CommercePage() {
   const session = await requireSession();
-  const enabled = await isModuleEnabled(session.user.tenantId, 'commerce');
-  if (!enabled) return <ModuleStub {...moduleStubProps} />;
-
-  // Fail-soft KPI fetch — service stubs reject with NOT_IMPLEMENTED in
-  // Phase 0; the dashboard still renders.
-  const ctx = { tenantId: session.user.tenantId, userId: session.user.id };
   const now = new Date();
   const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-  const range = { from: thirtyDaysAgo.toISOString(), to: now.toISOString() };
+  const range = `from=${encodeURIComponent(thirtyDaysAgo.toISOString())}&to=${encodeURIComponent(now.toISOString())}`;
 
   const [revenue, funnel, subs, abandoned] = await Promise.all([
-    reportingService.revenueSummary(ctx, range).catch(() => null),
-    reportingService.conversionFunnel(ctx, range).catch(() => null),
-    reportingService.subscriptionMetrics(ctx, range).catch(() => null),
-    reportingService.abandonedCarts(ctx, range).catch(() => null),
+    api.get<RevenueSummary>(`/v1/commerce/reports/revenue-summary?${range}`).catch(() => null),
+    api.get<ConversionFunnel>(`/v1/commerce/reports/conversion-funnel?${range}`).catch(() => null),
+    api.get<SubscriptionMetrics>('/v1/commerce/reports/subscription-metrics').catch(() => null),
+    api.get<AbandonedCarts>(`/v1/commerce/reports/abandoned-carts?${range}`).catch(() => null),
   ]);
 
   return (

@@ -1,8 +1,6 @@
 import Link from 'next/link';
-import { Warehouse as WarehouseIcon, PackageOpen, Plus } from 'lucide-react';
+import { Warehouse as WarehouseIcon, Plus } from 'lucide-react';
 
-import { isModuleEnabled, requireSession } from '@sparx/auth';
-import { inventoryService } from '@sparx/commerce';
 import {
   Badge,
   Button,
@@ -23,7 +21,8 @@ import {
   Text,
 } from '@sparx/ui';
 
-import { ModuleStub } from '../../../../components/module-stub';
+import { api } from '@/lib/api-rest-client';
+
 import { EntityRowLink } from '../../_components/entity-row-link';
 
 // Warehouses — the per-tenant physical/virtual stock locations the
@@ -32,23 +31,30 @@ import { EntityRowLink } from '../../_components/entity-row-link';
 
 export const dynamic = 'force-dynamic';
 
-export default async function WarehousesPage() {
-  const session = await requireSession();
-  const enabled = await isModuleEnabled(session.user.tenantId, 'commerce');
-  if (!enabled) {
-    return (
-      <ModuleStub
-        icon={<PackageOpen className="h-5 w-5" />}
-        title="Commerce"
-        tagline="Warehouses route orders to physical stock."
-        description="Activate the Commerce module from Billing to manage warehouses."
-        features={[]}
-      />
-    );
-  }
+interface WarehouseRow {
+  id: string;
+  name: string;
+  code: string;
+  type: string;
+  line1: string | null;
+  line2: string | null;
+  city: string | null;
+  region: string | null;
+  postalCode: string | null;
+  country: string | null;
+  phone: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  defaultForChannel: string[];
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
 
-  const ctx = { tenantId: session.user.tenantId, userId: session.user.id };
-  const warehouses = await inventoryService.listWarehouses(ctx, { includeInactive: true });
+export default async function WarehousesPage() {
+  const warehouses = await api.get<WarehouseRow[]>(
+    '/v1/commerce/warehouses?include_archived=true'
+  );
 
   const active = warehouses.filter((w) => w.isActive);
   const inactive = warehouses.filter((w) => !w.isActive);

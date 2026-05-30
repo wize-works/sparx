@@ -1,21 +1,15 @@
 'use server';
 
-// Pricing Server Actions — thin transport over @sparx/commerce
-// pricingService. Covers price lists, entries, bulk tiers, and contract
-// prices.
-
 import { revalidatePath } from 'next/cache';
-
-import { pricingService } from '@sparx/commerce';
-
-import { type ActionResult, runAction, sessionContext } from './_action-helpers';
+import { api } from '@/lib/api-rest-client';
+import type { ActionResult } from './_action-helpers';
+import { restAction } from './_rest-action';
 
 // ─── Price lists ──────────────────────────────────────────────────────
 
 export async function createPriceListAction(input: unknown): Promise<ActionResult<{ id: string }>> {
-  return runAction(async () => {
-    const ctx = await sessionContext();
-    const result = await pricingService.createPriceList(ctx, input);
+  return restAction(async () => {
+    const result = await api.post<{ id: string }>('/v1/commerce/price-lists', input);
     revalidatePath('/commerce/pricing');
     return result;
   });
@@ -25,9 +19,8 @@ export async function updatePriceListAction(
   id: string,
   input: unknown
 ): Promise<ActionResult<{ ok: true }>> {
-  return runAction(async () => {
-    const ctx = await sessionContext();
-    await pricingService.updatePriceList(ctx, id, input);
+  return restAction(async () => {
+    await api.patch<{ id: string }>(`/v1/commerce/price-lists/${id}`, input);
     revalidatePath('/commerce/pricing');
     revalidatePath(`/commerce/pricing/${id}`);
     return { ok: true as const };
@@ -35,9 +28,11 @@ export async function updatePriceListAction(
 }
 
 export async function archivePriceListAction(id: string): Promise<ActionResult<{ ok: true }>> {
-  return runAction(async () => {
-    const ctx = await sessionContext();
-    await pricingService.archivePriceList(ctx, id);
+  return restAction(async () => {
+    await api.post<{ id: string; archived: boolean }>(
+      `/v1/commerce/price-lists/${id}/archive`,
+      {}
+    );
     revalidatePath('/commerce/pricing');
     return { ok: true as const };
   });
@@ -48,9 +43,8 @@ export async function archivePriceListAction(id: string): Promise<ActionResult<{
 export async function setPriceListEntryAction(
   input: unknown
 ): Promise<ActionResult<{ id: string }>> {
-  return runAction(async () => {
-    const ctx = await sessionContext();
-    const result = await pricingService.setPriceListEntry(ctx, input);
+  return restAction(async () => {
+    const result = await api.post<{ id: string }>('/v1/commerce/price-list-entries', input);
     revalidatePath('/commerce/pricing');
     return result;
   });
@@ -60,9 +54,8 @@ export async function deletePriceListEntryAction(
   entryId: string,
   priceListId: string
 ): Promise<ActionResult<{ ok: true }>> {
-  return runAction(async () => {
-    const ctx = await sessionContext();
-    await pricingService.deletePriceListEntry(ctx, entryId);
+  return restAction(async () => {
+    await api.delete<void>(`/v1/commerce/price-list-entries/${entryId}`);
     revalidatePath(`/commerce/pricing/${priceListId}`);
     return { ok: true as const };
   });
@@ -71,18 +64,16 @@ export async function deletePriceListEntryAction(
 // ─── Bulk tiers ──────────────────────────────────────────────────────
 
 export async function createBulkTierAction(input: unknown): Promise<ActionResult<{ id: string }>> {
-  return runAction(async () => {
-    const ctx = await sessionContext();
-    const result = await pricingService.createBulkTier(ctx, input);
+  return restAction(async () => {
+    const result = await api.post<{ id: string }>('/v1/commerce/bulk-tiers', input);
     revalidatePath('/commerce/pricing');
     return result;
   });
 }
 
 export async function deleteBulkTierAction(tierId: string): Promise<ActionResult<{ ok: true }>> {
-  return runAction(async () => {
-    const ctx = await sessionContext();
-    await pricingService.deleteBulkTier(ctx, tierId);
+  return restAction(async () => {
+    await api.delete<void>(`/v1/commerce/bulk-tiers/${tierId}`);
     revalidatePath('/commerce/pricing');
     return { ok: true as const };
   });
@@ -93,18 +84,16 @@ export async function deleteBulkTierAction(tierId: string): Promise<ActionResult
 export async function createContractPriceAction(
   input: unknown
 ): Promise<ActionResult<{ id: string }>> {
-  return runAction(async () => {
-    const ctx = await sessionContext();
-    const result = await pricingService.createContractPrice(ctx, input);
+  return restAction(async () => {
+    const result = await api.post<{ id: string }>('/v1/commerce/contract-prices', input);
     revalidatePath('/commerce/pricing');
     return result;
   });
 }
 
 export async function deleteContractPriceAction(id: string): Promise<ActionResult<{ ok: true }>> {
-  return runAction(async () => {
-    const ctx = await sessionContext();
-    await pricingService.deleteContractPrice(ctx, id);
+  return restAction(async () => {
+    await api.delete<void>(`/v1/commerce/contract-prices/${id}`);
     revalidatePath('/commerce/pricing');
     return { ok: true as const };
   });

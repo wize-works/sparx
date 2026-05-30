@@ -1,8 +1,6 @@
 import Link from 'next/link';
-import { Layers, PackageOpen, Plus, Sparkles, Star } from 'lucide-react';
+import { Layers, Plus, Sparkles, Star } from 'lucide-react';
 
-import { isModuleEnabled, requireSession } from '@sparx/auth';
-import { collectionService } from '@sparx/commerce';
 import {
   Badge,
   Button,
@@ -22,8 +20,23 @@ import {
   Text,
 } from '@sparx/ui';
 
-import { ModuleStub } from '../../../../components/module-stub';
+import { api } from '@/lib/api-rest-client';
 import { EntityRowLink } from '../../_components/entity-row-link';
+
+interface CollectionSummary {
+  id: string;
+  name: string;
+  handle: string;
+  type: 'manual' | 'rules';
+  productCount: number;
+  featured: boolean;
+  updatedAt: string;
+}
+
+interface CollectionListResponse {
+  items: CollectionSummary[];
+  total: number;
+}
 
 // Collections — the merchandising surface ("Featured", "New for Spring",
 // "Diesel Service Specials"). Two flavors: manual (hand-curated product
@@ -37,33 +50,18 @@ interface PageProps {
 }
 
 export default async function CollectionsPage({ searchParams }: PageProps) {
-  const session = await requireSession();
-  const enabled = await isModuleEnabled(session.user.tenantId, 'commerce');
-  if (!enabled) {
-    return (
-      <ModuleStub
-        icon={<PackageOpen className="h-5 w-5" />}
-        title="Commerce"
-        tagline="Collections curate your storefront."
-        description="Activate the Commerce module from Billing to start creating collections."
-        features={[]}
-      />
-    );
-  }
-
   const params = await searchParams;
   const typeFilter = stringParam(params.type);
   const q = stringParam(params.q);
   const featuredOnly = stringParam(params.featured) === '1';
 
-  const { items, total } = await collectionService.list(
-    { tenantId: session.user.tenantId, userId: session.user.id },
-    {
-      take: 100,
-      ...(typeFilter === 'manual' || typeFilter === 'rules' ? { type: typeFilter } : {}),
-      ...(featuredOnly ? { featured: true } : {}),
-      ...(q ? { q } : {}),
-    }
+  const query = new URLSearchParams({ take: '100' });
+  if (typeFilter === 'manual' || typeFilter === 'rules') query.set('type', typeFilter);
+  if (featuredOnly) query.set('featured', 'true');
+  if (q) query.set('q', q);
+
+  const { items, total } = await api.get<CollectionListResponse>(
+    `/v1/commerce/collections?${query.toString()}`
   );
 
   return (

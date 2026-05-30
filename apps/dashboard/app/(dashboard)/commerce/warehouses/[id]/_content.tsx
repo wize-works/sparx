@@ -1,9 +1,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { PackageOpen, Warehouse as WarehouseIcon } from 'lucide-react';
+import { Warehouse as WarehouseIcon } from 'lucide-react';
 
-import { isModuleEnabled, requireSession } from '@sparx/auth';
-import { CommerceNotFoundError, inventoryService } from '@sparx/commerce';
 import {
   Badge,
   Button,
@@ -16,7 +14,7 @@ import {
   Text,
 } from '@sparx/ui';
 
-import { ModuleStub } from '../../../../../components/module-stub';
+import { api, type ApiRestError } from '@/lib/api-rest-client';
 
 import { WarehouseEditForm } from './_components/warehouse-edit-form';
 import { WarehouseArchiveButton } from './_components/warehouse-archive-button';
@@ -27,34 +25,57 @@ interface Props {
   id: string;
 }
 
+export interface WarehouseRow {
+  id: string;
+  name: string;
+  code: string;
+  type: string;
+  line1: string | null;
+  line2: string | null;
+  city: string | null;
+  region: string | null;
+  postalCode: string | null;
+  country: string | null;
+  phone: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  defaultForChannel: string[];
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface InventoryLevelRow {
+  variantId: string;
+  warehouseId: string;
+  warehouseCode: string;
+  onHand: number;
+  allocated: number;
+  available: number;
+  reorderPoint: number | null;
+  reorderQuantity: number | null;
+  leadTimeDays: number | null;
+  unitCostCents: number | null;
+  updatedAt: string;
+}
+
+interface LevelsForWarehouseResponse {
+  items: InventoryLevelRow[];
+  total: number;
+}
+
 export async function WarehouseDetailContent({ id }: Props) {
-  const session = await requireSession();
-  const enabled = await isModuleEnabled(session.user.tenantId, 'commerce');
-  if (!enabled) {
-    return (
-      <ModuleStub
-        icon={<PackageOpen className="h-5 w-5" />}
-        title="Commerce"
-        tagline=""
-        description="Commerce is disabled. Activate it from Billing to manage warehouses."
-        features={[]}
-      />
-    );
-  }
-
-  const ctx = { tenantId: session.user.tenantId, userId: session.user.id };
-
-  let warehouse;
+  let warehouse: WarehouseRow;
   try {
-    warehouse = await inventoryService.getWarehouse(ctx, id);
+    warehouse = await api.get<WarehouseRow>(`/v1/commerce/warehouses/${id}`);
   } catch (err) {
-    if (err instanceof CommerceNotFoundError) notFound();
+    if ((err as ApiRestError).code === 'NOT_FOUND') notFound();
     throw err;
   }
 
-  const { items: levels, total: levelCount } = await inventoryService.levelsForWarehouse(ctx, id, {
-    take: 500,
-  });
+  const { items: levels, total: levelCount } = await api.get<LevelsForWarehouseResponse>(
+    `/v1/commerce/inventory/levels/warehouse/${id}?take=500`
+  );
   const onHandTotal = levels.reduce((acc, l) => acc + l.onHand, 0);
   const lowCount = levels.filter(
     (l) => l.reorderPoint !== null && l.available <= l.reorderPoint

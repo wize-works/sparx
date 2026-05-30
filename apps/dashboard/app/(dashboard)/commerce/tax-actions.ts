@@ -1,24 +1,22 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-
-import { taxService } from '@sparx/commerce';
+import { api } from '@/lib/api-rest-client';
 import type {
   CreateTaxExemptionInput,
   CreateTaxRateInput,
   CreateTaxZoneInput,
 } from '@sparx/commerce-schemas';
-
-import { runAction, sessionContext, type ActionResult } from './_action-helpers';
+import type { ActionResult } from './_action-helpers';
+import { restAction } from './_rest-action';
 
 // ─── Zones ───────────────────────────────────────────────────────────
 
 export async function createTaxZoneAction(
   input: CreateTaxZoneInput
 ): Promise<ActionResult<{ id: string }>> {
-  return runAction(async () => {
-    const ctx = await sessionContext();
-    const result = await taxService.createZone(ctx, input);
+  return restAction(async () => {
+    const result = await api.post<{ id: string }>('/v1/commerce/tax/zones', input);
     revalidatePath('/commerce/tax');
     return result;
   });
@@ -28,18 +26,16 @@ export async function updateTaxZoneAction(
   id: string,
   input: Partial<CreateTaxZoneInput>
 ): Promise<ActionResult<void>> {
-  return runAction(async () => {
-    const ctx = await sessionContext();
-    await taxService.updateZone(ctx, id, input);
+  return restAction(async () => {
+    await api.patch<{ id: string }>(`/v1/commerce/tax/zones/${id}`, input);
     revalidatePath('/commerce/tax');
     revalidatePath(`/commerce/tax/zones/${id}`);
   });
 }
 
 export async function deleteTaxZoneAction(id: string): Promise<ActionResult<void>> {
-  return runAction(async () => {
-    const ctx = await sessionContext();
-    await taxService.deleteZone(ctx, id);
+  return restAction(async () => {
+    await api.delete<void>(`/v1/commerce/tax/zones/${id}`);
     revalidatePath('/commerce/tax');
   });
 }
@@ -49,18 +45,16 @@ export async function deleteTaxZoneAction(id: string): Promise<ActionResult<void
 export async function createTaxRateAction(
   input: CreateTaxRateInput
 ): Promise<ActionResult<{ id: string }>> {
-  return runAction(async () => {
-    const ctx = await sessionContext();
-    const result = await taxService.createRate(ctx, input);
+  return restAction(async () => {
+    const result = await api.post<{ id: string }>('/v1/commerce/tax/rates', input);
     revalidatePath(`/commerce/tax/zones/${input.zoneId}`);
     return result;
   });
 }
 
 export async function deleteTaxRateAction(id: string, zoneId: string): Promise<ActionResult<void>> {
-  return runAction(async () => {
-    const ctx = await sessionContext();
-    await taxService.deleteRate(ctx, id);
+  return restAction(async () => {
+    await api.delete<void>(`/v1/commerce/tax/rates/${id}`);
     revalidatePath(`/commerce/tax/zones/${zoneId}`);
   });
 }
@@ -70,18 +64,16 @@ export async function deleteTaxRateAction(id: string, zoneId: string): Promise<A
 export async function createTaxExemptionAction(
   input: CreateTaxExemptionInput
 ): Promise<ActionResult<{ id: string }>> {
-  return runAction(async () => {
-    const ctx = await sessionContext();
-    const result = await taxService.createExemption(ctx, input);
+  return restAction(async () => {
+    const result = await api.post<{ id: string }>('/v1/commerce/tax/exemptions', input);
     revalidatePath('/commerce/tax');
     return result;
   });
 }
 
 export async function deleteTaxExemptionAction(id: string): Promise<ActionResult<void>> {
-  return runAction(async () => {
-    const ctx = await sessionContext();
-    await taxService.deleteExemption(ctx, id);
+  return restAction(async () => {
+    await api.delete<void>(`/v1/commerce/tax/exemptions/${id}`);
     revalidatePath('/commerce/tax');
   });
 }

@@ -1,8 +1,6 @@
 import Link from 'next/link';
-import { DollarSign, PackageOpen, Plus } from 'lucide-react';
+import { DollarSign, Plus } from 'lucide-react';
 
-import { isModuleEnabled, requireSession } from '@sparx/auth';
-import { pricingService } from '@sparx/commerce';
 import {
   Badge,
   Button,
@@ -23,7 +21,7 @@ import {
   Text,
 } from '@sparx/ui';
 
-import { ModuleStub } from '../../../../components/module-stub';
+import { api } from '@/lib/api-rest-client';
 import { EntityRowLink } from '../../_components/entity-row-link';
 
 // Pricing — price lists, contract prices, bulk tiers.
@@ -42,25 +40,35 @@ const STATUS_VARIANT: Record<string, 'success' | 'warning' | 'outline'> = {
   archived: 'warning',
 };
 
-export default async function PricingPage() {
-  const session = await requireSession();
-  const enabled = await isModuleEnabled(session.user.tenantId, 'commerce');
-  if (!enabled) {
-    return (
-      <ModuleStub
-        icon={<PackageOpen className="h-5 w-5" />}
-        title="Commerce"
-        tagline="Price lists, B2B contracts, bulk discounts."
-        description="Activate the Commerce module from Billing to manage pricing."
-        features={[]}
-      />
-    );
-  }
+interface PriceListRow {
+  id: string;
+  name: string;
+  description: string | null;
+  currency: string;
+  channel: string | null;
+  customerSegmentId: string | null;
+  b2bAccountId: string | null;
+  collectionId: string | null;
+  priority: number;
+  validFrom: string | null;
+  validTo: string | null;
+  status: string;
+  entryCount: number;
+  updatedAt: string;
+}
 
-  const ctx = { tenantId: session.user.tenantId, userId: session.user.id };
+interface BulkPriceTierRow {
+  id: string;
+  variantId: string | null;
+  priceListId: string | null;
+  minQuantity: number;
+  unitPriceCents: number;
+}
+
+export default async function PricingPage() {
   const [priceLists, bulkTiers] = await Promise.all([
-    pricingService.listPriceLists(ctx),
-    pricingService.listBulkTiers(ctx),
+    api.get<PriceListRow[]>('/v1/commerce/price-lists'),
+    api.get<BulkPriceTierRow[]>('/v1/commerce/bulk-tiers'),
   ]);
 
   return (
