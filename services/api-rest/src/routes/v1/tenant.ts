@@ -24,7 +24,7 @@ import { z } from 'zod';
 import { prisma, type Prisma } from '@sparx/db';
 import { ok } from '@sparx/api-core/envelope';
 import { requireAuth, requireRole } from '@sparx/api-core/auth';
-import { notFound } from '@sparx/api-core/errors';
+import { conflict, notFound } from '@sparx/api-core/errors';
 import { invalidateModuleCache, type ModuleSlug } from '@sparx/auth';
 
 const MODULE_SLUGS: ModuleSlug[] = [
@@ -44,6 +44,64 @@ const PatchTenant = z.object({
   email: z.string().email().max(255).optional(),
 });
 
+// Storefront subdomain rules (docs/04 §2): 3–63 chars, lowercase alnum +
+// internal hyphens, plus a reserved-name guard.
+const RESERVED_SLUGS = new Set<string>([
+  'www',
+  'api',
+  'app',
+  'admin',
+  'mcp',
+  'mail',
+  'email',
+  'ftp',
+  'blog',
+  'shop',
+  'store',
+  'dashboard',
+  'static',
+  'cdn',
+  'assets',
+  'help',
+  'support',
+  'status',
+  'dev',
+  'staging',
+  'test',
+  'sparx',
+  'wize',
+  'wizeworks',
+  'account',
+  'accounts',
+  'login',
+  'signup',
+  'checkout',
+  'cart',
+  'docs',
+  'about',
+  'system',
+  'internal',
+]);
+const SLUG_RE = /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/;
+const SlugSchema = z
+  .string()
+  .min(3)
+  .max(63)
+  .regex(SLUG_RE, 'Use lowercase letters, numbers, and hyphens.');
+const SlugQuery = z.object({ slug: z.string().max(120) });
+const SlugBody = z.object({ slug: SlugSchema });
+
+// Three deterministic suggestions when a desired slug is taken/invalid.
+function slugSuggestions(base: string): string[] {
+  const clean =
+    base
+      .toLowerCase()
+      .replace(/[^a-z0-9-]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .slice(0, 55) || 'store';
+  return [`${clean}-store`, `${clean}-shop`, `${clean}-co`];
+}
+
 const ModuleParams = z.object({
   slug: z.string().refine((s) => MODULE_SLUG_SET.has(s), 'Unknown module slug'),
 });
@@ -52,22 +110,58 @@ const ModulePatch = z.object({
   enabled: z.boolean(),
 });
 
+const ONBOARDING_STEPS = ['business', 'theme', 'product', 'domain', 'payments', 'done'] as const;
+type OnboardingStep = (typeof ONBOARDING_STEPS)[number];
+
 const OnboardingPatch = z.object({
   dismissed: z.boolean().optional(),
   startedAt: z.string().datetime().nullable().optional(),
   finishedAt: z.string().datetime().nullable().optional(),
+  currentStep: z.enum(ONBOARDING_STEPS).optional(),
+  category: z.string().max(63).nullable().optional(),
+  completed: z
+    .object({
+      business: z.boolean().optional(),
+      theme: z.boolean().optional(),
+      product: z.boolean().optional(),
+      domain: z.boolean().optional(),
+      payments: z.boolean().optional(),
+    })
+    .optional(),
 });
+
+interface OnboardingCompleted {
+  business: boolean;
+  theme: boolean;
+  product: boolean;
+  domain: boolean;
+  payments: boolean;
+}
 
 interface OnboardingState {
   dismissed: boolean;
   startedAt: string | null;
   finishedAt: string | null;
+  currentStep: OnboardingStep;
+  category: string | null;
+  completed: OnboardingCompleted;
 }
+
+const DEFAULT_COMPLETED: OnboardingCompleted = {
+  business: false,
+  theme: false,
+  product: false,
+  domain: false,
+  payments: false,
+};
 
 const DEFAULT_ONBOARDING: OnboardingState = {
   dismissed: false,
   startedAt: null,
   finishedAt: null,
+  currentStep: 'business',
+  category: null,
+  completed: DEFAULT_COMPLETED,
 };
 
 function readOnboarding(settings: unknown): OnboardingState {
@@ -79,10 +173,22 @@ function readOnboarding(settings: unknown): OnboardingState {
     return DEFAULT_ONBOARDING;
   }
   const rec = raw as Record<string, unknown>;
+  const completedRaw = (rec.completed ?? {}) as Record<string, unknown>;
   return {
     dismissed: typeof rec.dismissed === 'boolean' ? rec.dismissed : false,
     startedAt: typeof rec.startedAt === 'string' ? rec.startedAt : null,
     finishedAt: typeof rec.finishedAt === 'string' ? rec.finishedAt : null,
+    currentStep: ONBOARDING_STEPS.includes(rec.currentStep as OnboardingStep)
+      ? (rec.currentStep as OnboardingStep)
+      : 'business',
+    category: typeof rec.category === 'string' ? rec.category : null,
+    completed: {
+      business: completedRaw.business === true,
+      theme: completedRaw.theme === true,
+      product: completedRaw.product === true,
+      domain: completedRaw.domain === true,
+      payments: completedRaw.payments === true,
+    },
   };
 }
 
@@ -119,6 +225,52 @@ const tenantRoutes: FastifyPluginAsync = async (app) => {
     const row = await prisma.tenant.update({
       where: { id: auth.tenantId },
       data: input,
+      select: { id: true, name: true, email: true, slug: true, plan: true },
+    });
+    return ok(row);
+  });
+
+  // Subdomain availability check for the onboarding domain step. Returns
+  // { available, reason?, suggestions? } so the wizard can guide the merchant.
+  app.get('/v1/tenant/slug-availability', async (request) => {
+    const auth = requireAuth(request);
+    const { slug } = SlugQuery.parse(request.query);
+    const normalized = slug.trim().toLowerCase();
+
+    if (!SLUG_RE.test(normalized) || normalized.length < 3 || normalized.length > 63) {
+      return ok({ available: false, reason: 'invalid', suggestions: slugSuggestions(normalized) });
+    }
+    if (RESERVED_SLUGS.has(normalized)) {
+      return ok({ available: false, reason: 'reserved', suggestions: slugSuggestions(normalized) });
+    }
+    const existing = await prisma.tenant.findUnique({
+      where: { slug: normalized },
+      select: { id: true },
+    });
+    if (existing && existing.id !== auth.tenantId) {
+      return ok({ available: false, reason: 'taken', suggestions: slugSuggestions(normalized) });
+    }
+    return ok({ available: true });
+  });
+
+  // Update the tenant's storefront subdomain. Owner/admin only.
+  app.patch('/v1/tenant/slug', async (request) => {
+    const auth = requireRole(request, 'admin');
+    const { slug } = SlugBody.parse(request.body);
+    const normalized = slug.trim().toLowerCase();
+    if (RESERVED_SLUGS.has(normalized)) {
+      throw conflict('That subdomain is reserved.', 'slug');
+    }
+    const existing = await prisma.tenant.findUnique({
+      where: { slug: normalized },
+      select: { id: true },
+    });
+    if (existing && existing.id !== auth.tenantId) {
+      throw conflict('That subdomain is already taken.', 'slug');
+    }
+    const row = await prisma.tenant.update({
+      where: { id: auth.tenantId },
+      data: { slug: normalized },
       select: { id: true, name: true, email: true, slug: true, plan: true },
     });
     return ok(row);
@@ -186,7 +338,13 @@ const tenantRoutes: FastifyPluginAsync = async (app) => {
 
     const currentSettings = (before.settings as Record<string, unknown> | null) ?? {};
     const currentOnboarding = readOnboarding(before.settings ?? null);
-    const nextOnboarding: OnboardingState = { ...currentOnboarding, ...input };
+    const nextOnboarding: OnboardingState = {
+      ...currentOnboarding,
+      ...input,
+      // `completed` is a nested partial — deep-merge so a single step flip
+      // doesn't clobber the other steps' flags.
+      completed: { ...currentOnboarding.completed, ...(input.completed ?? {}) },
+    };
     const nextSettings = {
       ...currentSettings,
       onboarding: nextOnboarding,

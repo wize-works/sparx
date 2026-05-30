@@ -6,10 +6,12 @@ import type { FastifyPluginAsync } from 'fastify';
 
 import emailSettingsRoutes from './settings.js';
 import emailDomainRoutes from './domains.js';
+import emailSuppressionRoutes from './suppressions.js';
 
 const emailRoutes: FastifyPluginAsync = async (app) => {
   await app.register(emailSettingsRoutes);
   await app.register(emailDomainRoutes);
+  await app.register(emailSuppressionRoutes);
 };
 
 export default emailRoutes;

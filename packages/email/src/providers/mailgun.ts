@@ -70,6 +70,14 @@ export function createMailgunProvider(config: MailgunConfig): EmailProvider {
           form.append(`h:X-Sparx-${k}`, v);
         }
       }
+      // User variables — Mailgun echoes these in delivery/engagement webhooks
+      // under event-data.user-variables, which is how the webhook receiver
+      // attributes events to a tenant + broadcast/automation.
+      if (email.variables) {
+        for (const [k, v] of Object.entries(email.variables)) {
+          form.append(`v:${k}`, v);
+        }
+      }
 
       const res = await fetch(url, {
         method: 'POST',

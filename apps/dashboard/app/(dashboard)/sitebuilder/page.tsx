@@ -1,24 +1,60 @@
-import { LayoutTemplate } from 'lucide-react';
-import { ModuleStub } from '../../../components/module-stub';
+import Link from 'next/link';
+import { Badge, Card, Heading, Text } from '@sparx/ui';
+import { getConfig, listThemes } from './_lib/api';
 
-export default function SitebuilderPage() {
+const SECTIONS = [
+  { href: '/sitebuilder/design', title: 'Design', desc: 'Theme, colors, fonts, and live preview.' },
+  { href: '/sitebuilder/themes', title: 'Themes', desc: 'Switch between curated storefront themes.' },
+  { href: '/sitebuilder/homepage', title: 'Homepage', desc: 'Compose your homepage from sections.' },
+  { href: '/sitebuilder/pages', title: 'Pages', desc: 'Build section-based landing pages.' },
+  {
+    href: '/sitebuilder/navigation',
+    title: 'Navigation',
+    desc: 'Header, footer, and announcement bar.',
+  },
+  {
+    href: '/sitebuilder/publishing',
+    title: 'Publishing',
+    desc: 'Version history, rollback, and schedules.',
+  },
+];
+
+export default async function SitebuilderOverview() {
+  const [config, themes] = await Promise.all([getConfig(), listThemes()]);
+  const theme = themes.find((t) => t.key === config.themeKey);
+
   return (
-    <ModuleStub
-      icon={<LayoutTemplate className="h-5 w-5" />}
-      title="Sitebuilder"
-      tagline="Themes, sections, and visual editing for your storefront."
-      description="The Sitebuilder module gives you a visual editor over the storefront's theme — sections, blocks, navigation, and global tokens — without leaving the dashboard."
-      features={[
-        { title: 'Themes', description: 'Curated starting points with token-driven theming.' },
-        { title: 'Sections', description: 'Drag-and-drop blocks per template (home, PDP, etc).' },
-        { title: 'Navigation', description: 'Header, footer, and menu management.' },
-        {
-          title: 'Global tokens',
-          description: 'Brand colors, type scale, spacing — applied site-wide.',
-        },
-        { title: 'Live preview', description: 'See changes mid-edit on real storefront data.' },
-        { title: 'Publishing', description: 'Draft, schedule, and roll back with one click.' },
-      ]}
-    />
+    <div className="flex flex-col gap-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <Heading level={1}>Site Builder</Heading>
+          <Text variant="muted">Design and publish your storefront.</Text>
+        </div>
+        {config.publishedVersionId ? (
+          <Badge variant="success">Published</Badge>
+        ) : (
+          <Badge variant="secondary">Not published</Badge>
+        )}
+      </div>
+
+      <Card variant="module" padding="md">
+        <Text size="xs" variant="muted">
+          Active theme
+        </Text>
+        <Heading level={3}>{theme?.name ?? config.themeKey}</Heading>
+        <Text variant="muted">{theme?.description}</Text>
+      </Card>
+
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {SECTIONS.map((s) => (
+          <Link key={s.href} href={s.href}>
+            <Card variant="module" padding="md" className="h-full hover:border-[var(--module-active)]">
+              <Heading level={4}>{s.title}</Heading>
+              <Text variant="muted">{s.desc}</Text>
+            </Card>
+          </Link>
+        ))}
+      </div>
+    </div>
   );
 }

@@ -1,0 +1,332 @@
+'use client';
+
+// The visual customizer: theme + appearance + color/font/layout settings on the
+// left, a live storefront preview on the right. Token edits push to the preview
+// iframe via postMessage for instant feedback (the storefront applies them as
+// CSS variables) and debounce-save to the draft. Structural/theme changes save
+// then refresh.
+
+import * as React from 'react';
+import { useRouter } from 'next/navigation';
+import {
+  Button,
+  ColorPicker,
+  Label,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Textarea,
+} from '@sparx/ui';
+import type { ThemeSettingField } from '@sparx/storefront-themes';
+import { selectTheme, updateSettings } from '../_lib/actions';
+import type { AppearancePolicy, SiteConfigDto, ThemeDto } from '../_lib/types';
+import { PublishBar } from './publish-bar';
+import { FieldControl } from './field-control';
+
+type Mode = 'light' | 'dark';
+type TokenMap = Record<string, string>;
+
+const DEVICES: { id: string; label: string; width: number | null }[] = [
+  { id: 'desktop', label: 'Desktop', width: null },
+  { id: 'tablet', label: 'Tablet', width: 820 },
+  { id: 'mobile', label: 'Mobile', width: 390 },
+];
+
+const POLICIES: { value: AppearancePolicy; label: string }[] = [
+  { value: 'light-only', label: 'Light only' },
+  { value: 'dark-only', label: 'Dark only' },
+  { value: 'auto', label: 'Auto (follow device)' },
+  { value: 'toggle', label: 'Shopper toggle' },
+];
+
+export interface CustomizerProps {
+  config: SiteConfigDto;
+  themes: ThemeDto[];
+  storefrontUrl: string;
+  slug: string;
+  hasUnpublishedChanges: boolean;
+}
+
+export function Customizer({
+  config,
+  themes,
+  storefrontUrl,
+  slug,
+  hasUnpublishedChanges,
+}: CustomizerProps) {
+  const router = useRouter();
+  const iframeRef = React.useRef<HTMLIFrameElement>(null);
+  const [pending, startTransition] = React.useTransition();
+
+  const [themeKey, setThemeKey] = React.useState(config.themeKey);
+  const [policy, setPolicy] = React.useState<AppearancePolicy>(config.appearancePolicy);
+  const [previewMode, setPreviewMode] = React.useState<Mode>(
+    config.appearancePolicy === 'dark-only' ? 'dark' : 'light'
+  );
+  const [device, setDevice] = React.useState('desktop');
+  const [light, setLight] = React.useState<TokenMap>(config.draftSettings.tokens?.light ?? {});
+  const [dark, setDark] = React.useState<TokenMap>(config.draftSettings.tokens?.dark ?? {});
+  const [customCss, setCustomCss] = React.useState(config.draftSettings.customCss ?? '');
+
+  const theme = themes.find((t) => t.key === themeKey) ?? themes[0];
+  const editing = previewMode === 'light' ? light : dark;
+  const setEditing = previewMode === 'light' ? setLight : setDark;
+
+  // Effective token value: merchant override → theme default for the mode.
+  const tokenValue = (field: ThemeSettingField): string => {
+    const override = editing[field.key];
+    if (override) return override;
+    return theme?.tokenDefaults[previewMode][field.key] ?? '';
+  };
+
+  const postToPreview = React.useCallback(
+    (overrides: { light: TokenMap; dark: TokenMap; mode: Mode; css: string }) => {
+      iframeRef.current?.contentWindow?.postMessage(
+        { type: 'sparx-sitebuilder-preview', themeKey, ...overrides },
+        '*'
+      );
+    },
+    [themeKey]
+  );
+
+  // Debounced draft save of token settings.
+  const saveTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const queueSave = React.useCallback(
+    (next: { light: TokenMap; dark: TokenMap; css: string }) => {
+      if (saveTimer.current) clearTimeout(saveTimer.current);
+      saveTimer.current = setTimeout(() => {
+        void updateSettings({
+          settings: { tokens: { light: next.light, dark: next.dark }, customCss: next.css },
+        });
+      }, 600);
+    },
+    []
+  );
+
+  const onTokenChange = (key: string, value: string) => {
+    const next = { ...editing, [key]: value };
+    setEditing(next);
+    const nextLight = previewMode === 'light' ? next : light;
+    const nextDark = previewMode === 'dark' ? next : dark;
+    postToPreview({ light: nextLight, dark: nextDark, mode: previewMode, css: customCss });
+    queueSave({ light: nextLight, dark: nextDark, css: customCss });
+  };
+
+  // Fonts/layout are shared across modes — write to both palettes.
+  const onSharedChange = (key: string, value: string) => {
+    const nextLight = { ...light, [key]: value };
+    const nextDark = { ...dark, [key]: value };
+    setLight(nextLight);
+    setDark(nextDark);
+    postToPreview({ light: nextLight, dark: nextDark, mode: previewMode, css: customCss });
+    queueSave({ light: nextLight, dark: nextDark, css: customCss });
+  };
+
+  const onCssChange = (css: string) => {
+    setCustomCss(css);
+    postToPreview({ light, dark, mode: previewMode, css });
+    queueSave({ light, dark, css });
+  };
+
+  const onSelectTheme = (key: string) => {
+    setThemeKey(key);
+    startTransition(async () => {
+      await selectTheme(key);
+      router.refresh();
+    });
+  };
+
+  const onPolicyChange = (value: AppearancePolicy) => {
+    setPolicy(value);
+    startTransition(() => void updateSettings({ appearancePolicy: value }));
+  };
+
+  const switchMode = (mode: Mode) => {
+    setPreviewMode(mode);
+    postToPreview({ light, dark, mode, css: customCss });
+  };
+
+  const colorFields = (theme?.settingsSchema ?? []).filter((f) => f.group === 'colors');
+  const typeFields = (theme?.settingsSchema ?? []).filter((f) => f.group === 'typography');
+  const layoutFields = (theme?.settingsSchema ?? []).filter((f) => f.group === 'layout');
+  const deviceWidth = DEVICES.find((d) => d.id === device)?.width ?? null;
+
+  return (
+    <div className="flex flex-col gap-4">
+      <PublishBar
+        isPublished={config.publishedVersionId !== null}
+        hasUnpublishedChanges={hasUnpublishedChanges}
+      />
+
+      <div className="grid gap-4 lg:grid-cols-[360px_1fr]">
+        {/* Left — settings panels */}
+        <div className="flex max-h-[calc(100vh-220px)] flex-col gap-6 overflow-y-auto pr-1">
+          <Panel title="Theme">
+            <Select value={themeKey} onValueChange={onSelectTheme}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {themes.map((t) => (
+                  <SelectItem key={t.key} value={t.key}>
+                    {t.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {theme ? (
+              <p className="text-xs text-[var(--color-text-muted)]">{theme.description}</p>
+            ) : null}
+          </Panel>
+
+          <Panel title="Appearance">
+            <div className="flex flex-col gap-1.5">
+              <Label>Mode policy</Label>
+              <Select value={policy} onValueChange={(v) => onPolicyChange(v as AppearancePolicy)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {POLICIES.map((p) => (
+                    <SelectItem key={p.value} value={p.value}>
+                      {p.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </Panel>
+
+          <Panel
+            title="Colors"
+            aside={
+              <ModeSwitch mode={previewMode} onChange={switchMode} />
+            }
+          >
+            {colorFields.map((f) => (
+              <div key={f.key} className="flex flex-col gap-1.5">
+                <Label>{f.label}</Label>
+                <ColorPicker value={tokenValue(f)} onChange={(v) => onTokenChange(f.key, v)} />
+                {f.help ? (
+                  <p className="text-xs text-[var(--color-text-muted)]">{f.help}</p>
+                ) : null}
+              </div>
+            ))}
+          </Panel>
+
+          <Panel title="Fonts">
+            {typeFields.map((f) => (
+              <FieldControl
+                key={f.key}
+                field={{ key: f.key, label: f.label, type: 'font' }}
+                value={light[f.key] ?? theme?.tokenDefaults.light[f.key] ?? ''}
+                onChange={(v) => onSharedChange(f.key, v as string)}
+              />
+            ))}
+          </Panel>
+
+          <Panel title="Layout">
+            {layoutFields.map((f) => (
+              <FieldControl
+                key={f.key}
+                field={{
+                  key: f.key,
+                  label: f.label,
+                  type: 'select',
+                  options: f.options,
+                }}
+                value={light[f.key] ?? theme?.tokenDefaults.light[f.key] ?? ''}
+                onChange={(v) => onSharedChange(f.key, v as string)}
+              />
+            ))}
+          </Panel>
+
+          <Panel title="Custom CSS">
+            <Textarea
+              rows={6}
+              value={customCss}
+              onChange={(e) => onCssChange(e.target.value)}
+              placeholder=":root { /* advanced overrides */ }"
+              className="font-mono text-xs"
+            />
+          </Panel>
+        </div>
+
+        {/* Right — live preview */}
+        <div className="flex flex-col gap-3">
+          <div className="flex items-center justify-between">
+            <div className="flex gap-1">
+              {DEVICES.map((d) => (
+                <Button
+                  key={d.id}
+                  size="sm"
+                  variant={device === d.id ? 'primary' : 'ghost'}
+                  onClick={() => setDevice(d.id)}
+                >
+                  {d.label}
+                </Button>
+              ))}
+            </div>
+            <ModeSwitch mode={previewMode} onChange={switchMode} />
+          </div>
+
+          <div className="flex justify-center overflow-hidden rounded-lg border border-[var(--color-border-default)] bg-[var(--color-bg-subtle)] p-3">
+            <iframe
+              ref={iframeRef}
+              title="Storefront preview"
+              src={`${storefrontUrl}/?tenant=${encodeURIComponent(slug)}&sparxPreview=1`}
+              className="h-[calc(100vh-280px)] w-full rounded-md border-0 bg-white"
+              style={deviceWidth ? { width: deviceWidth, maxWidth: '100%' } : undefined}
+            />
+          </div>
+          {pending ? (
+            <p className="text-xs text-[var(--color-text-muted)]">Saving…</p>
+          ) : null}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Panel({
+  title,
+  aside,
+  children,
+}: {
+  title: string;
+  aside?: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="flex flex-col gap-3">
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-semibold text-[var(--color-text-primary)]">{title}</h3>
+        {aside}
+      </div>
+      {children}
+    </section>
+  );
+}
+
+function ModeSwitch({ mode, onChange }: { mode: Mode; onChange: (m: Mode) => void }) {
+  return (
+    <div className="flex rounded-md border border-[var(--color-border-default)] p-0.5">
+      {(['light', 'dark'] as const).map((m) => (
+        <button
+          key={m}
+          type="button"
+          onClick={() => onChange(m)}
+          className={
+            mode === m
+              ? 'rounded px-2 py-0.5 text-xs bg-[var(--module-active)] text-white'
+              : 'rounded px-2 py-0.5 text-xs text-[var(--color-text-muted)]'
+          }
+        >
+          {m === 'light' ? '☀ Light' : '☾ Dark'}
+        </button>
+      ))}
+    </div>
+  );
+}

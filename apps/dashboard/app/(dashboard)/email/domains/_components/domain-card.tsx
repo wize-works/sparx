@@ -138,14 +138,16 @@ export function DomainCard({ domain }: { domain: SendingDomainRow }) {
           <Text size="sm" variant="muted">
             {STATE_HINT[domain.state]}
           </Text>
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="sm"
             onClick={() => setOpen((v) => !v)}
-            className="inline-flex w-fit items-center gap-1 text-sm font-medium text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
+            className="w-fit"
           >
             {open ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
             DNS records
-          </button>
+          </Button>
           {open ? <DnsRecordsTable records={domain.dnsRecords} /> : null}
         </Stack>
       </CardContent>

@@ -22,6 +22,12 @@ export interface SendableEmail {
   templateId?: string;
   /** Free-form key/value for provider tagging (Postal headers, etc.). */
   tags?: Record<string, string>;
+  /**
+   * Provider "user variables" echoed back on delivery/engagement webhooks
+   * (Mailgun `v:*`). Used for tenant + broadcast/automation attribution so the
+   * webhook receiver can write the right EmailEvent / EmailSuppression rows.
+   */
+  variables?: Record<string, string>;
 }
 
 export interface DeliveryResult {

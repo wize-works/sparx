@@ -11,7 +11,7 @@
 // unverified|active|disabled onto our richer set.
 
 import { withTenant } from '@sparx/db';
-import type { SendingDomain } from '@sparx/db';
+import type { Prisma, SendingDomain } from '@sparx/db';
 import { getMailgunDomainAdmin, MailgunAdminError, type MailgunDomainResult } from '@sparx/email';
 
 import { writeAuditLog } from '../audit';
@@ -71,7 +71,7 @@ export async function create(ctx: ServiceContext, rawInput: unknown): Promise<Se
         mailgunDomainId: result.name,
         region: input.region,
         state: mapState(result.state),
-        dnsRecords: result.sendingDnsRecords,
+        dnsRecords: result.sendingDnsRecords as unknown as Prisma.InputJsonValue,
         dkimSelector: result.dkimSelector ?? null,
       },
     });
@@ -115,7 +115,7 @@ export async function verify(ctx: ServiceContext, id: string): Promise<SendingDo
       where: { id },
       data: {
         state,
-        dnsRecords: result.sendingDnsRecords,
+        dnsRecords: result.sendingDnsRecords as unknown as Prisma.InputJsonValue,
         dkimSelector: result.dkimSelector ?? existing.dkimSelector,
         lastCheckedAt: new Date(),
         ...(verified ? { verifiedAt: new Date() } : {}),

@@ -21,6 +21,13 @@ const buttonVariants = cva(
         primary: 'bg-[var(--sparx-primary)] text-white hover:bg-[var(--sparx-primary-hover)]',
         secondary:
           'border border-[var(--color-border-default)] bg-[var(--color-bg-surface)] text-[var(--color-text-primary)] hover:bg-[var(--color-bg-subtle)]',
+        // Neutral, transparent-fill bordered button. Lower emphasis than
+        // `secondary` (no surface fill) — pairs well next to a primary action.
+        outline:
+          'border border-[var(--color-border-default)] bg-transparent text-[var(--color-text-primary)] hover:bg-[var(--color-bg-subtle)]',
+        // Tinted, borderless low-emphasis fill in the brand accent. The quiet
+        // counterpart to `primary` for secondary calls-to-action.
+        soft: 'bg-[var(--sparx-primary-tint)] text-[var(--sparx-primary)] hover:brightness-95',
         ghost:
           'text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-subtle)] hover:text-[var(--color-text-primary)]',
         link: 'h-auto p-0 text-[var(--sparx-primary)] underline-offset-4 hover:underline',

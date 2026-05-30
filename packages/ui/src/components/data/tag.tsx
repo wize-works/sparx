@@ -18,6 +18,11 @@ const tagVariants = cva(
         primary: 'border-transparent bg-[var(--sparx-primary-tint)] text-[var(--sparx-primary)]',
         module:
           'border-transparent bg-[var(--module-active-tint)] text-[var(--module-active-text)]',
+        // Cross-component-consistent treatments (match Button/Badge): `soft` is
+        // a tinted brand fill, `outline` is a neutral bordered transparent chip.
+        soft: 'border-transparent bg-[var(--sparx-primary-tint)] text-[var(--sparx-primary)]',
+        outline:
+          'border-[var(--color-border-default)] bg-transparent text-[var(--color-text-secondary)]',
       },
     },
     defaultVariants: { variant: 'default' },

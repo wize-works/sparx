@@ -19,6 +19,16 @@ export interface DnsRecord {
   priority?: string;
 }
 
+export interface SuppressionRow {
+  id: string;
+  email: string;
+  scope: 'transactional' | 'marketing' | 'all';
+  reason: 'bounce' | 'complaint' | 'unsubscribe' | 'manual';
+  source: string | null;
+  note: string | null;
+  createdAt: string;
+}
+
 export interface SendingDomainRow {
   id: string;
   domain: string;

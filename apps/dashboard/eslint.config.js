@@ -29,6 +29,7 @@ const BANNED_SERVICE_PACKAGES = [
   '@sparx/cms',
   '@sparx/commerce',
   '@sparx/crm',
+  '@sparx/sitebuilder',
   '@sparx/email',
   '@sparx/b2b',
   '@sparx/dropship',

@@ -73,6 +73,7 @@ import meRoutes from './routes/v1/me.js';
 import userRoutes from './routes/v1/users.js';
 import emailTestRoutes from './routes/v1/email/test.js';
 import emailRoutes from './routes/v1/email/index.js';
+import emailWebhookRoutes from './routes/v1/public/email-webhook.js';
 import dashboardRoutes from './routes/v1/dashboard.js';
 import { bootstrapProviders } from './lib/providers-bootstrap.js';
 
@@ -435,6 +436,7 @@ export async function createApp(): Promise<FastifyInstance> {
   await app.register(publicAccountRoutes);
   await app.register(publicStorefrontRoutes);
   await app.register(publicMediaRoutes);
+  await app.register(emailWebhookRoutes);
   await app.register(uploadRoutes);
   await app.register(mediaAssetRoutes);
   await app.register(crmRoutes);

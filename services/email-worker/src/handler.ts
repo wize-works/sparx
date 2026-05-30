@@ -81,7 +81,14 @@ export async function handle(event: EmailSendEvent, logger: Logger): Promise<Han
 
   try {
     const rendered = await renderTemplate(event.data);
-    const result = await getEmailProvider().send(rendered);
+    // Stamp the tenant onto the message as a Mailgun user variable so the
+    // webhook receiver can attribute delivery/engagement events back to it
+    // (works even on the shared sending domain, where From doesn't identify
+    // the merchant). Broadcast/automation ids ride in event.data later.
+    const result = await getEmailProvider().send({
+      ...rendered,
+      variables: { ...rendered.variables, tenant_id: event.tenantId },
+    });
     return {
       status: 'sent',
       messageId: result.id,
