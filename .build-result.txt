@@ -1,0 +1,17 @@
+EXIT=1
+----TAIL----
+
+> @sparx/dashboard@0.0.0 build G:\code\@wizeworks\sparx.works\apps\dashboard
+> next build
+
+⨯ Another next build process is already running.
+  Suggestion: Wait for the build to complete.
+
+  This could be:
+  - A next build still in progress
+  - A previous build that didn't exit cleanly
+
+ ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  @sparx/dashboard@0.0.0 build: `next build`
+Exit status 1
+
+

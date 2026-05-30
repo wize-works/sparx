@@ -1,10 +1,6 @@
 import 'server-only';
 import { prisma, type Prisma } from '@sparx/db';
-import {
-  DEFAULT_PREFERENCES,
-  parsePreferences,
-  type UserPreferences,
-} from './preferences-types';
+import { DEFAULT_PREFERENCES, parsePreferences, type UserPreferences } from './preferences-types';
 
 // Server-only DB access for per-user preferences. Client modules should
 // import types from `./preferences-types` instead — see the comment there.
