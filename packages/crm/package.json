@@ -33,7 +33,7 @@
     "@sparx/crm-schemas": "workspace:*",
     "@sparx/db": "workspace:*",
     "@sparx/ui": "workspace:*",
-    "lucide-react": "^0.469.0",
+    "lucide-react": "^0.577.0",
     "zod": "^4.4.3"
   },
   "peerDependencies": {
