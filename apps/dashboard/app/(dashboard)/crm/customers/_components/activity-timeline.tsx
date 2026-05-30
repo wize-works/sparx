@@ -128,39 +128,39 @@ export function ActivityTimeline({ activities }: Props) {
       </Text>
       <Timeline>
         {activities.map((a, idx) => {
-        const meta = renderForType(a);
-        const isCorrection = a.correctsActivityId != null;
-        return (
-          <TimelineItem
-            key={a.id}
-            showConnector={idx < activities.length - 1}
-            marker={
-              <span
-                aria-hidden
-                className="mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[var(--module-active)] text-white"
-              >
-                {meta.icon}
-              </span>
-            }
-          >
-            <Stack gap={1}>
-              <Stack direction="row" align="center" gap={2}>
-                <TimelineTitle>{meta.title}</TimelineTitle>
-                {isCorrection && (
-                  <Badge variant="outline">
-                    <Pencil className="h-3 w-3" /> Edited
-                  </Badge>
-                )}
-                <Badge variant="outline">{a.actorType}</Badge>
+          const meta = renderForType(a);
+          const isCorrection = a.correctsActivityId != null;
+          return (
+            <TimelineItem
+              key={a.id}
+              showConnector={idx < activities.length - 1}
+              marker={
+                <span
+                  aria-hidden
+                  className="mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[var(--module-active)] text-white"
+                >
+                  {meta.icon}
+                </span>
+              }
+            >
+              <Stack gap={1}>
+                <Stack direction="row" align="center" gap={2}>
+                  <TimelineTitle>{meta.title}</TimelineTitle>
+                  {isCorrection && (
+                    <Badge variant="outline">
+                      <Pencil className="h-3 w-3" /> Edited
+                    </Badge>
+                  )}
+                  <Badge variant="outline">{a.actorType}</Badge>
+                </Stack>
+                {a.description && <TimelineDescription>{a.description}</TimelineDescription>}
+                <TimelineTime dateTime={a.occurredAt.toISOString()}>
+                  {a.occurredAt.toLocaleString()}
+                </TimelineTime>
               </Stack>
-              {a.description && <TimelineDescription>{a.description}</TimelineDescription>}
-              <TimelineTime dateTime={a.occurredAt.toISOString()}>
-                {a.occurredAt.toLocaleString()}
-              </TimelineTime>
-            </Stack>
-          </TimelineItem>
-        );
-      })}
+            </TimelineItem>
+          );
+        })}
       </Timeline>
     </Stack>
   );

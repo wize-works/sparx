@@ -1,0 +1,4 @@
+g:\code\@wizeworks\sparx.works\apps\dashboard\app\(dashboard)\@detail\default.tsx
+g:\code\@wizeworks\sparx.works\apps\dashboard\app\(dashboard)\@detail\page.tsx
+g:\code\@wizeworks\sparx.works\apps\dashboard\app\(dashboard)\@detail\[...rest]
+g:\code\@wizeworks\sparx.works\apps\dashboard\app\(dashboard)\@detail\[...rest]\page.tsx

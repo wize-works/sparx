@@ -1,13 +1,6 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import {
-  Building2,
-  Mail,
-  Phone,
-  CreditCard,
-  CheckSquare,
-  AlertCircle,
-} from 'lucide-react';
+import { Building2, Mail, Phone, CreditCard, CheckSquare, AlertCircle } from 'lucide-react';
 
 import { requireSession } from '@sparx/auth';
 import {
@@ -135,8 +128,7 @@ export async function CustomerDetailContent({ id }: Props) {
                 {activities.length > 0 && <Badge variant="outline">{activities.length}</Badge>}
               </TabsTrigger>
               <TabsTrigger value="tasks">
-                Tasks{' '}
-                {openTasks.length > 0 && <Badge variant="warning">{openTasks.length}</Badge>}
+                Tasks {openTasks.length > 0 && <Badge variant="warning">{openTasks.length}</Badge>}
               </TabsTrigger>
               <TabsTrigger value="deals">Deals</TabsTrigger>
               <TabsTrigger value="notes">Notes</TabsTrigger>
@@ -211,8 +203,8 @@ export async function CustomerDetailContent({ id }: Props) {
               <Card>
                 <CardContent>
                   <Text variant="muted" size="sm">
-                    Deal list lands in Phase 3 (sales pipeline). Until then, deals attached to
-                    this customer can be opened from the Pipeline view.
+                    Deal list lands in Phase 3 (sales pipeline). Until then, deals attached to this
+                    customer can be opened from the Pipeline view.
                   </Text>
                 </CardContent>
               </Card>
@@ -223,8 +215,8 @@ export async function CustomerDetailContent({ id }: Props) {
                 <CardContent>
                   <Stack gap={4}>
                     <Text variant="muted" size="sm">
-                      Notes are recorded as activities of type{' '}
-                      <Badge variant="outline">note</Badge>. Use the right rail to add one.
+                      Notes are recorded as activities of type <Badge variant="outline">note</Badge>
+                      . Use the right rail to add one.
                     </Text>
                     <ActivityTimeline activities={activities.filter((a) => a.type === 'note')} />
                   </Stack>

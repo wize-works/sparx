@@ -15,6 +15,7 @@ import {
   Text,
 } from '@sparx/ui';
 
+import { EntityRowLink } from '../../_components/entity-row-link';
 import { CrmTabs } from '../_components/crm-tabs';
 import { RecomputeButton } from './_components/recompute-button';
 
@@ -90,12 +91,14 @@ export default async function SegmentsPage({ searchParams }: PageProps) {
                   <Stack direction="row" align="center" justify="between" wrap gap={3}>
                     <Stack gap={1} className="min-w-0 flex-1">
                       <Stack direction="row" align="center" gap={2}>
-                        <Link
+                        <EntityRowLink
                           href={`/crm/segments/${s.id}`}
+                          entityType="segment"
+                          entityId={s.id}
                           className="text-base font-medium hover:text-[var(--module-active)] hover:underline"
                         >
                           {s.name}
-                        </Link>
+                        </EntityRowLink>
                         {s.isBuiltIn && (
                           <Badge variant="outline" className="text-xs">
                             <Star className="h-3 w-3" /> Built-in

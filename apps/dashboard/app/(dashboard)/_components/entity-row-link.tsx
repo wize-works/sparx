@@ -3,7 +3,7 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { hasDetailComponent } from '../_shell/detail-registry';
+import { hasDetailView } from '../_shell/detail-registry';
 import type { DefaultDetailView, UserPreferences } from '../_shell/preferences';
 import { usePreferences } from './preferences-provider';
 
@@ -88,7 +88,7 @@ function resolveMode({
   const pref = preferences.defaultDetailView;
   // If the entity type isn't registered for detail views, fall back to
   // full-page navigation — drawer / modal would have nothing to render.
-  if ((pref === 'drawer' || pref === 'modal') && !hasDetailComponent(entityType)) {
+  if ((pref === 'drawer' || pref === 'modal') && !hasDetailView(entityType)) {
     return 'fullPage';
   }
   return pref;

@@ -14,7 +14,17 @@ import { listFavorites, listRecents } from './_shell/service';
 //
 // All three DB reads are parallelized via Promise.all — they don't depend
 // on each other.
-export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
+//
+// `detail` is the `@detail` parallel slot: a server-rendered detail body
+// (or null) driven by the `?drawer=` / `?modal=` search param. We pass it
+// straight through to the shell, which adds chrome and mounts it.
+export default async function DashboardLayout({
+  children,
+  detail,
+}: {
+  children: React.ReactNode;
+  detail: React.ReactNode;
+}) {
   const { user } = await requireSession();
 
   const ctx = { userId: user.id, tenantId: user.tenantId };
@@ -38,6 +48,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
       favorites={favorites}
       recents={recents}
       preferences={preferences}
+      detail={detail}
     >
       {children}
     </DashboardShell>

@@ -21,6 +21,7 @@ import {
   Text,
 } from '@sparx/ui';
 
+import { EntityRowLink } from '../../_components/entity-row-link';
 import { CrmTabs } from '../_components/crm-tabs';
 
 // Orders index — sortable + filterable table. Filters live in the query
@@ -108,12 +109,14 @@ export default async function OrdersPage({ searchParams }: PageProps) {
                   {orders.map((o) => (
                     <TableRow key={o.id}>
                       <TableCell>
-                        <Link
+                        <EntityRowLink
                           href={`/crm/orders/${o.id}`}
+                          entityType="order"
+                          entityId={o.id}
                           className="text-sm font-medium hover:text-[var(--module-active)] hover:underline"
                         >
                           {o.orderNumber}
-                        </Link>
+                        </EntityRowLink>
                       </TableCell>
                       <TableCell>
                         <Badge variant={STATUS_VARIANT[o.status] ?? 'outline'} className="text-xs">

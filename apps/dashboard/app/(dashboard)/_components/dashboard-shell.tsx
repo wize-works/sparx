@@ -45,6 +45,8 @@ export interface DashboardShellProps {
   recents: RecentRow[];
   preferences: UserPreferences;
   children: React.ReactNode;
+  /** Server-rendered detail body from the `@detail` slot (null when closed). */
+  detail?: React.ReactNode;
 }
 
 export function DashboardShell({
@@ -54,6 +56,7 @@ export function DashboardShell({
   recents,
   preferences,
   children,
+  detail,
 }: DashboardShellProps) {
   const pathname = usePathname();
   const router = useRouter();
@@ -71,8 +74,14 @@ export function DashboardShell({
     router.replace(qs ? `${pathname}?${qs}` : (pathname ?? '/'));
   }, [pathname, router, searchParams]);
 
+  // The detail body itself is server-rendered (the `@detail` slot). The shell
+  // only decides where to mount it and wraps it in client chrome. `detail` is
+  // null whenever no target is open, so the mode guards below stay in sync
+  // with the slot.
   const inlineDetail =
-    detailTarget?.mode === 'drawer' ? <InlineDetailContent target={detailTarget} /> : null;
+    detailTarget?.mode === 'drawer' && detail ? (
+      <InlineDetailContent target={detailTarget}>{detail}</InlineDetailContent>
+    ) : null;
 
   const sidebar = (
     <>
@@ -105,8 +114,10 @@ export function DashboardShell({
       </SidebarAppShell>
       {/* Modal overlay is rendered separately — it's not part of the
           shell's split layout. */}
-      {detailTarget?.mode === 'modal' && (
-        <ModalDetailContent target={detailTarget} onClose={closeDetail} />
+      {detailTarget?.mode === 'modal' && detail && (
+        <ModalDetailContent target={detailTarget} onClose={closeDetail}>
+          {detail}
+        </ModalDetailContent>
       )}
       {/* ⌘K palette — mounted once at the shell, listens globally for the
           shortcut. Receives favorites + recents so they appear at the top

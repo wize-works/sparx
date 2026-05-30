@@ -21,6 +21,7 @@ import {
   Text,
 } from '@sparx/ui';
 
+import { EntityRowLink } from '../../_components/entity-row-link';
 import { CrmTabs } from '../_components/crm-tabs';
 
 export const dynamic = 'force-dynamic';
@@ -102,12 +103,14 @@ export default async function QuotesPage({ searchParams }: PageProps) {
                   {quotes.map((q) => (
                     <TableRow key={q.id}>
                       <TableCell>
-                        <Link
+                        <EntityRowLink
                           href={`/crm/quotes/${q.id}`}
+                          entityType="quote"
+                          entityId={q.id}
                           className="text-sm font-medium hover:text-[var(--module-active)] hover:underline"
                         >
                           {q.quoteNumber}
-                        </Link>
+                        </EntityRowLink>
                       </TableCell>
                       <TableCell>
                         <Badge variant={STATUS_VARIANT[q.status] ?? 'outline'} className="text-xs">

@@ -10,21 +10,23 @@ import {
   ModalDescription,
   ModalTitle,
   ModuleProvider,
-  Spinner,
   Stack,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from '@sparx/ui';
 import { Maximize2, PanelRight, Square, X } from 'lucide-react';
-import { findEntityType, getDetailComponentLoader } from '../_shell/detail-registry';
+import { findEntityType, parseDetailToken } from '../_shell/detail-registry';
 
-// Parses the URL for `?drawer=type:id` or `?modal=type:id`. The drawer
-// panel renders inline in the shell's `detail` slot (composed by
-// DashboardShell). The modal panel renders as an overlay here.
+// Client chrome for the dashboard detail view. The detail BODY is rendered
+// server-side by the `@detail` parallel slot and passed in as `children`;
+// this file only supplies the header (close / open-full-page / switch-mode)
+// and decides the render target.
 //
-// Both modes load the SAME `_content.tsx` component for the entity type
-// via the detail-registry. Mode is just a render target.
+// `useDetailTarget()` parses the URL for `?drawer=type:id` / `?modal=type:id`.
+// The drawer panel renders inline in the shell's `detail` split; the modal
+// panel renders as an overlay. Mode is just a render target — both wrap the
+// same server-rendered body.
 
 export interface DetailTarget {
   mode: 'drawer' | 'modal';
@@ -36,23 +38,11 @@ export interface DetailTarget {
 // detail is open. `modal` overrides `drawer` if both are present.
 export function useDetailTarget(): DetailTarget | null {
   const params = useSearchParams();
-  const modal = params?.get('modal');
-  if (modal) {
-    const parsed = parseTarget(modal);
-    if (parsed) return { mode: 'modal', ...parsed };
-  }
-  const drawer = params?.get('drawer');
-  if (drawer) {
-    const parsed = parseTarget(drawer);
-    if (parsed) return { mode: 'drawer', ...parsed };
-  }
+  const modal = parseDetailToken(params?.get('modal'));
+  if (modal) return { mode: 'modal', ...modal };
+  const drawer = parseDetailToken(params?.get('drawer'));
+  if (drawer) return { mode: 'drawer', ...drawer };
   return null;
-}
-
-function parseTarget(raw: string): { typeId: string; entityId: string } | null {
-  const idx = raw.indexOf(':');
-  if (idx < 1 || idx === raw.length - 1) return null;
-  return { typeId: raw.slice(0, idx), entityId: raw.slice(idx + 1) };
 }
 
 // Imperative helper to construct a detail URL given (mode, type, id).
@@ -75,17 +65,15 @@ export function buildDetailHref(
 
 interface InlineDetailProps {
   target: DetailTarget;
+  /** Server-rendered detail body from the `@detail` slot. */
+  children: React.ReactNode;
 }
 
-export function InlineDetailContent({ target }: InlineDetailProps) {
+export function InlineDetailContent({ target, children }: InlineDetailProps) {
   return (
     <Stack gap={0} className="h-full">
       <DetailHeader target={target} />
-      <div className="flex-1 overflow-y-auto p-6">
-        <React.Suspense fallback={<DetailLoading />}>
-          <DetailBody target={target} />
-        </React.Suspense>
-      </div>
+      <div className="flex-1 overflow-y-auto p-6">{children}</div>
     </Stack>
   );
 }
@@ -95,9 +83,11 @@ export function InlineDetailContent({ target }: InlineDetailProps) {
 interface ModalDetailProps {
   target: DetailTarget;
   onClose: () => void;
+  /** Server-rendered detail body from the `@detail` slot. */
+  children: React.ReactNode;
 }
 
-export function ModalDetailContent({ target, onClose }: ModalDetailProps) {
+export function ModalDetailContent({ target, onClose, children }: ModalDetailProps) {
   return (
     <Modal open onOpenChange={(open) => !open && onClose()}>
       <ModalContent className="max-h-[85vh] w-[min(900px,90vw)] overflow-hidden p-0">
@@ -107,11 +97,7 @@ export function ModalDetailContent({ target, onClose }: ModalDetailProps) {
         </ModalDescription>
         <Stack gap={0} className="max-h-[85vh]">
           <DetailHeader target={target} />
-          <div className="flex-1 overflow-y-auto p-6">
-            <React.Suspense fallback={<DetailLoading />}>
-              <DetailBody target={target} />
-            </React.Suspense>
-          </div>
+          <div className="flex-1 overflow-y-auto p-6">{children}</div>
         </Stack>
       </ModalContent>
     </Modal>
@@ -188,35 +174,5 @@ function DetailHeader({ target }: { target: DetailTarget }) {
         <div className="flex-1" />
       </div>
     </ModuleProvider>
-  );
-}
-
-// ── Body loader ────────────────────────────────────────────
-
-interface DetailBodyProps {
-  target: DetailTarget;
-}
-
-function DetailBody({ target }: DetailBodyProps) {
-  // Hook must run unconditionally (rules-of-hooks). Loader is looked up
-  // every render — the registry returns the same reference for the same
-  // typeId, so React.lazy memoization holds.
-  const loader = getDetailComponentLoader(target.typeId);
-  const Lazy = React.useMemo(() => (loader ? React.lazy(loader) : null), [loader]);
-  if (!Lazy) {
-    return (
-      <Stack gap={2}>
-        <strong>No detail component registered for type &quot;{target.typeId}&quot;.</strong>
-      </Stack>
-    );
-  }
-  return <Lazy id={target.entityId} />;
-}
-
-function DetailLoading() {
-  return (
-    <div className="flex h-32 items-center justify-center">
-      <Spinner />
-    </div>
   );
 }

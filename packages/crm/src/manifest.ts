@@ -50,13 +50,15 @@ export const crmManifest: ModuleManifest = {
     { id: 'crm.task.create', label: 'Create task', icon: CheckSquare, href: '/crm/tasks/new' },
   ],
   entityTypes: [
-    { id: 'customer', label: 'Customer', routePrefix: '/crm/customers' },
-    { id: 'b2b-account', label: 'B2B account', routePrefix: '/crm/b2b' },
-    { id: 'deal', label: 'Deal', routePrefix: '/crm/deals' },
+    { id: 'customer', label: 'Customer', routePrefix: '/crm/customers', hasDetailView: true },
+    { id: 'b2b-account', label: 'B2B account', routePrefix: '/crm/b2b', hasDetailView: true },
+    { id: 'deal', label: 'Deal', routePrefix: '/crm/deals', hasDetailView: true },
+    // Pipeline detail is a full-width Kanban board — leaving hasDetailView
+    // off so it always opens full-page instead of in a drawer.
     { id: 'pipeline', label: 'Pipeline', routePrefix: '/crm/pipelines' },
-    { id: 'quote', label: 'Quote', routePrefix: '/crm/quotes' },
-    { id: 'order', label: 'Order', routePrefix: '/crm/orders' },
-    { id: 'segment', label: 'Segment', routePrefix: '/crm/segments' },
+    { id: 'quote', label: 'Quote', routePrefix: '/crm/quotes', hasDetailView: true },
+    { id: 'order', label: 'Order', routePrefix: '/crm/orders', hasDetailView: true },
+    { id: 'segment', label: 'Segment', routePrefix: '/crm/segments', hasDetailView: true },
     { id: 'task', label: 'Task', routePrefix: '/crm/tasks' },
   ],
 };
