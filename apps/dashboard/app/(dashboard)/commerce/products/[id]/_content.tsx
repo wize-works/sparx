@@ -113,25 +113,29 @@ interface VariantRow {
 interface ProductFitmentRow {
   id: string;
   productId: string;
-  makeId: string;
-  makeName: string;
-  modelId: string | null;
-  modelName: string | null;
-  engineId: string | null;
-  engineName: string | null;
-  yearMin: number | null;
-  yearMax: number | null;
+  domainId: string;
+  domainSlug: string;
+  categoryId: string;
+  categoryName: string;
+  itemId: string | null;
+  itemName: string | null;
+  variantId: string | null;
+  variantName: string | null;
+  rangeMin: number | null;
+  rangeMax: number | null;
   notes: string | null;
 }
 
-interface VehicleMakeRow {
+interface FitmentDomainRow {
   id: string;
-  name: string;
   slug: string;
-  countryOfOrigin: string | null;
-  logoMediaId: string | null;
+  displayName: string;
+  description: string | null;
+  iconKey: string | null;
+  labels: { l1: string; l2?: string; l3?: string; range?: string };
+  rangeUnit: string | null;
   isGlobal: boolean;
-  modelCount: number;
+  categoryCount: number;
 }
 
 interface WarehouseRow {
@@ -183,11 +187,11 @@ export async function ProductDetailContent({ id }: Props) {
     throw err;
   }
 
-  const [options, variants, fitments, makes, warehouses] = await Promise.all([
+  const [options, variants, fitments, domains, warehouses] = await Promise.all([
     api.get<OptionRow[]>(`/v1/commerce/products/${id}/variants/options`),
     api.get<VariantRow[]>(`/v1/commerce/products/${id}/variants?include_archived=true`),
     api.get<ProductFitmentRow[]>(`/v1/commerce/products/${id}/fitment`),
-    api.get<VehicleMakeRow[]>('/v1/commerce/fitment/makes'),
+    api.get<FitmentDomainRow[]>('/v1/commerce/fitment/domains'),
     api.get<WarehouseRow[]>('/v1/commerce/warehouses'),
   ]);
 
@@ -299,7 +303,13 @@ export async function ProductDetailContent({ id }: Props) {
             productId={product.id}
             productTitle={product.title}
             fitments={fitments}
-            makes={makes.map((m) => ({ id: m.id, name: m.name }))}
+            domains={domains.map((d) => ({
+              id: d.id,
+              slug: d.slug,
+              displayName: d.displayName,
+              labels: d.labels,
+              rangeUnit: d.rangeUnit,
+            }))}
           />
         </TabsContent>
 

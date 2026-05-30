@@ -1,12 +1,17 @@
-// Product detail page (PDP). Phase 1: hero block, variant picker
-// (option-value swatches), price, fitment list. Cart-add lands in
-// Phase 5; for now the CTA is a no-op label so the visual frame is
-// already in place when checkout wires in.
+// Product detail page (PDP). Server-loads the product, then hands the
+// interactive core (gallery + variants + add-to-cart) to <ProductDetail>.
+// Below the fold: description, vehicle fitment, reviews summary, and a
+// related-products rail. Emits Product + Breadcrumb JSON-LD for SEO.
 
+import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import Link from 'next/link';
 
-import { getProduct, type PublicProductVariant } from '@/lib/commerce';
+import { Breadcrumbs } from '@/components/breadcrumbs';
+import { ProductCard } from '@/components/product-card';
+import { ProductDetail } from '@/components/product-detail';
+import { RatingStars } from '@/components/rating-stars';
+import { getProduct, listRelatedProducts } from '@/lib/commerce';
+import { mediaUrl } from '@/lib/media';
 import { resolveTenant } from '@/lib/tenant';
 
 export const dynamic = 'force-dynamic';
@@ -15,17 +20,21 @@ interface PageProps {
   params: Promise<{ handle: string }>;
 }
 
-const moneyFmt = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
-
-export async function generateMetadata({ params }: PageProps) {
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const tenant = await resolveTenant();
   if (!tenant) return {};
   const { handle } = await params;
   const product = await getProduct(tenant.slug, handle);
   if (!product) return {};
+  const image = mediaUrl(product.images[0]?.mediaAssetId ?? null, tenant.slug);
   return {
     title: product.seoTitle ?? product.title,
     description: product.seoDescription ?? product.description ?? undefined,
+    openGraph: {
+      title: product.seoTitle ?? product.title,
+      description: product.seoDescription ?? product.description ?? undefined,
+      ...(image ? { images: [{ url: image }] } : {}),
+    },
   };
 }
 
@@ -36,315 +45,139 @@ export default async function ProductDetailPage({ params }: PageProps) {
   const product = await getProduct(tenant.slug, handle);
   if (!product) notFound();
 
-  const defaultVariant: PublicProductVariant | undefined =
-    product.variants.find((v) => v.isDefault) ?? product.variants[0];
+  const related = await listRelatedProducts(tenant.slug, product, 4);
+  const { defaultCurrency: currency, defaultLocale: locale, showStockBelow } = tenant.storefront;
+
+  const primaryImage = mediaUrl(product.images[0]?.mediaAssetId ?? null, tenant.slug);
+  const productJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: product.title,
+    description: product.description ?? undefined,
+    ...(primaryImage ? { image: [primaryImage] } : {}),
+    ...(product.vendor ? { brand: { '@type': 'Brand', name: product.vendor } } : {}),
+    ...(product.reviewCount > 0 && product.averageRating != null
+      ? {
+          aggregateRating: {
+            '@type': 'AggregateRating',
+            ratingValue: product.averageRating,
+            reviewCount: product.reviewCount,
+          },
+        }
+      : {}),
+    offers: {
+      '@type': 'AggregateOffer',
+      priceCurrency: currency,
+      lowPrice: (product.priceMinCents ?? 0) / 100,
+      highPrice: (product.priceMaxCents ?? product.priceMinCents ?? 0) / 100,
+      availability: product.inStock
+        ? 'https://schema.org/InStock'
+        : 'https://schema.org/OutOfStock',
+    },
+  };
 
   return (
-    <main style={{ maxWidth: '1200px', margin: '0 auto', padding: '3rem 1.5rem' }}>
-      <nav style={{ fontSize: '0.85rem', marginBottom: '1.5rem' }}>
-        <Link
-          href="/products"
-          style={{ color: 'var(--color-text-muted, #6b7280)', textDecoration: 'none' }}
-        >
-          ← Back to all products
-        </Link>
-      </nav>
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)',
-          gap: '3rem',
-        }}
-      >
-        <Gallery alt={product.title} hasImages={product.images.length > 0} />
-        <Details
-          tenantName={tenant.name}
-          title={product.title}
-          vendor={product.vendor}
-          description={product.description}
-          defaultVariant={defaultVariant}
-          variants={product.variants}
-          tags={product.tags}
-          inStock={product.inStock}
-        />
-      </div>
-      {product.options.length > 0 && (
-        <section style={{ marginTop: '3rem' }}>
-          <h2 style={sectionHeadingStyle()}>Available options</h2>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-            {product.options.map((option) => (
-              <div
-                key={option.id}
-                style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}
-              >
-                <span style={{ fontSize: '0.85rem', fontWeight: 500 }}>{option.name}</span>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
-                  {option.values.map((value) => (
-                    <span
-                      key={value.id}
-                      style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '0.4rem',
-                        padding: '0.4rem 0.75rem',
-                        borderRadius: '999px',
-                        background: 'var(--color-bg-subtle, #f1f3f7)',
-                        fontSize: '0.85rem',
-                      }}
-                    >
-                      {value.swatchHex && (
-                        <span
-                          aria-hidden
-                          style={{
-                            display: 'inline-block',
-                            width: 12,
-                            height: 12,
-                            borderRadius: '50%',
-                            background: value.swatchHex,
-                            border: '1px solid rgba(0, 0, 0, 0.1)',
-                          }}
-                        />
-                      )}
-                      {value.value}
-                    </span>
-                  ))}
-                </div>
-              </div>
+    <div className="sf-container">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd) }}
+      />
+
+      <Breadcrumbs
+        items={[
+          { label: 'Home', href: '/' },
+          { label: 'Products', href: '/products' },
+          { label: product.title },
+        ]}
+      />
+
+      <ProductDetail
+        product={product}
+        tenantSlug={tenant.slug}
+        currency={currency}
+        locale={locale}
+        showStockBelow={showStockBelow}
+      />
+
+      {/* Description */}
+      {product.description ? (
+        <section className="sf-section sf-container--prose" style={{ paddingInline: 0 }}>
+          <h2 className="sf-h2" style={{ marginBottom: '1rem' }}>
+            Details
+          </h2>
+          <div className="sparx-content" style={{ whiteSpace: 'pre-wrap', lineHeight: 1.7 }}>
+            {product.description}
+          </div>
+        </section>
+      ) : null}
+
+      {/* Fitment */}
+      {product.fitments.length > 0 ? (
+        <section className="sf-section">
+          <h2 className="sf-h2" style={{ marginBottom: '1rem' }}>
+            Vehicle fitment
+          </h2>
+          <div style={{ overflowX: 'auto' }}>
+            <table className="sf-fitment-table">
+              <thead>
+                <tr>
+                  <th>Make</th>
+                  <th>Model</th>
+                  <th>Engine</th>
+                  <th>Years</th>
+                  <th>Notes</th>
+                </tr>
+              </thead>
+              <tbody>
+                {product.fitments.map((f) => (
+                  <tr key={f.id}>
+                    <td>{f.make}</td>
+                    <td>{f.model ?? '—'}</td>
+                    <td>{f.engine ?? '—'}</td>
+                    <td>
+                      {f.yearMin ?? '—'}
+                      {f.yearMax && f.yearMax !== f.yearMin ? `–${f.yearMax}` : ''}
+                    </td>
+                    <td>{f.notes ?? '—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      ) : null}
+
+      {/* Reviews summary */}
+      {product.reviewCount > 0 && product.averageRating != null ? (
+        <section className="sf-section">
+          <h2 className="sf-h2" style={{ marginBottom: '1rem' }}>
+            Reviews
+          </h2>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <RatingStars rating={product.averageRating} count={product.reviewCount} />
+          </div>
+        </section>
+      ) : null}
+
+      {/* Related */}
+      {related.length > 0 ? (
+        <section className="sf-section">
+          <div className="sf-section__head">
+            <h2 className="sf-h2">You may also like</h2>
+          </div>
+          <div className="sf-grid">
+            {related.map((p) => (
+              <ProductCard
+                key={p.id}
+                product={p}
+                tenantSlug={tenant.slug}
+                currency={currency}
+                locale={locale}
+              />
             ))}
           </div>
         </section>
-      )}
-      {product.fitments.length > 0 && (
-        <section style={{ marginTop: '3rem' }}>
-          <h2 style={sectionHeadingStyle()}>Vehicle fitment</h2>
-          <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gap: '0.5rem' }}>
-            {product.fitments.map((f) => (
-              <li
-                key={f.id}
-                style={{
-                  display: 'flex',
-                  gap: '0.5rem',
-                  alignItems: 'baseline',
-                  padding: '0.75rem 1rem',
-                  borderRadius: '8px',
-                  background: 'var(--color-bg-subtle, #f6f7fa)',
-                  fontSize: '0.9rem',
-                }}
-              >
-                <strong>{f.make}</strong>
-                {f.model && <span>{f.model}</span>}
-                {f.engine && (
-                  <span style={{ color: 'var(--color-text-muted, #6b7280)' }}>· {f.engine}</span>
-                )}
-                {(f.yearMin ?? f.yearMax) !== null && (
-                  <span style={{ color: 'var(--color-text-muted, #6b7280)' }}>
-                    · {f.yearMin ?? '…'}–{f.yearMax ?? 'present'}
-                  </span>
-                )}
-                {f.notes && (
-                  <span style={{ color: 'var(--color-text-muted, #6b7280)' }}>· {f.notes}</span>
-                )}
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
-    </main>
-  );
-}
-
-function Gallery({ alt, hasImages }: { alt: string; hasImages: boolean }) {
-  return (
-    <div
-      role="img"
-      aria-label={alt}
-      style={{
-        aspectRatio: '1 / 1',
-        borderRadius: '14px',
-        background: hasImages
-          ? 'linear-gradient(135deg, rgba(99,102,241,0.15), rgba(99,102,241,0.05))'
-          : 'var(--color-bg-subtle, #f1f3f7)',
-        display: 'grid',
-        placeItems: 'center',
-        color: 'var(--color-text-muted, #9ca3af)',
-        fontSize: '0.85rem',
-      }}
-    >
-      {hasImages ? '' : 'Image coming soon'}
+      ) : null}
     </div>
   );
-}
-
-function Details({
-  tenantName,
-  title,
-  vendor,
-  description,
-  defaultVariant,
-  variants,
-  tags,
-  inStock,
-}: {
-  tenantName: string;
-  title: string;
-  vendor: string | null;
-  description: string | null;
-  defaultVariant: PublicProductVariant | undefined;
-  variants: PublicProductVariant[];
-  tags: string[];
-  inStock: boolean;
-}) {
-  const price = defaultVariant?.priceCents ?? null;
-  const compareAt = defaultVariant?.compareAtPriceCents ?? null;
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-      {vendor && (
-        <span
-          style={{
-            fontSize: '0.75rem',
-            letterSpacing: '0.1em',
-            textTransform: 'uppercase',
-            color: 'var(--color-text-muted, #6b7280)',
-          }}
-        >
-          {vendor}
-        </span>
-      )}
-      <h1 style={{ margin: 0, fontSize: '2rem', letterSpacing: '-0.02em' }}>{title}</h1>
-      {price !== null && (
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.75rem' }}>
-          <span style={{ fontSize: '1.5rem', fontWeight: 600 }}>
-            {moneyFmt.format(price / 100)}
-          </span>
-          {compareAt !== null && compareAt > price && (
-            <span
-              style={{
-                fontSize: '1rem',
-                textDecoration: 'line-through',
-                color: 'var(--color-text-muted, #9ca3af)',
-              }}
-            >
-              {moneyFmt.format(compareAt / 100)}
-            </span>
-          )}
-        </div>
-      )}
-      {description && (
-        <p style={{ margin: 0, color: 'var(--color-text-secondary, #374151)', lineHeight: 1.6 }}>
-          {description}
-        </p>
-      )}
-      {tags.length > 0 && (
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', marginTop: '0.5rem' }}>
-          {tags.map((tag) => (
-            <span
-              key={tag}
-              style={{
-                padding: '0.25rem 0.6rem',
-                borderRadius: '999px',
-                background: 'var(--color-bg-subtle, #eef2ff)',
-                fontSize: '0.75rem',
-                color: 'var(--color-text-secondary, #4338ca)',
-              }}
-            >
-              {tag}
-            </span>
-          ))}
-        </div>
-      )}
-      <StockBadge variant={defaultVariant} fallbackInStock={inStock} />
-      <button
-        type="button"
-        disabled
-        title="Cart + checkout wire in Phase 5"
-        style={{
-          marginTop: '0.5rem',
-          padding: '0.85rem 1.25rem',
-          borderRadius: '8px',
-          background: inStock
-            ? 'var(--color-action-primary, #6366f1)'
-            : 'var(--color-bg-disabled, #d1d5db)',
-          color: '#ffffff',
-          border: 'none',
-          fontSize: '0.95rem',
-          cursor: 'not-allowed',
-          opacity: inStock ? 0.85 : 1,
-        }}
-      >
-        {inStock ? 'Add to cart (Phase 5)' : 'Out of stock'}
-      </button>
-      <p
-        style={{
-          fontSize: '0.75rem',
-          color: 'var(--color-text-muted, #9ca3af)',
-          margin: 0,
-        }}
-      >
-        Sold by {tenantName}. {variants.length} {variants.length === 1 ? 'variant' : 'variants'}{' '}
-        available.
-      </p>
-    </div>
-  );
-}
-
-function StockBadge({
-  variant,
-  fallbackInStock,
-}: {
-  variant: PublicProductVariant | undefined;
-  fallbackInStock: boolean;
-}) {
-  if (!variant) return null;
-  const inStock = variant.inStock;
-  const showCount =
-    inStock &&
-    variant.available > 0 &&
-    variant.available <= 10 &&
-    variant.inventoryPolicy === 'deny';
-  const acceptsBackorder = !inStock && variant.inventoryPolicy !== 'deny';
-
-  let label = inStock ? 'In stock' : 'Out of stock';
-  if (showCount) label = `Only ${variant.available} left`;
-  if (acceptsBackorder) label = 'Available on back-order';
-
-  const color = inStock
-    ? 'var(--color-success, #16a34a)'
-    : acceptsBackorder
-      ? 'var(--color-warning, #b45309)'
-      : 'var(--color-danger, #b91c1c)';
-
-  // Acknowledge the prop so eslint stays happy + so callers always pass it.
-  void fallbackInStock;
-
-  return (
-    <span
-      style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: '0.4rem',
-        fontSize: '0.85rem',
-        color,
-      }}
-    >
-      <span
-        aria-hidden
-        style={{
-          width: 8,
-          height: 8,
-          borderRadius: '50%',
-          background: color,
-        }}
-      />
-      {label}
-    </span>
-  );
-}
-
-function sectionHeadingStyle(): React.CSSProperties {
-  return {
-    margin: '0 0 1rem',
-    fontSize: '1.25rem',
-    letterSpacing: '-0.01em',
-    fontWeight: 600,
-  };
 }

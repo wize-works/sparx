@@ -883,6 +883,30 @@
   color: var(--sf-text);
 }
 
+/* ── Fitment table ─────────────────────────────────────────── */
+.sf-fitment-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+.sf-fitment-table th {
+  text-align: left;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--sf-text-muted);
+  padding: 0.6rem 0.85rem;
+  border-bottom: 1px solid var(--sf-border-strong);
+}
+.sf-fitment-table td {
+  padding: 0.65rem 0.85rem;
+  border-bottom: 1px solid var(--sf-border);
+  color: var(--sf-text-secondary);
+}
+.sf-fitment-table tr:hover td {
+  background: var(--sf-bg-subtle);
+}
+
 /* ── Drawer (mobile nav + mini-cart) ───────────────────────── */
 .sf-drawer-backdrop {
   position: fixed;

@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
-import { Car, Plus, Trash } from 'lucide-react';
+import { Boxes, Plus, Trash } from 'lucide-react';
 
 import {
   Badge,
@@ -27,58 +27,67 @@ import {
 
 import {
   deleteFitmentAction,
-  listVehicleEnginesAction,
-  listVehicleModelsAction,
+  listFitmentCategoriesAction,
+  listFitmentItemsAction,
+  listFitmentVariantsAction,
   setProductFitmentAction,
 } from '../../../fitment-actions';
 
 interface FitmentRow {
   id: string;
-  makeId: string;
-  makeName: string;
-  modelId: string | null;
-  modelName: string | null;
-  engineId: string | null;
-  engineName: string | null;
-  yearMin: number | null;
-  yearMax: number | null;
+  domainId: string;
+  domainSlug: string;
+  categoryId: string;
+  categoryName: string;
+  itemId: string | null;
+  itemName: string | null;
+  variantId: string | null;
+  variantName: string | null;
+  rangeMin: number | null;
+  rangeMax: number | null;
   notes: string | null;
 }
 
-interface MakeOption {
+interface DomainOption {
   id: string;
-  name: string;
+  slug: string;
+  displayName: string;
+  labels: { l1: string; l2?: string; l3?: string; range?: string };
+  rangeUnit: string | null;
 }
 
 interface Props {
   productId: string;
   productTitle: string;
   fitments: FitmentRow[];
-  makes: MakeOption[];
+  domains: DomainOption[];
 }
 
-// Per-product fitment editor. Shows the rules already on the product
-// in a sortable table; adds new rules via an inline form below the
-// table. Replace-all semantics come from `setProductFitmentAction`;
-// individual rule deletes use the per-row `deleteFitmentAction` so a
-// merchant can remove a single bad row without resending the rest.
+// Per-product fitment editor. Shows applicability rules in a table;
+// adds new rules via a domain-aware inline form. Pick a domain first
+// (Vehicle / Pet / Device / ...); the form then asks for that domain's
+// category/item/variant/range with the right labels (Make/Model/Engine/
+// Year vs. Species/Breed/Weight vs. Brand/Model). Each row is one rule;
+// rules combine OR on the storefront so a single product can fit many
+// compatibility windows.
 
-export function FitmentPanel({ productId, productTitle, fitments, makes }: Props) {
+export function FitmentPanel({ productId, productTitle, fitments, domains }: Props) {
   return (
     <Stack gap={4}>
       <Card>
         <CardHeader>
           <Stack direction="row" align="center" gap={2}>
-            <Car className="h-4 w-4 text-[var(--module-active)]" />
+            <Boxes className="h-4 w-4 text-[var(--module-active)]" />
             <Heading level={3}>Fitment rules</Heading>
             <Badge variant="outline">
               {fitments.length} rule{fitments.length === 1 ? '' : 's'}
             </Badge>
           </Stack>
           <CardDescription>
-            Each row is one applicability rule for {productTitle}. Narrower (model+engine+year) wins
-            on the storefront — the match runs OR across rows, so a part that fits both the 6.7L
-            Power Stroke 2011-2016 and the 7.3L 1999-2003 is two rows here.
+            Each row is one compatibility rule for {productTitle}. Narrower rows win on the
+            storefront — match runs OR across rows. A brake pad that fits both the 6.7L Power Stroke
+            2011-2016 and the 7.3L 1999-2003 is two rows here; a dog harness fitting Labs 40-80 lb
+            and Goldens 50-90 lb is also two.
           </CardDescription>
         </CardHeader>
         <CardContent className="p-0">
@@ -88,27 +97,32 @@ export function FitmentPanel({ productId, productTitle, fitments, makes }: Props
               align="center"
               className="border-t border-[var(--color-border-default)] py-10 text-center"
             >
-              <Car className="h-5 w-5 text-[var(--color-text-muted)]" />
+              <Boxes className="h-5 w-5 text-[var(--color-text-muted)]" />
               <Text size="sm" variant="muted">
-                No fitment rules yet. Add one below so storefront vehicle filters can find this
-                product.
+                No fitment rules yet. Add one below so storefront filters can find this product.
               </Text>
             </Stack>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Make</TableHead>
-                  <TableHead>Model</TableHead>
-                  <TableHead>Engine</TableHead>
-                  <TableHead>Years</TableHead>
+                  <TableHead>Domain</TableHead>
+                  <TableHead>Category</TableHead>
+                  <TableHead>Item</TableHead>
+                  <TableHead>Variant</TableHead>
+                  <TableHead>Range</TableHead>
                   <TableHead>Notes</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {fitments.map((row) => (
-                  <FitmentRowEditor key={row.id} row={row} productId={productId} />
+                  <FitmentRowEditor
+                    key={row.id}
+                    row={row}
+                    productId={productId}
+                    domains={domains}
+                  />
                 ))}
               </TableBody>
             </Table>
@@ -123,30 +137,46 @@ export function FitmentPanel({ productId, productTitle, fitments, makes }: Props
             <Heading level={3}>Add fitment rule</Heading>
           </Stack>
           <CardDescription>
-            Pick a make (required). Model + engine + year range are optional — leave blank for
-            wildcard match. Add the rule, then refresh to see it in the table above.
+            Pick a domain, then narrow as far as the rule needs. Leave fields blank for wildcards —
+            a rule with just the category fits every item in that category.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <NewFitmentForm productId={productId} fitments={fitments} makes={makes} />
+          {domains.length === 0 ? (
+            <Text size="sm" variant="muted">
+              No fitment domains configured. Add one in <strong>Commerce → Fitment</strong> first.
+            </Text>
+          ) : (
+            <NewFitmentForm productId={productId} fitments={fitments} domains={domains} />
+          )}
         </CardContent>
       </Card>
     </Stack>
   );
 }
 
-function FitmentRowEditor({ row, productId }: { row: FitmentRow; productId: string }) {
+function FitmentRowEditor({
+  row,
+  productId,
+  domains,
+}: {
+  row: FitmentRow;
+  productId: string;
+  domains: DomainOption[];
+}) {
   const router = useRouter();
   const confirm = useConfirm();
   const [pending, startTransition] = React.useTransition();
   const [error, setError] = React.useState<string | null>(null);
 
+  const domain = domains.find((d) => d.id === row.domainId);
+
   async function onDelete() {
-    const label = `${row.makeName}${row.modelName ? ' / ' + row.modelName : ''}`;
+    const label = `${row.categoryName}${row.itemName ? ' / ' + row.itemName : ''}`;
     const ok = await confirm({
       title: `Remove fitment rule for ${label}?`,
       description:
-        'This product will no longer appear when shoppers filter by this vehicle. Other fitment rules on this product are unaffected.',
+        'This product will no longer appear when shoppers filter by this compatibility. Other fitment rules on this product are unaffected.',
       confirmLabel: 'Remove rule',
       tone: 'danger',
     });
@@ -162,21 +192,26 @@ function FitmentRowEditor({ row, productId }: { row: FitmentRow; productId: stri
     });
   }
 
+  const rangeLabel = formatRange(row.rangeMin, row.rangeMax, domain?.rangeUnit ?? null);
+
   return (
     <TableRow>
       <TableCell>
+        <Text size="sm">{domain?.displayName ?? row.domainSlug}</Text>
+      </TableCell>
+      <TableCell>
         <Text size="sm" weight="medium">
-          {row.makeName}
+          {row.categoryName}
         </Text>
       </TableCell>
       <TableCell>
-        <Text size="sm">{row.modelName ?? '—'}</Text>
+        <Text size="sm">{row.itemName ?? '—'}</Text>
       </TableCell>
       <TableCell>
-        <Text size="sm">{row.engineName ?? '—'}</Text>
+        <Text size="sm">{row.variantName ?? '—'}</Text>
       </TableCell>
       <TableCell>
-        <Text size="sm">{formatYears(row.yearMin, row.yearMax)}</Text>
+        <Text size="sm">{rangeLabel}</Text>
       </TableCell>
       <TableCell>
         <Text size="xs" variant="muted">
@@ -207,83 +242,108 @@ function FitmentRowEditor({ row, productId }: { row: FitmentRow; productId: stri
 interface NewFormProps {
   productId: string;
   fitments: FitmentRow[];
-  makes: MakeOption[];
+  domains: DomainOption[];
 }
 
-function NewFitmentForm({ productId, fitments, makes }: NewFormProps) {
+function NewFitmentForm({ productId, fitments, domains }: NewFormProps) {
   const router = useRouter();
   const [pending, startTransition] = React.useTransition();
   const [error, setError] = React.useState<string | null>(null);
 
-  const [makeId, setMakeId] = React.useState<string>('');
-  const [modelOptions, setModelOptions] = React.useState<{ id: string; name: string }[]>([]);
-  const [modelId, setModelId] = React.useState<string>('');
-  const [engineOptions, setEngineOptions] = React.useState<{ id: string; name: string }[]>([]);
+  const [domainId, setDomainId] = React.useState<string>(domains[0]?.id ?? '');
+  const domain = domains.find((d) => d.id === domainId);
 
-  // Load models when the make changes; clear downstream selections.
-  React.useEffect(() => {
-    setModelId('');
-    setModelOptions([]);
-    setEngineOptions([]);
-    if (!makeId) return;
-    void (async () => {
-      const result = await listVehicleModelsAction(makeId);
-      if (result.ok) {
-        setModelOptions(result.data.map((m) => ({ id: m.id, name: m.name })));
-      }
-    })();
-  }, [makeId]);
+  const [categoryOptions, setCategoryOptions] = React.useState<{ id: string; name: string }[]>([]);
+  const [categoryId, setCategoryId] = React.useState<string>('');
+
+  const [itemOptions, setItemOptions] = React.useState<{ id: string; name: string }[]>([]);
+  const [itemId, setItemId] = React.useState<string>('');
+
+  const [variantOptions, setVariantOptions] = React.useState<{ id: string; name: string }[]>([]);
 
   React.useEffect(() => {
-    setEngineOptions([]);
-    if (!modelId) return;
+    setCategoryId('');
+    setCategoryOptions([]);
+    setItemOptions([]);
+    setVariantOptions([]);
+    if (!domainId) return;
     void (async () => {
-      const result = await listVehicleEnginesAction(modelId);
+      const result = await listFitmentCategoriesAction(domainId);
       if (result.ok) {
-        setEngineOptions(result.data.map((e) => ({ id: e.id, name: e.name })));
+        setCategoryOptions(result.data.map((c) => ({ id: c.id, name: c.name })));
       }
     })();
-  }, [modelId]);
+  }, [domainId]);
+
+  React.useEffect(() => {
+    setItemId('');
+    setItemOptions([]);
+    setVariantOptions([]);
+    if (!categoryId || !domain?.labels.l2) return;
+    void (async () => {
+      const result = await listFitmentItemsAction(categoryId);
+      if (result.ok) {
+        setItemOptions(result.data.map((i) => ({ id: i.id, name: i.name })));
+      }
+    })();
+  }, [categoryId, domain?.labels.l2]);
+
+  React.useEffect(() => {
+    setVariantOptions([]);
+    if (!itemId || !domain?.labels.l3) return;
+    void (async () => {
+      const result = await listFitmentVariantsAction(itemId);
+      if (result.ok) {
+        setVariantOptions(result.data.map((v) => ({ id: v.id, name: v.name })));
+      }
+    })();
+  }, [itemId, domain?.labels.l3]);
 
   function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
 
     const form = new FormData(e.currentTarget);
-    const engineId = stringField(form.get('engineId'));
-    const yearMinRaw = stringField(form.get('yearMin')).trim();
-    const yearMaxRaw = stringField(form.get('yearMax')).trim();
+    const variantId = stringField(form.get('variantId'));
+    const rangeMinRaw = stringField(form.get('rangeMin')).trim();
+    const rangeMaxRaw = stringField(form.get('rangeMax')).trim();
     const notes = stringField(form.get('notes')).trim();
 
-    if (!makeId) {
-      setError('Pick a make first.');
+    if (!domainId) {
+      setError('Pick a domain first.');
+      return;
+    }
+    if (!categoryId) {
+      setError(`Pick a ${domain?.labels.l1.toLowerCase() ?? 'category'} first.`);
       return;
     }
 
-    const yearMin = yearMinRaw ? Number.parseInt(yearMinRaw, 10) : undefined;
-    const yearMax = yearMaxRaw ? Number.parseInt(yearMaxRaw, 10) : undefined;
-    if (yearMin !== undefined && yearMax !== undefined && yearMin > yearMax) {
-      setError('yearMin must be ≤ yearMax.');
+    const rangeMin = rangeMinRaw ? Number.parseFloat(rangeMinRaw) : undefined;
+    const rangeMax = rangeMaxRaw ? Number.parseFloat(rangeMaxRaw) : undefined;
+    if (rangeMin !== undefined && rangeMax !== undefined && rangeMin > rangeMax) {
+      setError('Range min must be ≤ range max.');
       return;
     }
 
     const newRow = {
-      makeId,
-      ...(modelId ? { modelId } : {}),
-      ...(engineId ? { engineId } : {}),
-      ...(Number.isFinite(yearMin) ? { yearMin } : {}),
-      ...(Number.isFinite(yearMax) ? { yearMax } : {}),
+      domainId,
+      categoryId,
+      ...(itemId ? { itemId } : {}),
+      ...(variantId ? { variantId } : {}),
+      ...(Number.isFinite(rangeMin) ? { rangeMin } : {}),
+      ...(Number.isFinite(rangeMax) ? { rangeMax } : {}),
       ...(notes ? { notes } : {}),
     };
 
     // Replace-all semantics: build the next list = existing rows + new row.
     const next = [
       ...fitments.map((f) => ({
-        makeId: f.makeId,
-        ...(f.modelId ? { modelId: f.modelId } : {}),
-        ...(f.engineId ? { engineId: f.engineId } : {}),
-        ...(f.yearMin !== null ? { yearMin: f.yearMin } : {}),
-        ...(f.yearMax !== null ? { yearMax: f.yearMax } : {}),
+        domainId: f.domainId,
+        categoryId: f.categoryId,
+        ...(f.itemId ? { itemId: f.itemId } : {}),
+        ...(f.variantId ? { variantId: f.variantId } : {}),
+        ...(f.rangeMin !== null ? { rangeMin: f.rangeMin } : {}),
+        ...(f.rangeMax !== null ? { rangeMax: f.rangeMax } : {}),
         ...(f.notes ? { notes: f.notes } : {}),
       })),
       newRow,
@@ -296,104 +356,148 @@ function NewFitmentForm({ productId, fitments, makes }: NewFormProps) {
         return;
       }
       (e.target as HTMLFormElement).reset();
-      setMakeId('');
+      setCategoryId('');
+      setItemId('');
       router.refresh();
     });
   }
+
+  if (!domain) {
+    return (
+      <Text size="sm" variant="muted">
+        Pick a domain to start.
+      </Text>
+    );
+  }
+
+  const rangeLabel = domain.labels.range
+    ? `${domain.labels.range} (${rangeUnitLabel(domain.rangeUnit)})`
+    : null;
 
   return (
     <form onSubmit={onSubmit} noValidate>
       <Stack gap={3}>
         <Stack direction="row" gap={3} wrap>
-          <Stack gap={1} className="min-w-[180px] flex-1">
-            <Label htmlFor="fit-make">Make</Label>
+          <Stack gap={1} className="min-w-[160px] flex-1">
+            <Label htmlFor="fit-domain">Domain</Label>
             <select
-              id="fit-make"
-              value={makeId}
-              onChange={(e) => setMakeId(e.target.value)}
+              id="fit-domain"
+              value={domainId}
+              onChange={(e) => setDomainId(e.target.value)}
               required
               className="flex h-9 w-full rounded-md border border-[var(--color-border-default)] bg-[var(--color-bg-surface)] px-3 py-2 text-sm text-[var(--color-text-primary)]"
             >
-              <option value="">— Pick a make —</option>
-              {makes.map((m) => (
-                <option key={m.id} value={m.id}>
-                  {m.name}
+              {domains.map((d) => (
+                <option key={d.id} value={d.id}>
+                  {d.displayName}
                 </option>
               ))}
             </select>
           </Stack>
 
           <Stack gap={1} className="min-w-[160px] flex-1">
-            <Label htmlFor="fit-model">Model (optional)</Label>
+            <Label htmlFor="fit-category">{domain.labels.l1}</Label>
             <select
-              id="fit-model"
-              value={modelId}
-              onChange={(e) => setModelId(e.target.value)}
-              disabled={!makeId || modelOptions.length === 0}
+              id="fit-category"
+              value={categoryId}
+              onChange={(e) => setCategoryId(e.target.value)}
+              required
+              disabled={categoryOptions.length === 0}
               className="flex h-9 w-full rounded-md border border-[var(--color-border-default)] bg-[var(--color-bg-surface)] px-3 py-2 text-sm text-[var(--color-text-primary)]"
             >
-              <option value="">— Any model —</option>
-              {modelOptions.map((m) => (
-                <option key={m.id} value={m.id}>
-                  {m.name}
+              <option value="">— Pick a {domain.labels.l1.toLowerCase()} —</option>
+              {categoryOptions.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
                 </option>
               ))}
             </select>
           </Stack>
 
-          <Stack gap={1} className="min-w-[160px] flex-1">
-            <Label htmlFor="fit-engine">Engine (optional)</Label>
-            <select
-              id="fit-engine"
-              name="engineId"
-              disabled={!modelId || engineOptions.length === 0}
-              defaultValue=""
-              className="flex h-9 w-full rounded-md border border-[var(--color-border-default)] bg-[var(--color-bg-surface)] px-3 py-2 text-sm text-[var(--color-text-primary)]"
-            >
-              <option value="">— Any engine —</option>
-              {engineOptions.map((e) => (
-                <option key={e.id} value={e.id}>
-                  {e.name}
-                </option>
-              ))}
-            </select>
-          </Stack>
+          {domain.labels.l2 && (
+            <Stack gap={1} className="min-w-[160px] flex-1">
+              <Label htmlFor="fit-item">{domain.labels.l2} (optional)</Label>
+              <select
+                id="fit-item"
+                value={itemId}
+                onChange={(e) => setItemId(e.target.value)}
+                disabled={!categoryId || itemOptions.length === 0}
+                className="flex h-9 w-full rounded-md border border-[var(--color-border-default)] bg-[var(--color-bg-surface)] px-3 py-2 text-sm text-[var(--color-text-primary)]"
+              >
+                <option value="">— Any {domain.labels.l2.toLowerCase()} —</option>
+                {itemOptions.map((i) => (
+                  <option key={i.id} value={i.id}>
+                    {i.name}
+                  </option>
+                ))}
+              </select>
+            </Stack>
+          )}
+
+          {domain.labels.l3 && (
+            <Stack gap={1} className="min-w-[160px] flex-1">
+              <Label htmlFor="fit-variant">{domain.labels.l3} (optional)</Label>
+              <select
+                id="fit-variant"
+                name="variantId"
+                disabled={!itemId || variantOptions.length === 0}
+                defaultValue=""
+                className="flex h-9 w-full rounded-md border border-[var(--color-border-default)] bg-[var(--color-bg-surface)] px-3 py-2 text-sm text-[var(--color-text-primary)]"
+              >
+                <option value="">— Any {domain.labels.l3.toLowerCase()} —</option>
+                {variantOptions.map((v) => (
+                  <option key={v.id} value={v.id}>
+                    {v.name}
+                  </option>
+                ))}
+              </select>
+            </Stack>
+          )}
         </Stack>
 
-        <Stack direction="row" gap={3} wrap>
-          <Stack gap={1} className="w-28">
-            <Label htmlFor="fit-year-min">Year from</Label>
-            <Input
-              id="fit-year-min"
-              name="yearMin"
-              type="number"
-              inputMode="numeric"
-              min={1900}
-              max={2100}
-              placeholder="2011"
-            />
+        {rangeLabel && (
+          <Stack direction="row" gap={3} wrap>
+            <Stack gap={1} className="w-32">
+              <Label htmlFor="fit-range-min">{domain.labels.range} from</Label>
+              <Input
+                id="fit-range-min"
+                name="rangeMin"
+                type="number"
+                inputMode="decimal"
+                placeholder={examplePlaceholder(domain.rangeUnit, 'min')}
+              />
+            </Stack>
+            <Stack gap={1} className="w-32">
+              <Label htmlFor="fit-range-max">{domain.labels.range} to</Label>
+              <Input
+                id="fit-range-max"
+                name="rangeMax"
+                type="number"
+                inputMode="decimal"
+                placeholder={examplePlaceholder(domain.rangeUnit, 'max')}
+              />
+            </Stack>
+            <Stack gap={1} className="min-w-[200px] flex-1">
+              <Label htmlFor="fit-notes">Notes</Label>
+              <Input
+                id="fit-notes"
+                name="notes"
+                placeholder="e.g. requires harness adapter, fleet-only"
+              />
+            </Stack>
           </Stack>
-          <Stack gap={1} className="w-28">
-            <Label htmlFor="fit-year-max">Year to</Label>
-            <Input
-              id="fit-year-max"
-              name="yearMax"
-              type="number"
-              inputMode="numeric"
-              min={1900}
-              max={2100}
-              placeholder="2016"
-            />
-          </Stack>
-          <Stack gap={1} className="min-w-[200px] flex-1">
+        )}
+
+        {!rangeLabel && (
+          <Stack gap={1} className="min-w-[200px]">
             <Label htmlFor="fit-notes">Notes</Label>
             <Input
               id="fit-notes"
               name="notes"
-              placeholder="e.g. requires harness adapter, fleet-only"
+              placeholder="Free-form note shown alongside the rule"
             />
           </Stack>
-        </Stack>
+        )}
 
         {error && (
           <Text size="sm" variant="danger" role="alert" aria-live="polite">
@@ -417,11 +521,59 @@ function NewFitmentForm({ productId, fitments, makes }: NewFormProps) {
   );
 }
 
-function formatYears(min: number | null, max: number | null): string {
+function formatRange(
+  min: number | null,
+  max: number | null,
+  rangeUnit: string | null
+): string {
   if (min === null && max === null) return 'any';
-  if (min !== null && max !== null) return min === max ? `${min}` : `${min}–${max}`;
-  if (min !== null) return `${min}+`;
-  return `≤${max!}`;
+  const u = rangeUnit ? ` ${rangeUnitLabel(rangeUnit)}` : '';
+  if (min !== null && max !== null) {
+    return min === max ? `${min}${u}` : `${min}–${max}${u}`;
+  }
+  if (min !== null) return `${min}+${u}`;
+  return `≤${max!}${u}`;
+}
+
+function rangeUnitLabel(unit: string | null): string {
+  if (!unit) return '';
+  switch (unit) {
+    case 'year':
+      return '';
+    case 'lb':
+      return 'lb';
+    case 'kg':
+      return 'kg';
+    case 'month':
+      return 'mo';
+    case 'us_shoe':
+      return 'US';
+    case 'eu_shoe':
+      return 'EU';
+    case 'mm':
+      return 'mm';
+    case 'in':
+      return 'in';
+    default:
+      return unit;
+  }
+}
+
+function examplePlaceholder(unit: string | null, end: 'min' | 'max'): string {
+  switch (unit) {
+    case 'year':
+      return end === 'min' ? '2011' : '2016';
+    case 'lb':
+      return end === 'min' ? '40' : '80';
+    case 'kg':
+      return end === 'min' ? '18' : '36';
+    case 'month':
+      return end === 'min' ? '6' : '24';
+    case 'us_shoe':
+      return end === 'min' ? '8' : '11';
+    default:
+      return '';
+  }
 }
 
 function stringField(value: FormDataEntryValue | null, fallback = ''): string {
