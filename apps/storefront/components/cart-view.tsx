@@ -45,10 +45,7 @@ export function CartView() {
         {lines.map((line) => (
           <div key={line.id} className="sf-line">
             <div className="sf-line__media">
-              {line.imageUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element -- cross-origin media via api-rest
-                <img src={line.imageUrl} alt={line.title} />
-              ) : null}
+              {line.imageUrl ? <img src={line.imageUrl} alt={line.title} /> : null}
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
               {line.productHandle ? (

@@ -52,7 +52,7 @@ const publicReviewRoutes: FastifyPluginAsync = async (app) => {
         ...(body.title ? { title: body.title } : {}),
         body: body.body,
       });
-      return ok({ reviewId: result.reviewId, status: result.status });
+      return ok({ reviewId: result.id, status: result.status });
     } catch (err) {
       throw badRequest((err as Error).message || 'Could not submit review.');
     }
