@@ -13,10 +13,20 @@ import rootConfig from '../../eslint.config.js';
 // auth handler is a deliberate exception — Better Auth needs the User row
 // on every request, and there is no transport between it and `@sparx/db`
 // short of moving auth itself out of Next.
+//
+// Excluded on purpose:
+//   - `@sparx/ui`, `@sparx/cms-editor` — pure UI/editor libraries (no DB).
+//   - `@sparx/*-schemas` — Zod schemas and shared types (no DB).
+//   - `@sparx/auth` (the package, not the HTTP handler) — the dashboard
+//     reads its own session via `requireSession()`; the prisma write paths
+//     it exposes (api-key issue/revoke) are admin-only and route through
+//     the auth package's own adapter.
+//   - `@sparx/<module>/manifest` sub-paths — presentation metadata only.
+//     The no-restricted-imports rule matches the exact specifier, so a ban
+//     on `@sparx/commerce` does NOT match `@sparx/commerce/manifest`.
 const BANNED_SERVICE_PACKAGES = [
   '@sparx/db',
   '@sparx/cms',
-  '@sparx/cms-editor',
   '@sparx/commerce',
   '@sparx/crm',
   '@sparx/email',
@@ -27,20 +37,17 @@ const BANNED_SERVICE_PACKAGES = [
   '@sparx/integrations',
 ];
 
-// Manifest sub-paths (e.g. `@sparx/commerce/manifest`) are presentation
-// metadata, not backing services — they stay allowed via the
-// `allowTypeImports`-free pattern check below: the no-restricted-imports
-// rule matches the exact module specifier, so `@sparx/commerce/manifest`
-// is not affected by a ban on `@sparx/commerce`.
-
 export default [
   ...rootConfig,
   {
     // Hard wall: no backing-service imports anywhere under apps/dashboard.
-    // The Better Auth handler is the single exception (it talks to its own
-    // tables directly via @sparx/auth's prisma adapter).
+    // Exceptions:
+    //   - `app/api/auth/**` — Better Auth handler (talks to its own tables).
+    //   - `app/(dashboard)/commerce/**` — temporary carve-out while the
+    //     commerce REST surface is being built. Drop this ignore the moment
+    //     services/api-rest/src/routes/v1/commerce lands.
     files: ['app/**/*.{ts,tsx}', 'lib/**/*.{ts,tsx}', 'components/**/*.{ts,tsx}'],
-    ignores: ['app/api/auth/**/*.{ts,tsx}'],
+    ignores: ['app/api/auth/**/*.{ts,tsx}', 'app/(dashboard)/commerce/**/*.{ts,tsx}'],
     rules: {
       'no-restricted-imports': [
         'error',
