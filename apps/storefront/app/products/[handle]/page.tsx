@@ -1,16 +1,22 @@
 // Product detail page (PDP). Server-loads the product, then hands the
 // interactive core (gallery + variants + add-to-cart) to <ProductDetail>.
-// Below the fold: description, vehicle fitment, reviews summary, and a
+// Below the fold: description, fitment (domain-aware), reviews summary, and a
 // related-products rail. Emits Product + Breadcrumb JSON-LD for SEO.
 
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
 import { Breadcrumbs } from '@/components/breadcrumbs';
+import { FitmentTable } from '@/components/fitment-table';
 import { ProductCard } from '@/components/product-card';
 import { ProductDetail } from '@/components/product-detail';
 import { RatingStars } from '@/components/rating-stars';
-import { getProduct, listRelatedProducts } from '@/lib/commerce';
+import {
+  getProduct,
+  listFitmentDomains,
+  listRelatedProducts,
+  type PublicFitmentDomain,
+} from '@/lib/commerce';
 import { mediaUrl } from '@/lib/media';
 import { resolveTenant } from '@/lib/tenant';
 
@@ -47,6 +53,14 @@ export default async function ProductDetailPage({ params }: PageProps) {
 
   const related = await listRelatedProducts(tenant.slug, product, 4);
   const { defaultCurrency: currency, defaultLocale: locale, showStockBelow } = tenant.storefront;
+
+  // Fitment rows carry a domain slug + label but not the per-level labels
+  // (Make/Model/Engine). Fetch the domains (cached) and map by slug so the
+  // table can render vertical-appropriate column headers.
+  const fitmentDomains = product.fitments.length
+    ? await listFitmentDomains(tenant.slug).catch<PublicFitmentDomain[]>(() => [])
+    : [];
+  const domainsBySlug = Object.fromEntries(fitmentDomains.map((d) => [d.slug, d]));
 
   const primaryImage = mediaUrl(product.images[0]?.mediaAssetId ?? null, tenant.slug);
   const productJsonLd = {
@@ -111,39 +125,13 @@ export default async function ProductDetailPage({ params }: PageProps) {
         </section>
       ) : null}
 
-      {/* Fitment */}
+      {/* Fitment — domain-aware (vehicle / pet / device / …) */}
       {product.fitments.length > 0 ? (
         <section className="sf-section">
           <h2 className="sf-h2" style={{ marginBottom: '1rem' }}>
-            Vehicle fitment
+            Compatibility
           </h2>
-          <div style={{ overflowX: 'auto' }}>
-            <table className="sf-fitment-table">
-              <thead>
-                <tr>
-                  <th>Make</th>
-                  <th>Model</th>
-                  <th>Engine</th>
-                  <th>Years</th>
-                  <th>Notes</th>
-                </tr>
-              </thead>
-              <tbody>
-                {product.fitments.map((f) => (
-                  <tr key={f.id}>
-                    <td>{f.make}</td>
-                    <td>{f.model ?? '—'}</td>
-                    <td>{f.engine ?? '—'}</td>
-                    <td>
-                      {f.yearMin ?? '—'}
-                      {f.yearMax && f.yearMax !== f.yearMin ? `–${f.yearMax}` : ''}
-                    </td>
-                    <td>{f.notes ?? '—'}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <FitmentTable fitments={product.fitments} domainsBySlug={domainsBySlug} />
         </section>
       ) : null}
 

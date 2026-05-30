@@ -110,13 +110,21 @@ export interface PublicProductImage {
   optionValueIds: string[];
 }
 
+// One applicability row on a product, in the generalized fitment model.
+// `domainLabel` is the merchant-facing noun for this vertical's top level
+// (e.g. "Vehicle", "Pet"); category/item/variant are the resolved names down
+// the tree; range + rangeUnit express the optional numeric span (year span,
+// weight band, shoe-size range — unit declared on the domain).
 export interface PublicProductFitment {
   id: string;
-  make: string;
-  model: string | null;
-  engine: string | null;
-  yearMin: number | null;
-  yearMax: number | null;
+  domainSlug: string;
+  domainLabel: string;
+  rangeUnit: string | null;
+  category: string;
+  item: string | null;
+  variant: string | null;
+  rangeMin: number | null;
+  rangeMax: number | null;
   notes: string | null;
 }
 
@@ -226,6 +234,12 @@ export interface ProductListFilters {
   vendor?: string;
   productType?: string;
   tag?: string;
+  /** Generalized fitment filter: category name + optional numeric range value
+   *  (year / weight / size — the unit is implied by the active domain). */
+  fitmentCategory?: string;
+  fitmentRangeValue?: number;
+  /** Legacy vehicle aliases — api-rest still accepts them and maps them onto
+   *  category + range internally. Kept for SEO/back-compat with old URLs. */
   fitmentMake?: string;
   fitmentYear?: number;
   minPriceCents?: number;
@@ -246,6 +260,8 @@ export async function listProducts(
     vendor: filters.vendor,
     productType: filters.productType,
     tag: filters.tag,
+    fitmentCategory: filters.fitmentCategory,
+    fitmentRangeValue: filters.fitmentRangeValue,
     fitmentMake: filters.fitmentMake,
     fitmentYear: filters.fitmentYear,
     minPriceCents: filters.minPriceCents,
@@ -322,6 +338,30 @@ export async function listFitmentCategories(
     `/v1/public/commerce/fitment/domains/${encodeURIComponent(domainId)}/categories`,
     { tenant: tenantSlug },
     [`commerce:${tenantSlug}:fitment:categories:${domainId}`]
+  );
+  return data;
+}
+
+export async function listFitmentItems(
+  tenantSlug: string,
+  categoryId: string
+): Promise<PublicFitmentItem[]> {
+  const { data } = await publicGet<PublicFitmentItem[]>(
+    `/v1/public/commerce/fitment/categories/${encodeURIComponent(categoryId)}/items`,
+    { tenant: tenantSlug },
+    [`commerce:${tenantSlug}:fitment:items:${categoryId}`]
+  );
+  return data;
+}
+
+export async function listFitmentVariants(
+  tenantSlug: string,
+  itemId: string
+): Promise<PublicFitmentVariant[]> {
+  const { data } = await publicGet<PublicFitmentVariant[]>(
+    `/v1/public/commerce/fitment/items/${encodeURIComponent(itemId)}/variants`,
+    { tenant: tenantSlug },
+    [`commerce:${tenantSlug}:fitment:variants:${itemId}`]
   );
   return data;
 }

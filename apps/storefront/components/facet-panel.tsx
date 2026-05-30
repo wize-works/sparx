@@ -3,10 +3,13 @@
 // works without client JS. Sort is preserved via a hidden field (the toolbar's
 // SortSelect owns changing it).
 //
-// Vendor/tag facets need an aggregation endpoint to enumerate values; until
-// that lands the panel exposes price, availability, and vehicle fitment.
+// Fitment is domain-aware: the panel adapts its labels + range widget to the
+// active fitment domain (Vehicle → "Make"/"Year", Pet → "Species"/"Weight",
+// …). With multiple domains a switcher appears; choosing one + Apply reloads
+// the form with that domain's categories. Vendor/tag facets need an
+// aggregation endpoint to enumerate values and land later.
 
-import type { PublicVehicleMake } from '@/lib/commerce';
+import type { PublicFitmentCategory, PublicFitmentDomain } from '@/lib/commerce';
 
 export interface FacetValues {
   q?: string;
@@ -14,20 +17,32 @@ export interface FacetValues {
   minPrice?: string;
   maxPrice?: string;
   inStock?: boolean;
-  fitmentMake?: string;
-  fitmentYear?: string;
+  fitmentDomain?: string; // domain slug
+  fitmentCategory?: string; // category name
+  fitmentRangeValue?: string; // year / weight / size value
 }
 
 export interface FacetPanelProps {
   action: string;
-  makes: PublicVehicleMake[];
+  domains: PublicFitmentDomain[];
+  /** The currently-active domain (chosen via ?fitmentDomain= or the only/first
+   *  one) and its categories, pre-loaded by the page. */
+  activeDomain: PublicFitmentDomain | null;
+  categories: PublicFitmentCategory[];
   values: FacetValues;
 }
 
 const YEAR_NOW = 2026;
 const YEARS = Array.from({ length: 50 }, (_, i) => YEAR_NOW - i);
+const US_SHOES = Array.from({ length: 21 }, (_, i) => (5 + i * 0.5).toString());
+const EU_SHOES = Array.from({ length: 16 }, (_, i) => (35 + i).toString());
 
-export function FacetPanel({ action, makes, values }: FacetPanelProps) {
+export function FacetPanel({ action, domains, activeDomain, categories, values }: FacetPanelProps) {
+  const labels = activeDomain?.labels ?? {};
+  const categoryLabel = labels.l1 ?? 'Category';
+  const rangeLabel = labels.range ?? 'Range';
+  const rangeUnit = activeDomain?.rangeUnit ?? null;
+
   return (
     <form id="plp-filters" className="sf-facets" method="GET" action={action}>
       {values.q ? <input type="hidden" name="q" value={values.q} /> : null}
@@ -70,50 +85,69 @@ export function FacetPanel({ action, makes, values }: FacetPanelProps) {
         </label>
       </div>
 
-      {makes.length > 0 ? (
+      {activeDomain ? (
         <div className="sf-facet">
-          <h4>Fits your vehicle</h4>
+          <h4>
+            {domains.length > 1
+              ? 'Fits your'
+              : `Fits your ${activeDomain.displayName.toLowerCase()}`}
+          </h4>
+
+          {domains.length > 1 ? (
+            <label
+              style={{
+                flexDirection: 'column',
+                alignItems: 'stretch',
+                gap: '0.4rem',
+                marginBottom: '0.5rem',
+              }}
+            >
+              <span className="sf-muted" style={{ fontSize: '0.78rem' }}>
+                Type
+              </span>
+              <select className="sf-select" name="fitmentDomain" defaultValue={activeDomain.slug}>
+                {domains.map((d) => (
+                  <option key={d.id} value={d.slug}>
+                    {d.displayName}
+                  </option>
+                ))}
+              </select>
+            </label>
+          ) : null}
+
           <label style={{ flexDirection: 'column', alignItems: 'stretch', gap: '0.4rem' }}>
             <span className="sf-muted" style={{ fontSize: '0.78rem' }}>
-              Make
+              {categoryLabel}
             </span>
             <select
               className="sf-select"
-              name="fitmentMake"
-              defaultValue={values.fitmentMake ?? ''}
+              name="fitmentCategory"
+              defaultValue={values.fitmentCategory ?? ''}
             >
-              <option value="">Any make</option>
-              {makes.map((m) => (
-                <option key={m.id} value={m.name}>
-                  {m.name}
+              <option value="">Any {categoryLabel.toLowerCase()}</option>
+              {categories.map((c) => (
+                <option key={c.id} value={c.name}>
+                  {c.name}
                 </option>
               ))}
             </select>
           </label>
-          <label
-            style={{
-              flexDirection: 'column',
-              alignItems: 'stretch',
-              gap: '0.4rem',
-              marginTop: '0.5rem',
-            }}
-          >
-            <span className="sf-muted" style={{ fontSize: '0.78rem' }}>
-              Year
-            </span>
-            <select
-              className="sf-select"
-              name="fitmentYear"
-              defaultValue={values.fitmentYear ?? ''}
+
+          {rangeUnit ? (
+            <label
+              style={{
+                flexDirection: 'column',
+                alignItems: 'stretch',
+                gap: '0.4rem',
+                marginTop: '0.5rem',
+              }}
             >
-              <option value="">Any year</option>
-              {YEARS.map((y) => (
-                <option key={y} value={y}>
-                  {y}
-                </option>
-              ))}
-            </select>
-          </label>
+              <span className="sf-muted" style={{ fontSize: '0.78rem' }}>
+                {rangeLabel}
+              </span>
+              <RangeWidget unit={rangeUnit} value={values.fitmentRangeValue} label={rangeLabel} />
+            </label>
+          ) : null}
         </div>
       ) : null}
 
@@ -126,5 +160,72 @@ export function FacetPanel({ action, makes, values }: FacetPanelProps) {
         </a>
       </div>
     </form>
+  );
+}
+
+// Range widget chosen by the domain's unit. Always writes to `fitmentRangeValue`
+// so the page reads one param regardless of vertical.
+function RangeWidget({ unit, value, label }: { unit: string; value?: string; label: string }) {
+  const unitSuffix = (() => {
+    switch (unit) {
+      case 'lb':
+        return 'lb';
+      case 'kg':
+        return 'kg';
+      case 'mm':
+        return 'mm';
+      case 'in':
+        return 'in';
+      case 'month':
+        return 'months';
+      default:
+        return '';
+    }
+  })();
+
+  if (unit === 'year') {
+    return (
+      <select className="sf-select" name="fitmentRangeValue" defaultValue={value ?? ''}>
+        <option value="">Any year</option>
+        {YEARS.map((y) => (
+          <option key={y} value={y}>
+            {y}
+          </option>
+        ))}
+      </select>
+    );
+  }
+
+  if (unit === 'us_shoe' || unit === 'eu_shoe') {
+    const sizes = unit === 'us_shoe' ? US_SHOES : EU_SHOES;
+    return (
+      <select className="sf-select" name="fitmentRangeValue" defaultValue={value ?? ''}>
+        <option value="">Any size</option>
+        {sizes.map((s) => (
+          <option key={s} value={s}>
+            {s}
+          </option>
+        ))}
+      </select>
+    );
+  }
+
+  // Numeric units (weight, age, dimension) → number input with a unit suffix.
+  return (
+    <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+      <input
+        className="sf-select"
+        type="number"
+        name="fitmentRangeValue"
+        inputMode="decimal"
+        min={0}
+        step="any"
+        placeholder={label}
+        defaultValue={value ?? ''}
+        style={{ width: '100%' }}
+        aria-label={`${label}${unitSuffix ? ` (${unitSuffix})` : ''}`}
+      />
+      {unitSuffix ? <span className="sf-muted">{unitSuffix}</span> : null}
+    </span>
   );
 }
