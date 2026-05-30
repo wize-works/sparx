@@ -171,11 +171,7 @@ SELECT
     '00000000-0000-0000-0000-000000000001',
     m."name",
     m."slug",
-    COALESCE(
-        jsonb_build_object('countryOfOrigin', m."country_of_origin")
-            FILTER (WHERE m."country_of_origin" IS NOT NULL),
-        '{}'::jsonb
-    ),
+    jsonb_strip_nulls(jsonb_build_object('countryOfOrigin', m."country_of_origin")),
     m."logo_media_id",
     0,
     m."created_at",
@@ -194,11 +190,7 @@ SELECT
     mo."make_id",
     mo."name",
     mo."slug",
-    COALESCE(
-        jsonb_build_object('bodyStyle', mo."body_style")
-            FILTER (WHERE mo."body_style" IS NOT NULL),
-        '{}'::jsonb
-    ),
+    jsonb_strip_nulls(jsonb_build_object('bodyStyle', mo."body_style")),
     0,
     mo."created_at",
     mo."updated_at"

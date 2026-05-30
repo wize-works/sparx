@@ -31,6 +31,8 @@ COPY packages/commerce-schemas ./packages/commerce-schemas
 COPY packages/integration-framework ./packages/integration-framework
 COPY packages/search ./packages/search
 COPY packages/commerce ./packages/commerce
+COPY packages/provider-stripe ./packages/provider-stripe
+COPY packages/provider-shippo ./packages/provider-shippo
 COPY services/api-rest ./services/api-rest
 
 # Install only what api-rest needs (and transitive workspace deps).
