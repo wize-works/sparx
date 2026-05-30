@@ -107,8 +107,8 @@ function VariantInventoryCard({
               )}
             </Heading>
             <CardDescription>
-              On hand, allocated, and available per warehouse. Inline adjust + reorder edits
-              record an audit-logged InventoryAdjustment.
+              On hand, allocated, and available per warehouse. Inline adjust + reorder edits record
+              an audit-logged InventoryAdjustment.
             </CardDescription>
           </Stack>
         </Stack>
@@ -290,7 +290,7 @@ function VariantInventoryRow({
                   <select
                     name="reason"
                     defaultValue="manual"
-                    className="border-[var(--color-border-default)] bg-[var(--color-bg-surface)] h-9 rounded border px-3 text-sm"
+                    className="h-9 rounded border border-[var(--color-border-default)] bg-[var(--color-bg-surface)] px-3 text-sm"
                   >
                     {REASONS.map((r) => (
                       <option key={r} value={r}>
@@ -315,7 +315,7 @@ function VariantInventoryRow({
                 </Stack>
               </Stack>
               {error && (
-                <Text size="xs" className="text-[var(--color-danger)] mt-2">
+                <Text size="xs" className="mt-2 text-[var(--color-danger)]">
                   {error}
                 </Text>
               )}
@@ -358,7 +358,7 @@ function VariantInventoryRow({
                 </Stack>
               </Stack>
               {error && (
-                <Text size="xs" className="text-[var(--color-danger)] mt-2">
+                <Text size="xs" className="mt-2 text-[var(--color-danger)]">
                   {error}
                 </Text>
               )}

@@ -89,13 +89,17 @@ export function UploadButton() {
 
   return (
     <Stack gap={2}>
+      {/* tabIndex={-1} + aria-hidden so AT users land on the visible Upload
+          button, not on the visually-hidden file input. The Button below
+          forwards its click to this input (audit UX-21). */}
       <input
         ref={fileRef}
         type="file"
         className="sr-only"
         onChange={onPick}
         accept="image/*,video/*,audio/*,application/pdf"
-        aria-label="Choose file to upload"
+        aria-hidden
+        tabIndex={-1}
       />
       <Button
         variant="module"

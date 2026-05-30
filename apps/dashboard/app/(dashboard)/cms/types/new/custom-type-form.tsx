@@ -9,6 +9,7 @@ import {
   CardDescription,
   CardFooter,
   CardHeader,
+  Checkbox,
   Heading,
   Input,
   Label,
@@ -24,6 +25,7 @@ export function CustomTypeForm({ initialSchema }: { initialSchema: string }) {
   const [pending, startTransition] = React.useTransition();
   const [error, setError] = React.useState<string | null>(null);
   const [schemaText, setSchemaText] = React.useState(initialSchema);
+  const [isSingleton, setIsSingleton] = React.useState(false);
   const [validationHint, setValidationHint] = React.useState<string | null>(null);
 
   React.useEffect(() => {
@@ -49,6 +51,10 @@ export function CustomTypeForm({ initialSchema }: { initialSchema: string }) {
     setError(null);
     const data = new FormData(e.currentTarget);
     data.set('schema', schemaText);
+    // <Checkbox> writes to React state, not native FormData — inject before
+    // the server action reads.
+    if (isSingleton) data.set('is_singleton', 'on');
+    else data.delete('is_singleton');
     startTransition(async () => {
       const result = await createContentType(data);
       if (!result.ok) {
@@ -63,7 +69,7 @@ export function CustomTypeForm({ initialSchema }: { initialSchema: string }) {
   return (
     <form onSubmit={onSubmit} noValidate>
       <Stack gap={5}>
-        <Card>
+        <Card variant="module">
           <CardHeader>
             <Heading level={3}>Identity</Heading>
           </CardHeader>
@@ -71,19 +77,31 @@ export function CustomTypeForm({ initialSchema }: { initialSchema: string }) {
             <Stack gap={4}>
               <Stack direction="row" gap={3}>
                 <Stack gap={1} className="flex-1">
-                  <Label htmlFor="key">Key</Label>
-                  <Input id="key" name="key" placeholder="case_study" required />
+                  <Label htmlFor="key" required>
+                    Key
+                  </Label>
+                  <Input id="key" name="key" placeholder="case_study" required aria-required />
                   <Text size="xs" variant="muted">
                     Immutable URL-safe identifier (lowercase, underscores).
                   </Text>
                 </Stack>
                 <Stack gap={1} className="flex-1">
-                  <Label htmlFor="name">Name</Label>
-                  <Input id="name" name="name" placeholder="Case study" required />
+                  <Label htmlFor="name" required>
+                    Name
+                  </Label>
+                  <Input id="name" name="name" placeholder="Case study" required aria-required />
                 </Stack>
                 <Stack gap={1} className="flex-1">
-                  <Label htmlFor="plural_name">Plural</Label>
-                  <Input id="plural_name" name="plural_name" placeholder="Case studies" required />
+                  <Label htmlFor="plural_name" required>
+                    Plural
+                  </Label>
+                  <Input
+                    id="plural_name"
+                    name="plural_name"
+                    placeholder="Case studies"
+                    required
+                    aria-required
+                  />
                 </Stack>
               </Stack>
               <Stack gap={1}>
@@ -106,11 +124,10 @@ export function CustomTypeForm({ initialSchema }: { initialSchema: string }) {
                 <Stack gap={1}>
                   <Label htmlFor="is_singleton">Singleton?</Label>
                   <Stack direction="row" align="center" gap={2}>
-                    <input
+                    <Checkbox
                       id="is_singleton"
-                      name="is_singleton"
-                      type="checkbox"
-                      className="h-5 w-5"
+                      checked={isSingleton}
+                      onCheckedChange={(next) => setIsSingleton(next === true)}
                     />
                     <Text size="xs" variant="muted">
                       Only one entry of this type can ever exist.
@@ -122,7 +139,7 @@ export function CustomTypeForm({ initialSchema }: { initialSchema: string }) {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card variant="module">
           <CardHeader>
             <Heading level={3}>Schema</Heading>
             <CardDescription>

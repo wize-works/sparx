@@ -183,7 +183,7 @@ function UserMenu({
     <DropdownMenu>
       <DropdownMenuTrigger
         aria-label={`Account menu for ${displayName}`}
-        className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left hover:bg-[var(--color-bg-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)]"
+        className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left hover:bg-[var(--color-bg-muted)] focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:outline-none"
       >
         <Avatar size="sm" alt={displayName} />
         <Stack gap={0} className="min-w-0 flex-1">

@@ -21,9 +21,7 @@ export async function listWarehousesAction(filter?: {
   });
 }
 
-export async function createWarehouseAction(
-  input: unknown
-): Promise<ActionResult<{ id: string }>> {
+export async function createWarehouseAction(input: unknown): Promise<ActionResult<{ id: string }>> {
   return runAction(async () => {
     const ctx = await sessionContext();
     const result = await inventoryService.createWarehouse(ctx, input);
@@ -73,9 +71,7 @@ export async function adjustInventoryAction(
   });
 }
 
-export async function setReorderPolicyAction(
-  input: unknown
-): Promise<ActionResult<{ ok: true }>> {
+export async function setReorderPolicyAction(input: unknown): Promise<ActionResult<{ ok: true }>> {
   return runAction(async () => {
     const ctx = await sessionContext();
     await inventoryService.setReorderPolicy(ctx, input);
@@ -84,9 +80,7 @@ export async function setReorderPolicyAction(
   });
 }
 
-export async function transferInventoryAction(
-  input: unknown
-): Promise<ActionResult<{ ok: true }>> {
+export async function transferInventoryAction(input: unknown): Promise<ActionResult<{ ok: true }>> {
   return runAction(async () => {
     const ctx = await sessionContext();
     await inventoryService.transfer(ctx, input);
@@ -97,9 +91,7 @@ export async function transferInventoryAction(
 
 // ─── Lot + serial ─────────────────────────────────────────────────────
 
-export async function createLotBatchAction(
-  input: unknown
-): Promise<ActionResult<{ id: string }>> {
+export async function createLotBatchAction(input: unknown): Promise<ActionResult<{ id: string }>> {
   return runAction(async () => {
     const ctx = await sessionContext();
     const result = await inventoryService.createLotBatch(ctx, input);

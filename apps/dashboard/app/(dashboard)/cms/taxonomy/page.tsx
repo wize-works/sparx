@@ -6,6 +6,7 @@ import {
   CardContent,
   CardHeader,
   Container,
+  EmptyState,
   Heading,
   Stack,
   Text,
@@ -47,13 +48,17 @@ export default async function TaxonomyIndexPage() {
 
         <TaxonomyCreateForm />
 
-        <Card>
+        <Card variant="module">
           <CardHeader>
             <Heading level={3}>Existing taxonomies</Heading>
           </CardHeader>
           <CardContent>
             {taxonomies.length === 0 ? (
-              <Text variant="muted">No taxonomies yet.</Text>
+              <EmptyState
+                icon={<Tag className="h-5 w-5" />}
+                title="No taxonomies yet"
+                description="Add your first taxonomy above. Tags and categories group entries on storefront index pages and feeds."
+              />
             ) : (
               <Stack gap={2}>
                 {taxonomies.map((t) => (

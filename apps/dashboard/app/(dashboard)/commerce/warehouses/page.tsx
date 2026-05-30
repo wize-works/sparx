@@ -65,10 +65,9 @@ export default async function WarehousesPage() {
               </Badge>
             </Stack>
             <Text variant="muted">
-              Inventory levels, lot batches, and serial units all sit beneath a warehouse. A
-              tenant needs at least one active warehouse before stock can be reserved or sold.
-              Dropship suppliers register as a virtual warehouse so the inventory model stays
-              uniform.
+              Inventory levels, lot batches, and serial units all sit beneath a warehouse. A tenant
+              needs at least one active warehouse before stock can be reserved or sold. Dropship
+              suppliers register as a virtual warehouse so the inventory model stays uniform.
             </Text>
           </Stack>
           <Button asChild>

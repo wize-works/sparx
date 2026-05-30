@@ -138,7 +138,10 @@ async function loadActiveModules(tenantId: string): Promise<{
   inactive: typeof MODULE_REGISTRY;
 }> {
   const flags = await Promise.all(
-    MODULE_REGISTRY.map(async (m) => ({ entry: m, enabled: await isModuleEnabled(tenantId, m.slug) }))
+    MODULE_REGISTRY.map(async (m) => ({
+      entry: m,
+      enabled: await isModuleEnabled(tenantId, m.slug),
+    }))
   );
   const activeEntries = flags.filter((f) => f.enabled).map((f) => f.entry);
   const inactiveEntries = flags.filter((f) => !f.enabled).map((f) => f.entry);

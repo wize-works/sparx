@@ -83,11 +83,7 @@ export function PreviewButton({
         variant={recentlyCopied ? 'module-outline' : 'ghost'}
         size="sm"
         leftIcon={
-          recentlyCopied ? (
-            <Check className="h-3.5 w-3.5" />
-          ) : (
-            <Eye className="h-3.5 w-3.5" />
-          )
+          recentlyCopied ? <Check className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />
         }
         onClick={onClick}
         disabled={pending}

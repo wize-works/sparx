@@ -297,7 +297,10 @@ function StockBadge({
   if (!variant) return null;
   const inStock = variant.inStock;
   const showCount =
-    inStock && variant.available > 0 && variant.available <= 10 && variant.inventoryPolicy === 'deny';
+    inStock &&
+    variant.available > 0 &&
+    variant.available <= 10 &&
+    variant.inventoryPolicy === 'deny';
   const acceptsBackorder = !inStock && variant.inventoryPolicy !== 'deny';
 
   let label = inStock ? 'In stock' : 'Out of stock';

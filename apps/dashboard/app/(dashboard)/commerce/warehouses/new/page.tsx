@@ -90,7 +90,9 @@ export default function NewWarehousePage() {
             <CardHeader>
               <Stack gap={1}>
                 <Heading level={3}>Basics</Heading>
-                <CardDescription>Name shows in the dashboard; code is the SKU prefix.</CardDescription>
+                <CardDescription>
+                  Name shows in the dashboard; code is the SKU prefix.
+                </CardDescription>
               </Stack>
             </CardHeader>
             <CardContent>
@@ -110,7 +112,7 @@ export default function NewWarehousePage() {
                     id="type"
                     name="type"
                     defaultValue="owned"
-                    className="border-[var(--color-border-default)] bg-[var(--color-bg-surface)] h-9 rounded border px-3 text-sm"
+                    className="h-9 rounded border border-[var(--color-border-default)] bg-[var(--color-bg-surface)] px-3 text-sm"
                   >
                     {TYPES.map((t) => (
                       <option key={t} value={t}>
@@ -162,9 +164,9 @@ export default function NewWarehousePage() {
               <Stack gap={1}>
                 <Heading level={3}>Default channels</Heading>
                 <CardDescription>
-                  When a cart on the named channel has no explicit warehouse, the picker uses
-                  this as a fallback. Optional — leave empty if you want every channel routed
-                  the same way.
+                  When a cart on the named channel has no explicit warehouse, the picker uses this
+                  as a fallback. Optional — leave empty if you want every channel routed the same
+                  way.
                 </CardDescription>
               </Stack>
             </CardHeader>

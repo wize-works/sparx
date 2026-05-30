@@ -3,18 +3,28 @@
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
   Button,
   Card,
   CardContent,
   CardDescription,
   CardFooter,
   CardHeader,
+  Checkbox,
   Heading,
   Input,
   Label,
   Stack,
   Text,
   Textarea,
+  toast,
 } from '@sparx/ui';
 import { Save, Trash2 } from 'lucide-react';
 import { deleteContentType, updateContentType } from '../../actions';
@@ -38,9 +48,10 @@ export function SchemaEditor({
   const router = useRouter();
   const [pending, startTransition] = React.useTransition();
   const [error, setError] = React.useState<string | null>(null);
-  const [message, setMessage] = React.useState<string | null>(null);
   const [schemaText, setSchemaText] = React.useState(initial.schemaText);
+  const [isSingleton, setIsSingleton] = React.useState(initial.isSingleton);
   const [hint, setHint] = React.useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = React.useState(false);
 
   React.useEffect(() => {
     try {
@@ -63,36 +74,33 @@ export function SchemaEditor({
   function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
-    setMessage(null);
     const data = new FormData(e.currentTarget);
     data.set('schema', schemaText);
+    // <Checkbox> writes to React state, not native FormData — inject value
+    // before the server action reads.
+    if (isSingleton) data.set('is_singleton', 'on');
+    else data.delete('is_singleton');
     startTransition(async () => {
       const result = await updateContentType(typeKey, data);
       if (!result.ok) {
         setError(result.error ?? 'Could not save schema.');
         return;
       }
-      setMessage('Schema saved.');
+      toast.success('Schema saved.');
       router.refresh();
     });
   }
 
-  function onDelete() {
-    if (
-      !confirm(
-        `Delete the "${typeKey}" content type? This is rejected if any entries still use it.`
-      )
-    ) {
-      return;
-    }
+  function executeDelete() {
+    setConfirmDelete(false);
     setError(null);
-    setMessage(null);
     startTransition(async () => {
       const result = await deleteContentType(typeKey);
       if (!result.ok) {
         setError(result.error ?? 'Could not delete type.');
         return;
       }
+      toast.success(`Deleted content type "${typeKey}".`);
       router.push('/cms/types');
       router.refresh();
     });
@@ -101,7 +109,7 @@ export function SchemaEditor({
   return (
     <form onSubmit={onSubmit} noValidate>
       <Stack gap={5}>
-        <Card>
+        <Card variant="module">
           <CardHeader>
             <Heading level={3}>Identity</Heading>
             <CardDescription>
@@ -112,16 +120,21 @@ export function SchemaEditor({
             <Stack gap={4}>
               <Stack direction="row" gap={3}>
                 <Stack gap={1} className="flex-1">
-                  <Label htmlFor="name">Name</Label>
-                  <Input id="name" name="name" defaultValue={initial.name} required />
+                  <Label htmlFor="name" required>
+                    Name
+                  </Label>
+                  <Input id="name" name="name" defaultValue={initial.name} required aria-required />
                 </Stack>
                 <Stack gap={1} className="flex-1">
-                  <Label htmlFor="plural_name">Plural</Label>
+                  <Label htmlFor="plural_name" required>
+                    Plural
+                  </Label>
                   <Input
                     id="plural_name"
                     name="plural_name"
                     defaultValue={initial.pluralName}
                     required
+                    aria-required
                   />
                 </Stack>
               </Stack>
@@ -146,20 +159,23 @@ export function SchemaEditor({
                 </Stack>
                 <Stack gap={1}>
                   <Label htmlFor="is_singleton">Singleton</Label>
-                  <input
-                    id="is_singleton"
-                    name="is_singleton"
-                    type="checkbox"
-                    defaultChecked={initial.isSingleton}
-                    className="h-5 w-5"
-                  />
+                  <Stack direction="row" align="center" gap={2}>
+                    <Checkbox
+                      id="is_singleton"
+                      checked={isSingleton}
+                      onCheckedChange={(next) => setIsSingleton(next === true)}
+                    />
+                    <Text size="xs" variant="muted">
+                      Only one entry can exist.
+                    </Text>
+                  </Stack>
                 </Stack>
               </Stack>
             </Stack>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card variant="module">
           <CardHeader>
             <Heading level={3}>Schema JSON</Heading>
             <CardDescription>
@@ -202,7 +218,7 @@ export function SchemaEditor({
                 type="button"
                 variant="ghost"
                 leftIcon={<Trash2 className="h-4 w-4" />}
-                onClick={onDelete}
+                onClick={() => setConfirmDelete(true)}
                 disabled={pending}
               >
                 Delete type
@@ -212,15 +228,26 @@ export function SchemaEditor({
                   {error}
                 </Text>
               )}
-              {message && (
-                <Text size="sm" variant="success" aria-live="polite">
-                  {message}
-                </Text>
-              )}
             </Stack>
           </CardFooter>
         </Card>
       </Stack>
+
+      <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete the &ldquo;{typeKey}&rdquo; content type?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This removes the schema definition. If any entries still use this type the API will
+              reject the deletion — you&apos;ll need to archive those entries first.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={executeDelete}>Delete type</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </form>
   );
 }

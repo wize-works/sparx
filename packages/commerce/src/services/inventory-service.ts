@@ -120,7 +120,7 @@ export async function createWarehouse(
         latitude: input.latitude ?? null,
         longitude: input.longitude ?? null,
         defaultForChannel: input.defaultForChannel,
-        hoursOfOperation: (input.hoursOfOperation ?? []),
+        hoursOfOperation: input.hoursOfOperation ?? [],
         isActive: input.isActive,
       },
     });
@@ -161,10 +161,7 @@ export async function updateWarehouse(
         select: { id: true },
       });
       if (collision) {
-        throw new CommerceConflictError(
-          `Warehouse code "${input.code}" is already in use`,
-          'code'
-        );
+        throw new CommerceConflictError(`Warehouse code "${input.code}" is already in use`, 'code');
       }
     }
 
@@ -458,10 +455,7 @@ export async function adjust(
   return { newOnHand: result.onHand, newAvailable };
 }
 
-export async function setReorderPolicy(
-  ctx: ServiceContext,
-  rawInput: unknown
-): Promise<void> {
+export async function setReorderPolicy(ctx: ServiceContext, rawInput: unknown): Promise<void> {
   const input = SetReorderPolicyInput.parse(rawInput);
   await withTenant(ctx, async (tx) => {
     await ensureWarehouseActive(tx, input.warehouseId);
@@ -632,10 +626,7 @@ export interface ReservationResult {
  * temporarily exceed onHand — surfaces as a negative `available` in the
  * dashboard).
  */
-export async function reserve(
-  ctx: ServiceContext,
-  rawInput: unknown
-): Promise<ReservationResult> {
+export async function reserve(ctx: ServiceContext, rawInput: unknown): Promise<ReservationResult> {
   const input = ReserveInventoryInput.parse(rawInput);
 
   return withTenant(ctx, async (tx) => {
@@ -943,10 +934,9 @@ export async function createSerialUnit(
         select: { id: true },
       });
       if (!lot) {
-        throw new CommerceValidationError(
-          'Lot batch does not belong to this variant',
-          [{ field: 'lotBatchId', message: 'Mismatched variant' }]
-        );
+        throw new CommerceValidationError('Lot batch does not belong to this variant', [
+          { field: 'lotBatchId', message: 'Mismatched variant' },
+        ]);
       }
     }
 
@@ -995,10 +985,9 @@ export async function initiateRecall(
       select: { id: true, lotNumber: true },
     });
     if (lots.length !== input.lotBatchIds.length) {
-      throw new CommerceValidationError(
-        'One or more lot batches were not found in this tenant',
-        [{ field: 'lotBatchIds', message: `Found ${lots.length} of ${input.lotBatchIds.length}` }]
-      );
+      throw new CommerceValidationError('One or more lot batches were not found in this tenant', [
+        { field: 'lotBatchIds', message: `Found ${lots.length} of ${input.lotBatchIds.length}` },
+      ]);
     }
 
     const sold = await tx.serialUnit.count({
@@ -1181,9 +1170,7 @@ function serializeWarehouse(w: Warehouse): WarehouseRow {
     phone: w.phone,
     latitude: w.latitude,
     longitude: w.longitude,
-    defaultForChannel: Array.isArray(w.defaultForChannel)
-      ? (w.defaultForChannel as string[])
-      : [],
+    defaultForChannel: Array.isArray(w.defaultForChannel) ? (w.defaultForChannel as string[]) : [],
     isActive: w.isActive,
     createdAt: w.createdAt.toISOString(),
     updatedAt: w.updatedAt.toISOString(),

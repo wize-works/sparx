@@ -12,9 +12,7 @@ export interface ReaperResult {
   released: number;
 }
 
-export async function reapExpiredReservations(input: {
-  tenantId: string;
-}): Promise<ReaperResult> {
+export async function reapExpiredReservations(input: { tenantId: string }): Promise<ReaperResult> {
   const { released } = await inventoryService.expireDueReservations({ tenantId: input.tenantId });
   return { tenantId: input.tenantId, released };
 }

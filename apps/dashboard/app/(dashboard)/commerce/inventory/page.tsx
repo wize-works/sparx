@@ -75,9 +75,7 @@ export default async function InventoryPage({ searchParams }: PageProps) {
     }),
   ]);
 
-  const activeWarehouse = warehouseFilter
-    ? warehouses.find((w) => w.id === warehouseFilter)
-    : null;
+  const activeWarehouse = warehouseFilter ? warehouses.find((w) => w.id === warehouseFilter) : null;
   const fallbackWarehouse = activeWarehouse ?? warehouses[0] ?? null;
 
   // The full per-warehouse level grid. Inline-editable.
@@ -93,13 +91,11 @@ export default async function InventoryPage({ searchParams }: PageProps) {
             <Stack direction="row" align="center" gap={2}>
               <Boxes className="h-5 w-5" />
               <Heading level={1}>Inventory</Heading>
-              {fallbackWarehouse && (
-                <Badge variant="module">{fallbackWarehouse.code}</Badge>
-              )}
+              {fallbackWarehouse && <Badge variant="module">{fallbackWarehouse.code}</Badge>}
             </Stack>
             <Text variant="muted">
-              On-hand is the authoritative count; allocated is the active reservation total
-              across carts, orders, and subscriptions; available = on-hand − allocated.
+              On-hand is the authoritative count; allocated is the active reservation total across
+              carts, orders, and subscriptions; available = on-hand − allocated.
             </Text>
           </Stack>
           <Stack direction="row" gap={2}>
@@ -141,7 +137,7 @@ export default async function InventoryPage({ searchParams }: PageProps) {
                       <select
                         name="warehouse"
                         defaultValue={fallbackWarehouse?.id ?? ''}
-                        className="border-[var(--color-border-default)] bg-[var(--color-bg-surface)] h-9 rounded border px-3 text-sm"
+                        className="h-9 rounded border border-[var(--color-border-default)] bg-[var(--color-bg-surface)] px-3 text-sm"
                       >
                         {warehouses.map((w) => (
                           <option key={w.id} value={w.id}>
@@ -151,12 +147,7 @@ export default async function InventoryPage({ searchParams }: PageProps) {
                       </select>
                     </Stack>
                     <label className="flex items-center gap-2 pb-1.5">
-                      <input
-                        type="checkbox"
-                        name="low"
-                        value="1"
-                        defaultChecked={lowStockOnly}
-                      />
+                      <input type="checkbox" name="low" value="1" defaultChecked={lowStockOnly} />
                       <Text size="sm">Low stock only</Text>
                     </label>
                     <Button type="submit" variant="secondary">
@@ -230,8 +221,8 @@ export default async function InventoryPage({ searchParams }: PageProps) {
                     </Badge>
                   </Heading>
                   <CardDescription>
-                    Each row shows the latest counts; the inline editor records every change as
-                    an audited adjustment (sale, recount, manual…).
+                    Each row shows the latest counts; the inline editor records every change as an
+                    audited adjustment (sale, recount, manual…).
                   </CardDescription>
                 </Stack>
               </CardHeader>

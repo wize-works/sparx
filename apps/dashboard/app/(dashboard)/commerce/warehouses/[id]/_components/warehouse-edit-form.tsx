@@ -69,8 +69,8 @@ export function WarehouseEditForm({ warehouse }: { warehouse: WarehouseRow }) {
           <Stack gap={1}>
             <Heading level={3}>Address + defaults</Heading>
             <CardDescription>
-              Code + type are fixed at creation. Need a different code? Archive this warehouse
-              and create a fresh one.
+              Code + type are fixed at creation. Need a different code? Archive this warehouse and
+              create a fresh one.
             </CardDescription>
           </Stack>
         </CardHeader>

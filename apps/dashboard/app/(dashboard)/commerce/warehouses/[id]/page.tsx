@@ -116,7 +116,7 @@ export default async function WarehouseDetailPage({ params }: PageProps) {
             <Stack gap={1}>
               <Heading level={3}>Stock</Heading>
               <CardDescription>
-                Full per-variant levels live on the {' '}
+                Full per-variant levels live on the{' '}
                 <Link
                   href={`/commerce/inventory?warehouse=${warehouse.id}`}
                   className="underline hover:text-[var(--module-active)]"

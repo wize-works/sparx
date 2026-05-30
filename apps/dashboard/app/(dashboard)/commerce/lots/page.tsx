@@ -76,9 +76,9 @@ export default async function LotsPage() {
               )}
             </Stack>
             <Text variant="muted">
-              Hazmat-flagged batches inform shipping routing automatically. Recalled lots flip
-              their unsold serials to scrapped and the dashboard surfaces affected customers so
-              you can email them.
+              Hazmat-flagged batches inform shipping routing automatically. Recalled lots flip their
+              unsold serials to scrapped and the dashboard surfaces affected customers so you can
+              email them.
             </Text>
           </Stack>
         </Stack>
@@ -167,7 +167,8 @@ export default async function LotsPage() {
                   {expiringSoon.map((l) => {
                     const days = l.expiresAt
                       ? Math.round(
-                          (new Date(l.expiresAt).getTime() - new Date(horizon).getTime() +
+                          (new Date(l.expiresAt).getTime() -
+                            new Date(horizon).getTime() +
                             ONE_YEAR_MS) /
                             (24 * 60 * 60 * 1000)
                         )
@@ -192,9 +193,7 @@ export default async function LotsPage() {
                         </TableCell>
                         <TableCell>
                           <Text size="sm">
-                            {l.expiresAt
-                              ? new Date(l.expiresAt).toLocaleDateString()
-                              : '—'}
+                            {l.expiresAt ? new Date(l.expiresAt).toLocaleDateString() : '—'}
                           </Text>
                           {days !== null && (
                             <Text size="xs" variant="muted">
