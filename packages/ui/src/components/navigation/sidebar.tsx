@@ -28,6 +28,21 @@ export const SidebarHeader = ({ className, ...props }: React.HTMLAttributes<HTML
 );
 SidebarHeader.displayName = 'SidebarHeader';
 
+// Scrollable <nav> region that fills the available space between the
+// SidebarHeader and SidebarFooter. Defaults to a "Primary" a11y label —
+// override with `label` when there are multiple navs in the same tree.
+export interface SidebarNavProps extends React.HTMLAttributes<HTMLElement> {
+  label?: string;
+}
+export const SidebarNav = ({ className, label = 'Primary', ...props }: SidebarNavProps) => (
+  <nav
+    aria-label={label}
+    className={cn('flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto', className)}
+    {...props}
+  />
+);
+SidebarNav.displayName = 'SidebarNav';
+
 export const SidebarSection = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
   <div className={cn('flex flex-col gap-0.5 py-2', className)} {...props} />
 );

@@ -197,12 +197,14 @@ export {
 export {
   Sidebar,
   SidebarHeader,
+  SidebarNav,
   SidebarSection,
   SidebarSectionLabel,
   SidebarFooter,
   SidebarItem,
   sidebarItemVariants,
   type SidebarItemProps,
+  type SidebarNavProps,
 } from './components/navigation/sidebar';
 export {
   Breadcrumb,
