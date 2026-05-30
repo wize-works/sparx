@@ -133,12 +133,69 @@ const publicCheckoutRoutes: FastifyPluginAsync = async (app) => {
     const body = ShippingQuoteBody.parse(request.body ?? {});
     const { tenantId, ctx } = await publicCommerceContext(request);
     const { cartId } = await assertSessionOwner(request, ctx, tenantId, sessionId);
-    const rates = await shippingService.quoteForCart(ctx, {
-      cartId,
-      ...(body.destinationCountry ? { destinationCountry: body.destinationCountry } : {}),
-      ...(body.destinationPostal ? { destinationPostal: body.destinationPostal } : {}),
+
+    // Build a ShipmentRequest from the cart: one package summing variant
+    // weights × quantity (defaulting to a nominal weight when unset), plus the
+    // line subtotal as declared value. shippingService.rateShipment matches it
+    // against the tenant's configured zones/rates.
+    const cart = await withTenant({ tenantId }, (tx) =>
+      tx.cart.findFirst({
+        where: { id: cartId },
+        select: {
+          currency: true,
+          items: {
+            select: {
+              quantity: true,
+              subtotalCents: true,
+              variant: { select: { weightGrams: true } },
+            },
+          },
+        },
+      })
+    );
+    if (!cart) throw notFound('Cart', cartId);
+
+    const totalWeight = cart.items.reduce(
+      (sum, it) => sum + (it.variant.weightGrams ?? 500) * it.quantity,
+      0
+    );
+    const totalValue = cart.items.reduce((sum, it) => sum + it.subtotalCents, 0);
+
+    // The rate engine matches on destination country + weight/value bands; we
+    // pass a single consolidated package with nominal dimensions and no hazmat
+    // (per-line hazmat handling is a future enhancement). line1/city are
+    // required by ShipmentAddress but unused by the manual-rate matcher, so we
+    // send placeholders for the quote step.
+    const rates = await shippingService.rateShipment(ctx, {
+      toAddress: {
+        line1: '—',
+        city: '—',
+        country: body.destinationCountry ?? 'US',
+        ...(body.destinationPostal ? { postalCode: body.destinationPostal } : {}),
+      },
+      currency: cart.currency,
+      packages: [
+        {
+          weight: totalWeight,
+          dimensions: { lengthMm: 0, widthMm: 0, heightMm: 0 },
+          containsHazmat: false,
+          hazmatClass: 'none',
+          declaredValueCents: totalValue,
+        },
+      ],
     });
-    return ok(rates);
+
+    // Map the service RateOption shape → the storefront's ShippingRate shape.
+    return ok(
+      rates.map((r) => ({
+        providerSlug: r.providerSlug,
+        rateRef: r.rateRef,
+        service: r.service,
+        carrier: r.carrier,
+        amountCents: r.amountCents,
+        estimatedDays: r.estimatedDeliveryDays ?? null,
+      }))
+    );
   });
 
   app.post('/v1/public/commerce/checkout/:sessionId/shipping', async (request) => {

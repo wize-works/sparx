@@ -204,7 +204,7 @@ const publicCartRoutes: FastifyPluginAsync = async (app) => {
     const { tenantId, ctx } = await publicCommerceContext(request);
     await assertCartToken(request, tenantId, cartId);
     try {
-      await discountService.applyToCart(ctx, { cartId, code: body.code });
+      await discountService.redeemCode(ctx, { cartId, code: body.code });
     } catch (err) {
       // Surface a clean 400 for an invalid/expired code rather than a 500.
       throw badRequest((err as Error).message || 'That code can’t be applied.');
@@ -214,9 +214,16 @@ const publicCartRoutes: FastifyPluginAsync = async (app) => {
 
   app.delete('/v1/public/commerce/cart/:cartId/discount/:code', async (request) => {
     const { cartId, code } = CodeParam.parse(request.params);
-    const { tenantId, ctx } = await publicCommerceContext(request);
+    const { tenantId } = await publicCommerceContext(request);
     await assertCartToken(request, tenantId, cartId);
-    await discountService.removeFromCart(ctx, { cartId, code });
+    // No service method removes a cart discount; the join row is safe to drop
+    // directly under RLS. Recompute happens lazily on the next cart read.
+    await withTenant({ tenantId }, (tx) =>
+      tx.cartDiscount.deleteMany({
+        where: { cartId, discount: { code: { equals: code, mode: 'insensitive' } } },
+      })
+    );
+    const ctx = toPublicCommerceContext(tenantId);
     return ok(await serializePublicCart(ctx, tenantId, cartId));
   });
 
