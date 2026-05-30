@@ -63,9 +63,10 @@ export type {
   CategoryProduct,
   ProductCollection,
   CollectionProduct,
-  VehicleMake,
-  VehicleModel,
-  VehicleEngine,
+  FitmentDomain,
+  FitmentCategory,
+  FitmentItem,
+  FitmentVariant,
   ProductFitment,
   // Commerce — inventory
   Warehouse,

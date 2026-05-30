@@ -197,21 +197,28 @@ function compileCondition(c: Condition): Prisma.ProductWhereInput | null {
     case 'priceMaxCents':
       return numericMatch('priceMaxCents', c);
     case 'fitmentMake':
+      // Legacy field name kept on CollectionPredicate (rule editor still
+      // ships labels like "Make"); the underlying join uses the generic
+      // FitmentCategory level so it works for any domain whose L1 is
+      // user-facing as "Make" / "Brand" / "Species" / etc.
       if (c.op === 'equals' && typeof c.value === 'string') {
-        return { fitments: { some: { make: { name: c.value } } } };
+        return { fitments: { some: { category: { name: c.value } } } };
       }
       if (c.op === 'in' && Array.isArray(c.value)) {
         const names = (c.value as unknown[]).filter((v): v is string => typeof v === 'string');
-        return { fitments: { some: { make: { name: { in: names } } } } };
+        return { fitments: { some: { category: { name: { in: names } } } } };
       }
       return null;
     case 'fitmentYear':
+      // Same legacy-name pattern — numeric narrowing on a fitment row's
+      // rangeMin/rangeMax window. Works for year (vehicle), weight (pet),
+      // shoe size, etc. — the domain owns the unit.
       if (c.op === 'equals' && typeof c.value === 'number') {
         return {
           fitments: {
             some: {
-              yearMin: { lte: c.value },
-              OR: [{ yearMax: { gte: c.value } }, { yearMax: null }],
+              rangeMin: { lte: c.value },
+              OR: [{ rangeMax: { gte: c.value } }, { rangeMax: null }],
             },
           },
         };

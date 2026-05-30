@@ -53,7 +53,7 @@ interface CartRow {
 function customerName(c: CartCustomer | null): string | null {
   if (!c) return null;
   const full = `${c.firstName ?? ''} ${c.lastName ?? ''}`.trim();
-  return full || c.email || null;
+  return full !== '' ? full : (c.email ?? null);
 }
 
 export default async function CartsPage({

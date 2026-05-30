@@ -45,11 +45,11 @@ export async function projectProduct(
         },
         fitments: {
           select: {
-            make: { select: { name: true } },
-            model: { select: { name: true } },
-            engine: { select: { name: true } },
-            yearMin: true,
-            yearMax: true,
+            category: { select: { name: true } },
+            item: { select: { name: true } },
+            variant: { select: { name: true } },
+            rangeMin: true,
+            rangeMax: true,
           },
         },
         categoryLinks: { select: { categoryId: true } },
@@ -84,22 +84,24 @@ export async function projectProduct(
         ? Math.max(...priceCentsList)
         : (product.priceMaxCents ?? priceMinCents);
 
-    // Fitment denormalized. Distinct make/model/engine name lists power
-    // the storefront facets without a join. yearMin/yearMax pairs flatten
-    // into a year list — open-ended ranges (no yearMax) are capped to a
-    // sensible window for the int32[] facet.
-    const makes = new Set<string>();
-    const models = new Set<string>();
-    const engines = new Set<string>();
-    const years = new Set<number>();
+    // Fitment denormalized. Distinct L1/L2/L3 name lists power the
+    // storefront facets without a join. The field names stay
+    // `fitment_makes/models/engines` for storage-format stability across
+    // the indexer — they're generic buckets at the index layer. Range
+    // pairs flatten into a numeric list (year for vehicle, weight for
+    // pet, etc.); open-ended ranges are capped to a sensible window.
+    const categories = new Set<string>();
+    const items = new Set<string>();
+    const variants = new Set<string>();
+    const rangeValues = new Set<number>();
     for (const f of product.fitments) {
-      makes.add(f.make.name);
-      if (f.model) models.add(f.model.name);
-      if (f.engine) engines.add(f.engine.name);
-      const lo = f.yearMin ?? 0;
-      const hi = f.yearMax ?? (lo > 0 ? lo + 30 : 0);
+      categories.add(f.category.name);
+      if (f.item) items.add(f.item.name);
+      if (f.variant) variants.add(f.variant.name);
+      const lo = f.rangeMin === null ? 0 : Number(f.rangeMin);
+      const hi = f.rangeMax === null ? (lo > 0 ? lo + 30 : 0) : Number(f.rangeMax);
       if (lo > 0 && hi >= lo) {
-        for (let y = lo; y <= Math.min(hi, lo + 50); y++) years.add(y);
+        for (let y = lo; y <= Math.min(hi, lo + 50); y++) rangeValues.add(y);
       }
     }
 
@@ -140,10 +142,10 @@ export async function projectProduct(
         activeVariants.length > 0
           ? activeVariants.map((v) => v.sku).filter((s): s is string => !!s)
           : undefined,
-      fitment_makes: makes.size > 0 ? [...makes] : undefined,
-      fitment_models: models.size > 0 ? [...models] : undefined,
-      fitment_engines: engines.size > 0 ? [...engines] : undefined,
-      fitment_years: years.size > 0 ? [...years] : undefined,
+      fitment_makes: categories.size > 0 ? [...categories] : undefined,
+      fitment_models: items.size > 0 ? [...items] : undefined,
+      fitment_engines: variants.size > 0 ? [...variants] : undefined,
+      fitment_years: rangeValues.size > 0 ? [...rangeValues] : undefined,
       image_url: firstImageKey ? mediaPublicUrl(firstImageKey) : undefined,
       created_at: Math.floor(product.createdAt.getTime() / 1000),
       updated_at: Math.floor(product.updatedAt.getTime() / 1000),

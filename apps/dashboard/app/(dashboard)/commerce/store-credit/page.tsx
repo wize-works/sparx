@@ -54,7 +54,7 @@ interface CrmCustomerRow {
 function customerName(c: StoreCreditCustomer | null): string | null {
   if (!c) return null;
   const full = `${c.firstName ?? ''} ${c.lastName ?? ''}`.trim();
-  return full || c.company || c.email || null;
+  return full !== '' ? full : (c.company ?? c.email ?? null);
 }
 
 export default async function StoreCreditPage() {
@@ -67,7 +67,7 @@ export default async function StoreCreditPage() {
 
   const recentCustomers = customersPaged.data.map((c) => {
     const full = `${c.firstName ?? ''} ${c.lastName ?? ''}`.trim();
-    const name = full || c.email || c.id.slice(0, 8) + '…';
+    const name = full !== '' ? full : (c.email ?? c.id.slice(0, 8) + '…');
     return { id: c.id, email: c.email, name };
   });
 

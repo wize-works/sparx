@@ -53,7 +53,7 @@ interface QuestionDetail {
 function displayCustomer(c: QuestionCustomer | null): string {
   if (!c) return 'Anonymous';
   const full = `${c.firstName ?? ''} ${c.lastName ?? ''}`.trim();
-  return full || c.email || 'Customer';
+  return full !== '' ? full : (c.email ?? 'Customer');
 }
 
 export async function QuestionDetailContent({ id }: Props) {
