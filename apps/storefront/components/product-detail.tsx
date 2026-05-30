@@ -110,7 +110,7 @@ export function ProductDetail({
   }
 
   async function handleAdd() {
-    if (!resolvedVariant || !resolvedVariant.inStock) return;
+    if (!resolvedVariant?.inStock) return;
     setAdding(true);
     try {
       await addItem(resolvedVariant.id, qty);
@@ -125,7 +125,6 @@ export function ProductDetail({
       <div className="sf-gallery">
         <div className="sf-gallery__main">
           {activeImage ? (
-            // eslint-disable-next-line @next/next/no-img-element -- cross-origin media via api-rest redirect
             <img
               src={mediaUrl(activeImage.mediaAssetId, tenantSlug) ?? ''}
               alt={activeImage.alt ?? product.title}
@@ -147,7 +146,6 @@ export function ProductDetail({
                 aria-label={img.alt ?? 'Product image'}
                 onClick={() => setActiveImageId(img.id)}
               >
-                {/* eslint-disable-next-line @next/next/no-img-element -- cross-origin media via api-rest redirect */}
                 <img src={mediaUrl(img.mediaAssetId, tenantSlug) ?? ''} alt="" />
               </button>
             ))}
@@ -168,7 +166,7 @@ export function ProductDetail({
             : formatPriceRange(product.priceMinCents, product.priceMaxCents, currency, locale)}
           {onSale ? (
             <span className="sf-card__compare" style={{ fontSize: '1rem' }}>
-              {formatMoney(compareAt!, currency, locale)}
+              {formatMoney(compareAt, currency, locale)}
             </span>
           ) : null}
         </div>

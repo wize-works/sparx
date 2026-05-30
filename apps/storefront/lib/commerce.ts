@@ -141,12 +141,30 @@ export interface PublicCategoryNode {
   featured: boolean;
 }
 
-export interface PublicVehicleMake {
+export interface PublicFitmentDomain {
+  id: string;
+  slug: string;
+  displayName: string;
+  description: string | null;
+  iconKey: string | null;
+  labels: { l1: string; l2?: string; l3?: string; range?: string };
+  rangeUnit: string | null;
+  isGlobal: boolean;
+}
+
+export interface PublicFitmentCategory {
   id: string;
   name: string;
   slug: string;
+  iconMediaId: string | null;
   isGlobal: boolean;
 }
+
+/** Back-compat alias — storefront callers used `PublicVehicleMake` when
+ *  fitment was vehicle-only. The shape is now a generic fitment category
+ *  with `name`/`slug`/`isGlobal`. New code should use
+ *  PublicFitmentCategory directly. */
+export type PublicVehicleMake = PublicFitmentCategory;
 
 // ─── Calls ─────────────────────────────────────────────────────────────
 
@@ -287,11 +305,34 @@ export async function getProduct(
   }
 }
 
-export async function listVehicleMakes(tenantSlug: string): Promise<PublicVehicleMake[]> {
-  const { data } = await publicGet<PublicVehicleMake[]>(
-    '/v1/public/commerce/fitment/makes',
+export async function listFitmentDomains(tenantSlug: string): Promise<PublicFitmentDomain[]> {
+  const { data } = await publicGet<PublicFitmentDomain[]>(
+    '/v1/public/commerce/fitment/domains',
     { tenant: tenantSlug },
-    [`commerce:${tenantSlug}:fitment:makes`]
+    [`commerce:${tenantSlug}:fitment:domains`]
   );
   return data;
+}
+
+export async function listFitmentCategories(
+  tenantSlug: string,
+  domainId: string
+): Promise<PublicFitmentCategory[]> {
+  const { data } = await publicGet<PublicFitmentCategory[]>(
+    `/v1/public/commerce/fitment/domains/${encodeURIComponent(domainId)}/categories`,
+    { tenant: tenantSlug },
+    [`commerce:${tenantSlug}:fitment:categories:${domainId}`]
+  );
+  return data;
+}
+
+/** Back-compat — keep callers that loaded "vehicle makes" working by
+ *  returning the categories of the global Vehicle domain. New code
+ *  should compose listFitmentDomains + listFitmentCategories so it's
+ *  not hardcoded to the vehicle vertical. */
+export async function listVehicleMakes(tenantSlug: string): Promise<PublicVehicleMake[]> {
+  const domains = await listFitmentDomains(tenantSlug);
+  const vehicle = domains.find((d) => d.slug === 'vehicle');
+  if (!vehicle) return [];
+  return listFitmentCategories(tenantSlug, vehicle.id);
 }

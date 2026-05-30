@@ -49,12 +49,14 @@ export function MobileNav({ nav, brand }: { nav: NavItem[]; brand: string }) {
       </button>
 
       {open ? (
-        <div className="sf-drawer-backdrop" onClick={() => setOpen(false)} role="presentation">
-          <nav
-            className="sf-drawer-panel sf-drawer-panel--left"
-            aria-label="Mobile navigation"
-            onClick={(e) => e.stopPropagation()}
-          >
+        <div className="sf-drawer-backdrop" role="presentation">
+          <button
+            type="button"
+            aria-label="Close mobile navigation"
+            className="sf-drawer-backdrop__close"
+            onClick={() => setOpen(false)}
+          />
+          <nav className="sf-drawer-panel sf-drawer-panel--left" aria-label="Mobile navigation">
             <div className="sf-drawer-panel__head">
               <span className="sf-header__brand">{brand}</span>
               <button

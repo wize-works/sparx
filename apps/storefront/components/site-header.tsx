@@ -33,7 +33,6 @@ export function SiteHeader({ tenant, nav, announcement }: SiteHeaderProps) {
 
           <Link href="/" className="sf-header__brand" aria-label={`${tenant.name} home`}>
             {logo ? (
-              // eslint-disable-next-line @next/next/no-img-element -- cross-origin media via api-rest redirect
               <img src={logo} alt={tenant.name} />
             ) : (
               tenant.name

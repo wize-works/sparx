@@ -64,7 +64,6 @@ export default async function SearchPage({
           type="search"
           name="q"
           defaultValue={q}
-          autoFocus
           placeholder="Search products…"
           aria-label="Search products"
         />

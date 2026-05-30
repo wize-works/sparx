@@ -65,7 +65,6 @@ export default async function CollectionDetailPage({ params, searchParams }: Pag
         }}
       >
         {hero ? (
-          // eslint-disable-next-line @next/next/no-img-element -- cross-origin media via api-rest redirect
           <img
             src={hero}
             alt=""

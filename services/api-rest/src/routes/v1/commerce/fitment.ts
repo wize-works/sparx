@@ -103,11 +103,13 @@ const fitmentRoutes: FastifyPluginAsync = async (app) => {
     requireRole(request, 'editor');
     await requireCommerceModule(request);
     const { productId } = ProductIdParam.parse(request.params);
+    // Body shape is validated by the service's Zod schema
+    // (ProductFitmentInput, applied per-row inside setForProduct).
     const body = z.object({ fitments: z.array(z.unknown()) }).parse(request.body);
     await fitmentService.setForProduct(
       toCommerceContext(request),
       productId,
-      body.fitments as never
+      body.fitments as Parameters<typeof fitmentService.setForProduct>[2]
     );
     return ok({ productId, updated: true });
   });

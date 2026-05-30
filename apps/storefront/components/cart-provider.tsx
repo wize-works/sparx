@@ -233,7 +233,7 @@ export function CartProvider({ tenantSlug, currency, children }: CartProviderPro
 interface CartApiShape {
   cartId: string;
   currency: string;
-  items: Array<{
+  items: {
     id: string;
     variantId: string;
     productHandle?: string | null;
@@ -243,7 +243,7 @@ interface CartApiShape {
     unitPriceCents: number;
     quantity: number;
     lineTotalCents: number;
-  }>;
+  }[];
   totals: { subtotalCents: number };
 }
 

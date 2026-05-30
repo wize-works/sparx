@@ -34,7 +34,6 @@ export function ProductCard({
         {onSale ? <span className="sf-badge sf-badge--sale">Sale</span> : null}
         {!product.inStock ? <span className="sf-badge sf-badge--out">Sold out</span> : null}
         {img ? (
-          // eslint-disable-next-line @next/next/no-img-element -- cross-origin media via api-rest redirect
           <img src={img} alt={product.title} loading="lazy" decoding="async" />
         ) : (
           <div className="sf-card__media sf-card__media--empty" aria-hidden="true">

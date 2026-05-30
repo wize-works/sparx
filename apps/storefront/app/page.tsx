@@ -74,7 +74,6 @@ export default async function StorefrontRoot({ searchParams }: RootPageProps) {
                 <Link key={c.id} href={`/collections/${c.handle}`} className="sf-card">
                   <div className="sf-card__media">
                     {hero ? (
-                      // eslint-disable-next-line @next/next/no-img-element -- cross-origin media via api-rest redirect
                       <img src={hero} alt={c.name} loading="lazy" decoding="async" />
                     ) : (
                       <div className="sf-card__media sf-card__media--empty" aria-hidden="true">

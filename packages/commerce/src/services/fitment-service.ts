@@ -185,7 +185,7 @@ export async function createDomain(
         displayName: input.displayName,
         description: input.description ?? null,
         iconKey: input.iconKey ?? null,
-        labels: input.labels as Prisma.InputJsonValue,
+        labels: input.labels,
         rangeUnit: input.rangeUnit ?? null,
         position: input.position,
       },

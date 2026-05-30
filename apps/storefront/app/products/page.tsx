@@ -73,7 +73,7 @@ export default async function ProductListingPage({ searchParams }: PageProps) {
           formAction="/products"
         />
       </header>
-      <ProductGrid products={items} />
+      <ProductGrid products={items} tenantSlug={tenant.slug} />
       {totalPages > 1 && (
         <Pagination
           page={page}
