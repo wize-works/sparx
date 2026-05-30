@@ -3,7 +3,12 @@ import { notFound } from 'next/navigation';
 import { ArrowLeft, ExternalLink, PackageOpen } from 'lucide-react';
 
 import { isModuleEnabled, requireSession } from '@sparx/auth';
-import { CommerceNotFoundError, productService, variantService } from '@sparx/commerce';
+import {
+  CommerceNotFoundError,
+  fitmentService,
+  productService,
+  variantService,
+} from '@sparx/commerce';
 import {
   Badge,
   Card,
@@ -21,6 +26,7 @@ import {
 
 import { ModuleStub } from '../../../../../components/module-stub';
 
+import { FitmentPanel } from './_components/fitment-panel';
 import { ProductEditForm } from './_components/product-edit-form';
 import { ProductStatusBar } from './_components/product-status-bar';
 import { VariantsPanel } from './_components/variants-panel';
@@ -72,9 +78,11 @@ export default async function ProductDetailPage({ params }: PageProps) {
   }
 
   // Variants tab data — fan out the two reads; both are tenant-scoped.
-  const [options, variants] = await Promise.all([
+  const [options, variants, fitments, makes] = await Promise.all([
     variantService.listOptions(ctx, id),
     variantService.listForProduct(ctx, id, { includeArchived: true }),
+    fitmentService.listForProduct(ctx, id),
+    fitmentService.listMakes(ctx),
   ]);
 
   return (
@@ -181,9 +189,11 @@ export default async function ProductDetailPage({ params }: PageProps) {
           </TabsContent>
 
           <TabsContent value="fitment">
-            <PhaseStub
-              title="Fitment — Phase 1.4"
-              description="Vehicle make / model / engine compatibility. Year range, notes, bulk-assign from a fitment-export CSV (Gillett Diesel reference case)."
+            <FitmentPanel
+              productId={product.id}
+              productTitle={product.title}
+              fitments={fitments}
+              makes={makes.map((m) => ({ id: m.id, name: m.name }))}
             />
           </TabsContent>
 

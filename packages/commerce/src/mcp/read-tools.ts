@@ -168,7 +168,7 @@ const searchFitment: McpToolDefinition = {
     engineId: z.string().uuid().optional(),
     year: z.number().int().min(1900).max(2100).optional(),
   }),
-  run: (ctx, input) => fitmentService.lookup(ctx, input as Record<string, unknown>),
+  run: (ctx, input) => fitmentService.lookup(ctx, input),
 };
 
 const getProviderHealth: McpToolDefinition = {
