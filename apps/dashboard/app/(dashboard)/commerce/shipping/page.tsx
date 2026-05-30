@@ -115,12 +115,14 @@ export default async function ShippingPage() {
                   {zones.map((z) => (
                     <TableRow key={z.id}>
                       <TableCell>
-                        <Link
+                        <EntityRowLink
                           href={`/commerce/shipping/zones/${z.id}`}
+                          entityType="shipping-zone"
+                          entityId={z.id}
                           className="font-medium hover:text-[var(--module-active)]"
                         >
                           {z.name}
-                        </Link>
+                        </EntityRowLink>
                       </TableCell>
                       <TableCell>
                         {z.targeting.countries.length > 0 ? (
@@ -200,12 +202,14 @@ export default async function ShippingPage() {
                   {profiles.map((p) => (
                     <TableRow key={p.id}>
                       <TableCell>
-                        <Link
+                        <EntityRowLink
                           href={`/commerce/shipping/profiles/${p.id}`}
+                          entityType="shipping-profile"
+                          entityId={p.id}
                           className="font-medium hover:text-[var(--module-active)]"
                         >
                           {p.name}
-                        </Link>
+                        </EntityRowLink>
                       </TableCell>
                       <TableCell>
                         <Stack direction="row" gap={1} wrap>

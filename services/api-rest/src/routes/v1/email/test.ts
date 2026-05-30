@@ -31,6 +31,7 @@ const TestSendBody = z.object({
     .optional(),
 });
 
+// eslint-disable-next-line @typescript-eslint/require-await -- FastifyPluginAsync type demands async; no top-level await needed because route registration is sync.
 const emailTestRoutes: FastifyPluginAsync = async (app) => {
   app.post('/v1/email/test-send', async (request) => {
     const auth = requireRole(request, 'admin');
@@ -81,6 +82,7 @@ const emailTestRoutes: FastifyPluginAsync = async (app) => {
     });
   });
 
+  // eslint-disable-next-line @typescript-eslint/require-await -- Fastify route handlers may be async or sync; this one is sync but matches the surrounding async signature.
   app.get('/v1/email/last-console-send', async (request) => {
     requireRole(request, 'admin');
     const provider = (process.env.SPARX_EMAIL_PROVIDER ?? 'console').toLowerCase();

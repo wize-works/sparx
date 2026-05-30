@@ -1,22 +1,19 @@
-import { withTenant } from '@sparx/db';
-import type { Prisma } from '@sparx/db';
+import 'server-only';
+import { api } from '@/lib/api-rest-client';
 
-// Onboarding state lives in `tenants.settings.onboarding` — a JSON column
-// rather than a dedicated table since (a) it is per-tenant 1:1, (b) the
-// shape will change every time we ship another onboarding step, and (c) no
-// other table needs to join against it.
-//
-// Step completion is *derived* from real domain data wherever possible
-// (first page, payments connected, etc.) so the user never needs to "tick a
-// box" manually. The persisted shape only carries dismissal state and any
-// step that has no DB analogue yet.
+// Onboarding state used to live in `tenants.settings.onboarding` and was read
+// through Prisma. It now goes through api-rest (`GET /v1/tenant/onboarding`,
+// `PATCH /v1/tenant/onboarding`, `GET /v1/tenant/onboarding/progress`). The
+// derivation of step completion from real domain data (pageCount, etc.) lives
+// on the api-rest side so it stays in sync with whatever the future Pub/Sub
+// onboarding workers compute.
 
 export interface OnboardingState {
   /** User clicked "Skip" or finished — hide the welcome banner everywhere. */
   dismissed: boolean;
-  /** Wall-clock timestamp the merchant landed on /welcome the first time. */
+  /** ISO wall-clock timestamp the merchant landed on /welcome the first time. */
   startedAt: string | null;
-  /** When the user finished or dismissed onboarding. */
+  /** ISO timestamp when the user finished or dismissed onboarding. */
   finishedAt: string | null;
 }
 
@@ -26,52 +23,11 @@ export const DEFAULT_ONBOARDING: OnboardingState = {
   finishedAt: null,
 };
 
-export function readOnboarding(settings: Prisma.JsonValue): OnboardingState {
-  if (typeof settings !== 'object' || settings === null || Array.isArray(settings)) {
-    return DEFAULT_ONBOARDING;
-  }
-  const raw = (settings as Record<string, unknown>).onboarding;
-  if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) {
-    return DEFAULT_ONBOARDING;
-  }
-  const rec = raw as Record<string, unknown>;
-  return {
-    dismissed: typeof rec.dismissed === 'boolean' ? rec.dismissed : false,
-    startedAt: typeof rec.startedAt === 'string' ? rec.startedAt : null,
-    finishedAt: typeof rec.finishedAt === 'string' ? rec.finishedAt : null,
-  };
-}
-
 export async function patchOnboarding(
-  tenantId: string,
+  _tenantId: string,
   patch: Partial<OnboardingState>
 ): Promise<OnboardingState> {
-  return withTenant({ tenantId }, async (tx) => {
-    const tenant = await tx.tenant.findUnique({
-      where: { id: tenantId },
-      select: { settings: true },
-    });
-    const current = readOnboarding(tenant?.settings ?? null);
-    const next = { ...current, ...patch };
-    const settings = mergeSettings(tenant?.settings ?? null, { onboarding: next });
-
-    await tx.tenant.update({
-      where: { id: tenantId },
-      data: { settings },
-    });
-    return next;
-  });
-}
-
-function mergeSettings(
-  current: Prisma.JsonValue,
-  patch: Record<string, unknown>
-): Prisma.InputJsonValue {
-  const base =
-    typeof current === 'object' && current !== null && !Array.isArray(current)
-      ? (current as Record<string, unknown>)
-      : {};
-  return { ...base, ...patch } as Prisma.InputJsonValue;
+  return api.patch<OnboardingState>('/v1/tenant/onboarding', patch);
 }
 
 export interface OnboardingProgress {
@@ -92,64 +48,6 @@ export interface OnboardingStep {
   comingSoon?: boolean;
 }
 
-export async function loadOnboardingProgress(tenantId: string): Promise<OnboardingProgress> {
-  return withTenant({ tenantId }, async (tx) => {
-    const tenant = await tx.tenant.findUnique({
-      where: { id: tenantId },
-      select: { settings: true, name: true },
-    });
-    const pageCount = await tx.page.count();
-
-    const state = readOnboarding(tenant?.settings ?? null);
-    const steps: OnboardingStep[] = [
-      {
-        id: 'account',
-        title: 'Create your account',
-        description: 'Email, password, and store name.',
-        done: true,
-      },
-      {
-        id: 'tenant',
-        title: 'Confirm your store details',
-        description: 'Make sure the contact email and store name look right.',
-        done: Boolean(tenant?.name),
-        cta: { label: 'Open settings', href: '/settings/general' },
-      },
-      {
-        id: 'first-page',
-        title: 'Add your first page',
-        description: 'About, Contact, or any landing page to get started.',
-        done: pageCount > 0,
-        cta: { label: 'Open CMS', href: '/cms' },
-      },
-      {
-        id: 'theme',
-        title: 'Pick a theme',
-        description: 'Themes ship with the Sitebuilder module.',
-        done: false,
-        comingSoon: true,
-      },
-      {
-        id: 'domain',
-        title: 'Connect a custom domain',
-        description: 'Use your wizeworks subdomain for now; bring your own later.',
-        done: false,
-        comingSoon: true,
-      },
-      {
-        id: 'payments',
-        title: 'Connect payments',
-        description: 'Stripe Connect — required to take orders.',
-        done: false,
-        comingSoon: true,
-      },
-    ];
-
-    const actionable = steps.filter((s) => !s.comingSoon);
-    const completion = actionable.length
-      ? actionable.filter((s) => s.done).length / actionable.length
-      : 1;
-
-    return { state, pageCount, steps, completion };
-  });
+export async function loadOnboardingProgress(_tenantId: string): Promise<OnboardingProgress> {
+  return api.get<OnboardingProgress>('/v1/tenant/onboarding/progress');
 }

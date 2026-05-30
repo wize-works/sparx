@@ -115,12 +115,14 @@ export default async function WarehousesPage() {
                   {warehouses.map((w) => (
                     <TableRow key={w.id}>
                       <TableCell>
-                        <Link
+                        <EntityRowLink
                           href={`/commerce/warehouses/${w.id}`}
+                          entityType="warehouse"
+                          entityId={w.id}
                           className="font-mono text-xs hover:text-[var(--module-active)]"
                         >
                           {w.code}
-                        </Link>
+                        </EntityRowLink>
                       </TableCell>
                       <TableCell>{w.name}</TableCell>
                       <TableCell>

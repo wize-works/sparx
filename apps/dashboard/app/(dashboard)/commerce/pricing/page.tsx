@@ -123,12 +123,14 @@ export default async function PricingPage() {
                   {priceLists.map((list) => (
                     <TableRow key={list.id}>
                       <TableCell>
-                        <Link
+                        <EntityRowLink
                           href={`/commerce/pricing/${list.id}`}
+                          entityType="price-list"
+                          entityId={list.id}
                           className="hover:text-[var(--module-active)]"
                         >
                           {list.name}
-                        </Link>
+                        </EntityRowLink>
                       </TableCell>
                       <TableCell>
                         <span className="font-mono text-xs">{list.currency}</span>

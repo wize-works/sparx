@@ -1,6 +1,5 @@
 import Link from 'next/link';
-import { requireSession, isModuleEnabled, type ModuleSlug } from '@sparx/auth';
-import { prisma, withTenant } from '@sparx/db';
+import { requireSession, type ModuleSlug } from '@sparx/auth';
 import { OnboardingBanner } from './_components/onboarding-banner';
 import { loadOnboardingProgress } from './welcome/onboarding';
 import {
@@ -35,11 +34,11 @@ import {
   Truck,
   Users,
 } from 'lucide-react';
+import { api } from '@/lib/api-rest-client';
 
 // First real dashboard page. Minimal but representative — Stats row + active
-// modules grid + an empty-state placeholder for tasks. Pages will be filled
-// in as the rest of the platform comes online; this is the merchant home
-// that doc 23 §6 calls out as `(dashboard)/page.tsx`.
+// modules grid + an empty-state placeholder for tasks. All DB-backed bits
+// resolve through api-rest (`/v1/dashboard/home`, `/v1/tenant/onboarding/progress`).
 
 interface ModuleSummary {
   id: SparxModule;
@@ -49,20 +48,22 @@ interface ModuleSummary {
   href: string;
 }
 
-export const dynamic = 'force-dynamic';
-
-// Single source of metadata for every module that can appear on the home
-// dashboard. The Active grid pulls from this filtered by enabled flag; the
-// Discover grid pulls from this filtered by the opposite. Slug values match
-// the ModuleSlug enum so they line up with /settings/modules.
-const MODULE_REGISTRY: {
+interface ModuleEntry {
   slug: ModuleSlug;
   id: SparxModule;
   href: string;
   label: string;
   description: string;
   icon: React.ReactNode;
-}[] = [
+}
+
+export const dynamic = 'force-dynamic';
+
+// Single source of metadata for every module that can appear on the home
+// dashboard. The Active grid pulls from this filtered by enabled flag; the
+// Discover grid pulls from this filtered by the opposite. Slug values match
+// the ModuleSlug enum so they line up with /settings/modules.
+const MODULE_REGISTRY: ModuleEntry[] = [
   {
     slug: 'storefront',
     id: 'storefront',
@@ -129,60 +130,41 @@ const MODULE_REGISTRY: {
   },
 ];
 
-// Read each module's enabled flag from tenant.settings.modules in one shot,
-// then resolve the per-module metric only for the active ones. Previously
-// this function was hardcoded to return CMS only, so the home dashboard
-// disagreed with /settings/modules — that was F-04 in the CRM audit.
-async function loadActiveModules(tenantId: string): Promise<{
-  active: ModuleSummary[];
-  inactive: typeof MODULE_REGISTRY;
-}> {
-  const flags = await Promise.all(
-    MODULE_REGISTRY.map(async (m) => ({
-      entry: m,
-      enabled: await isModuleEnabled(tenantId, m.slug),
-    }))
-  );
-  const activeEntries = flags.filter((f) => f.enabled).map((f) => f.entry);
-  const inactiveEntries = flags.filter((f) => !f.enabled).map((f) => f.entry);
-
-  const active = await Promise.all(
-    activeEntries.map(async (m) => ({
-      id: m.id,
-      label: m.label,
-      description: m.description,
-      metric: await loadModuleMetric(tenantId, m.slug),
-      href: m.href,
-    }))
-  );
-  return { active, inactive: inactiveEntries };
+interface HomeResponse {
+  modules: { slug: string; enabled: boolean; metric: string | null }[];
 }
 
-// Per-module quick-metric. Most modules will eventually have a row count or
-// a 30d aggregate; for now only the ones with shipped tables return a
-// useful number. The rest fall back to an em-dash so the card still renders
-// without claiming "0 of X" inaccurately.
-async function loadModuleMetric(tenantId: string, slug: ModuleSlug): Promise<string> {
-  switch (slug) {
-    case 'cms': {
-      const pageCount = await withTenant({ tenantId }, (tx) => tx.page.count());
-      return `${pageCount} ${pageCount === 1 ? 'page' : 'pages'}`;
+function joinHome(home: HomeResponse): {
+  active: ModuleSummary[];
+  inactive: ModuleEntry[];
+} {
+  const byslug = new Map(home.modules.map((m) => [m.slug, m]));
+  const active: ModuleSummary[] = [];
+  const inactive: ModuleEntry[] = [];
+  for (const entry of MODULE_REGISTRY) {
+    const state = byslug.get(entry.slug);
+    if (state?.enabled) {
+      active.push({
+        id: entry.id,
+        label: entry.label,
+        description: entry.description,
+        metric: state.metric ?? '—',
+        href: entry.href,
+      });
+    } else {
+      inactive.push(entry);
     }
-    case 'crm': {
-      const customerCount = await prisma.customer.count({ where: { tenantId, deletedAt: null } });
-      return `${customerCount} ${customerCount === 1 ? 'customer' : 'customers'}`;
-    }
-    default:
-      return '—';
   }
+  return { active, inactive };
 }
 
 export default async function DashboardHome() {
   const { user } = await requireSession();
-  const [{ active: activeModules, inactive: discoverModules }, onboarding] = await Promise.all([
-    loadActiveModules(user.tenantId),
+  const [home, onboarding] = await Promise.all([
+    api.get<HomeResponse>('/v1/dashboard/home'),
     loadOnboardingProgress(user.tenantId),
   ]);
+  const { active: activeModules, inactive: discoverModules } = joinHome(home);
 
   return (
     <Container size="xl">

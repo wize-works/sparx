@@ -93,11 +93,76 @@ export const commerceManifest: ModuleManifest = {
     },
   ],
   entityTypes: [
-    { id: 'product', label: 'Product', routePrefix: '/commerce/products' },
+    { id: 'product', label: 'Product', routePrefix: '/commerce/products', hasDetailView: true },
     { id: 'category', label: 'Category', routePrefix: '/commerce/categories' },
-    { id: 'collection', label: 'Collection', routePrefix: '/commerce/collections' },
+    {
+      id: 'collection',
+      label: 'Collection',
+      routePrefix: '/commerce/collections',
+      hasDetailView: true,
+    },
     { id: 'discount', label: 'Discount', routePrefix: '/commerce/discounts' },
     { id: 'gift-card', label: 'Gift card', routePrefix: '/commerce/gift-cards' },
-    { id: 'warehouse', label: 'Warehouse', routePrefix: '/commerce/warehouses' },
+    {
+      id: 'warehouse',
+      label: 'Warehouse',
+      routePrefix: '/commerce/warehouses',
+      hasDetailView: true,
+    },
+    { id: 'review', label: 'Review', routePrefix: '/commerce/reviews', hasDetailView: true },
+    { id: 'qa-question', label: 'Question', routePrefix: '/commerce/qa', hasDetailView: true },
+    {
+      id: 'subscription',
+      label: 'Subscription',
+      routePrefix: '/commerce/subscriptions',
+      hasDetailView: true,
+    },
+    {
+      id: 'return',
+      label: 'Return',
+      routePrefix: '/commerce/returns',
+      hasDetailView: true,
+    },
+    { id: 'bundle', label: 'Bundle', routePrefix: '/commerce/bundles', hasDetailView: true },
+    { id: 'cart', label: 'Cart', routePrefix: '/commerce/carts', hasDetailView: true },
+    {
+      id: 'provider-installation',
+      label: 'Provider',
+      routePrefix: '/commerce/providers',
+      hasDetailView: true,
+    },
+    {
+      id: 'price-list',
+      label: 'Price list',
+      routePrefix: '/commerce/pricing',
+      hasDetailView: true,
+    },
+    {
+      id: 'configurator-template',
+      label: 'Configurator',
+      routePrefix: '/commerce/configurator',
+      hasDetailView: true,
+    },
+    {
+      id: 'shipping-profile',
+      label: 'Shipping profile',
+      // Profiles live nested under /commerce/shipping/profiles, but the
+      // manifest's routePrefix is the entity's PARENT segment so
+      // EntityRowLink's full-page fallback resolves cleanly.
+      routePrefix: '/commerce/shipping/profiles',
+      hasDetailView: true,
+    },
+    {
+      id: 'shipping-zone',
+      label: 'Shipping zone',
+      routePrefix: '/commerce/shipping/zones',
+      hasDetailView: true,
+    },
+    {
+      id: 'tax-zone',
+      label: 'Tax zone',
+      routePrefix: '/commerce/tax/zones',
+      hasDetailView: true,
+    },
   ],
 };

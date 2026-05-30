@@ -54,6 +54,7 @@ async function loadMetric(tenantId: string, slug: ModuleSlug): Promise<string | 
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/require-await -- FastifyPluginAsync type demands async; no top-level await needed because route registration is sync.
 const dashboardRoutes: FastifyPluginAsync = async (app) => {
   app.get('/v1/dashboard/home', async (request) => {
     const auth = requireAuth(request);

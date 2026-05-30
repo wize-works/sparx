@@ -165,12 +165,14 @@ export default async function CollectionsPage({ searchParams }: PageProps) {
                       <TableCell>
                         <Stack gap={1}>
                           <Stack direction="row" align="center" gap={2}>
-                            <Link
+                            <EntityRowLink
                               href={`/commerce/collections/${c.id}`}
+                              entityType="collection"
+                              entityId={c.id}
                               className="text-sm font-medium hover:text-[var(--module-active)] hover:underline"
                             >
                               {c.name}
-                            </Link>
+                            </EntityRowLink>
                             {c.featured && (
                               <Badge variant="outline" className="text-xs">
                                 <Star className="mr-1 h-3 w-3" />

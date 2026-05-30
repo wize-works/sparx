@@ -118,12 +118,14 @@ export default async function SubscriptionsPage({
                   {items.map((s) => (
                     <TableRow key={s.id}>
                       <TableCell>
-                        <Link
+                        <EntityRowLink
                           href={`/commerce/subscriptions/${s.id}`}
+                          entityType="subscription"
+                          entityId={s.id}
                           className="font-mono text-xs hover:text-[var(--module-active)]"
                         >
                           {s.id.slice(0, 8)}
-                        </Link>
+                        </EntityRowLink>
                       </TableCell>
                       <TableCell>
                         <Text size="xs" className="font-mono">

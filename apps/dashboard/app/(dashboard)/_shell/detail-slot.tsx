@@ -12,6 +12,21 @@ import { DealDetailContent } from '../crm/deals/[id]/_content';
 import { OrderDetailContent } from '../crm/orders/[id]/_content';
 import { QuoteDetailContent } from '../crm/quotes/[id]/_content';
 import { SegmentDetailContent } from '../crm/segments/[id]/_content';
+import { BundleDetailContent } from '../commerce/bundles/[id]/_content';
+import { CartDetailContent } from '../commerce/carts/[id]/_content';
+import { CollectionDetailContent } from '../commerce/collections/[id]/_content';
+import { ConfiguratorTemplateDetailContent } from '../commerce/configurator/[id]/_content';
+import { PriceListDetailContent } from '../commerce/pricing/[id]/_content';
+import { ProductDetailContent } from '../commerce/products/[id]/_content';
+import { ProviderInstallationDetailContent } from '../commerce/providers/[id]/_content';
+import { QuestionDetailContent } from '../commerce/qa/[id]/_content';
+import { ReturnDetailContent } from '../commerce/returns/[id]/_content';
+import { ReviewDetailContent } from '../commerce/reviews/[id]/_content';
+import { ShippingProfileDetailContent } from '../commerce/shipping/profiles/[id]/_content';
+import { ShippingZoneDetailContent } from '../commerce/shipping/zones/[id]/_content';
+import { SubscriptionDetailContent } from '../commerce/subscriptions/[id]/_content';
+import { TaxZoneDetailContent } from '../commerce/tax/zones/[id]/_content';
+import { WarehouseDetailContent } from '../commerce/warehouses/[id]/_content';
 
 // Server-only registry mapping a manifest entity type id → its detail content
 // component. These are React Server Components that fetch their own data
@@ -38,6 +53,22 @@ const detailComponents: Record<string, DetailComponent> = {
   quote: QuoteDetailContent,
   order: OrderDetailContent,
   segment: SegmentDetailContent,
+  // Commerce
+  product: ProductDetailContent,
+  collection: CollectionDetailContent,
+  warehouse: WarehouseDetailContent,
+  review: ReviewDetailContent,
+  'qa-question': QuestionDetailContent,
+  subscription: SubscriptionDetailContent,
+  return: ReturnDetailContent,
+  bundle: BundleDetailContent,
+  cart: CartDetailContent,
+  'provider-installation': ProviderInstallationDetailContent,
+  'price-list': PriceListDetailContent,
+  'configurator-template': ConfiguratorTemplateDetailContent,
+  'shipping-profile': ShippingProfileDetailContent,
+  'shipping-zone': ShippingZoneDetailContent,
+  'tax-zone': TaxZoneDetailContent,
 };
 
 // Renders the detail content for a given (typeId, id), or null when the type

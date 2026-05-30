@@ -1095,6 +1095,9 @@ importers:
       '@sparx/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@sparx/email':
+        specifier: workspace:*
+        version: link:../../packages/email
       '@sparx/events':
         specifier: workspace:*
         version: link:../../packages/events

@@ -110,12 +110,14 @@ export default async function BundlesPage() {
                   {bundles.map((b) => (
                     <TableRow key={b.id}>
                       <TableCell>
-                        <Link
+                        <EntityRowLink
                           href={`/commerce/bundles/${b.id}`}
+                          entityType="bundle"
+                          entityId={b.id}
                           className="hover:text-[var(--module-active)]"
                         >
                           {b.bundleProductTitle}
-                        </Link>
+                        </EntityRowLink>
                       </TableCell>
                       <TableCell>{b.componentCount}</TableCell>
                       <TableCell>

@@ -1,26 +1,26 @@
 import { notFound } from 'next/navigation';
-import { requireSession } from '@sparx/auth';
-import { withTenant } from '@sparx/db';
 import { Container, Heading, Stack, Text } from '@sparx/ui';
+import { api, type ApiRestError } from '@/lib/api-rest-client';
 import { GeneralForm } from './general-form';
 
-// First real database-backed dashboard page. Reads the merchant's tenant row
-// through withTenant() so the same connection that the rest of the app uses
-// for tenant-scoped queries goes through here. The tenants table itself has
-// no RLS (it's the dispatch table), but the WHERE id = session.tenantId means
-// even a misconfigured RLS policy could not leak other tenants.
+interface TenantCard {
+  id: string;
+  name: string;
+  email: string;
+  slug: string;
+  plan: string;
+}
+
+// First real database-backed dashboard page. Now reads the merchant's tenant
+// through api-rest (`GET /v1/tenant`) instead of Prisma directly — the
+// dashboard no longer touches the database.
 export default async function GeneralSettingsPage() {
-  const { user } = await requireSession();
-
-  const tenant = await withTenant({ tenantId: user.tenantId }, (tx) =>
-    tx.tenant.findUnique({
-      where: { id: user.tenantId },
-      select: { name: true, email: true, slug: true, plan: true },
-    })
-  );
-
-  if (!tenant) {
-    notFound();
+  let tenant: TenantCard;
+  try {
+    tenant = await api.get<TenantCard>('/v1/tenant');
+  } catch (err) {
+    if ((err as ApiRestError).status === 404) notFound();
+    throw err;
   }
 
   return (
@@ -30,7 +30,7 @@ export default async function GeneralSettingsPage() {
           <Heading level={1}>General settings</Heading>
           <Text variant="muted">Update how your merchant account presents itself.</Text>
         </Stack>
-        <GeneralForm tenant={tenant} />
+        <GeneralForm tenant={{ name: tenant.name, email: tenant.email, slug: tenant.slug, plan: tenant.plan }} />
       </Stack>
     </Container>
   );

@@ -174,12 +174,14 @@ function KindSection({
                   {installed.map((inst) => (
                     <TableRow key={inst.id}>
                       <TableCell>
-                        <Link
+                        <EntityRowLink
                           href={`/commerce/providers/${inst.id}`}
+                          entityType="provider-installation"
+                          entityId={inst.id}
                           className="font-medium hover:text-[var(--module-active)]"
                         >
                           {inst.providerSlug}
-                        </Link>
+                        </EntityRowLink>
                       </TableCell>
                       <TableCell>
                         {inst.label ?? (

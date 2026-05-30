@@ -101,6 +101,7 @@ function readModuleFlags(settings: unknown): Record<string, boolean> {
   return out;
 }
 
+// eslint-disable-next-line @typescript-eslint/require-await -- FastifyPluginAsync type demands async; no top-level await needed because route registration is sync.
 const tenantRoutes: FastifyPluginAsync = async (app) => {
   app.get('/v1/tenant', async (request) => {
     const auth = requireAuth(request);

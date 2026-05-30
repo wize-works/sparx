@@ -112,12 +112,14 @@ export default async function ConfiguratorPage() {
                         </Link>
                       </TableCell>
                       <TableCell>
-                        <Link
+                        <EntityRowLink
                           href={`/commerce/configurator/${t.id}`}
+                          entityType="configurator-template"
+                          entityId={t.id}
                           className="hover:text-[var(--module-active)]"
                         >
                           {t.name}
-                        </Link>
+                        </EntityRowLink>
                       </TableCell>
                       <TableCell>{t.optionCount}</TableCell>
                       <TableCell>{t.ruleCount}</TableCell>

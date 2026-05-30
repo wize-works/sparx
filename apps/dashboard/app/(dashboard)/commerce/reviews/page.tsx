@@ -129,12 +129,14 @@ export default async function ReviewsPage({
                         <Stars value={r.rating} />
                       </TableCell>
                       <TableCell>
-                        <Link
+                        <EntityRowLink
                           href={`/commerce/reviews/${r.id}`}
+                          entityType="review"
+                          entityId={r.id}
                           className="hover:text-[var(--module-active)]"
                         >
                           {r.title}
-                        </Link>
+                        </EntityRowLink>
                       </TableCell>
                       <TableCell>
                         <Text size="xs" className="font-mono">

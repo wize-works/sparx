@@ -24,6 +24,7 @@ import {
 } from '@sparx/ui';
 
 import { ModuleStub } from '../../../../components/module-stub';
+import { EntityRowLink } from '../../_components/entity-row-link';
 
 export const dynamic = 'force-dynamic';
 
@@ -112,12 +113,14 @@ export default async function QaPage({
                   {rows.map((q) => (
                     <TableRow key={q.id}>
                       <TableCell>
-                        <Link
+                        <EntityRowLink
                           href={`/commerce/qa/${q.id}`}
+                          entityType="qa-question"
+                          entityId={q.id}
                           className="hover:text-[var(--module-active)]"
                         >
                           {truncate(q.body, 80)}
-                        </Link>
+                        </EntityRowLink>
                       </TableCell>
                       <TableCell>
                         <Text size="xs" className="font-mono">

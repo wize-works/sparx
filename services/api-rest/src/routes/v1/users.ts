@@ -17,6 +17,7 @@ const ListQuery = z.object({
   take: z.coerce.number().int().min(1).max(500).optional(),
 });
 
+// eslint-disable-next-line @typescript-eslint/require-await -- FastifyPluginAsync type demands async; no top-level await needed because route registration is sync.
 const userRoutes: FastifyPluginAsync = async (app) => {
   app.get('/v1/users', async (request) => {
     const auth = requireAuth(request);

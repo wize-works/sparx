@@ -21,7 +21,7 @@
 
 import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
-import { prisma, type Prisma } from '@sparx/db';
+import { prisma } from '@sparx/db';
 import { withRequestTenant } from '@sparx/api-core/db';
 import { ok } from '@sparx/api-core/envelope';
 import { requireAuth } from '@sparx/api-core/auth';
@@ -68,6 +68,7 @@ function parsePreferences(raw: unknown): {
   };
 }
 
+// eslint-disable-next-line @typescript-eslint/require-await -- FastifyPluginAsync type demands async; no top-level await needed because route registration is sync.
 const meRoutes: FastifyPluginAsync = async (app) => {
   app.get('/v1/me/preferences', async (request) => {
     const auth = requireAuth(request);
@@ -89,7 +90,7 @@ const meRoutes: FastifyPluginAsync = async (app) => {
     const next = { ...current, ...input };
     await prisma.user.update({
       where: { id: auth.actorId },
-      data: { preferences: next as unknown as Prisma.InputJsonValue },
+      data: { preferences: next },
     });
     return ok(next);
   });

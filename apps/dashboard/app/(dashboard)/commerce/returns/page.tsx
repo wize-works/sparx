@@ -126,12 +126,14 @@ export default async function ReturnsPage({
                   {items.map((r) => (
                     <TableRow key={r.id}>
                       <TableCell>
-                        <Link
+                        <EntityRowLink
                           href={`/commerce/returns/${r.id}`}
+                          entityType="return"
+                          entityId={r.id}
                           className="font-mono text-xs hover:text-[var(--module-active)]"
                         >
                           {r.id.slice(0, 8)}
-                        </Link>
+                        </EntityRowLink>
                       </TableCell>
                       <TableCell>
                         <Text size="xs" className="font-mono">

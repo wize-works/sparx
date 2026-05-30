@@ -1,30 +1,21 @@
 import 'server-only';
-import { prisma, type Prisma } from '@sparx/db';
-import { DEFAULT_PREFERENCES, parsePreferences, type UserPreferences } from './preferences-types';
+import { api } from '@/lib/api-rest-client';
+import { DEFAULT_PREFERENCES, type UserPreferences } from './preferences-types';
 
-// Server-only DB access for per-user preferences. Client modules should
-// import types from `./preferences-types` instead — see the comment there.
+// Per-user preferences. Used to talk to Prisma directly; now forwards to
+// api-rest (`/v1/me/preferences`). Client modules should import types from
+// `./preferences-types` instead of this file — see the comment there.
 
 export { DEFAULT_PREFERENCES };
 export type { DefaultDetailView, UserPreferences } from './preferences-types';
 
-export async function getUserPreferences(userId: string): Promise<UserPreferences> {
-  const row = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { preferences: true },
-  });
-  return parsePreferences(row?.preferences);
+export async function getUserPreferences(_userId: string): Promise<UserPreferences> {
+  return api.get<UserPreferences>('/v1/me/preferences');
 }
 
 export async function setUserPreferences(
-  userId: string,
+  _userId: string,
   patch: Partial<UserPreferences>
 ): Promise<UserPreferences> {
-  const current = await getUserPreferences(userId);
-  const next: UserPreferences = { ...current, ...patch };
-  await prisma.user.update({
-    where: { id: userId },
-    data: { preferences: next as unknown as Prisma.InputJsonValue },
-  });
-  return next;
+  return api.patch<UserPreferences>('/v1/me/preferences', patch);
 }

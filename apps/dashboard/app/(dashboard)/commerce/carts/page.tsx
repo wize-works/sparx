@@ -128,12 +128,14 @@ export default async function CartsPage({
                   {carts.map((c) => (
                     <TableRow key={c.id}>
                       <TableCell>
-                        <Link
+                        <EntityRowLink
                           href={`/commerce/carts/${c.id}`}
+                          entityType="cart"
+                          entityId={c.id}
                           className="font-mono text-xs hover:text-[var(--module-active)]"
                         >
                           {c.id.slice(0, 8)}
-                        </Link>
+                        </EntityRowLink>
                       </TableCell>
                       <TableCell>
                         {c.customer?.email ? (

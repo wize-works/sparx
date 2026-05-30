@@ -25,6 +25,7 @@ import {
 } from '@sparx/ui';
 
 import { ModuleStub } from '../../../../components/module-stub';
+import { EntityRowLink } from '../../_components/entity-row-link';
 
 // Products index — list view + filter chips + search. Filters live in the
 // query string so saved views / shared links serialize cleanly.
@@ -189,12 +190,14 @@ export default async function ProductsPage({ searchParams }: PageProps) {
                     <TableRow key={p.id}>
                       <TableCell>
                         <Stack gap={1}>
-                          <Link
+                          <EntityRowLink
                             href={`/commerce/products/${p.id}`}
+                            entityType="product"
+                            entityId={p.id}
                             className="text-sm font-medium hover:text-[var(--module-active)] hover:underline"
                           >
                             {p.title}
-                          </Link>
+                          </EntityRowLink>
                           <Text size="xs" variant="muted">
                             /{p.handle}
                           </Text>
