@@ -18,7 +18,7 @@ import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
 
 import { cartService, discountService, type ServiceContext } from '@sparx/commerce';
-import { prisma, withTenant } from '@sparx/db';
+import { withTenant } from '@sparx/db';
 import { ok } from '@sparx/api-core/envelope';
 import { badRequest } from '@sparx/api-core/errors';
 
