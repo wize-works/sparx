@@ -141,18 +141,18 @@ function FitmentRowEditor({ row, productId }: { row: FitmentRow; productId: stri
   const [pending, startTransition] = React.useTransition();
   const [error, setError] = React.useState<string | null>(null);
 
-  function onDelete() {
+  async function onDelete() {
+    const label = `${row.makeName}${row.modelName ? ' / ' + row.modelName : ''}`;
+    const ok = await confirm({
+      title: `Remove fitment rule for ${label}?`,
+      description:
+        'This product will no longer appear when shoppers filter by this vehicle. Other fitment rules on this product are unaffected.',
+      confirmLabel: 'Remove rule',
+      tone: 'danger',
+    });
+    if (!ok) return;
+    setError(null);
     startTransition(async () => {
-      const label = `${row.makeName}${row.modelName ? ' / ' + row.modelName : ''}`;
-      const ok = await confirm({
-        title: `Remove fitment rule for ${label}?`,
-        description:
-          'This product will no longer appear when shoppers filter by this vehicle. Other fitment rules on this product are unaffected.',
-        confirmLabel: 'Remove rule',
-        tone: 'danger',
-      });
-      if (!ok) return;
-      setError(null);
       const result = await deleteFitmentAction(productId, row.id);
       if (!result.ok) {
         setError(result.error.message);
@@ -188,7 +188,7 @@ function FitmentRowEditor({ row, productId }: { row: FitmentRow; productId: stri
           type="button"
           variant="ghost"
           size="sm"
-          onClick={onDelete}
+          onClick={() => void onDelete()}
           disabled={pending}
           leftIcon={<Trash className="h-3.5 w-3.5" />}
         >

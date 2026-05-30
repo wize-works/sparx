@@ -27,16 +27,16 @@ export function ApiKeyRow({ apiKey }: ApiKeyRowProps) {
   const [pending, startTransition] = React.useTransition();
   const [error, setError] = React.useState<string | null>(null);
 
-  function onRevoke() {
+  async function onRevoke() {
+    const ok = await confirm({
+      title: `Revoke "${apiKey.name}"?`,
+      description: 'Any integration using this key will stop working immediately.',
+      confirmLabel: 'Revoke key',
+      tone: 'danger',
+    });
+    if (!ok) return;
+    setError(null);
     startTransition(async () => {
-      const ok = await confirm({
-        title: `Revoke "${apiKey.name}"?`,
-        description: 'Any integration using this key will stop working immediately.',
-        confirmLabel: 'Revoke key',
-        tone: 'danger',
-      });
-      if (!ok) return;
-      setError(null);
       const res = await revokeApiKeyAction(apiKey.id);
       if (!res.ok) setError(res.error.message);
     });
@@ -81,7 +81,7 @@ export function ApiKeyRow({ apiKey }: ApiKeyRowProps) {
           type="button"
           variant="ghost"
           size="sm"
-          onClick={onRevoke}
+          onClick={() => void onRevoke()}
           disabled={pending}
           loading={pending}
           aria-label={`Revoke ${apiKey.name}`}

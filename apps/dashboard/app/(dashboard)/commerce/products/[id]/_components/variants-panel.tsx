@@ -334,17 +334,17 @@ function VariantRowEditor({ variant, productId, valuesById, onChanged }: Variant
     });
   }
 
-  function archive() {
+  async function archive() {
+    const ok = await confirm({
+      title: `Archive variant ${variant.sku}?`,
+      description:
+        'Carts referencing this variant will fail to checkout. You can restore it from the archived list.',
+      confirmLabel: 'Archive variant',
+      tone: 'danger',
+    });
+    if (!ok) return;
+    setError(null);
     startTransition(async () => {
-      const ok = await confirm({
-        title: `Archive variant ${variant.sku}?`,
-        description:
-          'Carts referencing this variant will fail to checkout. You can restore it from the archived list.',
-        confirmLabel: 'Archive variant',
-        tone: 'danger',
-      });
-      if (!ok) return;
-      setError(null);
       const result = await archiveVariantAction(variant.id, productId);
       if (!result.ok) {
         setError(result.error.message);
@@ -437,7 +437,7 @@ function VariantRowEditor({ variant, productId, valuesById, onChanged }: Variant
               type="button"
               variant="ghost"
               size="sm"
-              onClick={archive}
+              onClick={() => void archive()}
               disabled={pending}
               leftIcon={<ArrowDownAZ className="h-3.5 w-3.5" />}
             >

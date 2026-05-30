@@ -67,17 +67,17 @@ export function AssetEditForm({
     });
   }
 
-  function onDelete() {
+  async function onDelete() {
+    const ok = await confirm({
+      title: 'Delete this asset?',
+      description: 'This cannot be undone — the file and every reference to it are removed.',
+      confirmLabel: 'Delete asset',
+      tone: 'danger',
+    });
+    if (!ok) return;
+    setError(null);
+    setMessage(null);
     startTransition(async () => {
-      const ok = await confirm({
-        title: 'Delete this asset?',
-        description: 'This cannot be undone — the file and every reference to it are removed.',
-        confirmLabel: 'Delete asset',
-        tone: 'danger',
-      });
-      if (!ok) return;
-      setError(null);
-      setMessage(null);
       const result = await deleteAsset(assetId);
       if (!result.ok) {
         setError(result.error);
@@ -177,7 +177,7 @@ export function AssetEditForm({
               type="button"
               variant="ghost"
               leftIcon={<Trash2 className="h-4 w-4" />}
-              onClick={onDelete}
+              onClick={() => void onDelete()}
               disabled={pending}
             >
               Delete

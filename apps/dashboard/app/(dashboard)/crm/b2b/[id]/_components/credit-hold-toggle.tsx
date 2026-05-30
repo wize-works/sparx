@@ -23,18 +23,18 @@ export function CreditHoldToggle({ accountId, currentStatus }: CreditHoldToggleP
   const [pending, startTransition] = React.useTransition();
   const onHold = currentStatus === 'credit_hold';
 
-  function toggle() {
+  async function toggle() {
     const next = onHold ? 'active' : 'credit_hold';
+    if (next === 'credit_hold') {
+      const ok = await confirm({
+        title: 'Put this account on credit hold?',
+        description: 'New orders and quotes will block until you release the hold.',
+        confirmLabel: 'Put on hold',
+        tone: 'warning',
+      });
+      if (!ok) return;
+    }
     startTransition(async () => {
-      if (next === 'credit_hold') {
-        const ok = await confirm({
-          title: 'Put this account on credit hold?',
-          description: 'New orders and quotes will block until you release the hold.',
-          confirmLabel: 'Put on hold',
-          tone: 'warning',
-        });
-        if (!ok) return;
-      }
       const result = await setB2bAccountStatusAction(accountId, next);
       if (!result.ok) {
         toast.error(result.error.message ?? 'Could not change status');
@@ -51,7 +51,7 @@ export function CreditHoldToggle({ accountId, currentStatus }: CreditHoldToggleP
     <Button
       variant={onHold ? 'module' : 'secondary'}
       size="sm"
-      onClick={toggle}
+      onClick={() => void toggle()}
       disabled={pending}
       leftIcon={onHold ? <Play className="h-3.5 w-3.5" /> : <Pause className="h-3.5 w-3.5" />}
     >

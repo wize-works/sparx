@@ -55,21 +55,23 @@ export function NewTemplateForm({ products }: { products: ProductOption[] }) {
       setError('Name is required');
       return;
     }
-    let parsed: { layout?: unknown; options?: unknown; rules?: unknown; addOns?: unknown };
+    let parsed: unknown;
     try {
       parsed = JSON.parse(json);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Invalid JSON');
       return;
     }
+    const obj =
+      parsed && typeof parsed === 'object' ? (parsed as Record<string, unknown>) : {};
     const payload = {
       productId,
       name: name.trim(),
       description: description.trim() || undefined,
-      layout: parsed.layout ?? {},
-      options: parsed.options ?? [],
-      rules: parsed.rules ?? [],
-      addOns: parsed.addOns ?? [],
+      layout: obj.layout ?? {},
+      options: obj.options ?? [],
+      rules: obj.rules ?? [],
+      addOns: obj.addOns ?? [],
     };
     startTransition(async () => {
       const result = await createTemplateAction(payload);
