@@ -155,7 +155,7 @@ export interface PublicFitmentDomain {
   displayName: string;
   description: string | null;
   iconKey: string | null;
-  labels: { l1: string; l2?: string; l3?: string; range?: string };
+  labels: { l1?: string; l2?: string; l3?: string; range?: string };
   rangeUnit: string | null;
   isGlobal: boolean;
 }
@@ -165,6 +165,20 @@ export interface PublicFitmentCategory {
   name: string;
   slug: string;
   iconMediaId: string | null;
+  isGlobal: boolean;
+}
+
+export interface PublicFitmentItem {
+  id: string;
+  name: string;
+  slug: string;
+  isGlobal: boolean;
+}
+
+export interface PublicFitmentVariant {
+  id: string;
+  name: string;
+  slug: string;
   isGlobal: boolean;
 }
 

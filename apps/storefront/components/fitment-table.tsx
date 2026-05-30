@@ -25,11 +25,11 @@ export function FitmentTable({ fitments, domainsBySlug }: FitmentTableProps) {
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
       {[...groups.entries()].map(([slug, rows]) => {
         const domain = domainsBySlug[slug];
-        const labels = domain?.labels ?? {};
-        const l1 = labels.l1 ?? 'Category';
-        const l2 = labels.l2 ?? 'Item';
-        const l3 = labels.l3 ?? 'Variant';
-        const rangeLabel = labels.range ?? 'Range';
+        const labels = domain?.labels;
+        const l1 = labels?.l1 ?? 'Category';
+        const l2 = labels?.l2 ?? 'Item';
+        const l3 = labels?.l3 ?? 'Variant';
+        const rangeLabel = labels?.range ?? 'Range';
 
         const showItem = rows.some((r) => r.item);
         const showVariant = rows.some((r) => r.variant);

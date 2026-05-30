@@ -38,9 +38,8 @@ const US_SHOES = Array.from({ length: 21 }, (_, i) => (5 + i * 0.5).toString());
 const EU_SHOES = Array.from({ length: 16 }, (_, i) => (35 + i).toString());
 
 export function FacetPanel({ action, domains, activeDomain, categories, values }: FacetPanelProps) {
-  const labels = activeDomain?.labels ?? {};
-  const categoryLabel = labels.l1 ?? 'Category';
-  const rangeLabel = labels.range ?? 'Range';
+  const categoryLabel = activeDomain?.labels?.l1 ?? 'Category';
+  const rangeLabel = activeDomain?.labels?.range ?? 'Range';
   const rangeUnit = activeDomain?.rangeUnit ?? null;
 
   return (
