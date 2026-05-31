@@ -5,8 +5,8 @@
 **Last Updated:** 2026-05-31
 
 > Implementation spec for **Phase 3** of the Site Builder redesign. The architecture contract is
-> [docs/30-sitebuilder-redesign.md](../30-sitebuilder-redesign.md) §4; this doc is the *how* and must
-> honor that *what*. The cross-session task tracker is
+> [docs/30-sitebuilder-redesign.md](../30-sitebuilder-redesign.md) §4; this doc is the _how_ and must
+> honor that _what_. The cross-session task tracker is
 > [docs/handoffs/sitebuilder-redesign-plan.md](sitebuilder-redesign-plan.md). Phase 2 (the unified
 > editor shell + Theme/Brand inspectors + in-canvas editing of **static** sections) is done and green;
 > this spec sits on that foundation. Phase 4 (assignment: default-mapping table + per-item override +
@@ -17,7 +17,7 @@
 ## 1. Goal & the one-sentence shape
 
 **Goal (doc 30 §12).** The storefront stops being half-hardcoded React. A **product** page and a
-**collection** page each become a *composable, scoped layout* the merchant edits in the same one-screen
+**collection** page each become a _composable, scoped layout_ the merchant edits in the same one-screen
 editor they already use for the homepage — with **bound** sections that pull from the page's assigned
 item at render. Day one, the seeded default layouts render **pixel-identical** to today's hardcoded
 PDP/PLP, so nothing visibly changes until a merchant chooses to edit.
@@ -39,17 +39,17 @@ backend is reused — generalized in subject (a layout is a scoped snapshot), un
 
 Confirmed by reading the current code. Every decision below is anchored here.
 
-| Concern | Today | File |
-| --- | --- | --- |
-| Section model | `SiteSection.pageKey` = `"home"` or a slug; flat, no template concept | [49-sitebuilder.prisma](../../packages/db/prisma/schema/49-sitebuilder.prisma) `model SiteSection` |
-| Registry | Flat `Record<SectionType, SectionDefinition>`; 7 **static** types; no scope field | [section-registry.ts](../../packages/sitebuilder-schemas/src/section-registry.ts) |
-| Storefront render seam | `SectionRenderer` switches on `sectionType`; `SectionContext = { tenantSlug, currency, locale }`; unknown types skipped | [section-renderer.tsx](../../apps/storefront/components/section-renderer.tsx) |
-| Home composition | `sectionsForPage(snapshot, 'home')` → `SectionRenderer`; empty-store fallback is composed-commerce JSX | [app/page.tsx](../../apps/storefront/app/page.tsx), [lib/site.ts](../../apps/storefront/lib/site.ts) |
-| PDP | 100% hardcoded JSX: `<ProductDetail>` (gallery+variants+add-to-cart, client) + description + `<FitmentTable>` + reviews (`<RatingStars>`/`<ReviewForm>`) + Q&A (`<QuestionForm>`) + related rail. Loads `getProduct`, `listRelatedProducts`, `listProductQuestions`, `listFitmentDomains`. Emits Product/Breadcrumb JSON-LD. | [products/[handle]/page.tsx](../../apps/storefront/app/products/[handle]/page.tsx) |
-| PLP | Hardcoded JSX: breadcrumbs + hero `<header>` + count toolbar + `<ProductGrid>` + `<Pagination>`. Loads `getCollection`, `listCollectionProducts`. | [collections/[handle]/page.tsx](../../apps/storefront/app/collections/[handle]/page.tsx) |
-| Publish snapshot | `PublishedSnapshot.sections[]` keyed by `pageKey`; `readDraft` orders by `(pageKey, position)`; `SiteVersion.sectionsSnapshot` is opaque JSON | [publish-internals.ts](../../packages/sitebuilder/src/services/publish-internals.ts) |
-| Section CRUD | `sectionService` keys everything by `pageKey` (`list`, `create`, `reorder`) | [section-service.ts](../../packages/sitebuilder/src/services/section-service.ts) |
-| Binding surface | `PublicProduct` (options, variants, images, fitments + list fields), `PublicCollection`, `PublicQuestion`, `PublicFitmentDomain` | [lib/commerce.ts](../../apps/storefront/lib/commerce.ts) |
+| Concern                | Today                                                                                                                                                                                                                                                                                                                        | File                                                                                                 |
+| ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| Section model          | `SiteSection.pageKey` = `"home"` or a slug; flat, no template concept                                                                                                                                                                                                                                                        | [49-sitebuilder.prisma](../../packages/db/prisma/schema/49-sitebuilder.prisma) `model SiteSection`   |
+| Registry               | Flat `Record<SectionType, SectionDefinition>`; 7 **static** types; no scope field                                                                                                                                                                                                                                            | [section-registry.ts](../../packages/sitebuilder-schemas/src/section-registry.ts)                    |
+| Storefront render seam | `SectionRenderer` switches on `sectionType`; `SectionContext = { tenantSlug, currency, locale }`; unknown types skipped                                                                                                                                                                                                      | [section-renderer.tsx](../../apps/storefront/components/section-renderer.tsx)                        |
+| Home composition       | `sectionsForPage(snapshot, 'home')` → `SectionRenderer`; empty-store fallback is composed-commerce JSX                                                                                                                                                                                                                       | [app/page.tsx](../../apps/storefront/app/page.tsx), [lib/site.ts](../../apps/storefront/lib/site.ts) |
+| PDP                    | 100% hardcoded JSX: `<ProductDetail>` (gallery+variants+add-to-cart, client) + description + `<FitmentTable>` + reviews (`<RatingStars>`/`<ReviewForm>`) + Q&A (`<QuestionForm>`) + related rail. Loads `getProduct`, `listRelatedProducts`, `listProductQuestions`, `listFitmentDomains`. Emits Product/Breadcrumb JSON-LD. | [products/[handle]/page.tsx](../../apps/storefront/app/products/[handle]/page.tsx)                   |
+| PLP                    | Hardcoded JSX: breadcrumbs + hero `<header>` + count toolbar + `<ProductGrid>` + `<Pagination>`. Loads `getCollection`, `listCollectionProducts`.                                                                                                                                                                            | [collections/[handle]/page.tsx](../../apps/storefront/app/collections/[handle]/page.tsx)             |
+| Publish snapshot       | `PublishedSnapshot.sections[]` keyed by `pageKey`; `readDraft` orders by `(pageKey, position)`; `SiteVersion.sectionsSnapshot` is opaque JSON                                                                                                                                                                                | [publish-internals.ts](../../packages/sitebuilder/src/services/publish-internals.ts)                 |
+| Section CRUD           | `sectionService` keys everything by `pageKey` (`list`, `create`, `reorder`)                                                                                                                                                                                                                                                  | [section-service.ts](../../packages/sitebuilder/src/services/section-service.ts)                     |
+| Binding surface        | `PublicProduct` (options, variants, images, fitments + list fields), `PublicCollection`, `PublicQuestion`, `PublicFitmentDomain`                                                                                                                                                                                             | [lib/commerce.ts](../../apps/storefront/lib/commerce.ts)                                             |
 
 **Key realization:** the storefront already owns presentational components for every bound section the
 screenshot shows (`ProductDetail`, `FitmentTable`, `RatingStars`, `ReviewForm`, `QuestionForm`,
@@ -121,8 +121,8 @@ then prod via `gh workflow run db-migrate.yml` (Cloud SQL is private-IP only —
 migration is **data-driven** so it is correct regardless of which `pageKey`s exist in a tenant's data:
 
 1. `CREATE TABLE sitebuilder_templates (…)` + `ENABLE ROW LEVEL SECURITY` + `FORCE ROW LEVEL SECURITY`
-   + `CREATE POLICY sitebuilder_templates_tenant_isolation … USING (tenant_id = current_tenant_id())`.
-   (Mirror the established pattern — see [feedback_sparx_db_rls_pattern]; Prisma does not generate RLS.)
+   - `CREATE POLICY sitebuilder_templates_tenant_isolation … USING (tenant_id = current_tenant_id())`.
+     (Mirror the established pattern — see [feedback_sparx_db_rls_pattern]; Prisma does not generate RLS.)
 2. **Backfill templates from existing sections:**
    ```sql
    INSERT INTO sitebuilder_templates (id, tenant_id, scope, key, name)
@@ -148,7 +148,7 @@ behavior. The down-migration recreates `page_key` from `template.key`/`scope`.
 
 `SiteVersion.sectionsSnapshot` stays opaque JSON; we **enrich the SectionSnapshot shape** rather than
 add a column (§9 of doc 30: "a layout is just another versioned, scoped snapshot"). Each snapshotted
-section gains `scope` + `templateKey` (and `templateId`); legacy `pageKey` is dropped from *new*
+section gains `scope` + `templateKey` (and `templateId`); legacy `pageKey` is dropped from _new_
 snapshots but still **read** from old ones via a back-compat shim (§6.4). `readDraft` joins
 `SiteSection → SiteTemplate`; `toPublishedSnapshot` reads the enriched shape. No new column, old
 versions stay renderable, rollback unchanged.
@@ -164,8 +164,8 @@ versions stay renderable, rollback unchanged.
 service-side validation (reject a `product-buy-box` dropped into a `home` template).
 
 - **Static sections** (the existing 7) are allowed **everywhere**: `scopes: ['home','product',
-  'collection','cms-page','custom']`. Per doc 30 §4.2, "static" denotes a section's *default content
-  source*, not a wall — a hero can live above a product buy-box.
+'collection','cms-page','custom']`. Per doc 30 §4.2, "static" denotes a section's _default content
+  source_, not a wall — a hero can live above a product buy-box.
 - **Bound sections** are scope-locked to exactly the scope whose data they resolve.
 
 ```ts
@@ -177,7 +177,7 @@ export interface SectionDefinition {
   label: string;
   description: string;
   icon: string;
-  scopes: Scope[];        // NEW — which scopes may contain this section
+  scopes: Scope[]; // NEW — which scopes may contain this section
   binding?: 'product' | 'collection'; // NEW — set on bound sections; drives the binding context
   schema: z.ZodType;
   fields: SectionField[];
@@ -186,25 +186,25 @@ export interface SectionDefinition {
 
 ### 4.2 v1 bound section types
 
-Config schemas hold **presentation options only** — the *data* arrives from the binding context at
+Config schemas hold **presentation options only** — the _data_ arrives from the binding context at
 render (doc 30 §4.2). Each maps onto an existing storefront component (the parity lever).
 
 **`product` scope** (binding: `product`):
 
-| Type | Renders (existing component) | Config (presentation only) | Resolves from |
-| --- | --- | --- | --- |
-| `product-buy-box` | `<ProductDetail>` (gallery + title + price + variants + add-to-cart, **client**) | `galleryLayout` (stacked\|thumbs-left\|thumbs-below), `stickyBuyBox` (bool), `showSku`, `showVendor` | `product.{title,images,variants,options,price*,inStock}` |
-| `product-description` | description block (today's "Details") | `heading` (default "Details"), `showHeadingWhenEmpty` (bool) | `product.description` |
-| `product-fitment` | `<FitmentTable>` | `heading` (default "Compatibility") | `product.fitments` + `fitmentDomainsBySlug` |
-| `product-reviews` | `<RatingStars>` + `<ReviewForm>` | `heading`, `showForm` (bool), `emptyText` | `product.{averageRating,reviewCount}` + form |
-| `product-questions` | Q&A list + `<QuestionForm>` | `heading`, `showForm`, `emptyText` | `productExtras.questions` |
-| `product-related` | related rail of `<ProductCard>` | `heading` (default "You may also like"), `limit` (default 4) | `productExtras.related` |
+| Type                  | Renders (existing component)                                                     | Config (presentation only)                                                                           | Resolves from                                            |
+| --------------------- | -------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- | -------------------------------------------------------- |
+| `product-buy-box`     | `<ProductDetail>` (gallery + title + price + variants + add-to-cart, **client**) | `galleryLayout` (stacked\|thumbs-left\|thumbs-below), `stickyBuyBox` (bool), `showSku`, `showVendor` | `product.{title,images,variants,options,price*,inStock}` |
+| `product-description` | description block (today's "Details")                                            | `heading` (default "Details"), `showHeadingWhenEmpty` (bool)                                         | `product.description`                                    |
+| `product-fitment`     | `<FitmentTable>`                                                                 | `heading` (default "Compatibility")                                                                  | `product.fitments` + `fitmentDomainsBySlug`              |
+| `product-reviews`     | `<RatingStars>` + `<ReviewForm>`                                                 | `heading`, `showForm` (bool), `emptyText`                                                            | `product.{averageRating,reviewCount}` + form             |
+| `product-questions`   | Q&A list + `<QuestionForm>`                                                      | `heading`, `showForm`, `emptyText`                                                                   | `productExtras.questions`                                |
+| `product-related`     | related rail of `<ProductCard>`                                                  | `heading` (default "You may also like"), `limit` (default 4)                                         | `productExtras.related`                                  |
 
 **`collection` scope** (binding: `collection`):
 
-| Type | Renders (existing component) | Config | Resolves from |
-| --- | --- | --- | --- |
-| `collection-header` | hero image + name + description `<header>` | `showDescription` (bool), `overlayStyle` | `collection.{name,description,heroMediaId}` |
+| Type                  | Renders (existing component)                     | Config                                                                       | Resolves from                                 |
+| --------------------- | ------------------------------------------------ | ---------------------------------------------------------------------------- | --------------------------------------------- |
+| `collection-header`   | hero image + name + description `<header>`       | `showDescription` (bool), `overlayStyle`                                     | `collection.{name,description,heroMediaId}`   |
 | `collection-products` | count toolbar + `<ProductGrid>` + `<Pagination>` | `perPage` (default 24), `showCount` (bool), `showSort` (bool, deferred-rich) | `collectionExtras.{items,total,page,perPage}` |
 
 Granularity rationale: the buy-box stays one section (gallery+variants+cart are one client unit today
@@ -218,8 +218,8 @@ keeps `generateMetadata` and structured data out of the section model.
 
 ### 4.3 Two senses of "bound" (doc 30 §4.2, preserved)
 
-*Style* is always bound for **every** section (static or bound) via the `--sf-*` tokens already
-injected by the theme — Phase 3 changes nothing here. *Content* binding is what `binding` denotes: a
+_Style_ is always bound for **every** section (static or bound) via the `--sf-*` tokens already
+injected by the theme — Phase 3 changes nothing here. _Content_ binding is what `binding` denotes: a
 bound section's **default** data source is the assigned item. The editor's static/bound legend is a
 teaching device for content source, not a hardcoded-vs-dynamic wall.
 
@@ -270,7 +270,12 @@ export interface SectionContext {
   };
   // Present only when rendering a `collection`-scope template:
   collection?: PublicCollection;
-  collectionExtras?: { items: PublicProductListItem[]; total: number; page: number; perPage: number };
+  collectionExtras?: {
+    items: PublicProductListItem[];
+    total: number;
+    page: number;
+    perPage: number;
+  };
 }
 ```
 
@@ -368,7 +373,7 @@ Per deploy-early/deploy-small. The risky storefront cutover (3.2) ships and bake
 can edit (3.3), and **parity is verifiable before edit exists**.
 
 - **3.0 — Schema + migration.** `SiteTemplate` + re-key `SiteSection`; hand-edited RLS; data-driven
-  backfill; service/api re-key. *Backward-safe:* home still renders; no storefront behavior change. Ship.
+  backfill; service/api re-key. _Backward-safe:_ home still renders; no storefront behavior change. Ship.
 - **3.1 — Registry: scopes + bound schemas.** Add `scopes`/`binding` to `SectionDefinition`, the bound
   section Zod schemas + fields, `sectionsForScope`, `DEFAULT_TEMPLATES`. Pure additive; no runtime
   wiring yet. Ship (covered by `section-registry.test.ts` extensions).
@@ -406,8 +411,8 @@ Explicitly **not** built here (these are the screenshot's "applies to" surface):
 - The **per-item override** pointer on Commerce/CMS records (Open Q 13.1: nullable FK vs module-owned
   assignment table).
 - The storefront **resolver cascade** (`item/group override → type default → seeded scope default →
-  safety fallback`). Phase 3's resolver is the trivial case: *the single template for the scope, else
-  the code default.*
+safety fallback`). Phase 3's resolver is the trivial case: _the single template for the scope, else
+  the code default._
 - The **"Layout: [template ▾]"** control in the Commerce product editor / CMS entry editor.
 - More than one named layout per scope (Phase 3 ships exactly the `default`).
 
@@ -420,12 +425,12 @@ generalizes into the cascade with no change to the bound section family or rende
 
 1. **Migration drops `page_key`.** §3.3 re-keys cleanly (template `key` preserves the slug; §6.4 shim
    keeps old snapshots renderable). The alternative — keep `page_key` as a denormalized mirror
-   alongside `template_id` — avoids the irreversible drop but leaves two sources of truth. *Lean: drop
-   it.* Confirm.
-2. **Code-defined defaults (§5) vs seeded rows.** *Lean: code-defined* (no-rows-until-used, exact
+   alongside `template_id` — avoids the irreversible drop but leaves two sources of truth. _Lean: drop
+   it._ Confirm.
+2. **Code-defined defaults (§5) vs seeded rows.** _Lean: code-defined_ (no-rows-until-used, exact
    parity, no per-tenant data migration). Confirm — this is the load-bearing call for the whole phase.
 3. **Snapshot shape: enrich `SectionSnapshot` (scope/templateKey) vs add a `templatesSnapshot`
-   column.** *Lean: enrich the existing JSON* (no column, old versions stay renderable, matches doc 30
+   column.** _Lean: enrich the existing JSON_ (no column, old versions stay renderable, matches doc 30
    §9). Confirm.
 
 All three honor doc 30; none reopen the contract. With sign-off, the build order is §9.
