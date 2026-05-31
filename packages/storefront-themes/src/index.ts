@@ -10,3 +10,7 @@ export * from './types';
 export * from './tokens';
 export * from './presets';
 export * from './compile';
+
+// Token Model v2 (docs/33-token-model-v2.md). Distinct names from v1; both are
+// exported during the build-out (the storefront read path cuts over in §3).
+export * from './v2';

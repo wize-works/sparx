@@ -9,31 +9,94 @@
    ────────────────────────────────────────────────────────────── */
 
 :root {
-  /* ── Theme tokens (merchant-overridable) ───────────────────── */
-  --sf-primary: var(--sparx-primary);
-  --sf-primary-hover: color-mix(in srgb, var(--sf-primary) 86%, black);
-  --sf-on-primary: #ffffff;
-  --sf-accent: var(--sf-primary);
-  --sf-bg: var(--color-bg-page);
-  --sf-surface: var(--color-bg-surface);
-  --sf-bg-subtle: var(--color-bg-subtle);
-  --sf-border: var(--color-border-default);
-  --sf-border-strong: var(--color-border-strong);
-  --sf-text: var(--color-text-primary);
-  --sf-text-secondary: var(--color-text-secondary);
-  --sf-text-muted: var(--color-text-muted);
+  /* ── Token Model v2 fallbacks (docs/33-token-model-v2.md) ─────
+     The injected per-tenant <style> (buildThemeCssV2) overrides these with the
+     compiled theme. These are the UN-THEMED defaults so a tenant-less / pre-
+     injection render still looks right. Canonical `--sf-*` names; a few legacy
+     aliases remain for rules not yet migrated. */
 
+  /* Brand identity */
+  --sf-primary: var(--sparx-primary);
+  --sf-primary-content: #ffffff;
+  --sf-primary-hover: color-mix(in oklab, var(--sf-primary) 86%, black);
+  --sf-primary-active: color-mix(in oklab, var(--sf-primary) 74%, black);
+  --sf-primary-tint: color-mix(in oklab, var(--sf-primary) 8%, transparent);
+  --sf-secondary: var(--sf-primary);
+  --sf-secondary-content: #ffffff;
+  --sf-accent: var(--sf-primary);
+  --sf-accent-content: #ffffff;
+  --sf-accent-tint: color-mix(in oklab, var(--sf-accent) 8%, transparent);
+
+  /* Surfaces + line */
+  --sf-base-100: var(--color-bg-page);
+  --sf-base-200: var(--color-bg-surface);
+  --sf-base-300: var(--color-bg-subtle);
+  --sf-base-content: var(--color-text-primary);
+  --sf-neutral: var(--color-text-primary);
+  --sf-neutral-content: #ffffff;
+  --sf-border: var(--color-border-default);
+
+  /* Status (themeable; default to the @sparx/ui globals) */
+  --sf-info: var(--color-info, #0284c7);
+  --sf-info-content: #ffffff;
+  --sf-success: var(--color-success);
+  --sf-success-content: #ffffff;
+  --sf-warning: var(--color-warning);
+  --sf-warning-content: #0a0a0a;
+  --sf-danger: var(--color-danger);
+  --sf-danger-content: #ffffff;
+
+  /* Type */
   --sf-font-fallback: 'Geist', 'Inter', system-ui, -apple-system, sans-serif;
   --sf-font-body: var(--font-sans);
   --sf-font-heading: var(--font-sans);
 
-  --sf-radius: 14px;
-  --sf-radius-sm: calc(var(--sf-radius) * 0.5);
-  --sf-radius-lg: calc(var(--sf-radius) * 1.4);
+  /* Shape — radius trio + border width */
+  --sf-radius-field: 0.5rem;
+  --sf-radius-box: 0.875rem;
+  --sf-radius-selector: 9999px;
+  --sf-border-width: 1px;
 
-  --sf-shadow-sm: 0 1px 2px rgb(0 0 0 / 0.04), 0 1px 3px rgb(0 0 0 / 0.06);
-  --sf-shadow-md: 0 4px 12px -2px rgb(0 0 0 / 0.08), 0 2px 6px -2px rgb(0 0 0 / 0.05);
-  --sf-shadow-lg: 0 18px 40px -12px rgb(0 0 0 / 0.18);
+  /* Rhythm — spacing scale (derived from the base unit) + control sizes */
+  --sf-space-base: 0.25rem;
+  --sf-space-1: var(--sf-space-base);
+  --sf-space-2: calc(var(--sf-space-base) * 2);
+  --sf-space-3: calc(var(--sf-space-base) * 3);
+  --sf-space-4: calc(var(--sf-space-base) * 4);
+  --sf-space-5: calc(var(--sf-space-base) * 5);
+  --sf-space-6: calc(var(--sf-space-base) * 6);
+  --sf-space-8: calc(var(--sf-space-base) * 8);
+  --sf-space-10: calc(var(--sf-space-base) * 10);
+  --sf-space-12: calc(var(--sf-space-base) * 12);
+  --sf-space-16: calc(var(--sf-space-base) * 16);
+  --sf-size-field: 2.75rem;
+  --sf-size-selector: 2rem;
+
+  /* Effect — depth scales the shadow alphas */
+  --sf-depth: 1;
+  --sf-shadow-sm:
+    0 1px 2px rgb(0 0 0 / calc(0.04 * var(--sf-depth))),
+    0 1px 3px rgb(0 0 0 / calc(0.06 * var(--sf-depth)));
+  --sf-shadow-md:
+    0 4px 12px -2px rgb(0 0 0 / calc(0.08 * var(--sf-depth))),
+    0 2px 6px -2px rgb(0 0 0 / calc(0.05 * var(--sf-depth)));
+  --sf-shadow-lg: 0 18px 40px -12px rgb(0 0 0 / calc(0.18 * var(--sf-depth)));
+
+  /* Derived text tiers + strong border (follow the canonical bases) */
+  --sf-text-secondary: color-mix(in oklab, var(--sf-base-content) 78%, var(--sf-base-100));
+  --sf-text-muted: color-mix(in oklab, var(--sf-base-content) 55%, var(--sf-base-100));
+  --sf-text-tertiary: color-mix(in oklab, var(--sf-base-content) 40%, var(--sf-base-100));
+  --sf-border-strong: color-mix(in oklab, var(--sf-border), var(--sf-base-content) 35%);
+
+  /* Legacy aliases (kept for rules not yet migrated to canonical names) */
+  --sf-bg: var(--sf-base-100);
+  --sf-surface: var(--sf-base-200);
+  --sf-bg-subtle: var(--sf-base-300);
+  --sf-text: var(--sf-base-content);
+  --sf-on-primary: var(--sf-primary-content);
+  --sf-radius: var(--sf-radius-box);
+  --sf-radius-sm: var(--sf-radius-field);
+  --sf-radius-lg: var(--sf-radius-box);
 
   --sf-ease: cubic-bezier(0.4, 0, 0.2, 1);
   --sf-gutter: clamp(20px, 5vw, 64px);
@@ -116,8 +179,9 @@
   font-size: 0.95rem;
   line-height: 1;
   padding: 0.85rem 1.5rem;
-  border-radius: var(--sf-radius-sm);
-  border: 1px solid transparent;
+  min-height: var(--sf-size-field);
+  border-radius: var(--sf-radius-field);
+  border: var(--sf-border-width) solid transparent;
   cursor: pointer;
   text-decoration: none;
   transition:
@@ -508,13 +572,13 @@
   letter-spacing: 0.04em;
   text-transform: uppercase;
   padding: 0.3rem 0.55rem;
-  border-radius: var(--sf-radius-sm);
-  background: var(--sf-text);
-  color: var(--sf-bg);
+  border-radius: var(--sf-radius-selector);
+  background: var(--sf-neutral);
+  color: var(--sf-neutral-content);
 }
 .sf-badge--sale {
-  background: var(--color-danger);
-  color: #fff;
+  background: var(--sf-danger);
+  color: var(--sf-danger-content);
 }
 .sf-badge--out {
   background: var(--sf-bg-muted, #e4e4e7);
@@ -630,8 +694,9 @@
   font: inherit;
   font-size: 0.88rem;
   padding: 0.55rem 0.95rem;
-  border-radius: var(--sf-radius-sm);
-  border: 1px solid var(--sf-border-strong);
+  min-height: var(--sf-size-selector);
+  border-radius: var(--sf-radius-selector);
+  border: var(--sf-border-width) solid var(--sf-border-strong);
   background: var(--sf-surface);
   color: var(--sf-text);
   cursor: pointer;
@@ -680,10 +745,10 @@
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: var(--color-success);
+  background: var(--sf-success);
 }
 .sf-stock--low .sf-stock__dot {
-  background: var(--color-warning);
+  background: var(--sf-warning);
 }
 .sf-stock--out {
   color: var(--sf-text-muted);
@@ -696,13 +761,13 @@
 .sf-qty {
   display: inline-flex;
   align-items: center;
-  border: 1px solid var(--sf-border-strong);
-  border-radius: var(--sf-radius-sm);
+  border: var(--sf-border-width) solid var(--sf-border-strong);
+  border-radius: var(--sf-radius-field);
   overflow: hidden;
 }
 .sf-qty button {
   width: 40px;
-  height: 44px;
+  height: var(--sf-size-field);
   border: none;
   background: var(--sf-surface);
   color: var(--sf-text);
@@ -715,9 +780,9 @@
 }
 .sf-qty input {
   width: 44px;
-  height: 44px;
+  height: var(--sf-size-field);
   border: none;
-  border-inline: 1px solid var(--sf-border);
+  border-inline: var(--sf-border-width) solid var(--sf-border);
   text-align: center;
   font: inherit;
   background: var(--sf-surface);
@@ -780,8 +845,9 @@
   font: inherit;
   font-size: 0.9rem;
   padding: 0.55rem 2rem 0.55rem 0.85rem;
-  border-radius: var(--sf-radius-sm);
-  border: 1px solid var(--sf-border-strong);
+  min-height: var(--sf-size-field);
+  border-radius: var(--sf-radius-field);
+  border: var(--sf-border-width) solid var(--sf-border-strong);
   background: var(--sf-surface);
   color: var(--sf-text);
   cursor: pointer;
@@ -1218,8 +1284,9 @@
   font: inherit;
   font-size: 0.95rem;
   padding: 0.7rem 0.85rem;
-  border-radius: var(--sf-radius-sm);
-  border: 1px solid var(--sf-border-strong);
+  min-height: var(--sf-size-field);
+  border-radius: var(--sf-radius-field);
+  border: var(--sf-border-width) solid var(--sf-border-strong);
   background: var(--sf-surface);
   color: var(--sf-text);
   width: 100%;
@@ -1311,7 +1378,7 @@
   color: var(--sf-on-primary);
 }
 .sf-steps__item[data-state='done'] .sf-steps__dot {
-  background: var(--color-success);
+  background: var(--sf-success);
   color: #fff;
 }
 .sf-alert {
@@ -1322,7 +1389,7 @@
 .sf-alert--error {
   background: var(--color-danger-tint);
   color: var(--color-danger-text);
-  border: 1px solid color-mix(in srgb, var(--color-danger) 30%, transparent);
+  border: var(--sf-border-width) solid color-mix(in oklab, var(--sf-danger) 30%, transparent);
 }
 
 /* ── Account ───────────────────────────────────────────────── */
@@ -1415,8 +1482,8 @@
   border-color: var(--sf-primary);
 }
 .sf-wishbtn.is-saved {
-  color: var(--color-danger, #e1135b);
-  border-color: color-mix(in srgb, var(--color-danger, #e1135b) 40%, transparent);
+  color: var(--sf-danger);
+  border-color: color-mix(in oklab, var(--sf-danger) 40%, transparent);
 }
 .sf-wishbtn:focus-visible {
   outline: 2px solid var(--sf-primary);

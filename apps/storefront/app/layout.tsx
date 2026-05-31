@@ -16,7 +16,6 @@ import { cookies } from 'next/headers';
 import { GeistSans } from 'geist/font/sans';
 import { GeistMono } from 'geist/font/mono';
 
-import { tokensToCss } from '@sparx/storefront-themes';
 import type { HeaderConfig, FooterConfig, AnnouncementConfig } from '@sparx/sitebuilder-schemas';
 
 import { CartProvider } from '@/components/cart-provider';
@@ -28,8 +27,8 @@ import { SiteHeader, type NavItem } from '@/components/site-header';
 import { SiteFooter, type FooterColumn } from '@/components/site-footer';
 import { listCollections } from '@/lib/commerce';
 import { mediaUrl } from '@/lib/media';
-import { resolveTenant } from '@/lib/tenant';
-import { themeToCss } from '@/lib/theme';
+import { resolveTenant, type TenantTheme } from '@/lib/tenant';
+import { buildStorefrontThemeCss } from '@/lib/theme';
 import {
   getPublishedSite,
   getNavigationMenu,
@@ -58,18 +57,24 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 // ── Theme CSS ──────────────────────────────────────────────────────────────
+//
+// Compiled by the Token Model v2 engine (docs/33-token-model-v2.md). The theme
+// key comes from the published snapshot when present, else the tenant's preset;
+// brand identity + presentation surfaces are sourced from the data the layout
+// already fetched. buildStorefrontThemeCss emits the canonical `--sf-*` tokens
+// plus the legacy aliases the current storefront.css still reads.
 
 function buildThemeCss(
   snapshot: PublishedSnapshot | null,
-  theme: Parameters<typeof themeToCss>[0],
+  theme: TenantTheme | null,
   preset: string | null | undefined
 ): string {
-  if (snapshot) {
-    const light = tokensToCss(snapshot.compiledTokens.light);
-    const dark = tokensToCss(snapshot.compiledTokens.dark);
-    return `${light ? `:root{${light}}` : ''}${dark ? `[data-theme="dark"]{${dark}}` : ''}`;
-  }
-  return themeToCss(theme, preset);
+  const themeKey = snapshot?.themeKey ?? preset ?? 'apex';
+  return buildStorefrontThemeCss({
+    themeKey,
+    tenantTheme: theme,
+    snapshotTokens: snapshot?.compiledTokens ?? null,
+  });
 }
 
 // Inline, before-paint script that resolves data-theme for policies that can't
