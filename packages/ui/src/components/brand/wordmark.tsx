@@ -49,10 +49,13 @@ export function Wordmark({ size = 22, icon = false, className, style, ...rest }:
       }}
       {...rest}
     >
-      {icon ? <SparxMark size={Math.round(size * 1.18)} /> : null}
-      <span>
-        Spar<span style={{ color: 'var(--sparx-primary)' }}>x</span>
-      </span>
+      {icon ? (
+        <SparxMark size={Math.round(size * 1.18)} />
+      ) : (
+        <span>
+          Spar<span style={{ color: 'var(--sparx-primary)' }}>x</span>
+        </span>
+      )}
     </span>
   );
 }

@@ -102,7 +102,7 @@ export function RailNav({ pathname, enabledModules, favorites, recents }: RailNa
       <div
         className={`flex items-center ${expanded ? 'w-full gap-2 px-2 py-1' : 'justify-center'}`}
       >
-        <Wordmark className={expanded ? 'h-5 w-auto' : 'h-5 w-5'} />
+        <Wordmark icon={expanded ? false : true} className={expanded ? 'h-5 w-auto' : 'h-5 w-5'} />
       </div>
 
       <button
