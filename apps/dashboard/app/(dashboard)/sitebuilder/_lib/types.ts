@@ -2,7 +2,7 @@
 // interfaces (not the Prisma row types) so client components can import them
 // without pulling the service package / Prisma into the browser bundle.
 
-import type { PresentationOverlayV2, ThemePreset } from '@sparx/storefront-themes';
+import type { BrandTokenDoc, PresentationOverlayV2, ThemePreset } from '@sparx/storefront-themes';
 
 export type ThemeDto = ThemePreset;
 
@@ -87,6 +87,9 @@ export interface BrandDto {
   colorAccent: string | null;
   fontHeading: string | null;
   fontBody: string | null;
+  // Brand-owned Token Model v2 shape/rhythm/effect (docs/33). Null = inherit the
+  // theme preset. Colour/type stay in the dedicated fields above.
+  tokens: BrandTokenDoc | null;
   socials: Record<string, string>;
 }
 

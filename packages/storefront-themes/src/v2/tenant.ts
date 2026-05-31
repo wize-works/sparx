@@ -14,19 +14,27 @@ import { compileTokensV2 } from './compile';
 import { getThemePresetV2 } from '../presets/v2';
 import type { BrandTokenDoc, CompiledThemeV2, PresentationOverlayV2 } from './types';
 
-/** Tenant brand identity as stored in the TenantBrand columns (the subset the
- *  v2 engine consumes; selected by publish-service and returned by /v1/brand). */
+/** Tenant brand as stored in the TenantBrand columns + the `tokens` JSONB (the
+ *  subset the v2 engine consumes; selected by publish-service and returned by
+ *  /v1/brand). Colour/type are dedicated columns; shape/rhythm/effect live in
+ *  the `tokens` doc — one source of truth per axis. */
 export interface TenantBrandColumns {
   colorPrimary?: string | null;
   colorPrimaryForeground?: string | null;
   colorAccent?: string | null;
   fontHeading?: string | null;
   fontBody?: string | null;
+  // Partial BrandTokenDoc (shape/rhythm/effect branches). `unknown` because it
+  // arrives untyped from Prisma JSONB / the brand API; read defensively below.
+  tokens?: unknown;
 }
 
-/** Project the TenantBrand identity columns onto a v2 brand token doc. Empty
- *  columns stay null so the compiler falls through to the preset default. */
+/** Project the TenantBrand columns + `tokens` doc onto a v2 brand token doc.
+ *  Colour/type come from the columns (they win); shape/rhythm/effect from the
+ *  `tokens` JSONB. Empty/absent values stay null/undefined so the compiler falls
+ *  through to the preset default (resolveShared/resolveColors read defensively). */
 export function brandColsToTokenDoc(cols: TenantBrandColumns | null | undefined): BrandTokenDoc {
+  const tokens = (cols?.tokens ?? undefined) as BrandTokenDoc | undefined;
   return {
     v: 2,
     color: {
@@ -38,6 +46,9 @@ export function brandColsToTokenDoc(cols: TenantBrandColumns | null | undefined)
       heading: cols?.fontHeading ?? null,
       body: cols?.fontBody ?? null,
     },
+    shape: tokens?.shape,
+    rhythm: tokens?.rhythm,
+    effect: tokens?.effect,
   };
 }
 

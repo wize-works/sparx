@@ -134,9 +134,28 @@ layout (keeps live preview + docked inspector + in-canvas selection).
       `design/page.tsx` renders it via `getBrand()`; `/sitebuilder/design` added to `CANVAS_SCOPES`;
       `customizer.tsx` + `theme-gallery.tsx` + `/themes` route deleted. NOT runtime-verified (build green
       only); recommend eyeballing on the deploy or local `pnpm db:up`.
-- [ ] **§2.4 Brand pane v2-native** — identity (color/type/shape/rhythm/effect), ownership cues. Delete
-      `/sitebuilder/brand`. NEEDS `TenantBrand.tokens` JSONB column for shape/rhythm/effect = staged prod
-      migration (identity cols already exist; the §2.3 `brandColsToTokenDoc` widens to read `.tokens`).
+- [x] **§2.4 Brand pane v2-native** (2026-05-31, green: typecheck 38/38, lint 0 err, 52 theme tests;
+      migration applied to LOCAL docker only — **prod via db-migrate.yml, user-triggered**). The Brand
+      pane now edits identity (colour/type — existing) PLUS shape/rhythm/effect (new), and the storefront
+      SSR + the Theme scope's live canvas pick up the brand feel via `compileThemeForTenant`. Kept the
+      shipped self-contained brand BOARD full-width (NOT a canvas scope) — flipping it into the ~360px
+      inspector would have forced a rewrite of a good, working surface; instead the board's "Applied"
+      samples now reflect the chosen radius/border/depth so the feel is truthful. **Decisions:** (a)
+      `tenant_brands.tokens` JSONB stores ONLY shape/rhythm/effect — colour/type stay in their dedicated
+      columns (one source of truth per axis); (b) feel exposed as approachable preset knobs (Corners /
+      Border weight / Spacing / Control size / Depth), each with a "Theme default" that clears the axis so
+      it inherits the preset (brand never silently pins a default). Files: migration
+      `20260610000300_tenant_brand_tokens` (additive `ADD COLUMN tokens JSONB`, nullable, no policy change
+      — table already RLS); schema `07-tenant-brand.prisma` `tokens Json?`; `storefront-themes/v2/tenant.ts`
+      `TenantBrandColumns += tokens?: unknown`, `brandColsToTokenDoc` merges shape/rhythm/effect (+ tests);
+      api-rest `/v1/brand` (PatchBrand/BrandView/toView + `tokens` via `Prisma.DbNull` clear); `publish-service`
+      brand select `+tokens`; dashboard `_lib/brand-feel.ts` (NEW: preset tables + resolve/reverse-match +
+      cleanTokens), `brand-panel.tsx` ("Shape & feel" section + FeelSelect), `brand-board.tsx` (Applied
+      samples honor feel), `_lib/types.ts` `BrandDto += tokens`, `theme-inspector.tsx` `brandCols += tokens`.
+  > **⚠️ PROD MIGRATION:** `20260610000300_tenant_brand_tokens` is applied LOCALLY only. Deploy the §2.4
+  > code first, then `gh workflow run db-migrate.yml` (additive column → safe either order, but follow the
+  > deploy-first rule). It joins the still-pending 1D trio (…000000/000100/000200) — `prisma migrate deploy`
+  > applies ALL pending at once, so a single workflow run covers them.
 - [ ] **§2.5** — retire the email designer (Phase 1 done → constraint lifted).
 - [ ] **Acceptance:** the full design → compose → publish loop happens on one screen.
 

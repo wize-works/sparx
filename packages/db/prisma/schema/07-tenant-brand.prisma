@@ -33,6 +33,13 @@ model TenantBrand {
   fontHeading String? @map("font_heading") @db.VarChar(127)
   fontBody    String? @map("font_body") @db.VarChar(127)
 
+  // Token Model v2 brand-owned NON-IDENTITY tokens (docs/33): shape (radius
+  // trio + border width), rhythm (space base + control sizes), effect (depth).
+  // A partial BrandTokenDoc — only the shape/rhythm/effect branches; colour +
+  // type stay in the dedicated columns above (one source of truth per axis).
+  // Null = no overrides → the theme preset's defaults apply.
+  tokens Json? @db.JsonB
+
   // Social handles / links, keyed by platform: { instagram: "https://…", … }.
   socials Json @default("{}")
 

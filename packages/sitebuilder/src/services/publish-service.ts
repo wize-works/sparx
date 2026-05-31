@@ -127,6 +127,9 @@ async function overlayBrand(
       colorAccent: true,
       fontHeading: true,
       fontBody: true,
+      // shape/rhythm/effect — feeds compiledV2 (the v1 identity overlay below
+      // ignores it; applyBrandIdentityTokens only touches colour/type).
+      tokens: true,
     },
   });
   const compiledTokens = brand

@@ -24,6 +24,36 @@ describe('brandColsToTokenDoc', () => {
     const doc = brandColsToTokenDoc(null);
     expect(doc.color?.primary).toBeNull();
     expect(doc.type?.heading).toBeNull();
+    expect(doc.shape).toBeUndefined();
+    expect(doc.effect).toBeUndefined();
+  });
+
+  it('merges shape/rhythm/effect from the tokens doc (colour/type stay in columns)', () => {
+    const doc = brandColsToTokenDoc({
+      colorPrimary: '#111111',
+      tokens: {
+        v: 2,
+        shape: { radiusBox: '0px', borderWidth: '2px' },
+        rhythm: { spaceBase: '0.3rem' },
+        effect: { depth: 0 },
+      },
+    });
+    expect(doc.color?.primary).toBe('#111111'); // column wins for colour
+    expect(doc.shape?.radiusBox).toBe('0px');
+    expect(doc.shape?.borderWidth).toBe('2px');
+    expect(doc.rhythm?.spaceBase).toBe('0.3rem');
+    expect(doc.effect?.depth).toBe(0);
+  });
+});
+
+describe('compileThemeForTenant with brand shape/rhythm/effect', () => {
+  it('applies brand shape + effect over the preset', () => {
+    const c = compileThemeForTenant({
+      themeKey: 'apex',
+      brand: { tokens: { v: 2, shape: { radiusBox: '0px' }, effect: { depth: 0 } } },
+    });
+    expect(c.shared.radiusBox).toBe('0px');
+    expect(c.shared.depth).toBe(0);
   });
 });
 

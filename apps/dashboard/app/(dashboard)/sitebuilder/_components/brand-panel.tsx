@@ -12,15 +12,41 @@
 // form) on small screens — the builder must be usable on mobile.
 
 import * as React from 'react';
-import { Button, ColorPicker, Input, Label } from '@sparx/ui';
+import {
+  Button,
+  ColorPicker,
+  Input,
+  Label,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@sparx/ui';
 import { updateBrand, type BrandPatch } from '../_lib/actions';
 import type { BrandDto, BrandMediaUrls } from '../_lib/types';
 import { BRAND_PREVIEW_FALLBACK, contrastRatio, rateContrast } from '../_lib/brand-preview';
+import {
+  BORDER_OPTIONS,
+  CORNER_OPTIONS,
+  DEPTH_OPTIONS,
+  SIZE_OPTIONS,
+  SPACING_OPTIONS,
+  cleanTokens,
+  cornerKeyOf,
+  resolveFeel,
+  sizeKeyOf,
+  type BrandTokens,
+} from '../_lib/brand-feel';
 import { BrandImageField } from './brand-image-field';
 import { BrandBoard } from './brand-board';
 import { FieldControl } from './field-control';
 
 const SOCIAL_PLATFORMS = ['instagram', 'facebook', 'x', 'tiktok', 'youtube', 'linkedin'] as const;
+
+// Radix Select forbids an empty-string item value, so "inherit the preset" uses
+// this sentinel instead of '' and is mapped back to "clear the axis".
+const INHERIT = 'default';
 
 interface MediaState {
   id: string | null;
@@ -55,6 +81,9 @@ export function BrandPanel({ initial, initialMedia }: BrandPanelProps) {
     url: initialMedia.favicon,
   });
   const [socials, setSocials] = React.useState<Record<string, string>>(initial.socials ?? {});
+  // Brand-owned shape/rhythm/effect (docs/33). A partial doc — unset axes inherit
+  // the theme preset; set axes win.
+  const [tokens, setTokens] = React.useState<BrandTokens>(initial.tokens ?? {});
 
   const [pending, startTransition] = React.useTransition();
   const [savedAt, setSavedAt] = React.useState<number | null>(null);
@@ -73,6 +102,7 @@ export function BrandPanel({ initial, initialMedia }: BrandPanelProps) {
       colorAccent,
       fontHeading,
       fontBody,
+      tokens: cleanTokens(tokens),
       socials: Object.fromEntries(Object.entries(socials).filter(([, v]) => v.trim())),
     }),
     [
@@ -86,6 +116,7 @@ export function BrandPanel({ initial, initialMedia }: BrandPanelProps) {
       colorAccent,
       fontHeading,
       fontBody,
+      tokens,
       socials,
     ]
   );
@@ -110,6 +141,60 @@ export function BrandPanel({ initial, initialMedia }: BrandPanelProps) {
 
   const setSocial = (platform: string, value: string) =>
     setSocials((s) => ({ ...s, [platform]: value }));
+
+  // ── Shape & feel knobs (map preset keys ↔ the brand token doc) ──────────────
+  const cornerKey = cornerKeyOf(tokens) || INHERIT;
+  const borderKey = tokens.shape?.borderWidth ?? INHERIT;
+  const spacingKey = tokens.rhythm?.spaceBase ?? INHERIT;
+  const sizeKey = sizeKeyOf(tokens) || INHERIT;
+  const depthKey = tokens.effect?.depth != null ? String(tokens.effect.depth) : INHERIT;
+
+  const setCorner = (key: string) =>
+    setTokens((t) => {
+      const o = CORNER_OPTIONS.find((c) => c.key === key);
+      const borderWidth = t.shape?.borderWidth;
+      return {
+        ...t,
+        shape: o
+          ? { ...t.shape, radiusSelector: o.selector, radiusField: o.field, radiusBox: o.box }
+          : borderWidth != null
+            ? { borderWidth }
+            : undefined,
+      };
+    });
+
+  const setBorder = (key: string) =>
+    setTokens((t) => {
+      const next = { ...t.shape };
+      if (key === INHERIT) delete next.borderWidth;
+      else next.borderWidth = key;
+      return { ...t, shape: Object.keys(next).length ? next : undefined };
+    });
+
+  const setSpacing = (key: string) =>
+    setTokens((t) => {
+      const next = { ...t.rhythm };
+      if (key === INHERIT) delete next.spaceBase;
+      else next.spaceBase = key;
+      return { ...t, rhythm: Object.keys(next).length ? next : undefined };
+    });
+
+  const setSize = (key: string) =>
+    setTokens((t) => {
+      const o = SIZE_OPTIONS.find((s) => s.key === key);
+      const next = { ...t.rhythm };
+      if (o) {
+        next.sizeField = o.field;
+        next.sizeSelector = o.selector;
+      } else {
+        delete next.sizeField;
+        delete next.sizeSelector;
+      }
+      return { ...t, rhythm: Object.keys(next).length ? next : undefined };
+    });
+
+  const setDepth = (key: string) =>
+    setTokens((t) => ({ ...t, effect: key === INHERIT ? undefined : { depth: Number(key) } }));
 
   return (
     <div className="flex flex-col gap-4">
@@ -209,6 +294,44 @@ export function BrandPanel({ initial, initialMedia }: BrandPanelProps) {
             />
           </Section>
 
+          {/* Brand-owned shape/rhythm/effect (docs/33). Theme controls surfaces;
+              these set the overall feel and apply across the storefront. */}
+          <Section title="Shape & feel">
+            <FeelSelect
+              label="Corners"
+              help="Roundness of buttons, inputs, and cards."
+              value={cornerKey}
+              options={CORNER_OPTIONS}
+              onChange={setCorner}
+            />
+            <FeelSelect
+              label="Border weight"
+              value={borderKey}
+              options={BORDER_OPTIONS}
+              onChange={setBorder}
+            />
+            <FeelSelect
+              label="Spacing"
+              help="Overall density of the layout."
+              value={spacingKey}
+              options={SPACING_OPTIONS}
+              onChange={setSpacing}
+            />
+            <FeelSelect
+              label="Control size"
+              value={sizeKey}
+              options={SIZE_OPTIONS}
+              onChange={setSize}
+            />
+            <FeelSelect
+              label="Depth"
+              help="Shadow strength on cards and menus."
+              value={depthKey}
+              options={DEPTH_OPTIONS}
+              onChange={setDepth}
+            />
+          </Section>
+
           <Section title="Social links">
             {SOCIAL_PLATFORMS.map((p) => (
               <div key={p} className="flex flex-col gap-1.5">
@@ -241,10 +364,47 @@ export function BrandPanel({ initial, initialMedia }: BrandPanelProps) {
             fontBody={fontBody}
             logoLightUrl={logoLight.url}
             logoDarkUrl={logoDark.url}
+            feel={resolveFeel(tokens)}
             socials={Object.fromEntries(Object.entries(socials).filter(([, v]) => v.trim()))}
           />
         </div>
       </div>
+    </div>
+  );
+}
+
+// A labelled Select for one shape/rhythm/effect knob. The first item ("Theme
+// default", value INHERIT) clears the axis so it inherits the preset.
+function FeelSelect({
+  label,
+  help,
+  value,
+  options,
+  onChange,
+}: {
+  label: string;
+  help?: string;
+  value: string;
+  options: readonly { key: string; label: string }[];
+  onChange: (key: string) => void;
+}) {
+  return (
+    <div className="flex flex-col gap-1.5">
+      <Label>{label}</Label>
+      <Select value={value} onValueChange={onChange}>
+        <SelectTrigger>
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value={INHERIT}>Theme default</SelectItem>
+          {options.map((o) => (
+            <SelectItem key={o.key} value={o.key}>
+              {o.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      {help ? <p className="text-xs text-[var(--color-text-muted)]">{help}</p> : null}
     </div>
   );
 }

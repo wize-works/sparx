@@ -109,6 +109,7 @@ export function ThemeInspector({
       colorAccent: brand.colorAccent,
       fontHeading: brand.fontHeading,
       fontBody: brand.fontBody,
+      tokens: brand.tokens,
     }),
     [brand]
   );

@@ -17,6 +17,7 @@ import {
   fontStack,
   rateContrast,
 } from '../_lib/brand-preview';
+import { depthShadow, resolveFeel, type ResolvedFeel } from '../_lib/brand-feel';
 
 export interface BrandBoardValues {
   businessName: string | null;
@@ -28,6 +29,8 @@ export interface BrandBoardValues {
   fontBody: string | null;
   logoLightUrl: string | null;
   logoDarkUrl: string | null;
+  // Resolved shape/rhythm/effect for the "Applied" samples (defaults when absent).
+  feel?: ResolvedFeel;
   socials: Record<string, string>;
 }
 
@@ -44,6 +47,8 @@ export function BrandBoard(props: BrandBoardValues) {
   const trimmedName = props.businessName?.trim();
   const name = trimmedName && trimmedName.length > 0 ? trimmedName : 'Your business';
   const socials = Object.entries(props.socials).filter(([, v]) => v.trim());
+  const feel = props.feel ?? resolveFeel({});
+  const shadow = depthShadow(feel.depth);
 
   // Rate the pair the merchant will actually ship on every brand button.
   const buttonRatio = contrastRatio(onPrimary, primary);
@@ -134,21 +139,65 @@ export function BrandBoard(props: BrandBoardValues) {
         </div>
       </div>
 
-      {/* Applied — buttons in brand colours */}
+      {/* Applied — brand colours + the chosen shape/feel (radius, border, depth) */}
       <div className="flex flex-col gap-2">
         <BoardLabel>Applied</BoardLabel>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <span
-            className="inline-flex items-center rounded-md px-3 py-1.5 text-sm font-medium"
-            style={{ backgroundColor: primary, color: onPrimary, fontFamily: bodyFont }}
+            className="inline-flex items-center px-3 py-1.5 text-sm font-medium"
+            style={{
+              backgroundColor: primary,
+              color: onPrimary,
+              fontFamily: bodyFont,
+              borderRadius: feel.radiusField,
+              boxShadow: shadow,
+            }}
           >
             Primary action
           </span>
           <span
-            className="inline-flex items-center rounded-md border px-3 py-1.5 text-sm font-medium"
-            style={{ borderColor: accent, color: accent, fontFamily: bodyFont }}
+            className="inline-flex items-center px-3 py-1.5 text-sm font-medium"
+            style={{
+              borderColor: accent,
+              color: accent,
+              fontFamily: bodyFont,
+              borderRadius: feel.radiusField,
+              borderWidth: feel.borderWidth,
+              borderStyle: 'solid',
+            }}
           >
             Accent
+          </span>
+          <span
+            className="inline-flex items-center px-2.5 py-0.5 text-xs font-medium"
+            style={{
+              backgroundColor: accent,
+              color: onPrimary,
+              fontFamily: bodyFont,
+              borderRadius: feel.radiusSelector,
+            }}
+          >
+            Pill
+          </span>
+        </div>
+        <div
+          className="flex flex-col gap-1 bg-[var(--color-bg-default)] p-3"
+          style={{
+            borderRadius: feel.radiusBox,
+            borderWidth: feel.borderWidth,
+            borderStyle: 'solid',
+            borderColor: 'var(--color-border-default)',
+            boxShadow: shadow,
+          }}
+        >
+          <span
+            className="text-sm font-medium text-[var(--color-text-primary)]"
+            style={{ fontFamily: headingFont }}
+          >
+            Card surface
+          </span>
+          <span className="text-xs text-[var(--color-text-muted)]" style={{ fontFamily: bodyFont }}>
+            Corners, borders, and depth follow your brand.
           </span>
         </div>
         {buttonFails ? (
