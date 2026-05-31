@@ -3,7 +3,7 @@
 
 import { z } from 'zod';
 import { AppearancePolicy, LayoutSlot, OptionalUuid, ThemeKey, Uuid } from './common';
-import { SectionTypeEnum } from './section-registry';
+import { ScopeEnum, SectionTypeEnum } from './section-registry';
 import { SiteSettings } from './site-settings';
 
 export const SelectThemeInput = z.object({
@@ -18,10 +18,43 @@ export const UpdateSettingsInput = z.object({
 export type UpdateSettingsInput = z.infer<typeof UpdateSettingsInput>;
 
 // pageKey: "home" or a CMS page slug. Bounded to the column width.
+// Legacy alias — sections are addressed by `templateId` in the live API
+// (Phase 3.3); `pageKey` survives only as a transitional alias the service
+// maps onto (scope, key), removed in 3.3c.
 export const PageKey = z.string().min(1).max(255);
 
+// key: stable within (tenant, scope) — "default" for a scope's single layout,
+// a slug for cms-page / custom standalone pages.
+export const TemplateKey = z.string().min(1).max(255);
+
+// Resolve-or-create a (scope, key) layout. `key` defaults to a scope's single
+// "default" layout; `name` is humanized from the scope when omitted.
+export const CreateTemplateInput = z.object({
+  scope: ScopeEnum,
+  key: TemplateKey.default('default'),
+  name: z.string().min(1).max(255).optional(),
+});
+export type CreateTemplateInput = z.infer<typeof CreateTemplateInput>;
+
+// "Customize this layout" — get-or-create then, if the layout is still empty,
+// copy the code-defined DEFAULT_TEMPLATES[scope] rows into it (scopes without a
+// code default just get an empty layout).
+export const MaterializeTemplateInput = z.object({
+  scope: ScopeEnum,
+  key: TemplateKey.default('default'),
+});
+export type MaterializeTemplateInput = z.infer<typeof MaterializeTemplateInput>;
+
+export const ListTemplatesQuery = z.object({
+  scope: ScopeEnum.optional(),
+});
+export type ListTemplatesQuery = z.infer<typeof ListTemplatesQuery>;
+
 export const CreateSectionInput = z.object({
-  pageKey: PageKey.default('home'),
+  // Target layout. Prefer `templateId`; `pageKey` is the legacy alias the
+  // service resolves onto a template when `templateId` is absent (default home).
+  templateId: Uuid.optional(),
+  pageKey: PageKey.optional(),
   sectionType: SectionTypeEnum,
   // Optional initial config; defaults are filled from the section schema.
   config: z.record(z.string(), z.unknown()).optional(),
@@ -37,7 +70,9 @@ export const UpdateSectionInput = z.object({
 export type UpdateSectionInput = z.infer<typeof UpdateSectionInput>;
 
 export const ReorderSectionsInput = z.object({
-  pageKey: PageKey,
+  // Target layout — `templateId` preferred, `pageKey` the legacy alias.
+  templateId: Uuid.optional(),
+  pageKey: PageKey.optional(),
   orderedIds: z.array(Uuid).min(1),
 });
 export type ReorderSectionsInput = z.infer<typeof ReorderSectionsInput>;

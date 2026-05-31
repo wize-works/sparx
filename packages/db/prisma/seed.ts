@@ -3,17 +3,13 @@
 //
 // Creates the "E2E Store" tenant with one staff user
 // (e2e-staff@sparx.test / e2e-test-password) — these credentials are baked
-// into Playwright tests and any local dashboard smoke test. The password
-// hash uses argon2id with Better Auth's default parameters so the same
-// row works against the live login flow once the auth service is wired in.
+// into Playwright tests and any local dashboard smoke test. The password hash
+// is produced by Better Auth's own hasher (scrypt, via better-auth/crypto) so
+// the seeded credential row verifies against the live sign-in flow.
 
 import { PrismaClient } from '@prisma/client';
-import { hash } from '@node-rs/argon2';
+import { hashPassword } from 'better-auth/crypto';
 import { seedMarketingContent } from './seeds/marketing.js';
-
-// `Algorithm.Argon2id` from @node-rs/argon2 is a const enum, which
-// verbatimModuleSyntax disallows. Inline the numeric value instead.
-const ARGON2ID = 2;
 
 const prisma = new PrismaClient();
 
@@ -59,14 +55,12 @@ async function main(): Promise<void> {
     WHERE id = ${tenant.id}::uuid
   `;
 
-  // Better Auth defaults to argon2id with these parameters (docs/16 §1).
-  // Match them here so the seeded hash verifies against the live login flow.
-  const passwordHash = await hash(STAFF_PASSWORD, {
-    algorithm: ARGON2ID,
-    memoryCost: 19_456,
-    timeCost: 2,
-    parallelism: 1,
-  });
+  // Hash with Better Auth's own hasher — the exact function its sign-in
+  // verifier uses (scrypt, via better-auth/crypto). Hashing by hand with a
+  // different algorithm (e.g. argon2) yields "Invalid password hash" at
+  // sign-in, because server.ts leaves emailAndPassword on Better Auth's
+  // default (scrypt) hasher rather than configuring a custom one.
+  const passwordHash = await hashPassword(STAFF_PASSWORD);
 
   // users and accounts are RLS-protected; set the tenant context inside a
   // transaction so SET LOCAL applies to every statement that follows. Account

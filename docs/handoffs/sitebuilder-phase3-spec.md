@@ -486,10 +486,14 @@ layer — sequenced deploy-small so the e2e store never breaks mid-rollout.
 
 ### 13.3 Increments (deploy-small; every intermediate state works)
 
-- **3.3a — Backend, additive.** Add the templates resource (`templateService.materializeDefault` +
-  routes), `templateId`-native `sectionService` methods, and scope validation. Section routes accept
-  **either** `template_id` **or** `page_key` (alias) so the un-migrated dashboard + MCP keep working.
-  Integration tests cover the `template_id` paths. Ship.
+- **3.3a — Backend, additive. ✅ Shipped 2026-05-31 (green).** Added the templates resource
+  (`templateService.getOrCreate` / `materializeDefault` + `GET/POST /v1/sitebuilder/templates` and
+  `POST .../materialize`), `templateId`-native `sectionService` (`listForTemplate`,
+  `resolveTemplateForWrite`, `SectionView += templateId/scope/templateKey`), and scope validation in
+  `create` (→ 422). Section routes accept **either** `template_id` **or** `page_key` (alias) so the
+  un-migrated dashboard + MCP keep working. `getOrCreate`/`materializeDefault` parse raw input so the
+  Zod schemas stay the service boundary (api-rest keeps zero `@sparx/sitebuilder-schemas` dep). 9 new
+  integration tests (13 total pass); typecheck/lint/format clean. _Not deployed by me — user-triggered._
 - **3.3b — Dashboard, Layouts UI.** Manifest "Layouts" group + Products/Collections routes; editor
   resolves `templateId`; scope-restricted gallery; read-only bindings inspector; sample-item preview
   picker; explicit "Customize". Migrate Home/Pages calls to `templateId` too. Ship — dashboard is now
