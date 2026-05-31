@@ -79,12 +79,12 @@ export async function resolveEmailBrand(ctx: ServiceContext): Promise<BrandToken
       brand !== null &&
       Boolean(
         brand.businessName ||
-          brand.colorPrimary ||
-          brand.colorPrimaryForeground ||
-          brand.colorAccent ||
-          brand.fontHeading ||
-          brand.fontBody ||
-          brand.logoLightMediaId
+        brand.colorPrimary ||
+        brand.colorPrimaryForeground ||
+        brand.colorAccent ||
+        brand.fontHeading ||
+        brand.fontBody ||
+        brand.logoLightMediaId
       );
     if (!hasIdentity) return null;
 
