@@ -279,16 +279,16 @@ function RailToggle({ expanded, onToggle }: { expanded: boolean; onToggle: () =>
       aria-label={expanded ? 'Collapse navigation' : 'Expand navigation'}
       aria-expanded={expanded}
       className={cn(
-        'flex h-10 items-center rounded-xl text-[var(--color-text-tertiary)] transition-colors hover:bg-[var(--color-bg-subtle)] hover:text-[var(--color-text-primary)] focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:outline-none',
-        expanded ? 'w-full justify-start gap-3 px-3' : 'w-10 justify-center'
+        'flex h-8 items-center rounded-md text-sm font-medium text-[var(--color-text-tertiary)] transition-colors hover:bg-[var(--color-bg-subtle)] hover:text-[var(--color-text-primary)] focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:outline-none',
+        expanded ? 'w-full justify-start gap-2 px-2' : 'w-8 justify-center'
       )}
     >
       {expanded ? (
-        <PanelLeftClose className="h-5 w-5 shrink-0" />
+        <PanelLeftClose className="h-4 w-4 shrink-0" />
       ) : (
-        <PanelLeftOpen className="h-5 w-5 shrink-0" />
+        <PanelLeftOpen className="h-4 w-4 shrink-0" />
       )}
-      {expanded && <span className="text-sm font-medium">Collapse</span>}
+      {expanded && <span className="flex-1 truncate text-left">Collapse</span>}
     </button>
   );
 }

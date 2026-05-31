@@ -26,15 +26,29 @@ import { recordVisitAction } from '../_shell/actions';
 
 const RECENTS_LIMIT = 8;
 
+// The rail tiles mirror the module sidebar's `SidebarItem` (packages/ui
+// navigation/sidebar.tsx) so the primary and contextual navs read at the same
+// scale: h-8 rows, rounded-md, gap-2, text-sm, and the same tint active state.
+// `group` lets the icon adopt SidebarItem's two-tone hover coloring.
 const TILE_BASE =
-  'relative flex h-10 items-center rounded-xl transition-colors focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:outline-none';
+  'group relative flex h-8 items-center rounded-md text-sm font-medium transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:outline-none';
 const TILE_INACTIVE =
-  'text-[var(--color-text-tertiary)] hover:bg-[var(--color-bg-subtle)] hover:text-[var(--color-text-primary)]';
-const TILE_ACTIVE = 'bg-[var(--module-active)] text-white';
+  'text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-subtle)] hover:text-[var(--color-text-primary)]';
+const TILE_ACTIVE = 'bg-[var(--module-active-tint)] text-[var(--module-active-text)]';
 
 function tileClass(active: boolean, expanded: boolean) {
-  const shape = expanded ? 'w-full justify-start gap-3 px-3' : 'w-10 justify-center';
+  const shape = expanded ? 'w-full justify-start gap-2 px-2' : 'w-8 justify-center';
   return `${TILE_BASE} ${shape} ${active ? TILE_ACTIVE : TILE_INACTIVE}`;
+}
+
+// Matches SidebarItem's icon wrapper: the glyph is tinted independently of the
+// label — module color when active, a quiet tertiary→secondary on hover when not.
+function tileIconClass(active: boolean) {
+  return `inline-flex h-4 w-4 shrink-0 items-center justify-center ${
+    active
+      ? 'text-[var(--module-active)]'
+      : 'text-[var(--color-text-tertiary)] group-hover:text-[var(--color-text-secondary)]'
+  }`;
 }
 
 function isActivePath(pathname: string | null, href: string) {
@@ -106,8 +120,10 @@ export function RailNav({ pathname, enabledModules, favorites, recents }: RailNa
         aria-label="Search"
         className={tileClass(false, expanded)}
       >
-        <Search className="h-5 w-5 shrink-0" />
-        {expanded && <span className="truncate text-sm font-medium">Search</span>}
+        <span className={tileIconClass(false)}>
+          <Search className="h-4 w-4" />
+        </span>
+        {expanded && <span className="flex-1 truncate text-left">Search</span>}
       </button>
 
       <Link
@@ -116,8 +132,10 @@ export function RailNav({ pathname, enabledModules, favorites, recents }: RailNa
         aria-label="Home"
         className={tileClass(pathname === '/', expanded)}
       >
-        <Home className="h-5 w-5 shrink-0" />
-        {expanded && <span className="truncate text-sm font-medium">Home</span>}
+        <span className={tileIconClass(pathname === '/')}>
+          <Home className="h-4 w-4" />
+        </span>
+        {expanded && <span className="flex-1 truncate text-left">Home</span>}
       </Link>
 
       <RailDivider expanded={expanded} />
@@ -141,8 +159,10 @@ export function RailNav({ pathname, enabledModules, favorites, recents }: RailNa
                 aria-current={active ? 'page' : undefined}
                 className={tileClass(active, expanded)}
               >
-                <Icon className="h-5 w-5 shrink-0" />
-                {expanded && <span className="truncate text-sm font-medium">{manifest.label}</span>}
+                <span className={tileIconClass(active)}>
+                  <Icon className="h-4 w-4" />
+                </span>
+                {expanded && <span className="flex-1 truncate text-left">{manifest.label}</span>}
               </Link>
             </ModuleProvider>
           );
@@ -172,8 +192,10 @@ export function RailNav({ pathname, enabledModules, favorites, recents }: RailNa
         aria-label="Settings"
         className={tileClass(isActivePath(pathname, '/settings'), expanded)}
       >
-        <Settings className="h-5 w-5 shrink-0" />
-        {expanded && <span className="truncate text-sm font-medium">Settings</span>}
+        <span className={tileIconClass(isActivePath(pathname, '/settings'))}>
+          <Settings className="h-4 w-4" />
+        </span>
+        {expanded && <span className="flex-1 truncate text-left">Settings</span>}
       </Link>
     </>
   );
@@ -224,8 +246,10 @@ function RailGroup({ label, groupIcon: GroupIcon, items, pathname, expanded }: R
             aria-current={active ? 'page' : undefined}
             className={tileClass(active, expanded)}
           >
-            <Icon className="h-5 w-5 shrink-0" />
-            {expanded && <span className="truncate text-sm font-medium">{item.label}</span>}
+            <span className={tileIconClass(active)}>
+              <Icon className="h-4 w-4" />
+            </span>
+            {expanded && <span className="flex-1 truncate text-left">{item.label}</span>}
           </Link>
         );
       })}
