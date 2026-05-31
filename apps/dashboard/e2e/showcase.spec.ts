@@ -20,7 +20,9 @@ test.describe('/showcase', () => {
     // Section headings (Heading level=3)
     await expect(page.getByRole('heading', { name: 'Palette' })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Buttons — color × variant' })).toBeVisible();
-    await expect(page.getByRole('heading', { name: 'Badges & Tags — color × variant' })).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: 'Badges & Tags — color × variant' })
+    ).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Alerts' })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Controls — color on state' })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Inputs — size & state' })).toBeVisible();
