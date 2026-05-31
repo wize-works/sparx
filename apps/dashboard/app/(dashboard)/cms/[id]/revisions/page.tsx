@@ -14,7 +14,6 @@ import {
 } from '@sparx/ui';
 import { ArrowLeft, GitCompare, History } from 'lucide-react';
 import { api, type ApiRestError } from '@/lib/api-rest-client';
-import { CmsTabs } from '../../_components/cms-tabs';
 import { RestoreButton } from './restore-button';
 
 export const dynamic = 'force-dynamic';
@@ -52,7 +51,6 @@ export default async function RevisionsPage({ params }: { params: Promise<{ id: 
   return (
     <Container size="lg">
       <Stack gap={6} className="py-10">
-        <CmsTabs current="pages" />
         <Stack gap={2}>
           <Button color="primary" variant="link" size="sm" asChild>
             <Link href={`/cms/${id}`}>

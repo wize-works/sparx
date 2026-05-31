@@ -15,7 +15,6 @@ export default async function SuppressionsPage() {
 
   return (
     <EmailShell
-      current="suppressions"
       icon={<ShieldOff className="h-5 w-5" />}
       title="Suppressions"
       description="Addresses that are never emailed. Bounces, complaints, and unsubscribes are added automatically; you can also suppress addresses manually."

@@ -1,6 +1,5 @@
 import { Badge, Container, Heading, Stack, Text } from '@sparx/ui';
 import { api } from '@/lib/api-rest-client';
-import { CmsTabs } from '../_components/cms-tabs';
 import { RedirectsList } from './redirects-list';
 
 export const dynamic = 'force-dynamic';
@@ -20,7 +19,6 @@ export default async function RedirectsPage() {
   return (
     <Container size="lg">
       <Stack gap={6} className="py-10">
-        <CmsTabs current="redirects" />
         <Stack gap={2}>
           <Stack direction="row" align="center" gap={2}>
             <Heading level={1}>Redirects</Heading>

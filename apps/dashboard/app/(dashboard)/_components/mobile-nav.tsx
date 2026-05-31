@@ -45,7 +45,7 @@ export function MobileNav({ pathname, enabledModules, favorites, recents }: Mobi
     <>
       <SidebarHeader>
         <Stack gap={0}>
-          <Wordmark size={18} />
+          <Wordmark size={18} icon />
           <Text size="xs" variant="muted">
             Dashboard
           </Text>

@@ -2,7 +2,6 @@ import Link from 'next/link';
 import { Button, Card, Container, Heading, Stack, Text } from '@sparx/ui';
 import { ArrowRight, Plus } from 'lucide-react';
 import { api } from '@/lib/api-rest-client';
-import { CmsTabs } from '../_components/cms-tabs';
 
 // Navigation menus are CMS-owned content (docs/30 §8): the merchant builds the
 // header / footer / mega / custom menu trees here. Site Builder consumes them
@@ -37,7 +36,6 @@ export default async function CmsNavigationPage() {
   return (
     <Container size="xl">
       <Stack gap={6} className="py-10">
-        <CmsTabs current="navigation" />
         <Stack gap={2}>
           <Heading level={1}>Navigation</Heading>
           <Text variant="muted">

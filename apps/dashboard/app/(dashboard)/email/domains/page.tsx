@@ -22,7 +22,6 @@ export default async function DomainsPage() {
 
   return (
     <EmailShell
-      current="domains"
       icon={<Globe className="h-5 w-5" />}
       title="Sending domains"
       description="Send from your own domain with automatic DKIM, SPF, and DMARC. Until a domain is verified, email sends from the shared Sparx domain."

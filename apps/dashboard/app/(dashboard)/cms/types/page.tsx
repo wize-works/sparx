@@ -22,7 +22,6 @@ import {
 } from '@sparx/ui';
 import { Database, ArrowRight, Plus, Settings } from 'lucide-react';
 import { api } from '@/lib/api-rest-client';
-import { CmsTabs } from '../_components/cms-tabs';
 
 export const dynamic = 'force-dynamic';
 
@@ -53,7 +52,6 @@ export default async function ContentTypesPage() {
   return (
     <Container size="xl">
       <Stack gap={6} className="py-10">
-        <CmsTabs current="types" />
         <Stack direction="row" align="end" justify="between">
           <Stack gap={2}>
             <Stack direction="row" align="center" gap={2}>

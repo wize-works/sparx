@@ -1,8 +1,8 @@
 # Sparx Brand Guide
 
-**Version:** 1.1
+**Version:** 1.2
 **Author:** Brandon Korous / WizeWorks
-**Last Updated:** 2026-05-27
+**Last Updated:** 2026-05-31
 
 ---
 
@@ -26,11 +26,24 @@ Spar x
     Everything else renders in primary text color
 ```
 
-- Set in Geist, weight 500, tracking -0.03em
+- Set in **Inter, weight 700 (bold)**, tracking -0.03em — the bold weight aligns
+  the letterforms with the monogram mark (§2.1)
 - The "x" is the brand moment — it is always colored, never neutral
 - Never render the full wordmark in a single color
 - Never use the wordmark at sizes below 16px
 - Minimum clear space: equal to the height of the "S" on all sides
+
+### 2.1 The Monogram Mark
+
+When a compact mark is needed (favicons, app icons, the icon + wordmark lockup),
+use the **"Sx" monogram** from `images/SVG/icon.svg`:
+
+- The "S" uses the current text color (`currentColor`) so it adapts to light and
+  dark surfaces; the "x" is always Sparx Indigo (`#6366F1`), matching the wordmark
+- In product UI, render it via `<SparxMark>` from `@sparx/ui` (S = `currentColor`,
+  x = `--sparx-primary`). For the icon + wordmark lockup, use `<Wordmark icon />`
+- As a browser favicon (where CSS variables can't resolve), each app ships a
+  static `app/icon.svg` that inlines the hex plus a `prefers-color-scheme` rule
 
 ---
 

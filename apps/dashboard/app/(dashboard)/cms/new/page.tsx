@@ -20,7 +20,6 @@ import {
 import { ContentBlockEditor, EMPTY_DOC, type CmsDoc } from '@sparx/cms-editor';
 import { ArrowLeft } from 'lucide-react';
 import { createPage } from '../actions';
-import { CmsTabs } from '../_components/cms-tabs';
 
 export default function NewPage() {
   const router = useRouter();
@@ -48,7 +47,6 @@ export default function NewPage() {
   return (
     <Container size="lg">
       <Stack gap={6} className="py-10">
-        <CmsTabs current="pages" />
         <Stack gap={2}>
           <Button color="primary" variant="link" size="sm" asChild>
             <Link href="/cms">

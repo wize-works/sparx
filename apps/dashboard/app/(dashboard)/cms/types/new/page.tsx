@@ -1,7 +1,6 @@
 import Link from 'next/link';
 import { Button, Container, Heading, Stack, Text } from '@sparx/ui';
 import { ArrowLeft } from 'lucide-react';
-import { CmsTabs } from '../../_components/cms-tabs';
 import { CustomTypeForm } from './custom-type-form';
 
 export const dynamic = 'force-dynamic';
@@ -24,7 +23,6 @@ export default function NewContentTypePage() {
   return (
     <Container size="lg">
       <Stack gap={6} className="py-10">
-        <CmsTabs current="types" />
         <Stack gap={2}>
           <Button color="primary" variant="link" size="sm" asChild>
             <Link href="/cms/types">

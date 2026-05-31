@@ -2,7 +2,6 @@ import { notFound } from 'next/navigation';
 import type { FieldDef } from '@sparx/cms-schemas';
 import { Container, Heading, Stack, Text } from '@sparx/ui';
 import { api } from '@/lib/api-rest-client';
-import { CmsTabs } from '../../../_components/cms-tabs';
 import { NewEntryForm } from './new-entry-form';
 
 export const dynamic = 'force-dynamic';
@@ -33,7 +32,6 @@ export default async function NewEntryPage({ params }: PageProps) {
   return (
     <Container size="lg">
       <Stack gap={6} className="py-10">
-        <CmsTabs current="types" />
         <Stack gap={1}>
           <Heading level={1}>New {type.name.toLowerCase()}</Heading>
           {type.description && <Text variant="muted">{type.description}</Text>}

@@ -18,7 +18,6 @@ import {
 
 import { api } from '@/lib/api-rest-client';
 
-import { CrmTabs } from '../_components/crm-tabs';
 import { TaskRow } from './_components/task-row';
 
 interface TaskListItem {
@@ -54,7 +53,6 @@ export default async function TasksPage({ searchParams }: PageProps) {
   return (
     <Container size="xl">
       <Stack gap={6} className="py-10">
-        <CrmTabs current="tasks" />
         <Stack direction="row" align="end" justify="between" wrap>
           <Stack gap={2}>
             <Stack direction="row" align="center" gap={2}>

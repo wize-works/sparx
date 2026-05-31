@@ -3,7 +3,6 @@ import { notFound } from 'next/navigation';
 import { Badge, Button, Container, Heading, Stack, Text } from '@sparx/ui';
 import { ArrowLeft } from 'lucide-react';
 import { api, type ApiRestError } from '@/lib/api-rest-client';
-import { CmsTabs } from '../../../_components/cms-tabs';
 import { SchemaEditor } from './schema-editor';
 
 export const dynamic = 'force-dynamic';
@@ -38,7 +37,6 @@ export default async function EditTypeSchemaPage({ params }: PageParams) {
     return (
       <Container size="lg">
         <Stack gap={6} className="py-10">
-          <CmsTabs current="types" />
           <Stack gap={2}>
             <Heading level={1}>{type.name}</Heading>
             <Badge variant="outline">built-in</Badge>
@@ -58,7 +56,6 @@ export default async function EditTypeSchemaPage({ params }: PageParams) {
   return (
     <Container size="lg">
       <Stack gap={6} className="py-10">
-        <CmsTabs current="types" />
         <Stack gap={2}>
           <Button color="primary" variant="link" size="sm" asChild>
             <Link href="/cms/types">

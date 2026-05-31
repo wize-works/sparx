@@ -15,7 +15,6 @@ import {
 import { Image as ImageIcon } from 'lucide-react';
 import { api } from '@/lib/api-rest-client';
 import { EntityRowLink } from '../../_components/entity-row-link';
-import { CmsTabs } from '../_components/cms-tabs';
 import { UploadButton } from './upload-button';
 
 export const dynamic = 'force-dynamic';
@@ -44,7 +43,6 @@ export default async function MediaPage() {
   return (
     <Container size="xl">
       <Stack gap={6} className="py-10">
-        <CmsTabs current="media" />
         <Stack direction="row" align="end" justify="between">
           <Stack gap={2}>
             <Stack direction="row" align="center" gap={2}>

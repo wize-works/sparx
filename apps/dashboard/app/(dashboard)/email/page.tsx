@@ -78,7 +78,6 @@ export default async function EmailOverviewPage() {
 
   return (
     <EmailShell
-      current="overview"
       icon={<Send className="h-5 w-5" />}
       title="Email"
       description={

@@ -1,7 +1,6 @@
 import Link from 'next/link';
 import { Button, Container, Stack } from '@sparx/ui';
 import { ArrowLeft } from 'lucide-react';
-import { CmsTabs } from '../../_components/cms-tabs';
 import { AuthorDetailContent } from './_content';
 
 export const dynamic = 'force-dynamic';
@@ -15,7 +14,6 @@ export default async function EditAuthorPage({ params }: PageParams) {
   return (
     <Container size="lg">
       <Stack gap={6} className="py-10">
-        <CmsTabs current="authors" />
         <Button color="primary" variant="link" size="sm" asChild>
           <Link href="/cms/authors">
             <ArrowLeft className="h-3.5 w-3.5" />

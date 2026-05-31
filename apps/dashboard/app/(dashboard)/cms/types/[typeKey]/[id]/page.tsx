@@ -4,7 +4,6 @@ import type { FieldDef } from '@sparx/cms-schemas';
 import { Badge, Button, Container, Heading, Stack, Text } from '@sparx/ui';
 import { ArrowLeft } from 'lucide-react';
 import { api } from '@/lib/api-rest-client';
-import { CmsTabs } from '../../../_components/cms-tabs';
 import { EditEntryForm } from './edit-entry-form';
 
 export const dynamic = 'force-dynamic';
@@ -49,7 +48,6 @@ export default async function EditEntryPage({ params }: PageProps) {
   return (
     <Container size="lg">
       <Stack gap={6} className="py-10">
-        <CmsTabs current="types" />
         <Stack direction="row" align="end" justify="between">
           <Stack gap={2}>
             <Button asChild variant="ghost" size="sm" leftIcon={<ArrowLeft className="h-3 w-3" />}>

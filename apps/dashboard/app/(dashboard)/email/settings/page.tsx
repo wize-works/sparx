@@ -13,7 +13,6 @@ export default async function EmailSettingsPage() {
 
   return (
     <EmailShell
-      current="settings"
       icon={<SettingsIcon className="h-5 w-5" />}
       title="Settings"
       description="Sender identity, reply-to, and physical mailing address."

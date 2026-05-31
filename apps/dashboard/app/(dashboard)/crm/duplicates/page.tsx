@@ -15,7 +15,6 @@ import {
 
 import { api } from '@/lib/api-rest-client';
 
-import { CrmTabs } from '../_components/crm-tabs';
 import { MergeCandidatesGroup } from './_components/merge-candidates-group';
 
 // Find-duplicates landing — surfaces groups of customers that share an email
@@ -45,7 +44,6 @@ export default async function DuplicatesPage() {
   return (
     <Container size="xl">
       <Stack gap={6} className="py-10">
-        <CrmTabs current="duplicates" />
         <Stack gap={2}>
           <Stack direction="row" align="center" gap={3}>
             <Heading level={1}>Find duplicates</Heading>

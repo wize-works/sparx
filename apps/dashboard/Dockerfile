@@ -100,6 +100,9 @@ RUN addgroup --system --gid 1001 nodejs \
 
 COPY --from=builder --chown=nextjs:nodejs /repo/apps/dashboard/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /repo/apps/dashboard/.next/static ./apps/dashboard/.next/static
+# public/ is NOT bundled into standalone output — copy it explicitly so the
+# manifest icons (android-chrome-*.png) serve.
+COPY --from=builder --chown=nextjs:nodejs /repo/apps/dashboard/public ./apps/dashboard/public
 
 USER nextjs
 

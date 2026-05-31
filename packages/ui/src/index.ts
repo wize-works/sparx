@@ -31,6 +31,7 @@ export { useMediaQuery } from './hooks/use-media-query';
 
 // ── Brand ────────────────────────────────────────────────
 export { Wordmark, type WordmarkProps } from './components/brand/wordmark';
+export { SparxMark, type SparxMarkProps } from './components/brand/sparx-mark';
 
 // ── Primitives ────────────────────────────────────────────
 export { Spinner, type SpinnerProps } from './components/primitives/spinner';

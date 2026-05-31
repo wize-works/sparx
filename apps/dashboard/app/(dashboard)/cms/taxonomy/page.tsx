@@ -13,7 +13,6 @@ import {
 import { Pencil, Tag } from 'lucide-react';
 import { api } from '@/lib/api-rest-client';
 import { EntityRowLink } from '../../_components/entity-row-link';
-import { CmsTabs } from '../_components/cms-tabs';
 import { TaxonomyCreateForm } from './taxonomy-create-form';
 
 export const dynamic = 'force-dynamic';
@@ -33,7 +32,6 @@ export default async function TaxonomyIndexPage() {
   return (
     <Container size="lg">
       <Stack gap={6} className="py-10">
-        <CmsTabs current="taxonomy" />
         <Stack gap={2}>
           <Stack direction="row" align="center" gap={2}>
             <Tag className="h-5 w-5" />

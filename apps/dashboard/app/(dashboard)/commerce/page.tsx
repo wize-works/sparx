@@ -24,12 +24,14 @@ import {
   Container,
   Grid,
   Heading,
+  PageHeader,
   Stack,
   Stat,
   Text,
 } from '@sparx/ui';
 
 import { api } from '@/lib/api-rest-client';
+import { OverviewChartCard, SAMPLE_REVENUE_14D } from '../_components/overview-charts';
 
 // Commerce landing — KPI strip + quick-actions grid. Module gate lives in
 // the parent layout; by the time we hit this page Commerce is active. All
@@ -81,20 +83,22 @@ export default async function CommercePage() {
   return (
     <Container className="py-10">
       <Stack gap={6}>
-        <Stack direction="row" align="end" justify="between" wrap gap={4}>
-          <Stack gap={2}>
-            <Heading level={1}>Commerce</Heading>
-            <Text variant="muted">Last 30 days · tenant {session.user.tenantId.slice(0, 8)}</Text>
-          </Stack>
-          <Stack direction="row" gap={2}>
-            <Button asChild variant="outline">
-              <Link href="/commerce/orders">View orders</Link>
-            </Button>
-            <Button asChild color="module" leftIcon={<PlusCircle className="h-4 w-4" />}>
-              <Link href="/commerce/products/new">New product</Link>
-            </Button>
-          </Stack>
-        </Stack>
+        <PageHeader
+          className="mb-0"
+          icon={<ShoppingCart className="h-5 w-5" />}
+          title="Commerce"
+          description={`Last 30 days · tenant ${session.user.tenantId.slice(0, 8)}`}
+          actions={
+            <>
+              <Button asChild variant="outline">
+                <Link href="/commerce/orders">View orders</Link>
+              </Button>
+              <Button asChild color="module" leftIcon={<PlusCircle className="h-4 w-4" />}>
+                <Link href="/commerce/products/new">New product</Link>
+              </Button>
+            </>
+          }
+        />
 
         <Grid cols={1} mdCols={2} gap={4}>
           <Stat
@@ -139,6 +143,25 @@ export default async function CommercePage() {
                 ? `${abandoned.recoveredCount}/${abandoned.abandonedCount} recovered`
                 : 'Abandoned-cart automation not yet running'
             }
+          />
+        </Grid>
+
+        <Grid cols={1} mdCols={2} gap={4}>
+          <OverviewChartCard
+            title="Revenue"
+            description="Net revenue, last 14 days"
+            data={SAMPLE_REVENUE_14D}
+            series={[{ key: 'revenue', label: 'Revenue', color: 'module' }]}
+            type="area"
+            format="currency"
+          />
+          <OverviewChartCard
+            title="Orders"
+            description="Orders placed, last 14 days"
+            data={SAMPLE_REVENUE_14D}
+            series={[{ key: 'orders', label: 'Orders' }]}
+            type="bar"
+            format="number"
           />
         </Grid>
 

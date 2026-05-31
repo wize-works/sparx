@@ -15,7 +15,6 @@ import {
 import { Pencil, Users } from 'lucide-react';
 import { api } from '@/lib/api-rest-client';
 import { EntityRowLink } from '../../_components/entity-row-link';
-import { CmsTabs } from '../_components/cms-tabs';
 import { AuthorCreateForm } from './author-create-form';
 
 export const dynamic = 'force-dynamic';
@@ -34,7 +33,6 @@ export default async function AuthorsPage() {
   return (
     <Container size="lg">
       <Stack gap={6} className="py-10">
-        <CmsTabs current="authors" />
         <Stack gap={2}>
           <Stack direction="row" align="center" gap={2}>
             <Heading level={1}>Authors</Heading>

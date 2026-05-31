@@ -53,6 +53,9 @@ RUN addgroup --system --gid 1001 nodejs \
 # Standalone bundle includes the minimal node_modules + server.js for the app.
 COPY --from=builder --chown=nextjs:nodejs /repo/apps/storefront/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /repo/apps/storefront/.next/static ./apps/storefront/.next/static
+# public/ is NOT bundled into standalone output — copy it explicitly so the
+# default favicon fallback (favicon.ico, sparx-icon.svg) serves.
+COPY --from=builder --chown=nextjs:nodejs /repo/apps/storefront/public ./apps/storefront/public
 
 USER nextjs
 

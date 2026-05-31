@@ -46,14 +46,30 @@ const THEME_COOKIE = 'sparx_theme';
 export async function generateMetadata(): Promise<Metadata> {
   const tenant = await resolveTenant();
   if (!tenant) {
-    return { title: 'Store not found', robots: { index: false, follow: false } };
+    return {
+      title: 'Store not found',
+      robots: { index: false, follow: false },
+      icons: { icon: '/sparx-icon.svg' },
+    };
   }
   const favicon = mediaUrl(tenant.theme?.faviconMediaId ?? null, tenant.slug);
   return {
     title: { default: tenant.name, template: `%s · ${tenant.name}` },
     description: `Shop ${tenant.name}.`,
     robots: { index: true, follow: true },
-    ...(favicon ? { icons: { icon: favicon } } : {}),
+    // The merchant's own favicon always wins. Until they set one, fall back to
+    // the Sparx mark (public/) rather than the browser's default globe — a
+    // brand-new store still looks finished. Deliberately favicon-only: no
+    // apple-icon / manifest, so Sparx never brands a merchant's home-screen
+    // install. Assets: apps/storefront/public/{favicon.ico,sparx-icon.svg}.
+    icons: favicon
+      ? { icon: favicon }
+      : {
+          icon: [
+            { url: '/sparx-icon.svg', type: 'image/svg+xml' },
+            { url: '/favicon.ico', sizes: 'any' },
+          ],
+        },
   };
 }
 

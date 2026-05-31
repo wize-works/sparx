@@ -6,13 +6,11 @@
 import Link from 'next/link';
 import { Button, Card, CardContent, Container, EmptyState, Stack } from '@sparx/ui';
 import { ImageOff } from 'lucide-react';
-import { CmsTabs } from '../../_components/cms-tabs';
 
 export default function NotFound() {
   return (
     <Container size="lg">
       <Stack gap={6} className="py-10">
-        <CmsTabs current="media" />
         <Card variant="module">
           <CardContent>
             <EmptyState

@@ -24,7 +24,6 @@ import {
   Text,
 } from '@sparx/ui';
 import { Webhook } from 'lucide-react';
-import { CmsTabs } from '../_components/cms-tabs';
 
 export const dynamic = 'force-dynamic';
 
@@ -32,7 +31,6 @@ export default function WebhooksPage() {
   return (
     <Container size="lg">
       <Stack gap={6} className="py-10">
-        <CmsTabs current="webhooks" />
         <Stack gap={2}>
           <Stack direction="row" align="center" gap={2}>
             <Webhook className="h-5 w-5" />

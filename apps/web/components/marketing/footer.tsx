@@ -115,7 +115,7 @@ export function Footer() {
             maxWidth: '340px',
           }}
         >
-          <Wordmark size={24} />
+          <Wordmark size={24} icon />
           <p
             style={{
               fontFamily: 'var(--font-sans)',

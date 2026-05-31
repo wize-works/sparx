@@ -1,14 +1,13 @@
-// Shared page scaffold for every Email surface: page container + header
-// (icon, title, optional badge/actions) + the section sub-nav. Keeps the
-// chrome identical across Overview / Broadcasts / Automations / etc. so each
-// surface only renders its own body.
+// Shared page scaffold for every Email surface: width-constrained container +
+// the standard PageHeader (icon, title, optional description/actions). Section
+// navigation now lives in the shell's contextual panel (docs/34 §11), so this
+// no longer renders an in-content tab strip — each surface just renders its
+// own body below the header.
 
 import type { ReactNode } from 'react';
-import { Container, Heading, Stack, Text } from '@sparx/ui';
-import { EmailTabs, type EmailSection } from './email-tabs';
+import { Container, PageHeader, Stack } from '@sparx/ui';
 
 interface EmailShellProps {
-  current: EmailSection;
   title: string;
   description?: ReactNode;
   icon?: ReactNode;
@@ -17,34 +16,17 @@ interface EmailShellProps {
   children: ReactNode;
 }
 
-export function EmailShell({
-  current,
-  title,
-  description,
-  icon,
-  actions,
-  children,
-}: EmailShellProps) {
+export function EmailShell({ title, description, icon, actions, children }: EmailShellProps) {
   return (
     <Container size="xl">
       <Stack gap={6} className="py-10">
-        <Stack direction="row" align="start" justify="between" gap={4}>
-          <Stack gap={2}>
-            <Stack direction="row" align="center" gap={2}>
-              {icon ? (
-                <span aria-hidden className="text-[var(--module-active)]">
-                  {icon}
-                </span>
-              ) : null}
-              <Heading level={1}>{title}</Heading>
-            </Stack>
-            {description ? <Text variant="muted">{description}</Text> : null}
-          </Stack>
-          {actions ? <div className="shrink-0">{actions}</div> : null}
-        </Stack>
-
-        <EmailTabs current={current} />
-
+        <PageHeader
+          className="mb-0"
+          icon={icon}
+          title={title}
+          description={description}
+          actions={actions}
+        />
         {children}
       </Stack>
     </Container>

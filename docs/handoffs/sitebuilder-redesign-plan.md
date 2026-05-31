@@ -111,10 +111,37 @@ layout (keeps live preview + docked inspector + in-canvas selection).
       `/sitebuilder/homepage` + `/sitebuilder/pages` render `SectionBuilder` directly; the orphaned
       `PageBuilder` + sitebuilder `PreviewFrame` were deleted. (Homepage/Pages kept as separate scopes
       — the merge is deferred, low value.)
-- [ ] **§2.3 Theme pane v2-native** (= old §3) — generator UX (swatch + `-content` grid, surfaces,
-      status, radius trio, sizes, effects, container, save-as-theme); drives live `sparx-preview-theme`
-      via `buildThemeCssV2`. Lands the v2 storage cutover (staged). Delete `/sitebuilder/design` + `/themes`.
-- [ ] **§2.4 Brand pane v2-native** — identity (color/type/shape/rhythm/effect), ownership cues. Delete `/sitebuilder/brand`.
+- [ ] **§2.3 Theme pane v2-native** (= old §3) — generator UX (presentation swatch + `-content` grid,
+      status, container); drives live `sparx-preview-theme` via `buildThemeCssV2`. Lands the v2 storage
+      cutover. Delete `/sitebuilder/design` + `/themes`.
+  > **READY-TO-EXECUTE SPEC (all seams traced 2026-05-31; backward-safe additive `compiledV2`, NO
+  > migration — the v1 `compiledTokens` + write-through path stays untouched, so existing tenants can't
+  > break; do as ONE coordinated push, ideally with `pnpm db:up` + the live deploy to eyeball colors —
+  > a generator is the worst thing to build blind). Theme pane edits PRESENTATION only (surfaces
+  > base-100/200/300 + baseContent, neutral, info/success/warning/danger, border, containerWidth);
+  > identity/shape/rhythm/effect = §2.4 Brand pane.**
+  >
+  > 1. `packages/storefront-themes/src/v2/tenant.ts` (new): `brandColsToTokenDoc(cols)` +
+  >    `compileThemeForTenant({themeKey, brand, presentation}) → CompiledThemeV2` (`getThemePresetV2` ←
+  >    brand identity ← presentation). Export from `v2/index.ts`. Publish AND inspector both call it.
+  > 2. `packages/sitebuilder-schemas/src/site-settings.ts`: add optional `presentation`
+  >    (PresentationOverlayV2 shape, permissive) to `SiteSettings` → persists into `draftSettings` JSON.
+  > 3. `packages/sitebuilder/src/services/publish-internals.ts`: `PublishedSnapshot` += `compiledV2?`.
+  >    `publishWithinTx` fetches the 5 brand cols (like `overlayBrand`) + reads `draftSettings.presentation`,
+  >    `compiledV2 = compileThemeForTenant(...)`, EMBEDS in the version's `compiledTokens` JSON as
+  >    `{ ...compiled, v2: compiledV2 }` (no new column). `toPublishedSnapshot` splits it back out.
+  > 4. `publish-service.ts getDraftSnapshot`: compute `compiledV2` inline (brand + presentation) → snapshot.
+  > 5. storefront: `lib/site.ts` `PublishedSnapshot += compiledV2?`; `lib/theme.ts`: prefer
+  >    `buildThemeCssV2(compiledV2)` when present, else today's `buildLegacyThemeCss`; `app/layout.tsx`
+  >    passes `snapshot.compiledV2`.
+  > 6. dashboard: new `_components/theme-inspector.tsx` (theme picker + appearance policy + per-mode
+  >    presentation swatch grid + container; change → `compileThemeForTenant`+`buildThemeCssV2` →
+  >    `useEditorCanvas().setThemeCss()` LIVE, no reload; debounce-save `presentation` via `updateSettings`).
+  >    `design/page.tsx` renders it (drop v1 `customizer`); add `/sitebuilder/design` to `CANVAS_SCOPES`;
+  >    delete `/themes` + `customizer.tsx`. Brand fetched via `getBrand()` (already in `_lib/api`).
+- [ ] **§2.4 Brand pane v2-native** — identity (color/type/shape/rhythm/effect), ownership cues. Delete
+      `/sitebuilder/brand`. NEEDS `TenantBrand.tokens` JSONB column for shape/rhythm/effect = staged prod
+      migration (identity cols already exist; the §2.3 `brandColsToTokenDoc` widens to read `.tokens`).
 - [ ] **§2.5** — retire the email designer (Phase 1 done → constraint lifted).
 - [ ] **Acceptance:** the full design → compose → publish loop happens on one screen.
 

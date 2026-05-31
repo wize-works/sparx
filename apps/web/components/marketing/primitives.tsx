@@ -10,6 +10,7 @@
  * variables from packages/ui/src/tokens.css.
  */
 import * as React from 'react';
+import { SparxMark } from '@sparx/ui';
 const MODULE_COLORS = {
   storefront: { color: 'var(--module-storefront)', tint: '#EEF2FF', text: '#4338CA' },
   commerce: { color: 'var(--module-commerce)', tint: '#FFF7ED', text: '#C2410C' },
@@ -30,21 +31,25 @@ export function getModuleColor(module: MarketingModule) {
 /**
  * The Sparx wordmark. The "x" is always indigo. Brand guide §2.
  */
-export function Wordmark({ size = 22 }: { size?: number }) {
+export function Wordmark({ size = 22, icon = false }: { size?: number; icon?: boolean }) {
   return (
     <span
       style={{
-        fontFamily: 'var(--font-sans)',
-        fontWeight: 500,
+        fontFamily: "var(--font-wordmark, 'Inter', system-ui, sans-serif)",
+        fontWeight: 700,
         fontSize: `${size}px`,
         letterSpacing: '-0.03em',
         color: 'var(--color-text-primary)',
         display: 'inline-flex',
-        alignItems: 'baseline',
+        alignItems: 'center',
+        gap: icon ? Math.round(size * 0.28) : 0,
         lineHeight: 1,
       }}
     >
-      Spar<span style={{ color: 'var(--sparx-primary)', fontWeight: 800 }}>x</span>
+      {icon ? <SparxMark size={Math.round(size * 1.18)} /> : null}
+      <span>
+        Spar<span style={{ color: 'var(--sparx-primary)' }}>x</span>
+      </span>
     </span>
   );
 }

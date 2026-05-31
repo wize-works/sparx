@@ -22,7 +22,6 @@ import {
 import { api } from '@/lib/api-rest-client';
 
 import { EntityRowLink } from '../../_components/entity-row-link';
-import { CrmTabs } from '../_components/crm-tabs';
 
 interface QuoteRow {
   id: string;
@@ -66,7 +65,6 @@ export default async function QuotesPage({ searchParams }: PageProps) {
   return (
     <Container size="xl">
       <Stack gap={6} className="py-10">
-        <CrmTabs current="quotes" />
         <Stack direction="row" align="end" justify="between" wrap>
           <Stack gap={2}>
             <Stack direction="row" align="center" gap={2}>
