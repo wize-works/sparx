@@ -29,7 +29,7 @@ export function Nav() {
           gap: '16px',
         }}
       >
-        <Wordmark icon />
+        <Wordmark />
 
         <div
           className="mkt-hide-on-tablet"
