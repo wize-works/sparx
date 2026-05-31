@@ -13,7 +13,6 @@ import {
   EmptyState,
   PageHeader,
   Stack,
-  Text,
 } from '@sparx/ui';
 
 import { api } from '@/lib/api-rest-client';
