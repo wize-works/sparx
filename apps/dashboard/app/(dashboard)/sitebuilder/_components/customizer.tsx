@@ -1,9 +1,13 @@
 'use client';
 
 // The visual customizer: theme + appearance + color/font/layout settings on the
-// left, a live storefront preview on the right. Token edits push to the preview
-// iframe via postMessage for instant feedback (the storefront applies them as
-// CSS variables) and debounce-save to the draft. Structural/theme changes save
+// left, a live storefront preview on the right. Light/dark mode flips live over
+// the Phase 2 §1 preview transport (`sparx-preview-mode`); token + CSS edits
+// debounce-save to the draft and surface in the preview on Refresh (the
+// storefront re-renders them through the v2 SSR path). Live token streaming —
+// compiling buildThemeCssV2 in the browser and pushing `sparx-preview-theme` —
+// lands with the v2-native inspector that replaces this panel (Phase 2 §3),
+// where the editor holds v2 token state directly. Structural/theme changes save
 // then refresh.
 
 import * as React from 'react';
@@ -85,15 +89,11 @@ export function Customizer({
     return theme?.tokenDefaults[previewMode][field.key] ?? '';
   };
 
-  const postToPreview = React.useCallback(
-    (overrides: { light: TokenMap; dark: TokenMap; mode: Mode; css: string }) => {
-      iframeRef.current?.contentWindow?.postMessage(
-        { type: 'sparx-sitebuilder-preview', themeKey, ...overrides },
-        '*'
-      );
-    },
-    [themeKey]
-  );
+  // Live mode flip over the preview transport (Phase 2 §1). Token/CSS streaming
+  // is intentionally NOT pushed here — see the file header.
+  const postMode = React.useCallback((mode: Mode) => {
+    iframeRef.current?.contentWindow?.postMessage({ type: 'sparx-preview-mode', mode }, '*');
+  }, []);
 
   // Debounced draft save of token settings.
   const saveTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -111,7 +111,6 @@ export function Customizer({
     setEditing(next);
     const nextLight = previewMode === 'light' ? next : light;
     const nextDark = previewMode === 'dark' ? next : dark;
-    postToPreview({ light: nextLight, dark: nextDark, mode: previewMode, css: customCss });
     queueSave({ light: nextLight, dark: nextDark, css: customCss });
   };
 
@@ -121,13 +120,11 @@ export function Customizer({
     const nextDark = { ...dark, [key]: value };
     setLight(nextLight);
     setDark(nextDark);
-    postToPreview({ light: nextLight, dark: nextDark, mode: previewMode, css: customCss });
     queueSave({ light: nextLight, dark: nextDark, css: customCss });
   };
 
   const onCssChange = (css: string) => {
     setCustomCss(css);
-    postToPreview({ light, dark, mode: previewMode, css });
     queueSave({ light, dark, css });
   };
 
@@ -146,7 +143,7 @@ export function Customizer({
 
   const switchMode = (mode: Mode) => {
     setPreviewMode(mode);
-    postToPreview({ light, dark, mode, css: customCss });
+    postMode(mode);
   };
 
   // Identity tokens (brand/primary colour, accent, type) are owned by the

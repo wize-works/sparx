@@ -66,7 +66,11 @@ export function SectionRenderer({
   return (
     <>
       {sections.map((section) => (
-        <div key={section.id}>{renderSection(section, ctx)}</div>
+        // data-section-* lets the Site Builder preview bridge resolve a click to
+        // a section without each section having to become a client component.
+        <div key={section.id} data-section-id={section.id} data-section-type={section.sectionType}>
+          {renderSection(section, ctx)}
+        </div>
       ))}
     </>
   );

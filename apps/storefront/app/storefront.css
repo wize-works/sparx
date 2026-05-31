@@ -1870,3 +1870,25 @@
   font-weight: 550;
   color: var(--sf-primary);
 }
+
+/* ── Site Builder preview chrome ─────────────────────────────────
+   Only present when the storefront is embedded in the editor iframe (the
+   preview bridge sets data-sparx-preview on <html>). Editor-only affordances:
+   sections become clickable and show a hover / selection ring. The ring color
+   is fixed (Sparx Indigo) so it stays legible on any merchant theme, and uses
+   `outline` (not border) so selecting never shifts layout. */
+[data-sparx-preview] {
+  --sf-preview-ring: #6366f1;
+}
+[data-sparx-preview] [data-section-id] {
+  cursor: pointer;
+  outline: 2px solid transparent;
+  outline-offset: -2px;
+  transition: outline-color 0.12s var(--sf-ease);
+}
+[data-sparx-preview] [data-section-id]:hover {
+  outline-color: color-mix(in oklab, var(--sf-preview-ring) 45%, transparent);
+}
+[data-sparx-preview] [data-section-id].sparx-section-selected {
+  outline-color: var(--sf-preview-ring);
+}

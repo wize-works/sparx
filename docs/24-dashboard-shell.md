@@ -1,8 +1,10 @@
 # Sparx Platform — Dashboard Shell
 
-**Version:** 1.1
+**Version:** 1.2
 **Author:** Brandon Korous
-**Last Updated:** 2026-05-30
+**Last Updated:** 2026-05-31
+
+> **1.2 (2026-05-31):** Sidebar moves to a **rail + contextual panel** model (§5) — a thin icon rail (modules, Home, Settings, search, Favorites/Recents flyouts) plus a contextual panel whose contents follow context: a module's sections when inside one, Favorites + Recents at platform level. This makes intra-module navigation a shell concern, so the working area drops its in-content section tabs and card-grid-as-nav (see [doc 34](34-dashboard-working-area-standard.md) §11).
 
 ---
 
@@ -232,47 +234,51 @@ Supported affordances:
 
 ## 5. Sidebar
 
-### 5.1 Layout
+### 5.1 Layout — rail + contextual panel
+
+The sidebar is two columns: a constant **icon rail** and a **contextual panel** whose contents follow where you are. The rail answers "which module"; the panel answers "which section" (inside a module) or surfaces cross-module shortcuts (at the platform level). One mechanism, always present, scaling to modules with 10+ sections where a horizontal tab strip cannot.
 
 ```
-┌────────────────────────────┐
-│ [Avatar] Tenant name   [<] │  ← Tenant switcher (same popover as Tenant breadcrumb)
-├────────────────────────────┤
-│ 🔍 Search           ⌘K     │  ← ⌘K trigger
-├────────────────────────────┤
-│ ★ Favorites             ▾  │  ← collapsible, drag-to-reorder children
-│   • All open orders        │
-│   • Create order           │
-│   • Customer list          │
-├────────────────────────────┤
-│ ⏱ Recents              ▾  │  ← collapsible, server-driven, capped at 20
-│   • Orders                 │
-│   • Customers              │
-├────────────────────────────┤
-│ Modules                    │  ← section header (non-collapsible)
-│   ▸ Commerce               │  ← each module is a collapsible tree
-│     • Orders               │     showing its sections from manifest
-│     • Products             │
-│     • Customers            │
-│   ▸ CMS                    │
-│   ▸ CRM                    │
-│   …                        │
-├────────────────────────────┤
-│ ⚙ Settings                │  ← always pinned to bottom
-│ ? Help                     │
-└────────────────────────────┘
+┌────┬───────────────────────┐
+│ 🔍 │  COMMERCE             │  ← panel header: active module (module-color)
+│ ⌂  │  Products             │
+│ ★  │  Pricing              │  ← contextual panel:
+│ ⏱  │  Discounts            │     the active module's sections
+│────│  Subscriptions        │     (from its manifest), active one
+│ ▣  │  Shipping             │     highlighted in --module-active
+│ ▣▸ │  Returns & RMA        │
+│ ▣  │  Reviews & Q&A        │
+│ ▣  │  Providers            │
+│ ▣  │  Configurator         │
+│ …  │                       │
+│────│                       │
+│ ⚙  │                       │  ← Settings pinned to rail bottom
+└────┴───────────────────────┘
+  rail        contextual panel
 ```
+
+**The rail** (top → bottom): Search (⌘K), Home, ★ Favorites (flyout), ⏱ Recents (flyout), a divider, then one icon per **enabled** module (active module tinted `--module-active`), and Settings pinned at the bottom. The rail never changes between routes.
+
+**The contextual panel** changes contents by context — it is *not* a mode flip, just different data:
+
+| Context | Panel shows |
+| ------- | ----------- |
+| Inside a module (`/commerce/*`, `/crm/*`, …) | That module's `sections` from its manifest, active section highlighted. Header = module name in module color. |
+| Platform level (`/`, `/settings`) | **Favorites** + **Recents** (the cross-module shortcuts), so they stay first-class when no module is active. |
+
+This keeps Favorites and Recents reachable (they fill the panel at the platform level, and are always one click away via their rail flyouts and ⌘K), while giving focused, vertical section navigation the moment you enter a module. The **tenant/workspace switcher** moves entirely to the breadcrumb's Workspace segment (§4.2) and the rail's account control — it is no longer a sidebar header.
 
 ### 5.2 Section Behaviors
 
-| Section         | Source                                                | Mutability                                                                                       |
-| --------------- | ----------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
-| Tenant switcher | Better Auth org membership                            | Read-only here; mutate via Settings or the popover                                               |
-| Search          | n/a                                                   | Opens ⌘K                                                                                         |
-| Favorites       | `user_favorites` table                                | Add via star or right-click "Add to Favorites"; reorder via drag; remove via star or right-click |
-| Recents         | `user_recents` table                                  | Mutated by navigation; user cannot manually reorder (chronological); can clear via Settings      |
-| Modules         | `moduleManifests` filtered by tenant's active modules | Read-only; activate new modules via Settings → Modules                                           |
-| Settings / Help | Static                                                | Read-only                                                                                        |
+| Element              | Source                                                | Mutability                                                                                       |
+| -------------------- | ----------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| Search (rail)        | n/a                                                   | Opens ⌘K                                                                                         |
+| Home (rail)          | Static                                                | Navigate to platform dashboard                                                                   |
+| Favorites (rail ★)   | `user_favorites` table                                | Flyout; add via star or right-click; reorder via drag; also fills the panel at platform level    |
+| Recents (rail ⏱)     | `user_recents` table                                  | Flyout; mutated by navigation; chronological; also fills the panel at platform level             |
+| Module icons (rail)  | `moduleManifests` filtered by tenant's active modules | Read-only; activate new modules via Settings → Modules                                           |
+| Contextual panel     | active module's manifest `sections`                   | Read-only navigation; the single intra-module nav surface (no in-content tabs — see [doc 34](34-dashboard-working-area-standard.md) §11) |
+| Settings (rail ⚙)    | Static                                                | Pinned to rail bottom                                                                            |
 
 ### 5.3 No Top-Tab Strip
 

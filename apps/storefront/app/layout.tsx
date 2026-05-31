@@ -23,6 +23,7 @@ import { CustomerProvider } from '@/components/customer-provider';
 import { WishlistProvider } from '@/components/wishlist-provider';
 import { MiniCart } from '@/components/mini-cart';
 import { ModeToggle } from '@/components/mode-toggle';
+import { PreviewBridge } from '@/components/preview-bridge';
 import { SiteHeader, type NavItem } from '@/components/site-header';
 import { SiteFooter, type FooterColumn } from '@/components/site-footer';
 import { listCollections } from '@/lib/commerce';
@@ -228,6 +229,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         ) : null}
       </head>
       <body className="sf-body">
+        <PreviewBridge />
         {tenant ? (
           <CustomerProvider tenantSlug={tenant.slug}>
             <WishlistProvider>

@@ -3,7 +3,7 @@
 **Platform:** Sparx (sparx.works)
 **Company:** WizeWorks (wize.works)
 **Author:** Brandon Korous (me@brandonkorous.com)
-**Last Updated:** 2026-05-27
+**Last Updated:** 2026-05-31
 
 ---
 
@@ -113,3 +113,5 @@ Decisions locked in during the v2 documentation pass (vs. the original WizeWorks
 | 29  | Site Builder Architecture           | Theme/section engine, draft→publish→schedule, light/dark, boundaries    |
 | 30  | Site Builder Redesign               | One-screen editor, layout/template model, assignment, navigation flip   |
 | 32  | Workspace Switching & Breadcrumb    | Phased plan: module switcher + workspace switch/create, org-plugin risk |
+| 33  | Token Model v2                      | Semantic palette + shape/rhythm/effects, brand-vs-presentation ownership |
+| 34  | Platform Glossary & Concept Model   | Canonical terms; tenant → brand → site → modules; "storefront" overload |
