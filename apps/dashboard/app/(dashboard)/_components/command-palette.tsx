@@ -34,6 +34,15 @@ export function CommandPalette({ favorites, recents }: CommandPaletteProps) {
   const router = useRouter();
   const [open, setOpen] = React.useState(false);
 
+  // Let non-keyboard surfaces (the rail/mobile-nav Search affordance) open the
+  // palette without re-implementing the ⌘K shortcut. They dispatch a window
+  // event; the palette owns the open state.
+  React.useEffect(() => {
+    const handler = () => setOpen(true);
+    window.addEventListener('sparx:open-command-palette', handler);
+    return () => window.removeEventListener('sparx:open-command-palette', handler);
+  }, []);
+
   const all = listFavoritableItems();
 
   const favoritedItems = favorites

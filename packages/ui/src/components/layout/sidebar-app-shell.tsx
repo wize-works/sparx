@@ -4,7 +4,6 @@ import * as React from 'react';
 import { Menu } from 'lucide-react';
 import { Button } from '../primitives/button';
 import { Drawer, DrawerContent, DrawerTitle } from '../overlay/drawer';
-import { Sidebar } from '../navigation/sidebar';
 import { useMediaQuery } from '../../hooks/use-media-query';
 
 // SidebarAppShell is the canonical authenticated-app layout: pinned sidebar +
@@ -28,10 +27,11 @@ import { useMediaQuery } from '../../hooks/use-media-query';
 //     header chrome (close button etc.) and calls `onDetailClose` to
 //     dismiss.
 //
-// The `sidebar` prop is rendered in BOTH the desktop sidebar and the
-// mobile drawer, so pass content that renders identically in either
-// context (header + nav + footer composed from SidebarHeader / nav
-// sections / SidebarFooter is the intended shape).
+// Navigation is a two-column model on desktop (docs/24 §5): a thin icon
+// `rail` (module switching + Home/Search/Settings) and a `panel` whose
+// contents follow context (a module's sections, or Favorites/Recents at the
+// platform level). Below `md` both collapse into the hamburger Drawer, which
+// renders the single vertical `mobileNav` tree instead.
 
 const DETAIL_WIDTH_STORAGE_KEY = 'sparx:detail-width';
 const DETAIL_WIDTH_DEFAULT = 40; // percent of main area
@@ -39,12 +39,12 @@ const DETAIL_WIDTH_MIN = 25;
 const DETAIL_WIDTH_MAX = 65;
 
 export interface SidebarAppShellProps {
-  /**
-   * Contents of the sidebar — typically `<SidebarHeader>`, a nav region,
-   * and `<SidebarFooter>`. Rendered in both the desktop sidebar and the
-   * mobile drawer.
-   */
-  sidebar: React.ReactNode;
+  /** Desktop icon rail (md+) — module switcher + Home/Search/Settings. */
+  rail: React.ReactNode;
+  /** Desktop contextual panel (md+) — sections, or Favorites/Recents. */
+  panel: React.ReactNode;
+  /** Vertical nav tree rendered in the mobile drawer (below md). */
+  mobileNav: React.ReactNode;
   /** Left-aligned header content (e.g. breadcrumbs). */
   headerStart?: React.ReactNode;
   /** Right-aligned content for the top header (user menu, etc). */
@@ -79,7 +79,9 @@ export interface SidebarAppShellProps {
 }
 
 export function SidebarAppShell({
-  sidebar,
+  rail,
+  panel,
+  mobileNav,
   headerStart,
   headerActions,
   detail,
@@ -116,12 +118,22 @@ export function SidebarAppShell({
         Skip to content
       </a>
 
-      <Sidebar className="hidden md:flex">{sidebar}</Sidebar>
+      <div className="hidden md:flex">
+        <nav
+          aria-label={mobileNavLabel}
+          className="flex h-full w-14 shrink-0 flex-col items-center gap-1 border-r border-[var(--color-border-default)] bg-[var(--color-bg-surface)] py-2"
+        >
+          {rail}
+        </nav>
+        <div className="flex h-full w-60 shrink-0 flex-col border-r border-[var(--color-border-default)] bg-[var(--color-bg-surface)]">
+          {panel}
+        </div>
+      </div>
 
       <Drawer open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
         <DrawerContent side="left" className="flex w-72 max-w-[85vw] flex-col gap-1 p-3" hideClose>
           <DrawerTitle className="sr-only">{mobileNavLabel}</DrawerTitle>
-          {sidebar}
+          {mobileNav}
         </DrawerContent>
       </Drawer>
 

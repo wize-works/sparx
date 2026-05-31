@@ -27,36 +27,36 @@ Today that working area is improvised per page. A live audit of 19 representativ
 3. **The module color is automatic — let it be.** Every surface is wrapped in `<ModuleProvider>`, which sets `--module-active`. Primary actions, card stripes, tab underlines, and stat icons all read that variable. A page should never hardcode indigo (or any hue) — if it looks indigo on a Commerce page, it's missing `variant="module"`.
 4. **One primary action per header, top-right.** Actions live in the page header, right-aligned. Never below the header, never duplicated into the body, never a second competing primary.
 5. **The breadcrumb is the back button.** The shell breadcrumb already provides up-navigation. The working area carries no in-content "← Back to X" link.
-6. **Section navigation belongs to the shell, not the content.** Switching between a module's sections is the contextual sidebar's job (§11), not in-content tabs or a card grid. The working area is for *content*; in-content tabs are reserved for the facets of a single record (§11.1).
+6. **Section navigation belongs to the shell, not the content.** Switching between a module's sections is the contextual sidebar's job (§11), not in-content tabs or a card grid. The working area is for _content_; in-content tabs are reserved for the facets of a single record (§11.1).
 7. **Two widths, decided by intent.** Workspaces are wide; focused tasks are narrow (§3). No per-page max-width guessing.
 
 ---
 
 ## 3. Content Width
 
-The shell applies no max-width; each page wraps its content in the shared `Container` (`packages/ui/src/components/layout/container.tsx`). There are exactly **two** allowed widths, chosen by whether the page is a *workspace* (you survey and navigate) or a *focused task* (you fill one thing out):
+The shell applies no max-width; each page wraps its content in the shared `Container` (`packages/ui/src/components/layout/container.tsx`). There are exactly **two** allowed widths, chosen by whether the page is a _workspace_ (you survey and navigate) or a _focused task_ (you fill one thing out):
 
-| Width | `Container size` | Max | Used by archetypes |
-| ----- | ---------------- | --- | ------------------ |
-| **Wide** | `xl` | 1280px | Module Overview, Collection/List, Record Detail, Settings Index, Module Preview |
-| **Focused** | `md` | 768px | Create/Edit Form, single-section settings forms |
+| Width       | `Container size` | Max    | Used by archetypes                                                              |
+| ----------- | ---------------- | ------ | ------------------------------------------------------------------------------- |
+| **Wide**    | `xl`             | 1280px | Module Overview, Collection/List, Record Detail, Settings Index, Module Preview |
+| **Focused** | `md`             | 768px  | Create/Edit Form, single-section settings forms                                 |
 
 `md` (768px) comfortably fits the two-column field rows seen on the deal/product forms. A form that genuinely needs three+ columns may opt up to `lg` (1024px), but that is the documented exception, not a free choice. The four ad-hoc widths in the audit (820 / 960 / 1040 / 1200) collapse to these two.
 
-> **Record Detail vs. Form.** A *detail* page (tabs, multiple panels, the rich edit surface for an entity like a product) is a workspace → **Wide**. A *form* page (`/new`, a simple single-card edit) is a focused task → **Focused**. The tell: a detail page has in-content tabs and inline/auto save; a form page has one card and an explicit Save/Cancel bar.
+> **Record Detail vs. Form.** A _detail_ page (tabs, multiple panels, the rich edit surface for an entity like a product) is a workspace → **Wide**. A _form_ page (`/new`, a simple single-card edit) is a focused task → **Focused**. The tell: a detail page has in-content tabs and inline/auto save; a form page has one card and an explicit Save/Cancel bar.
 
 ---
 
 ## 4. The Six Archetypes
 
-| # | Archetype | Route shape | Width | Header actions | Body |
-| - | --------- | ----------- | ----- | -------------- | ---- |
-| 1 | **Module Overview** | `/{module}` | Wide | Primary create + optional secondary | Stat grid → SectionCard grid (links to surfaces) |
-| 2 | **Collection / List** | `/{module}/{things}` | Wide | Primary create | FilterBar → DataTable (desktop) / card list (mobile) → pager |
-| 3 | **Record Detail** | `/{module}/{things}/{id}` | Wide | Status-changing secondaries (Publish, Archive…) | Tabs → section Cards |
-| 4 | **Create / Edit Form** | `/{module}/{things}/new`, simple edits | Focused | — (actions in the form bar) | Card(s) → Form fields → action bar |
-| 5 | **Settings Index** | `/settings`, `/{module}/settings` (index) | Wide | — | SectionCard grid |
-| 6 | **Module Preview** | not-yet-built modules | Wide | — | `ModuleStub`: header + "coming online" panel + "What ships" grid |
+| #   | Archetype              | Route shape                               | Width   | Header actions                                  | Body                                                             |
+| --- | ---------------------- | ----------------------------------------- | ------- | ----------------------------------------------- | ---------------------------------------------------------------- |
+| 1   | **Module Overview**    | `/{module}`                               | Wide    | Primary create + optional secondary             | Stat grid → SectionCard grid (links to surfaces)                 |
+| 2   | **Collection / List**  | `/{module}/{things}`                      | Wide    | Primary create                                  | FilterBar → DataTable (desktop) / card list (mobile) → pager     |
+| 3   | **Record Detail**      | `/{module}/{things}/{id}`                 | Wide    | Status-changing secondaries (Publish, Archive…) | Tabs → section Cards                                             |
+| 4   | **Create / Edit Form** | `/{module}/{things}/new`, simple edits    | Focused | — (actions in the form bar)                     | Card(s) → Form fields → action bar                               |
+| 5   | **Settings Index**     | `/settings`, `/{module}/settings` (index) | Wide    | —                                               | SectionCard grid                                                 |
+| 6   | **Module Preview**     | not-yet-built modules                     | Wide    | —                                               | `ModuleStub`: header + "coming online" panel + "What ships" grid |
 
 Everything below specifies the shared pieces these archetypes are built from.
 
@@ -73,13 +73,13 @@ There is no shared `PageHeader` today; every page hand-rolls `Stack + Heading + 
 subtitle paragraph (muted, one or two sentences)
 ```
 
-| Slot | Rule |
-| ---- | ---- |
-| **Icon** | The module's `lucide` icon, in `--module-active`. Present on every module-scoped page; omitted only on the platform-level `/` Home and `/settings` index. |
-| **Title** | `<Heading level={1}>`. The page/entity name. |
-| **Badge** | Optional. A single inline pill for a **count** ("12 products") or **status** ("Active", "Module preview"). Uses `Badge`; never colored eyebrow text, never free-floating. At most one. |
+| Slot         | Rule                                                                                                                                                                                                           |
+| ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Icon**     | The module's `lucide` icon, in `--module-active`. Present on every module-scoped page; omitted only on the platform-level `/` Home and `/settings` index.                                                      |
+| **Title**    | `<Heading level={1}>`. The page/entity name.                                                                                                                                                                   |
+| **Badge**    | Optional. A single inline pill for a **count** ("12 products") or **status** ("Active", "Module preview"). Uses `Badge`; never colored eyebrow text, never free-floating. At most one.                         |
 | **Subtitle** | Optional `<Text variant="muted">`, ≤ 2 sentences. One consistent style — not sometimes a long paragraph, sometimes a meta string. Tenant ids / "last 30 days" framing belongs in body stats, not the subtitle. |
-| **Actions** | Right-aligned. **Exactly one** primary (`Button variant="module"`); zero or more secondaries (`variant="outline"`/`"ghost"`). Empty when the archetype's actions live elsewhere (forms, previews). |
+| **Actions**  | Right-aligned. **Exactly one** primary (`Button variant="module"`); zero or more secondaries (`variant="outline"`/`"ghost"`). Empty when the archetype's actions live elsewhere (forms, previews).             |
 
 **Forbidden:** primary actions placed below the header or left-aligned (seen on Discounts, Segments); a second `Create` button duplicated into an empty state; the in-content "← Back to X" link (seen on every `/new` and the product detail) — delete it, the breadcrumb owns up-nav.
 
@@ -99,8 +99,8 @@ subtitle paragraph (muted, one or two sentences)
 
 - **Table style:** the single `Table` primitive (uppercase muted column headers, borderless rows, hover highlight). Kill the competing bordered-table style from the products page.
 - **Row → detail:** the whole row is the link to the record's detail page. No per-row "Edit"/"Open" button when the row itself navigates (drop the CMS-pages "Edit" button and the segments "Open" link in favor of row-click; keep an explicit affordance only where a row has multiple distinct destinations).
-- **Mobile cards:** title + key metadata + status badge per card; tapping the card navigates. This is the *only* sanctioned card-list — it is the responsive form of the table, not a separate design choice.
-- **Browse/library views** (e.g. CMS Media) are the documented exception: a thumbnail grid is appropriate where the content *is* visual. Everything record-shaped uses the table.
+- **Mobile cards:** title + key metadata + status badge per card; tapping the card navigates. This is the _only_ sanctioned card-list — it is the responsive form of the table, not a separate design choice.
+- **Browse/library views** (e.g. CMS Media) are the documented exception: a thumbnail grid is appropriate where the content _is_ visual. Everything record-shaped uses the table.
 
 ### 7.1 FilterBar (to build, `@sparx/ui`)
 
@@ -118,7 +118,7 @@ The audit found three filter styles (labeled inputs + an "Apply" button on produ
 
 ## 8. Empty States — `EmptyState` (exists, `@sparx/ui`)
 
-The audit found three treatments (an inline icon-left card on Home; a bare gray box with no CTA on Orders; a stripe-card-wrapping-a-gray-box with a *duplicated* CTA on Discounts and Media). Use the single `EmptyState` component (`packages/ui/src/components/data/empty-state.tsx`) everywhere:
+The audit found three treatments (an inline icon-left card on Home; a bare gray box with no CTA on Orders; a stripe-card-wrapping-a-gray-box with a _duplicated_ CTA on Discounts and Media). Use the single `EmptyState` component (`packages/ui/src/components/data/empty-state.tsx`) everywhere:
 
 - Centered: icon-in-circle, title, **one-line** description, **one** action.
 - Rendered **directly** in the content region (or as the `DataTable` zero-row fallback) — **never** double-nested (stripe Card → gray box → content).
@@ -144,7 +144,7 @@ Five variants in the audit (Home "Active modules", Commerce "Manage", Email "Sur
 - `Card variant="module"` (the 3px `--module-active` top stripe, `card.tsx:11`) in a responsive `Grid` (3-col wide → 1-col mobile).
 - Card content: icon + title + one-line description + optional status/"Soon" badge.
 - **Whole card is the link.** No "Open" button/link in the corner (drop the Settings "Open" and Email "Open X" buttons); a disabled/"Soon" card is non-interactive with a muted badge.
-- **This grid is a *launchpad*, not navigation chrome.** It appears on the Module Overview (§12) and the Settings Index (§4) as a rich, described entry point — never as the *only* way to reach a section (the contextual sidebar in §11 is the persistent nav). The B2B/AI/Dropship "What ships" grid is the same component with a "Planned" badge.
+- **This grid is a _launchpad_, not navigation chrome.** It appears on the Module Overview (§12) and the Settings Index (§4) as a rich, described entry point — never as the _only_ way to reach a section (the contextual sidebar in §11 is the persistent nav). The B2B/AI/Dropship "What ships" grid is the same component with a "Planned" badge.
 
 ---
 
@@ -162,7 +162,7 @@ The audit found a module's child sections navigated three different ways: an in-
 
 ### 11.1 Tabs survive — but only for record facets
 
-In-content tabs (`Tabs variant="default"`, underline in `--module-active`, `tabs.tsx:55`) remain the right tool for the **facets of a single record** — a product's Overview / Variants / Media / Pricing / Inventory / Fitment / SEO. These are sub-views of *one entity*, not module navigation, so they belong in the working area, not the sidebar.
+In-content tabs (`Tabs variant="default"`, underline in `--module-active`, `tabs.tsx:55`) remain the right tool for the **facets of a single record** — a product's Overview / Variants / Media / Pricing / Inventory / Fitment / SEO. These are sub-views of _one entity_, not module navigation, so they belong in the working area, not the sidebar.
 
 - Use `variant="default"`.
 - **Drop the redundant "active" text label** — the underline already communicates selection.
@@ -178,11 +178,12 @@ In-content tabs (`Tabs variant="default"`, underline in `--module-active`, `tabs
 
 1. `PageHeader` — module icon + name + primary create action (e.g. "New product").
 2. **Stat grid** (§9) — the module's headline KPIs.
-3. **SectionCard launchpad** (§10) — one card per surface the module owns (Products, Pricing, Discounts…), each a rich, described entry point. This is a *launchpad*, not the nav: the persistent way to jump between sections is the contextual sidebar (§11). Surface lists live at `/{module}/{surface}`.
+3. **SectionCard launchpad** (§10) — one card per surface the module owns (Products, Pricing, Discounts…), each a rich, described entry point. This is a _launchpad_, not the nav: the persistent way to jump between sections is the contextual sidebar (§11). Surface lists live at `/{module}/{surface}`.
 
 **Migration notes:**
+
 - **Commerce / Email**: already overview-shaped. Normalize the stat surface (§9), the section launchpad (§10), fix the indigo buttons (§6), and drop Email's in-content section tabs in favor of the contextual sidebar (§11).
-- **CRM / CMS**: today the root *is* the Customers / Pages list with a section tab strip. Introduce an overview root; the existing list becomes `/crm/customers` and `/cms/pages` (Collection archetype). The section **tab strip is removed** — section switching moves to the contextual sidebar (§11) — and the landing becomes the overview.
+- **CRM / CMS**: today the root _is_ the Customers / Pages list with a section tab strip. Introduce an overview root; the existing list becomes `/crm/customers` and `/cms/pages` (Collection archetype). The section **tab strip is removed** — section switching moves to the contextual sidebar (§11) — and the landing becomes the overview.
 
 ---
 
@@ -214,20 +215,20 @@ The not-yet-built modules (B2B, AI, Dropship) already share one template via `ap
 
 ## 15. Components: build vs. reuse
 
-| Need | Status | Location |
-| ---- | ------ | -------- |
-| `Container` (widths) | ✅ reuse | `packages/ui/src/components/layout/container.tsx` |
-| `Card` + `variant="module"` | ✅ reuse | `packages/ui/src/components/layout/card.tsx` |
-| `Stat` (KPI card) | ✅ reuse | `packages/ui/src/components/data/stat.tsx` |
-| `DataTable` / `Table` | ✅ reuse | `packages/ui/src/components/data/{data-table,table}.tsx` |
-| `EmptyState` | ✅ reuse | `packages/ui/src/components/data/empty-state.tsx` |
-| `Tabs variant="default"` | ✅ reuse | `packages/ui/src/components/navigation/tabs.tsx` |
-| `Grid` / `Stack` | ✅ reuse | `packages/ui/src/components/layout/{grid,stack}.tsx` |
-| `Form*` primitives | ✅ reuse | `packages/ui/src/components/form/form.tsx` |
-| `ModuleStub` (preview) | ✅ reuse | `apps/dashboard/components/module-stub.tsx` |
-| **`PageHeader`** | ❌ build | new in `@sparx/ui` — composes the §5 anatomy |
-| **`FilterBar`** | ❌ build | new in `@sparx/ui` — composes the §7.1 toolbar |
-| **`FormActionBar`** | ❌ build | new in `@sparx/ui` — the §13 right-aligned bar |
+| Need                        | Status   | Location                                                 |
+| --------------------------- | -------- | -------------------------------------------------------- |
+| `Container` (widths)        | ✅ reuse | `packages/ui/src/components/layout/container.tsx`        |
+| `Card` + `variant="module"` | ✅ reuse | `packages/ui/src/components/layout/card.tsx`             |
+| `Stat` (KPI card)           | ✅ reuse | `packages/ui/src/components/data/stat.tsx`               |
+| `DataTable` / `Table`       | ✅ reuse | `packages/ui/src/components/data/{data-table,table}.tsx` |
+| `EmptyState`                | ✅ reuse | `packages/ui/src/components/data/empty-state.tsx`        |
+| `Tabs variant="default"`    | ✅ reuse | `packages/ui/src/components/navigation/tabs.tsx`         |
+| `Grid` / `Stack`            | ✅ reuse | `packages/ui/src/components/layout/{grid,stack}.tsx`     |
+| `Form*` primitives          | ✅ reuse | `packages/ui/src/components/form/form.tsx`               |
+| `ModuleStub` (preview)      | ✅ reuse | `apps/dashboard/components/module-stub.tsx`              |
+| **`PageHeader`**            | ❌ build | new in `@sparx/ui` — composes the §5 anatomy             |
+| **`FilterBar`**             | ❌ build | new in `@sparx/ui` — composes the §7.1 toolbar           |
+| **`FormActionBar`**         | ❌ build | new in `@sparx/ui` — the §13 right-aligned bar           |
 
 Three small new shared components + targeted prop fixes (mostly `variant="module"`) cover the entire standard. No primitive needs restyling.
 
@@ -235,27 +236,27 @@ Three small new shared components + targeted prop fixes (mostly `variant="module
 
 ## 16. Per-page compliance snapshot (from the 2026-05-31 audit)
 
-| Page | Archetype | Primary gaps to fix |
-| ---- | --------- | ------------------- |
-| `/` (Home) | Overview (platform) | Stat surface vs. §9; section cards vs. §10 |
-| `/commerce` | Overview | Stat surface, section-card style, button color |
-| `/crm` | Overview | Currently a list w/ section tabs; introduce overview, move list to `/crm/customers`, **drop section tabs** → contextual sidebar (§11) |
-| `/cms` | Overview | Currently Pages list w/ section tabs; introduce overview, move to `/cms/pages`, **drop section tabs** → contextual sidebar (§11) |
-| `/email` | Overview | Normalize stat/section blocks; drop "Open X" buttons; **drop section tabs** → contextual sidebar (§11) |
-| `/commerce/products` | List | Bordered table → standard table; FilterBar (drop Apply); header per §5 |
-| `/crm` (customers) | List | Header anatomy; FilterBar; row-click nav |
-| `/crm/orders` | List | Empty state needs CTA (§8) |
-| `/commerce/discounts` | List | **Indigo→module button**; action top-right not below; empty state un-nested, single CTA |
-| `/crm/segments` | List | Card-stack → responsive table; actions into header (not left row) |
-| `/cms` (pages) | List | Card → responsive table; drop per-row Edit button |
-| `/cms/media` | List (library) | Acceptable thumbnail-grid exception; header per §5 |
-| `/commerce/products/[id]` | Detail | Remove back link; tabs drop "active" label |
-| `/commerce/products/new` | Form | Remove centered back link; single action bar; width `md` |
-| `/crm/deals/new` | Form | Remove back link; required asterisks; width `md` |
-| `/cms/new` | Form | Remove back link (keep its good asterisk + footer) |
-| `/settings` | Settings Index | Section cards drop "Open" link (whole-card click) |
-| `/commerce/settings` | Form | **Indigo→module save button**; action bar per §13 |
-| `/b2b`, `/ai`, `/dropship` | Preview | ✅ compliant (reference template) |
+| Page                       | Archetype           | Primary gaps to fix                                                                                                                   |
+| -------------------------- | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `/` (Home)                 | Overview (platform) | Stat surface vs. §9; section cards vs. §10                                                                                            |
+| `/commerce`                | Overview            | Stat surface, section-card style, button color                                                                                        |
+| `/crm`                     | Overview            | Currently a list w/ section tabs; introduce overview, move list to `/crm/customers`, **drop section tabs** → contextual sidebar (§11) |
+| `/cms`                     | Overview            | Currently Pages list w/ section tabs; introduce overview, move to `/cms/pages`, **drop section tabs** → contextual sidebar (§11)      |
+| `/email`                   | Overview            | Normalize stat/section blocks; drop "Open X" buttons; **drop section tabs** → contextual sidebar (§11)                                |
+| `/commerce/products`       | List                | Bordered table → standard table; FilterBar (drop Apply); header per §5                                                                |
+| `/crm` (customers)         | List                | Header anatomy; FilterBar; row-click nav                                                                                              |
+| `/crm/orders`              | List                | Empty state needs CTA (§8)                                                                                                            |
+| `/commerce/discounts`      | List                | **Indigo→module button**; action top-right not below; empty state un-nested, single CTA                                               |
+| `/crm/segments`            | List                | Card-stack → responsive table; actions into header (not left row)                                                                     |
+| `/cms` (pages)             | List                | Card → responsive table; drop per-row Edit button                                                                                     |
+| `/cms/media`               | List (library)      | Acceptable thumbnail-grid exception; header per §5                                                                                    |
+| `/commerce/products/[id]`  | Detail              | Remove back link; tabs drop "active" label                                                                                            |
+| `/commerce/products/new`   | Form                | Remove centered back link; single action bar; width `md`                                                                              |
+| `/crm/deals/new`           | Form                | Remove back link; required asterisks; width `md`                                                                                      |
+| `/cms/new`                 | Form                | Remove back link (keep its good asterisk + footer)                                                                                    |
+| `/settings`                | Settings Index      | Section cards drop "Open" link (whole-card click)                                                                                     |
+| `/commerce/settings`       | Form                | **Indigo→module save button**; action bar per §13                                                                                     |
+| `/b2b`, `/ai`, `/dropship` | Preview             | ✅ compliant (reference template)                                                                                                     |
 
 ---
 

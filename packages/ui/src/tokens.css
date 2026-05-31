@@ -30,7 +30,8 @@
   /* Active module — set by ModuleProvider, read by components */
   --module-active: var(--sparx-primary);
   --module-active-tint: var(--sparx-primary-tint);
-  --module-active-text: #4338ca;
+  --module-active-text: #4338ca; /* legacy: ink-style dark text on tint */
+  --module-active-content: #ffffff; /* text/icon on the solid module fill */
 
   /* ── NEUTRALS — LIGHT MODE ─────────────────────────────── */
   --color-bg-page: #fafafa;
@@ -50,16 +51,40 @@
   --color-text-disabled: #d4d4d8;
   --color-text-inverse: #ffffff;
 
-  /* ── SEMANTIC ───────────────────────────────────────────── */
+  /* ── SEMANTIC PALETTE (Token Model v2 — docs/35 §3) ──────────
+     Each color is a base (hex, merchant/theme-overridable) + a `-content`
+     pair (text/icon shown on the SOLID fill). The hover / tint / ink shades
+     the variant treatments need are DERIVED in the .sx-c-* role classes
+     below via color-mix — so a single base hex yields a coherent set and a
+     custom theme color only needs to override the base.
+     ──────────────────────────────────────────────────────────── */
+  --color-primary: var(--sparx-primary);
+  --color-primary-content: #ffffff;
+
+  --color-secondary: #64748b;
+  --color-secondary-content: #ffffff;
+
+  --color-accent: #8b5cf6;
+  --color-accent-content: #ffffff;
+
+  --color-neutral: #1f2937;
+  --color-neutral-content: #ffffff;
+
+  --color-info: #0ea5e9;
+  --color-info-content: #ffffff;
+
   --color-success: #10b981;
-  --color-success-tint: #ecfdf5;
-  --color-success-text: #065f46;
+  --color-success-content: #ffffff;
+  --color-success-tint: #ecfdf5; /* legacy curated tint — kept for direct users */
+  --color-success-text: #065f46; /* legacy alias (see role ink below) */
 
   --color-warning: #f59e0b;
+  --color-warning-content: #422006; /* dark text — white fails AA on amber */
   --color-warning-tint: #fffbeb;
   --color-warning-text: #92400e;
 
   --color-danger: #ef4444;
+  --color-danger-content: #ffffff;
   --color-danger-tint: #fef2f2;
   --color-danger-text: #991b1b;
 
@@ -163,4 +188,92 @@
   --color-text-inverse: #0a0a0a;
 
   --sparx-primary-tint: #1e1b4b;
+
+  /* Neutral fill inverts in dark mode — a light surface with dark content,
+     so a `color="neutral"` solid button stays high-contrast. */
+  --color-neutral: #e5e7eb;
+  --color-neutral-content: #1f2937;
+}
+
+/* ── COLOR ROLE VARIABLES (docs/35 §4) ───────────────────────────
+   Each .sx-c-{color} class maps the four role variables the variant
+   treatments consume. `variant` (solid/soft/outline/…) is authored ONCE
+   against these role vars (in the components), so color × variant composes
+   with no cartesian product and no codegen.
+
+   Derivation (color-mix in OKLCH):
+     --c-ink   = base mixed 60% toward --color-text-primary. Because
+                 text-primary FLIPS with light/dark mode, the soft/ghost/
+                 outline text reads correctly in BOTH modes from one rule.
+     --c-hover = base nudged 86% toward text-primary (darken in light,
+                 lighten in dark) for solid hover.
+     --c-tint  = base at 14% over transparent — adapts to any surface.
+
+   A runtime custom theme color works by either overriding --color-<name>
+   (re-skins an existing slot) or by the theme layer emitting one extra
+   .sx-c-<name> rule shaped like these. No component rebuild (docs/35 §4.2).
+   ──────────────────────────────────────────────────────────────── */
+.sx-c-primary {
+  --c-bg: var(--color-primary);
+  --c-fg: var(--color-primary-content);
+  --c-ink: color-mix(in oklch, var(--color-primary) 60%, var(--color-text-primary));
+  --c-hover: color-mix(in oklch, var(--color-primary) 86%, var(--color-text-primary));
+  --c-tint: color-mix(in oklch, var(--color-primary) 14%, transparent);
+}
+.sx-c-secondary {
+  --c-bg: var(--color-secondary);
+  --c-fg: var(--color-secondary-content);
+  --c-ink: color-mix(in oklch, var(--color-secondary) 60%, var(--color-text-primary));
+  --c-hover: color-mix(in oklch, var(--color-secondary) 86%, var(--color-text-primary));
+  --c-tint: color-mix(in oklch, var(--color-secondary) 14%, transparent);
+}
+.sx-c-accent {
+  --c-bg: var(--color-accent);
+  --c-fg: var(--color-accent-content);
+  --c-ink: color-mix(in oklch, var(--color-accent) 60%, var(--color-text-primary));
+  --c-hover: color-mix(in oklch, var(--color-accent) 86%, var(--color-text-primary));
+  --c-tint: color-mix(in oklch, var(--color-accent) 14%, transparent);
+}
+.sx-c-neutral {
+  --c-bg: var(--color-neutral);
+  --c-fg: var(--color-neutral-content);
+  --c-ink: var(--color-text-primary);
+  --c-hover: color-mix(in oklch, var(--color-neutral) 86%, var(--color-text-primary));
+  --c-tint: color-mix(in oklch, var(--color-neutral) 14%, transparent);
+}
+.sx-c-info {
+  --c-bg: var(--color-info);
+  --c-fg: var(--color-info-content);
+  --c-ink: color-mix(in oklch, var(--color-info) 60%, var(--color-text-primary));
+  --c-hover: color-mix(in oklch, var(--color-info) 86%, var(--color-text-primary));
+  --c-tint: color-mix(in oklch, var(--color-info) 14%, transparent);
+}
+.sx-c-success {
+  --c-bg: var(--color-success);
+  --c-fg: var(--color-success-content);
+  --c-ink: color-mix(in oklch, var(--color-success) 58%, var(--color-text-primary));
+  --c-hover: color-mix(in oklch, var(--color-success) 86%, var(--color-text-primary));
+  --c-tint: color-mix(in oklch, var(--color-success) 14%, transparent);
+}
+.sx-c-warning {
+  --c-bg: var(--color-warning);
+  --c-fg: var(--color-warning-content);
+  --c-ink: color-mix(in oklch, var(--color-warning) 52%, var(--color-text-primary));
+  --c-hover: color-mix(in oklch, var(--color-warning) 86%, var(--color-text-primary));
+  --c-tint: color-mix(in oklch, var(--color-warning) 16%, transparent);
+}
+.sx-c-danger {
+  --c-bg: var(--color-danger);
+  --c-fg: var(--color-danger-content);
+  --c-ink: color-mix(in oklch, var(--color-danger) 60%, var(--color-text-primary));
+  --c-hover: color-mix(in oklch, var(--color-danger) 86%, var(--color-text-primary));
+  --c-tint: color-mix(in oklch, var(--color-danger) 14%, transparent);
+}
+/* `module` tracks the ModuleProvider's active color rather than a fixed slot. */
+.sx-c-module {
+  --c-bg: var(--module-active);
+  --c-fg: var(--module-active-content);
+  --c-ink: color-mix(in oklch, var(--module-active) 60%, var(--color-text-primary));
+  --c-hover: color-mix(in oklch, var(--module-active) 86%, var(--color-text-primary));
+  --c-tint: var(--module-active-tint);
 }

@@ -50,8 +50,8 @@ export const commerceManifest: ModuleManifest = {
   // module ids match their dashboard route (Storefront → /sitebuilder).
   routePrefix: '/commerce',
 
-  // Sections that show as expandable children under the module in the sidebar
-  // and as siblings when a Commerce breadcrumb segment is clicked.
+  // Sections the module owns. Rendered as the contextual panel's section list
+  // when the module is active (§5) and in the breadcrumb section switcher.
   sections: [
     { id: 'products', label: 'Products', icon: Package, href: '/commerce/products' },
     { id: 'pricing', label: 'Pricing', icon: Tag, href: '/commerce/pricing' },
@@ -110,7 +110,7 @@ export const moduleManifests = [
 
 Manifests for inactive modules are still imported (tree-shaking-friendly because they're plain objects) but are filtered against the tenant's active-module set before render. A disabled module's sections and actions never appear in the sidebar, ⌘K, or favorites — even if a user previously favorited one.
 
-A special, non-manifest **Home** item is rendered as the first sidebar entry above Favorites. It is not a module, has no color, and is hardcoded in the shell.
+A special, non-manifest **Home** item lives on the rail (above the module icons) and heads the contextual panel at the platform level, above Favorites. It is not a module, has no color, and is hardcoded in the shell.
 
 ### 3.3 Action ID Stability
 
@@ -259,26 +259,26 @@ The sidebar is two columns: a constant **icon rail** and a **contextual panel** 
 
 **The rail** (top → bottom): Search (⌘K), Home, ★ Favorites (flyout), ⏱ Recents (flyout), a divider, then one icon per **enabled** module (active module tinted `--module-active`), and Settings pinned at the bottom. The rail never changes between routes.
 
-**The contextual panel** changes contents by context — it is *not* a mode flip, just different data:
+**The contextual panel** changes contents by context — it is _not_ a mode flip, just different data:
 
-| Context | Panel shows |
-| ------- | ----------- |
+| Context                                      | Panel shows                                                                                                   |
+| -------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
 | Inside a module (`/commerce/*`, `/crm/*`, …) | That module's `sections` from its manifest, active section highlighted. Header = module name in module color. |
-| Platform level (`/`, `/settings`) | **Favorites** + **Recents** (the cross-module shortcuts), so they stay first-class when no module is active. |
+| Platform level (`/`, `/settings`)            | **Favorites** + **Recents** (the cross-module shortcuts), so they stay first-class when no module is active.  |
 
 This keeps Favorites and Recents reachable (they fill the panel at the platform level, and are always one click away via their rail flyouts and ⌘K), while giving focused, vertical section navigation the moment you enter a module. The **tenant/workspace switcher** moves entirely to the breadcrumb's Workspace segment (§4.2) and the rail's account control — it is no longer a sidebar header.
 
 ### 5.2 Section Behaviors
 
-| Element              | Source                                                | Mutability                                                                                       |
-| -------------------- | ----------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
-| Search (rail)        | n/a                                                   | Opens ⌘K                                                                                         |
-| Home (rail)          | Static                                                | Navigate to platform dashboard                                                                   |
-| Favorites (rail ★)   | `user_favorites` table                                | Flyout; add via star or right-click; reorder via drag; also fills the panel at platform level    |
-| Recents (rail ⏱)     | `user_recents` table                                  | Flyout; mutated by navigation; chronological; also fills the panel at platform level             |
-| Module icons (rail)  | `moduleManifests` filtered by tenant's active modules | Read-only; activate new modules via Settings → Modules                                           |
-| Contextual panel     | active module's manifest `sections`                   | Read-only navigation; the single intra-module nav surface (no in-content tabs — see [doc 34](34-dashboard-working-area-standard.md) §11) |
-| Settings (rail ⚙)    | Static                                                | Pinned to rail bottom                                                                            |
+| Element             | Source                                                | Mutability                                                                                                                               |
+| ------------------- | ----------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| Search (rail)       | n/a                                                   | Opens ⌘K                                                                                                                                 |
+| Home (rail)         | Static                                                | Navigate to platform dashboard                                                                                                           |
+| Favorites (rail ★)  | `user_favorites` table                                | Flyout; add via star or right-click; reorder via drag; also fills the panel at platform level                                            |
+| Recents (rail ⏱)    | `user_recents` table                                  | Flyout; mutated by navigation; chronological; also fills the panel at platform level                                                     |
+| Module icons (rail) | `moduleManifests` filtered by tenant's active modules | Read-only; activate new modules via Settings → Modules                                                                                   |
+| Contextual panel    | active module's manifest `sections`                   | Read-only navigation; the single intra-module nav surface (no in-content tabs — see [doc 34](34-dashboard-working-area-standard.md) §11) |
+| Settings (rail ⚙)   | Static                                                | Pinned to rail bottom                                                                                                                    |
 
 ### 5.3 No Top-Tab Strip
 
