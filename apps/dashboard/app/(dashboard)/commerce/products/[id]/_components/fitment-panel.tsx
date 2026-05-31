@@ -23,6 +23,7 @@ import {
   TableRow,
   Text,
   useConfirm,
+  NativeSelect,
 } from '@sparx/ui';
 
 import {
@@ -380,30 +381,28 @@ function NewFitmentForm({ productId, fitments, domains }: NewFormProps) {
         <Stack direction="row" gap={3} wrap>
           <Stack gap={1} className="min-w-[160px] flex-1">
             <Label htmlFor="fit-domain">Domain</Label>
-            <select
+            <NativeSelect
               id="fit-domain"
               value={domainId}
               onChange={(e) => setDomainId(e.target.value)}
               required
-              className="flex h-9 w-full rounded-md border border-[var(--color-border-default)] bg-[var(--color-bg-surface)] px-3 py-2 text-sm text-[var(--color-text-primary)]"
             >
               {domains.map((d) => (
                 <option key={d.id} value={d.id}>
                   {d.displayName}
                 </option>
               ))}
-            </select>
+            </NativeSelect>
           </Stack>
 
           <Stack gap={1} className="min-w-[160px] flex-1">
             <Label htmlFor="fit-category">{domain.labels.l1}</Label>
-            <select
+            <NativeSelect
               id="fit-category"
               value={categoryId}
               onChange={(e) => setCategoryId(e.target.value)}
               required
               disabled={categoryOptions.length === 0}
-              className="flex h-9 w-full rounded-md border border-[var(--color-border-default)] bg-[var(--color-bg-surface)] px-3 py-2 text-sm text-[var(--color-text-primary)]"
             >
               <option value="">— Pick a {domain.labels.l1.toLowerCase()} —</option>
               {categoryOptions.map((c) => (
@@ -411,18 +410,17 @@ function NewFitmentForm({ productId, fitments, domains }: NewFormProps) {
                   {c.name}
                 </option>
               ))}
-            </select>
+            </NativeSelect>
           </Stack>
 
           {domain.labels.l2 && (
             <Stack gap={1} className="min-w-[160px] flex-1">
               <Label htmlFor="fit-item">{domain.labels.l2} (optional)</Label>
-              <select
+              <NativeSelect
                 id="fit-item"
                 value={itemId}
                 onChange={(e) => setItemId(e.target.value)}
                 disabled={!categoryId || itemOptions.length === 0}
-                className="flex h-9 w-full rounded-md border border-[var(--color-border-default)] bg-[var(--color-bg-surface)] px-3 py-2 text-sm text-[var(--color-text-primary)]"
               >
                 <option value="">— Any {domain.labels.l2.toLowerCase()} —</option>
                 {itemOptions.map((i) => (
@@ -430,19 +428,18 @@ function NewFitmentForm({ productId, fitments, domains }: NewFormProps) {
                     {i.name}
                   </option>
                 ))}
-              </select>
+              </NativeSelect>
             </Stack>
           )}
 
           {domain.labels.l3 && (
             <Stack gap={1} className="min-w-[160px] flex-1">
               <Label htmlFor="fit-variant">{domain.labels.l3} (optional)</Label>
-              <select
+              <NativeSelect
                 id="fit-variant"
                 name="variantId"
                 disabled={!itemId || variantOptions.length === 0}
                 defaultValue=""
-                className="flex h-9 w-full rounded-md border border-[var(--color-border-default)] bg-[var(--color-bg-surface)] px-3 py-2 text-sm text-[var(--color-text-primary)]"
               >
                 <option value="">— Any {domain.labels.l3.toLowerCase()} —</option>
                 {variantOptions.map((v) => (
@@ -450,7 +447,7 @@ function NewFitmentForm({ productId, fitments, domains }: NewFormProps) {
                     {v.name}
                   </option>
                 ))}
-              </select>
+              </NativeSelect>
             </Stack>
           )}
         </Stack>

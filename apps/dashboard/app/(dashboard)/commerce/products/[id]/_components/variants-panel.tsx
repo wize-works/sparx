@@ -31,6 +31,7 @@ import {
   TableRow,
   Text,
   useConfirm,
+  NativeSelect,
 } from '@sparx/ui';
 
 import {
@@ -400,17 +401,18 @@ function VariantRowEditor({ variant, productId, valuesById, onChanged }: Variant
         />
       </TableCell>
       <TableCell>
-        <select
+        <NativeSelect
+          size="sm"
+          className="w-auto"
           value={variant.inventoryPolicy}
           onChange={(e) => commit({ inventoryPolicy: e.target.value })}
           disabled={pending || !!variant.deletedAt}
           aria-label={`Inventory policy for ${variant.sku}`}
-          className="flex h-8 rounded-md border border-[var(--color-border-default)] bg-[var(--color-bg-surface)] px-2 text-xs text-[var(--color-text-primary)]"
         >
           <option value="deny">Deny when out</option>
           <option value="continue">Continue selling</option>
           <option value="preorder">Preorder</option>
-        </select>
+        </NativeSelect>
       </TableCell>
       <TableCell className="text-right tabular-nums">
         <Text size="sm" variant="muted">

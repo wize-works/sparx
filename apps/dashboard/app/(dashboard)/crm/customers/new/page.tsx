@@ -19,6 +19,7 @@ import {
   Stack,
   Text,
   Textarea,
+  NativeSelect,
 } from '@sparx/ui';
 
 import { createCustomerAction } from '../../actions';
@@ -105,16 +106,11 @@ export default function NewCustomerPage() {
                   {/* Native select rather than @sparx/ui Select — that
                       component wraps Radix and needs controlled state /
                       onValueChange; native works directly with FormData. */}
-                  <select
-                    id="type"
-                    name="type"
-                    defaultValue="prospect"
-                    className="flex h-9 w-full rounded-md border border-[var(--color-border-default)] bg-[var(--color-bg-surface)] px-3 py-2 text-sm text-[var(--color-text-primary)] focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:outline-none"
-                  >
+                  <NativeSelect id="type" name="type" defaultValue="prospect">
                     <option value="prospect">Prospect</option>
                     <option value="retail">Retail customer</option>
                     <option value="b2b">B2B contact</option>
-                  </select>
+                  </NativeSelect>
                 </Stack>
 
                 <Stack direction="row" gap={4}>

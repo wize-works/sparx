@@ -26,8 +26,10 @@ export const sitebuilderManifest: ModuleManifest = {
     // Brand is the tenant-level identity foundation (docs/30 §6) — first in the
     // rail, above the presentation layers (theme/design) that read from it.
     { id: 'brand', label: 'Brand', icon: Fingerprint, href: '/sitebuilder/brand' },
-    { id: 'design', label: 'Design', icon: Palette, href: '/sitebuilder/design' },
-    { id: 'themes', label: 'Themes', icon: LayoutTemplate, href: '/sitebuilder/themes' },
+    // Theme switching + presentation tokens (the old "Themes" gallery folded in
+    // here — theme selection lives in the Design/Theme scope). Route stays
+    // /sitebuilder/design until the v2-native theme pane lands (Phase 2 §2.3).
+    { id: 'design', label: 'Theme', icon: Palette, href: '/sitebuilder/design' },
     { id: 'homepage', label: 'Homepage', icon: Home, href: '/sitebuilder/homepage' },
     { id: 'pages', label: 'Pages', icon: FileText, href: '/sitebuilder/pages' },
     {

@@ -3,7 +3,7 @@
 import * as React from 'react';
 import { Plus, Trash } from 'lucide-react';
 
-import { Button, Heading, Input, Label, Stack, Text } from '@sparx/ui';
+import { Button, Heading, Input, Label, NativeSelect, Stack, Text } from '@sparx/ui';
 
 import { setProductOptionsAction } from '../../../variant-actions';
 
@@ -183,20 +183,20 @@ export function OptionsEditor({
                 </Stack>
                 <Stack gap={1}>
                   <Label htmlFor={`opt-${opt.localKey}-display`}>Display</Label>
-                  <select
+                  <NativeSelect
                     id={`opt-${opt.localKey}-display`}
+                    className="w-auto"
                     value={opt.displayType}
                     onChange={(e) =>
                       patchOption(oi, { displayType: e.target.value as DisplayType })
                     }
-                    className="flex h-9 rounded-md border border-[var(--color-border-default)] bg-[var(--color-bg-surface)] px-3 py-2 text-sm text-[var(--color-text-primary)]"
                   >
                     <option value="dropdown">Dropdown</option>
                     <option value="swatch">Color swatch</option>
                     <option value="image_swatch">Image swatch</option>
                     <option value="radio">Radio</option>
                     <option value="segmented">Segmented</option>
-                  </select>
+                  </NativeSelect>
                 </Stack>
                 <Button
                   type="button"

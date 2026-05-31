@@ -22,6 +22,7 @@ import type { SectionField } from '@sparx/sitebuilder-schemas';
 import { upsertLayout } from '../_lib/actions';
 import type { NavMenuDto, SiteLayoutBlockDto } from '../_lib/types';
 import { FieldControl } from './field-control';
+import { useEditorCanvas } from './editor-shell';
 
 type Slot = 'header' | 'footer' | 'announcement';
 
@@ -87,6 +88,7 @@ function SlotEditor({
   menus: NavMenuDto[];
 }) {
   const router = useRouter();
+  const canvas = useEditorCanvas();
   const [config, setConfig] = React.useState<Record<string, unknown>>(block?.config ?? {});
   const [menuId, setMenuId] = React.useState(block?.navigationMenuId ?? NO_MENU);
   const [pending, startTransition] = React.useTransition();
@@ -98,6 +100,9 @@ function SlotEditor({
         navigationMenuId: HAS_MENU[slot] && menuId !== NO_MENU ? menuId : null,
       });
       router.refresh();
+      // Slot config is a structural draft change — reload the live canvas so the
+      // header/footer/announcement chrome reflects it (it re-fetches the draft).
+      canvas.reload();
     });
 
   return (

@@ -82,6 +82,11 @@ export {
 
 // ── Form ──────────────────────────────────────────────────
 export { Input, inputVariants, type InputProps } from './components/form/input';
+export {
+  NativeSelect,
+  nativeSelectVariants,
+  type NativeSelectProps,
+} from './components/form/native-select';
 export { FormActionBar, type FormActionBarProps } from './components/form/form-action-bar';
 export { Textarea, textareaVariants, type TextareaProps } from './components/form/textarea';
 export {
@@ -296,3 +301,15 @@ export {
   TimelineTime,
   type TimelineItemProps,
 } from './components/data/timeline';
+export {
+  LineChart,
+  BarChart,
+  AreaChart,
+  Sparkline,
+  type ChartSeries,
+  type BaseChartProps,
+  type LineChartProps,
+  type BarChartProps,
+  type AreaChartProps,
+  type SparklineProps,
+} from './components/data/chart';

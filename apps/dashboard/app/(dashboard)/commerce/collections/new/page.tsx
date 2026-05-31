@@ -19,6 +19,7 @@ import {
   Stack,
   Text,
   Textarea,
+  NativeSelect,
 } from '@sparx/ui';
 
 import { createCollectionAction } from '../../collection-actions';
@@ -192,15 +193,10 @@ export default function NewCollectionPage() {
                     >
                       <Stack gap={2}>
                         <Label htmlFor="match">Match mode</Label>
-                        <select
-                          id="match"
-                          name="match"
-                          defaultValue="all"
-                          className="flex h-9 rounded-md border border-[var(--color-border-default)] bg-[var(--color-bg-surface)] px-3 py-2 text-sm text-[var(--color-text-primary)]"
-                        >
+                        <NativeSelect id="match" name="match" defaultValue="all">
                           <option value="all">Match all (AND)</option>
                           <option value="any">Match any (OR)</option>
-                        </select>
+                        </NativeSelect>
                       </Stack>
                       <Stack gap={2}>
                         <Label htmlFor="seedTag">Seed predicate — tag equals</Label>

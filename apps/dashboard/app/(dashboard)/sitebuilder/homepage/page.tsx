@@ -1,16 +1,16 @@
 import { Heading, Text } from '@sparx/ui';
-import { getConfig, getSitePreviewToken, getTenant, listSections, listVersions } from '../_lib/api';
-import { PageBuilder } from '../_components/page-builder';
+import { getConfig, listSections, listVersions } from '../_lib/api';
+import { SectionBuilder } from '../_components/section-builder';
 import { PublishBar } from '../_components/publish-bar';
-import { storefrontOrigin } from '../_lib/storefront';
 
+// Homepage composition. Renders in the editor shell's inspector column; the
+// shared persistent canvas (in the /sitebuilder layout) shows the live home page
+// and the section editor drives it (select / reorder / edit → reload).
 export default async function HomepagePage() {
-  const [config, sections, versions, tenant, previewToken] = await Promise.all([
+  const [config, sections, versions] = await Promise.all([
     getConfig(),
     listSections('home'),
     listVersions(),
-    getTenant(),
-    getSitePreviewToken(),
   ]);
   const published = versions.find((v) => v.id === config.publishedVersionId);
   const hasUnpublishedChanges = published
@@ -21,21 +21,13 @@ export default async function HomepagePage() {
     <div className="flex flex-col gap-5">
       <div>
         <Heading level={1}>Homepage</Heading>
-        <Text variant="muted">
-          Compose your homepage from sections. Drag to reorder; publish when ready.
-        </Text>
+        <Text variant="muted">Compose your homepage from sections. Drag to reorder.</Text>
       </div>
       <PublishBar
         isPublished={config.publishedVersionId !== null}
         hasUnpublishedChanges={hasUnpublishedChanges}
       />
-      <PageBuilder
-        pageKey="home"
-        sections={sections}
-        storefrontUrl={storefrontOrigin(tenant.slug)}
-        slug={tenant.slug}
-        previewToken={previewToken}
-      />
+      <SectionBuilder pageKey="home" sections={sections} previewPath="/" />
     </div>
   );
 }

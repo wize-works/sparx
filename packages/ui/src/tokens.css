@@ -33,6 +33,19 @@
   --module-active-text: #4338ca; /* legacy: ink-style dark text on tint */
   --module-active-content: #ffffff; /* text/icon on the solid module fill */
 
+  /* ── CHART PALETTE ─────────────────────────────────────────
+     A categorical series palette for multi-series charts. Drawn from the
+     module hues so charts read as part of the brand. A single "hero" series
+     should use var(--module-active) instead, so it adopts the active module's
+     color. Consumed by @sparx/ui chart primitives; merchant themes may
+     override. */
+  --chart-1: #6366f1;
+  --chart-2: #14b8a6;
+  --chart-3: #f97316;
+  --chart-4: #06b6d4;
+  --chart-5: #ec4899;
+  --chart-6: #10b981;
+
   /* ── NEUTRALS — LIGHT MODE ─────────────────────────────── */
   --color-bg-page: #fafafa;
   --color-bg-surface: #ffffff;
@@ -186,6 +199,14 @@
   --color-text-muted: #8a8a93;
   --color-text-disabled: #3f3f46;
   --color-text-inverse: #0a0a0a;
+
+  /* Chart palette — lifted for legibility on dark surfaces */
+  --chart-1: #818cf8;
+  --chart-2: #2dd4bf;
+  --chart-3: #fb923c;
+  --chart-4: #22d3ee;
+  --chart-5: #f472b6;
+  --chart-6: #34d399;
 
   --sparx-primary-tint: #1e1b4b;
 

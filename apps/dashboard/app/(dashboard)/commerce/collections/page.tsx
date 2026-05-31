@@ -18,6 +18,7 @@ import {
   TableHeader,
   TableRow,
   Text,
+  NativeSelect,
 } from '@sparx/ui';
 
 import { api } from '@/lib/api-rest-client';
@@ -98,16 +99,16 @@ export default async function CollectionsPage({ searchParams }: PageProps) {
                   defaultValue={q ?? ''}
                   className="min-w-[260px] flex-1"
                 />
-                <select
+                <NativeSelect
                   name="type"
                   defaultValue={typeFilter ?? ''}
-                  className="flex h-9 rounded-md border border-[var(--color-border-default)] bg-[var(--color-bg-surface)] px-3 py-2 text-sm text-[var(--color-text-primary)]"
                   aria-label="Type"
+                  className="w-auto"
                 >
                   <option value="">All types</option>
                   <option value="manual">Manual</option>
                   <option value="rules">Rules-driven</option>
-                </select>
+                </NativeSelect>
                 <Stack direction="row" align="center" gap={2}>
                   <input
                     type="checkbox"

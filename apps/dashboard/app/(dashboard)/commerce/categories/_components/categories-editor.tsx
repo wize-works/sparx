@@ -4,7 +4,17 @@ import * as React from 'react';
 import { useRouter } from 'next/navigation';
 import { ChevronDown, ChevronRight, Pencil, Star, Trash } from 'lucide-react';
 
-import { Badge, Button, Input, Label, Stack, Text, Textarea, useConfirm } from '@sparx/ui';
+import {
+  Badge,
+  Button,
+  Input,
+  Label,
+  NativeSelect,
+  Stack,
+  Text,
+  Textarea,
+  useConfirm,
+} from '@sparx/ui';
 
 import {
   createCategoryAction,
@@ -126,12 +136,7 @@ export function NewCategoryForm({ tree }: NewFormProps) {
         </Stack>
         <Stack gap={1}>
           <Label htmlFor="new-parent">Parent</Label>
-          <select
-            id="new-parent"
-            name="parentId"
-            defaultValue=""
-            className="flex h-9 w-full rounded-md border border-[var(--color-border-default)] bg-[var(--color-bg-surface)] px-3 py-2 text-sm text-[var(--color-text-primary)]"
-          >
+          <NativeSelect id="new-parent" name="parentId" defaultValue="">
             <option value="">— Top level —</option>
             {flat.map((n) => (
               <option key={n.id} value={n.id}>
@@ -139,7 +144,7 @@ export function NewCategoryForm({ tree }: NewFormProps) {
                 {n.name}
               </option>
             ))}
-          </select>
+          </NativeSelect>
         </Stack>
         <Stack gap={1}>
           <Label htmlFor="new-desc">Description</Label>
@@ -342,11 +347,10 @@ function TreeNode({ node, all }: NodeProps) {
             </Stack>
             <Stack gap={1}>
               <Label htmlFor={`edit-parent-${node.id}`}>Parent</Label>
-              <select
+              <NativeSelect
                 id={`edit-parent-${node.id}`}
                 name="parentId"
                 defaultValue={node.parentId ?? ''}
-                className="flex h-9 w-full rounded-md border border-[var(--color-border-default)] bg-[var(--color-bg-surface)] px-3 py-2 text-sm text-[var(--color-text-primary)]"
               >
                 <option value="">— Top level —</option>
                 {parentOptions.map((p) => (
@@ -355,7 +359,7 @@ function TreeNode({ node, all }: NodeProps) {
                     {p.name}
                   </option>
                 ))}
-              </select>
+              </NativeSelect>
             </Stack>
             <Stack gap={1}>
               <Label htmlFor={`edit-desc-${node.id}`}>Description</Label>

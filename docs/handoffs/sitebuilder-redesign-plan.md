@@ -73,58 +73,54 @@ Goal: a single unified editor replaces the six-route hub.
 
 **Decisions locked (2026-05-31):**
 
-- **`/sitebuilder` BECOMES the editor** (was the hub card grid). `/sitebuilder/publishing` stays a
-  secondary view (versions/schedule), reachable from the status bar. The creative sub-routes
-  (design/themes/homepage/pages/navigation-slots/brand) fold into panes and are deleted as each
-  pane's v2-native rewrite lands.
-- **Editor fills the content area; the global dashboard sidebar STAYS** (consistency over a
-  full-screen takeover). The shell lives inside `SidebarAppShell`'s content region, wrapped in
-  `<ModuleProvider module="storefront">` — so it adopts Storefront indigo.
-- **Panes are rewritten v2-native as we go** (end state: generator-style panes, old routes gone) —
-  but landed as **shippable increments**, not one commit. The v2 storage cutover (TenantBrand.tokens
-  - drop StorefrontTheme cols) stays **staged separately**: read-both-shapes code deploys first, the
-    destructive migration runs after — never inside a shell commit.
+- **Use the shipped two-tier dashboard nav — NO bespoke scope rail.** The dashboard now has
+  `rail-nav` (icon module switcher) → `contextual-panel` (per-module section nav, data-driven from
+  `ModuleManifest.sections`) → content area. Site Builder's scopes ARE its manifest sections; the
+  contextual panel is the scope switcher. (Superseded the earlier custom-icon-rail plan.)
+- **Persistent canvas in `/sitebuilder/layout.tsx`.** A client `EditorShell` in the layout holds the
+  ONE preview iframe + the §1 transport (postMessage helpers via React context, `useEditorCanvas()`).
+  Each scope is a CHILD route whose page renders only its inspector; Next layout-persistence keeps
+  the iframe mounted across scope switches (Theme↔Pages = inspector swaps, canvas stays live). Canvas
+  shown only for a `CANVAS_SCOPES` allowlist; Brand (self-contained board) + Publishing + un-migrated
+  routes render full-width.
+- **Panes rewritten v2-native as shippable increments** (end state: generator panes, old routes
+  gone). The v2 storage cutover (TenantBrand.tokens + drop StorefrontTheme cols) stays **staged
+  separately**: read-both-shapes code deploys first, the destructive migration runs after.
 
-**Shell anatomy (desktop):** three regions left→right inside the content area —
-
-```
-┌ status / publish bar ───────────────────────────────────────┐
-│ scope ┆        inspector        ┆        live canvas         │
-│ rail  ┆  (active scope's        ┆  (one persistent preview   │
-│ (icon ┆   controls, ScrollArea, ┆   iframe — device + light/ │
-│  strip)┆  docked, never a modal)┆   dark toggles live here)  │
-└───────┴────────────────────────┴────────────────────────────┘
-```
-
-- **Scope rail** — narrow icon strip (icon + tooltip) to preserve canvas width next to the global
-  sidebar. Scopes: Brand · Theme · Pages (sections) · Layout (header/footer/announcement). Publishing
-  reached from the status bar.
-- **Inspector** — the active scope's controls; docked left of the canvas (familiar controls-left /
-  preview-right, matches the customizer + the generator reference). `ScrollArea`.
-- **Canvas** — the ONE persistent preview iframe (replaces both `PreviewFrame` + the customizer's
-  inline iframe); device + light/dark toggles live here once. Drives + receives the §1 transport.
-- **Responsive** ([[responsive_builder_mobile]]): below `lg`, inspector + canvas stack to one column
-  with an Edit/Preview segmented switch; scope rail becomes a horizontal scroll strip. Never
-  desktop-only.
+So doc 30 §3's "one screen" = platform two-tier nav (kills the route-bounce) + persistent-canvas
+layout (keeps live preview + docked inspector + in-canvas selection).
 
 **Increment order (each shippable):**
 
-- [ ] **§2.0 Shell scaffold** — `/sitebuilder` → new client shell: scope rail + inspector container
-      (scope switching) + persistent canvas (reuse `PreviewFrame` logic) + status/publish bar +
-      responsive collapse. Transitional: panes mount the EXISTING components (Brand→`brand-panel`,
-      Theme→`customizer`, Pages→`page-builder`, Layout→`layout-editor`) so the one screen ships
-      usable on day one; each gets rewritten next. Old sub-routes still resolve until replaced.
-- [ ] **§2.1 Theme pane v2-native** (= old §3) — generator UX (swatch + `-content` grid, surfaces,
-      status, radius trio, sizes, effects, container, save-as-theme); drives live
-      `sparx-preview-theme` via `buildThemeCssV2`. Lands the v2 storage cutover (staged). Delete
-      `/sitebuilder/design` + `/themes`.
-- [ ] **§2.2 Brand pane v2-native** — identity (color/type/shape/rhythm/effect), ownership cues
-      (read-only everywhere else). Delete `/sitebuilder/brand`.
-- [ ] **§2.3 Pages + Layout panes** — section composition (dnd reorder, gallery, per-section fields) + header/footer/announcement slots. Delete `/sitebuilder/homepage`, `/pages`, the SB slots page.
-- [ ] **§2.4 In-canvas section editing** (= old §4) — click a section → inspector opens its fields
-      (consumes the §1 `sparx-section-selected` channel); `sparx-highlight-section` round-trip.
+- [x] **§2.0 EditorShell foundation** (2026-05-31, green) — `_components/editor-shell.tsx` (persistent
+      canvas iframe + device/mode toolbar + `EditorCanvasContext`/`useEditorCanvas` exposing
+      setMode/setThemeCss/highlightSection/setPreviewPath/reload/onSectionSelected; re-asserts live
+      state on `sparx-preview-ready`; responsive Edit/Preview stack below `lg`). `/sitebuilder/layout.tsx`
+      mounts it (resolves slug/storefrontOrigin/previewToken once). `/sitebuilder` Overview rewritten
+      slim (status + active theme + jump links) to sit in the inspector column with the live preview
+      beside it. Manifest curated: dropped "Themes" gallery, relabeled Design→"Theme". `CANVAS_SCOPES`
+      = `/sitebuilder` only for now (un-migrated routes still render full-width, unchanged).
+- [x] **§2.1 Header & footer onto the canvas** (2026-05-31, green) — `/sitebuilder/navigation` added to
+      CANVAS_SCOPES; `layout-editor` slot saves call `useEditorCanvas().reload()` so the chrome
+      reflects the draft. Also fixed a §2.0 matcher bug (bare `/sitebuilder` was prefix-swallowing all
+      children → canvas wrongly shown everywhere; root now matches exactly).
+- [x] **§2.2 Pages + Homepage onto the canvas + in-canvas section editing** (2026-05-31, green) —
+      `section-builder` rewired to the persistent canvas: docked INLINE editor (replaced the modal),
+      two-way selection (canvas click → `onSectionSelected` opens the editor; open section →
+      `highlightSection` outlines it), `setPreviewPath` per page, `reload()` on every mutation. Both
+      `/sitebuilder/homepage` + `/sitebuilder/pages` render `SectionBuilder` directly; the orphaned
+      `PageBuilder` + sitebuilder `PreviewFrame` were deleted. (Homepage/Pages kept as separate scopes
+      — the merge is deferred, low value.)
+- [ ] **§2.3 Theme pane v2-native** (= old §3) — generator UX (swatch + `-content` grid, surfaces,
+      status, radius trio, sizes, effects, container, save-as-theme); drives live `sparx-preview-theme`
+      via `buildThemeCssV2`. Lands the v2 storage cutover (staged). Delete `/sitebuilder/design` + `/themes`.
+- [ ] **§2.4 Brand pane v2-native** — identity (color/type/shape/rhythm/effect), ownership cues. Delete `/sitebuilder/brand`.
 - [ ] **§2.5** — retire the email designer (Phase 1 done → constraint lifted).
 - [ ] **Acceptance:** the full design → compose → publish loop happens on one screen.
+
+> NOTE: build dashboard UI on the **docs/35 four-axis component API** — `color` (primary/success/…)
+> × `variant` (solid|soft|outline|dashed|ghost|link) × size × shape. `primary`/`success` are colors,
+> not variants. See [[reference_ui_color_variant_api]].
 
 **§1 · Preview transport — DONE + green (2026-05-31):** storefront `PreviewBridge` (self-gates on
 `?sparxSitePreview`, sets `data-sparx-preview`, injects `<style id=sparx-live>`, mode flip, section

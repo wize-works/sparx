@@ -1,10 +1,13 @@
 'use client';
 
-// Section composition editor for a page (pageKey "home" or a CMS page slug):
-// add sections from the library, drag to reorder, toggle visibility, edit a
-// section's settings in a modal, remove. Mutations call the server actions then
-// refresh; reorder is optimistic — the list moves instantly, then persists and
-// rolls back to the server order on the next refresh.
+// Section composition for a page (pageKey "home" or a CMS page slug), wired to
+// the editor shell's persistent canvas (Phase 2 §2.2):
+//   • add sections from the library, drag to reorder, toggle visibility, remove;
+//   • editing a section opens a DOCKED inline editor in the inspector (never a
+//     modal over the preview, per docs/30 §3) — its fields edit live;
+//   • selection is two-way: clicking a section in the canvas opens its editor,
+//     and the open section is outlined in the canvas;
+//   • every mutation reloads the canvas so the preview reflects the saved draft.
 
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
@@ -17,6 +20,7 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import {
+  ArrowLeft,
   GripVertical,
   Image as ImageIcon,
   LayoutGrid,
@@ -27,15 +31,7 @@ import {
   ShoppingBag,
   Type,
 } from 'lucide-react';
-import {
-  Button,
-  EmptyState,
-  Modal,
-  ModalContent,
-  ModalHeader,
-  ModalTitle,
-  ModalFooter,
-} from '@sparx/ui';
+import { Button, EmptyState, Modal, ModalContent, ModalHeader, ModalTitle } from '@sparx/ui';
 import {
   SECTION_DEFINITIONS,
   SECTION_REGISTRY,
@@ -44,6 +40,7 @@ import {
 import { createSection, removeSection, reorderSections, updateSection } from '../_lib/actions';
 import type { SiteSectionDto } from '../_lib/types';
 import { FieldControl } from './field-control';
+import { useEditorCanvas } from './editor-shell';
 
 // Maps a section definition's lucide icon name (from the schema registry) to a
 // component for the visual add-section gallery. Falls back to a generic tile.
@@ -60,16 +57,17 @@ const SECTION_ICONS: Record<string, React.ComponentType<{ className?: string }>>
 export interface SectionBuilderProps {
   pageKey: string;
   sections: SiteSectionDto[];
-  /** Fired after any successful mutation so a parent (e.g. the live preview)
-   *  can refresh. Optional — the editor works standalone without it. */
-  onMutate?: () => void;
+  /** Storefront path this page renders at ("/" for home, "/<slug>" otherwise).
+   *  Points the shared canvas at the right page on mount. */
+  previewPath?: string;
 }
 
-export function SectionBuilder({ pageKey, sections, onMutate }: SectionBuilderProps) {
+export function SectionBuilder({ pageKey, sections, previewPath = '/' }: SectionBuilderProps) {
   const router = useRouter();
+  const canvas = useEditorCanvas();
   const [pending, startTransition] = React.useTransition();
   const [adding, setAdding] = React.useState(false);
-  const [editing, setEditing] = React.useState<SiteSectionDto | null>(null);
+  const [editingId, setEditingId] = React.useState<string | null>(null);
 
   const sorted = React.useMemo(
     () => [...sections].sort((a, b) => a.position - b.position),
@@ -81,12 +79,37 @@ export function SectionBuilder({ pageKey, sections, onMutate }: SectionBuilderPr
   React.useEffect(() => setItems(sorted), [sorted]);
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
+  const editing = items.find((s) => s.id === editingId) ?? null;
+
+  // Point the canvas at this page.
+  React.useEffect(() => {
+    canvas.setPreviewPath(previewPath);
+  }, [canvas, previewPath]);
+
+  // Outline the open section in the canvas; clear on unmount.
+  React.useEffect(() => {
+    canvas.highlightSection(editingId);
+  }, [canvas, editingId]);
+  React.useEffect(() => () => canvas.highlightSection(null), [canvas]);
+
+  // Canvas → inspector: a click in the preview opens that section's editor.
+  const itemsRef = React.useRef(items);
+  React.useEffect(() => {
+    itemsRef.current = items;
+  }, [items]);
+  React.useEffect(
+    () =>
+      canvas.onSectionSelected(({ sectionId }) => {
+        if (itemsRef.current.some((s) => s.id === sectionId)) setEditingId(sectionId);
+      }),
+    [canvas]
+  );
 
   const act = (fn: () => Promise<unknown>) =>
     startTransition(async () => {
       await fn();
       router.refresh();
-      onMutate?.();
+      canvas.reload();
     });
 
   const add = (type: SectionType) => {
@@ -110,11 +133,24 @@ export function SectionBuilder({ pageKey, sections, onMutate }: SectionBuilderPr
     );
   };
 
+  // Docked editor — replaces the list while a section is selected.
+  if (editing) {
+    return (
+      <InlineSectionEditor
+        key={editing.id}
+        section={editing}
+        pending={pending}
+        onBack={() => setEditingId(null)}
+        onSave={(config) => act(() => updateSection(editing.id, { config }))}
+      />
+    );
+  }
+
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between">
         <h2 className="text-base font-semibold text-[var(--color-text-primary)]">Sections</h2>
-        <Button onClick={() => setAdding(true)} disabled={pending}>
+        <Button size="sm" onClick={() => setAdding(true)} disabled={pending}>
           Add section
         </Button>
       </div>
@@ -138,7 +174,7 @@ export function SectionBuilder({ pageKey, sections, onMutate }: SectionBuilderPr
                   key={s.id}
                   section={s}
                   pending={pending}
-                  onEdit={() => setEditing(s)}
+                  onEdit={() => setEditingId(s.id)}
                   onToggle={() => act(() => updateSection(s.id, { visible: !s.visible }))}
                   onRemove={() => act(() => removeSection(s.id))}
                 />
@@ -181,20 +217,6 @@ export function SectionBuilder({ pageKey, sections, onMutate }: SectionBuilderPr
           </div>
         </ModalContent>
       </Modal>
-
-      {/* Edit section settings */}
-      {editing ? (
-        <SectionEditor
-          key={editing.id}
-          section={editing}
-          onClose={() => setEditing(null)}
-          onSaved={() => {
-            setEditing(null);
-            router.refresh();
-            onMutate?.();
-          }}
-        />
-      ) : null}
     </div>
   );
 }
@@ -226,7 +248,7 @@ function SortableSection({
     <li
       ref={setNodeRef}
       style={style}
-      className="flex items-center gap-3 rounded-lg border border-[var(--color-border-default)] bg-[var(--color-bg-default)] px-3 py-2.5"
+      className="flex items-center gap-2 rounded-lg border border-[var(--color-border-default)] bg-[var(--color-bg-default)] px-3 py-2.5"
     >
       <button
         type="button"
@@ -238,19 +260,16 @@ function SortableSection({
         <GripVertical className="h-4 w-4" />
       </button>
 
-      <div className="flex-1">
-        <p className="text-sm font-medium text-[var(--color-text-primary)]">
+      <button type="button" onClick={onEdit} className="min-w-0 flex-1 text-left">
+        <p className="truncate text-sm font-medium text-[var(--color-text-primary)]">
           {def?.label ?? section.sectionType}
           {!section.visible ? (
             <span className="ml-2 text-xs text-[var(--color-text-muted)]">(hidden)</span>
           ) : null}
         </p>
-        <p className="text-xs text-[var(--color-text-muted)]">{def?.description}</p>
-      </div>
+        <p className="truncate text-xs text-[var(--color-text-muted)]">{def?.description}</p>
+      </button>
 
-      <Button size="sm" variant="ghost" onClick={onEdit} disabled={pending}>
-        Edit
-      </Button>
       <Button size="sm" variant="ghost" onClick={onToggle} disabled={pending}>
         {section.visible ? 'Hide' : 'Show'}
       </Button>
@@ -261,50 +280,46 @@ function SortableSection({
   );
 }
 
-function SectionEditor({
+function InlineSectionEditor({
   section,
-  onClose,
-  onSaved,
+  pending,
+  onBack,
+  onSave,
 }: {
   section: SiteSectionDto;
-  onClose: () => void;
-  onSaved: () => void;
+  pending: boolean;
+  onBack: () => void;
+  onSave: (config: Record<string, unknown>) => void;
 }) {
   const def = SECTION_REGISTRY[section.sectionType as SectionType];
   const [config, setConfig] = React.useState<Record<string, unknown>>(section.config ?? {});
-  const [pending, startTransition] = React.useTransition();
-
-  const save = () =>
-    startTransition(async () => {
-      await updateSection(section.id, { config });
-      onSaved();
-    });
 
   return (
-    <Modal open onOpenChange={(o) => !o && onClose()}>
-      <ModalContent>
-        <ModalHeader>
-          <ModalTitle>Edit {def?.label ?? 'section'}</ModalTitle>
-        </ModalHeader>
-        <div className="grid max-h-[60vh] gap-4 overflow-y-auto py-2">
-          {(def?.fields ?? []).map((f) => (
-            <FieldControl
-              key={f.key}
-              field={f}
-              value={config[f.key]}
-              onChange={(v) => setConfig((c) => ({ ...c, [f.key]: v }))}
-            />
-          ))}
-        </div>
-        <ModalFooter>
-          <Button variant="outline" onClick={onClose} disabled={pending}>
-            Cancel
-          </Button>
-          <Button onClick={save} disabled={pending}>
-            {pending ? 'Saving…' : 'Save'}
-          </Button>
-        </ModalFooter>
-      </ModalContent>
-    </Modal>
+    <div className="flex flex-col gap-4">
+      <button
+        type="button"
+        onClick={onBack}
+        className="flex items-center gap-1 self-start text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"
+      >
+        <ArrowLeft className="h-3.5 w-3.5" />
+        Sections
+      </button>
+      <h2 className="text-base font-semibold text-[var(--color-text-primary)]">
+        {def?.label ?? 'Section'}
+      </h2>
+      <div className="flex flex-col gap-4">
+        {(def?.fields ?? []).map((f) => (
+          <FieldControl
+            key={f.key}
+            field={f}
+            value={config[f.key]}
+            onChange={(v) => setConfig((c) => ({ ...c, [f.key]: v }))}
+          />
+        ))}
+      </div>
+      <Button className="self-start" onClick={() => onSave(config)} disabled={pending}>
+        {pending ? 'Saving…' : 'Save changes'}
+      </Button>
+    </div>
   );
 }

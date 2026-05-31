@@ -16,6 +16,7 @@ import {
   Heading,
   Input,
   Label,
+  NativeSelect,
   Stack,
   Text,
   Textarea,
@@ -160,15 +161,10 @@ export default function NewProductPage() {
                   <Stack direction="row" gap={4}>
                     <Stack gap={2} className="flex-1">
                       <Label htmlFor="status">Status</Label>
-                      <select
-                        id="status"
-                        name="status"
-                        defaultValue="draft"
-                        className="flex h-9 w-full rounded-md border border-[var(--color-border-default)] bg-[var(--color-bg-surface)] px-3 py-2 text-sm text-[var(--color-text-primary)] focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:outline-none"
-                      >
+                      <NativeSelect id="status" name="status" defaultValue="draft">
                         <option value="draft">Draft</option>
                         <option value="active">Active (publish now)</option>
-                      </select>
+                      </NativeSelect>
                     </Stack>
                     <Stack gap={2} className="flex-1">
                       <Label htmlFor="productType">Product type</Label>
@@ -222,11 +218,10 @@ export default function NewProductPage() {
                   <Stack direction="row" gap={4}>
                     <Stack gap={2} className="flex-1">
                       <Label htmlFor="fulfillmentType">Fulfillment</Label>
-                      <select
+                      <NativeSelect
                         id="fulfillmentType"
                         name="fulfillmentType"
                         defaultValue="physical"
-                        className="flex h-9 w-full rounded-md border border-[var(--color-border-default)] bg-[var(--color-bg-surface)] px-3 py-2 text-sm text-[var(--color-text-primary)] focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:outline-none"
                       >
                         <option value="physical">Physical goods</option>
                         <option value="digital">Digital download</option>
@@ -234,16 +229,11 @@ export default function NewProductPage() {
                         <option value="configurable">Configurable (built-to-order)</option>
                         <option value="bundle">Bundle / kit</option>
                         <option value="subscription">Subscription</option>
-                      </select>
+                      </NativeSelect>
                     </Stack>
                     <Stack gap={2} className="flex-1">
                       <Label htmlFor="hazmatClass">Hazmat class</Label>
-                      <select
-                        id="hazmatClass"
-                        name="hazmatClass"
-                        defaultValue="none"
-                        className="flex h-9 w-full rounded-md border border-[var(--color-border-default)] bg-[var(--color-bg-surface)] px-3 py-2 text-sm text-[var(--color-text-primary)] focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:outline-none"
-                      >
+                      <NativeSelect id="hazmatClass" name="hazmatClass" defaultValue="none">
                         <option value="none">None</option>
                         <option value="flammable_liquid">Flammable liquid</option>
                         <option value="flammable_solid">Flammable solid</option>
@@ -253,7 +243,7 @@ export default function NewProductPage() {
                         <option value="corrosive">Corrosive</option>
                         <option value="radioactive">Radioactive</option>
                         <option value="misc">Miscellaneous</option>
-                      </select>
+                      </NativeSelect>
                     </Stack>
                   </Stack>
                   <Stack direction="row" align="center" gap={2}>

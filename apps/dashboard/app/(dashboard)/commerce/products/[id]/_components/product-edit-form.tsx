@@ -17,6 +17,7 @@ import {
   Stack,
   Text,
   Textarea,
+  NativeSelect,
 } from '@sparx/ui';
 
 import { updateProductAction } from '../../../product-actions';
@@ -173,11 +174,10 @@ export function ProductEditForm({ product }: { product: ProductOverview }) {
               <Stack direction="row" gap={4}>
                 <Stack gap={2} className="flex-1">
                   <Label htmlFor="fulfillmentType">Fulfillment</Label>
-                  <select
+                  <NativeSelect
                     id="fulfillmentType"
                     name="fulfillmentType"
                     defaultValue={product.fulfillmentType}
-                    className="flex h-9 w-full rounded-md border border-[var(--color-border-default)] bg-[var(--color-bg-surface)] px-3 py-2 text-sm text-[var(--color-text-primary)] focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:outline-none"
                   >
                     <option value="physical">Physical goods</option>
                     <option value="digital">Digital download</option>
@@ -185,15 +185,14 @@ export function ProductEditForm({ product }: { product: ProductOverview }) {
                     <option value="configurable">Configurable (built-to-order)</option>
                     <option value="bundle">Bundle / kit</option>
                     <option value="subscription">Subscription</option>
-                  </select>
+                  </NativeSelect>
                 </Stack>
                 <Stack gap={2} className="flex-1">
                   <Label htmlFor="hazmatClass">Hazmat class</Label>
-                  <select
+                  <NativeSelect
                     id="hazmatClass"
                     name="hazmatClass"
                     defaultValue={product.hazmatClass}
-                    className="flex h-9 w-full rounded-md border border-[var(--color-border-default)] bg-[var(--color-bg-surface)] px-3 py-2 text-sm text-[var(--color-text-primary)] focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:outline-none"
                   >
                     <option value="none">None</option>
                     <option value="flammable_liquid">Flammable liquid</option>
@@ -204,7 +203,7 @@ export function ProductEditForm({ product }: { product: ProductOverview }) {
                     <option value="corrosive">Corrosive</option>
                     <option value="radioactive">Radioactive</option>
                     <option value="misc">Miscellaneous</option>
-                  </select>
+                  </NativeSelect>
                 </Stack>
               </Stack>
               <Stack direction="row" align="center" gap={2}>

@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 
-import { Button, Heading, Input, Label, Stack, Text } from '@sparx/ui';
+import { Button, Heading, Input, Label, NativeSelect, Stack, Text } from '@sparx/ui';
 
 import { createVariantAction } from '../../../variant-actions';
 
@@ -25,7 +25,7 @@ export function NewVariantForm({ productId, options, onCreated, onCancel }: Prop
   const [error, setError] = React.useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = React.useState<Record<string, string>>({});
 
-  // One <select> per option; tracks the currently picked value id.
+  // One <NativeSelect> per option; tracks the currently picked value id.
   const [picked, setPicked] = React.useState<Record<string, string>>(() => {
     const initial: Record<string, string> = {};
     for (const o of options) {
@@ -106,18 +106,17 @@ export function NewVariantForm({ productId, options, onCreated, onCancel }: Prop
             {options.map((o) => (
               <Stack key={o.id} gap={2}>
                 <Label htmlFor={`pick-${o.id}`}>{o.name}</Label>
-                <select
+                <NativeSelect
                   id={`pick-${o.id}`}
                   value={picked[o.id] ?? ''}
                   onChange={(e) => setPicked((p) => ({ ...p, [o.id]: e.target.value }))}
-                  className="flex h-9 w-full rounded-md border border-[var(--color-border-default)] bg-[var(--color-bg-surface)] px-3 py-2 text-sm text-[var(--color-text-primary)]"
                 >
                   {o.values.map((v) => (
                     <option key={v.id} value={v.id}>
                       {v.value}
                     </option>
                   ))}
-                </select>
+                </NativeSelect>
               </Stack>
             ))}
             {fieldErrors.options && (
@@ -165,16 +164,11 @@ export function NewVariantForm({ productId, options, onCreated, onCancel }: Prop
           </Stack>
           <Stack gap={2} className="flex-1">
             <Label htmlFor="inventoryPolicy">Inventory policy</Label>
-            <select
-              id="inventoryPolicy"
-              name="inventoryPolicy"
-              defaultValue="deny"
-              className="flex h-9 w-full rounded-md border border-[var(--color-border-default)] bg-[var(--color-bg-surface)] px-3 py-2 text-sm text-[var(--color-text-primary)]"
-            >
+            <NativeSelect id="inventoryPolicy" name="inventoryPolicy" defaultValue="deny">
               <option value="deny">Deny when out</option>
               <option value="continue">Continue selling</option>
               <option value="preorder">Preorder</option>
-            </select>
+            </NativeSelect>
           </Stack>
         </Stack>
 

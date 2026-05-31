@@ -7,7 +7,7 @@
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { useTransition } from 'react';
 
-import { Badge, Button, Input, Stack } from '@sparx/ui';
+import { Badge, Button, Input, NativeSelect, Stack } from '@sparx/ui';
 
 interface Props {
   currentType?: string;
@@ -108,18 +108,19 @@ export function CustomerFiltersBar({ currentType, currentTag, currentQuery, curr
 
         <span className="mx-2 h-5 w-px bg-[var(--color-border-default)]" aria-hidden />
 
-        <select
+        <NativeSelect
+          size="sm"
+          className="w-auto"
           value={currentSort}
           onChange={(e) => setParam('sort', e.target.value)}
           disabled={pending}
-          className="rounded-md border border-[var(--color-border-default)] bg-[var(--color-bg-default)] px-2 py-1 text-sm text-[var(--color-text-primary)]"
         >
           {SORT_OPTIONS.map((s) => (
             <option key={s.value} value={s.value}>
               Sort: {s.label}
             </option>
           ))}
-        </select>
+        </NativeSelect>
       </Stack>
 
       {(currentTag ?? currentType ?? currentQuery) && (

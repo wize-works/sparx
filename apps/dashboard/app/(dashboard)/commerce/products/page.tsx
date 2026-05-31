@@ -18,6 +18,7 @@ import {
   TableHeader,
   TableRow,
   Text,
+  NativeSelect,
 } from '@sparx/ui';
 
 import { api } from '@/lib/api-rest-client';
@@ -112,17 +113,17 @@ export default async function ProductsPage({ searchParams }: PageProps) {
                   <Search className="h-4 w-4 text-[var(--color-text-muted)]" />
                   <Input name="q" placeholder="Title, handle, or vendor" defaultValue={q ?? ''} />
                 </Stack>
-                <select
+                <NativeSelect
                   name="status"
                   defaultValue={status ?? ''}
-                  className="flex h-9 rounded-md border border-[var(--color-border-default)] bg-[var(--color-bg-surface)] px-3 py-2 text-sm text-[var(--color-text-primary)] focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:outline-none"
                   aria-label="Status"
+                  className="w-auto"
                 >
                   <option value="">All statuses</option>
                   <option value="draft">Draft</option>
                   <option value="active">Active</option>
                   <option value="archived">Archived</option>
-                </select>
+                </NativeSelect>
                 <Input name="vendor" placeholder="Vendor" defaultValue={vendor ?? ''} />
                 <Input name="tag" placeholder="Tag" defaultValue={tag ?? ''} />
                 <Stack direction="row" align="center" gap={2}>
