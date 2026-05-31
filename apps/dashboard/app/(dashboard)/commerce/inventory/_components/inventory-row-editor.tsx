@@ -208,7 +208,7 @@ export function InventoryRowEditor({
                   <Button variant="ghost" size="sm" type="button" onClick={() => setMode('view')}>
                     Cancel
                   </Button>
-                  <Button size="sm" type="submit" disabled={pending}>
+                  <Button color="module" size="sm" type="submit" disabled={pending}>
                     {pending ? 'Saving…' : 'Apply'}
                   </Button>
                 </Stack>
@@ -261,7 +261,7 @@ export function InventoryRowEditor({
                   <Button variant="ghost" size="sm" type="button" onClick={() => setMode('view')}>
                     Cancel
                   </Button>
-                  <Button size="sm" type="submit" disabled={pending}>
+                  <Button color="module" size="sm" type="submit" disabled={pending}>
                     {pending ? 'Saving…' : 'Save policy'}
                   </Button>
                 </Stack>

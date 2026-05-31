@@ -392,7 +392,7 @@ export function BundleEditor({
         )}
 
         <Stack direction="row" gap={2} justify="end">
-          <Button type="submit" disabled={pending}>
+          <Button color="module" type="submit" disabled={pending}>
             {pending ? 'Saving…' : isEdit ? 'Save bundle' : 'Create bundle'}
           </Button>
         </Stack>

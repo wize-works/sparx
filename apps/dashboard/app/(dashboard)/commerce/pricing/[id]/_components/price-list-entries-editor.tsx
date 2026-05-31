@@ -199,7 +199,7 @@ export function PriceListEntriesEditor({
             </Text>
             <Input name="maxQuantity" defaultValue="" placeholder="any" />
           </Stack>
-          <Button type="submit" size="sm" disabled={pending}>
+          <Button color="module" type="submit" size="sm" disabled={pending}>
             {pending ? 'Saving…' : 'Add'}
           </Button>
         </Stack>

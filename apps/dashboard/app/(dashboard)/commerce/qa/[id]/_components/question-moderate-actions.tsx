@@ -47,7 +47,7 @@ export function QuestionModerateActions({
     <Stack gap={1} align="end">
       <Stack direction="row" gap={2}>
         {status !== 'published' && (
-          <Button disabled={pending} onClick={() => decide('published')}>
+          <Button color="module" disabled={pending} onClick={() => decide('published')}>
             <Check className="h-4 w-4" />
             Publish
           </Button>

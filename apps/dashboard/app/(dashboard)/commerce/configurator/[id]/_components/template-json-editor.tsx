@@ -61,7 +61,7 @@ export function TemplateJsonEditor({
         </Text>
       )}
       <Stack direction="row" gap={2} justify="end">
-        <Button type="button" disabled={pending} onClick={onSave}>
+        <Button color="module" type="button" disabled={pending} onClick={onSave}>
           {pending ? 'Saving…' : 'Save definition'}
         </Button>
       </Stack>

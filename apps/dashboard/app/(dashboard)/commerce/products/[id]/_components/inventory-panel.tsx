@@ -66,7 +66,7 @@ export function InventoryPanel({ variantsWithLevels, warehouses }: InventoryPane
             title="No warehouses yet"
             description="Add a warehouse before tracking inventory."
             action={
-              <Button asChild>
+              <Button color="module" asChild>
                 <Link href="/commerce/warehouses/new">Add warehouse</Link>
               </Button>
             }
@@ -320,7 +320,7 @@ function VariantInventoryRow({
                   <Button variant="ghost" size="sm" type="button" onClick={() => setMode('view')}>
                     Cancel
                   </Button>
-                  <Button size="sm" type="submit" disabled={pending}>
+                  <Button color="module" size="sm" type="submit" disabled={pending}>
                     {pending ? 'Saving…' : 'Apply'}
                   </Button>
                 </Stack>
@@ -363,7 +363,7 @@ function VariantInventoryRow({
                   <Button variant="ghost" size="sm" type="button" onClick={() => setMode('view')}>
                     Cancel
                   </Button>
-                  <Button size="sm" type="submit" disabled={pending}>
+                  <Button color="module" size="sm" type="submit" disabled={pending}>
                     {pending ? 'Saving…' : 'Save policy'}
                   </Button>
                 </Stack>

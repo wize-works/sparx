@@ -76,7 +76,7 @@ export function ModerateActions({ reviewId, status }: { reviewId: string; status
     <Stack gap={1} align="end">
       <Stack direction="row" gap={2}>
         {status !== 'approved' && (
-          <Button disabled={pending} onClick={() => moderate('approved')}>
+          <Button color="module" disabled={pending} onClick={() => moderate('approved')}>
             <Check className="h-4 w-4" />
             Approve
           </Button>
