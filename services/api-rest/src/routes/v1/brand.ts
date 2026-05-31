@@ -69,7 +69,7 @@ function toView(
   } | null
 ): BrandView {
   const socials =
-    row && row.socials && typeof row.socials === 'object' && !Array.isArray(row.socials)
+    row?.socials && typeof row.socials === 'object' && !Array.isArray(row.socials)
       ? (row.socials as Record<string, string>)
       : {};
   return {
@@ -115,7 +115,7 @@ const brandRoutes: FastifyPluginAsync = async (app) => {
     if (input.colorAccent !== undefined) data.colorAccent = input.colorAccent;
     if (input.fontHeading !== undefined) data.fontHeading = input.fontHeading;
     if (input.fontBody !== undefined) data.fontBody = input.fontBody;
-    if (input.socials !== undefined) data.socials = input.socials as Prisma.InputJsonValue;
+    if (input.socials !== undefined) data.socials = input.socials;
 
     const row = await withTenant({ tenantId: auth.tenantId, userId: auth.actorId }, (tx) =>
       tx.tenantBrand.upsert({

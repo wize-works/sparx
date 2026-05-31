@@ -81,7 +81,6 @@ export function BrandImageField({
           }`}
         >
           {previewUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element -- arbitrary tenant media URL, not a build-time asset.
             <img src={previewUrl} alt="" className="h-full w-full object-contain" />
           ) : (
             <ImageIcon className="h-5 w-5 text-[var(--color-text-tertiary)]" />

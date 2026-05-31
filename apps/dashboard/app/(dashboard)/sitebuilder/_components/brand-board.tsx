@@ -46,7 +46,8 @@ export function BrandBoard(props: BrandBoardValues) {
   const accent = props.colorAccent ?? FALLBACK.accent;
   const headingFont = fontStack(props.fontHeading, FALLBACK.heading);
   const bodyFont = fontStack(props.fontBody, FALLBACK.body);
-  const name = props.businessName?.trim() || 'Your business';
+  const trimmedName = props.businessName?.trim();
+  const name = trimmedName && trimmedName.length > 0 ? trimmedName : 'Your business';
   const socials = Object.entries(props.socials).filter(([, v]) => v.trim());
 
   return (
@@ -201,7 +202,6 @@ function LogoTile({
         style={{ backgroundColor: bg }}
       >
         {logo ? (
-          // eslint-disable-next-line @next/next/no-img-element -- arbitrary tenant media URL.
           <img src={logo} alt="" className="max-h-full max-w-full object-contain" />
         ) : (
           <div className="flex items-center gap-1.5" style={{ color: text }}>

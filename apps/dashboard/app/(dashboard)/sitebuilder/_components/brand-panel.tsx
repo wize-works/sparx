@@ -72,10 +72,7 @@ export function BrandPanel({ initial, initialMedia }: BrandPanelProps) {
       colorAccent,
       fontHeading,
       fontBody,
-      socials: Object.fromEntries(Object.entries(socials).filter(([, v]) => v.trim())) as Record<
-        string,
-        string
-      >,
+      socials: Object.fromEntries(Object.entries(socials).filter(([, v]) => v.trim())),
     }),
     [
       businessName,
