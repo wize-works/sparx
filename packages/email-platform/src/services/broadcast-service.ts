@@ -10,13 +10,13 @@
 
 import { withTenant } from '@sparx/db';
 import type { Broadcast, EmailTemplate } from '@sparx/db';
-import { renderAuthoredEmail } from '@sparx/email';
-import { renderDocToHtml } from '@sparx/cms-editor/serialize';
-import type { CmsDoc } from '@sparx/cms-editor';
+import { renderSections } from '@sparx/email';
+import { bodyIsPersonalized, normalizeBody } from '@sparx/email-sections';
 
 import { writeAuditLog } from '../audit';
 import { publishEmailEvent } from '../events';
 import { EmailNotFoundError, EmailValidationError, type ServiceContext } from '../errors';
+import { makeStaticResolver, type ResolveSectionData } from './template-service';
 import {
   CreateBroadcastInput,
   ScheduleBroadcastInput,
@@ -119,7 +119,8 @@ export async function estimateRecipients(
 
 async function renderBody(
   ctx: ServiceContext,
-  broadcast: Broadcast
+  broadcast: Broadcast,
+  resolveData: ResolveSectionData
 ): Promise<{ subject: string; html: string; text: string }> {
   if (!broadcast.templateId) {
     throw new EmailValidationError('Attach a template before sending.');
@@ -130,28 +131,37 @@ async function renderBody(
   if (template?.source !== 'authored') {
     throw new EmailNotFoundError('EmailTemplate', broadcast.templateId);
   }
-  const doc = (template.body as CmsDoc | null) ?? { type: 'doc', content: [] };
-  const bodyHtml = renderDocToHtml(doc);
+  // Render ONCE (no recipient) — broadcasts fan out the same body. Personalized
+  // sections render empty here and omit themselves; per-recipient broadcasts
+  // land with the personalization pipeline (docs/31 §7, P5).
+  const { sections } = normalizeBody(template.body);
+  const data = await resolveData(sections);
   const brand = (await resolveEmailBrand(ctx)) ?? undefined;
-  const rendered = await renderAuthoredEmail(
+  const rendered = await renderSections(
     {
+      sections,
       to: 'broadcast@example.com',
       subject: broadcast.subject,
       preheader: broadcast.preheader ?? undefined,
-      bodyHtml,
+      data,
     },
     { brand }
   );
   return { subject: rendered.subject, html: rendered.html, text: rendered.text };
 }
 
-async function expandRecipients(ctx: ServiceContext, broadcast: Broadcast): Promise<string[]> {
+interface Recipient {
+  email: string;
+  customerId: string | null;
+}
+
+async function expandRecipients(ctx: ServiceContext, broadcast: Broadcast): Promise<Recipient[]> {
   if (!broadcast.segmentId) return [];
   return withTenant(ctx, async (tx) => {
     const [members, suppressions] = await Promise.all([
       tx.segmentMember.findMany({
         where: { segmentId: broadcast.segmentId! },
-        select: { customer: { select: { email: true, doNotContact: true } } },
+        select: { customerId: true, customer: { select: { email: true, doNotContact: true } } },
       }),
       tx.emailSuppression.findMany({
         where: { scope: { in: ['marketing', 'all'] } },
@@ -159,12 +169,15 @@ async function expandRecipients(ctx: ServiceContext, broadcast: Broadcast): Prom
       }),
     ]);
     const blocked = new Set(suppressions.map((s) => s.email.toLowerCase()));
-    const out = new Set<string>();
+    const seen = new Set<string>();
+    const out: Recipient[] = [];
     for (const m of members) {
       const email = m.customer.email?.toLowerCase();
-      if (email && !m.customer.doNotContact && !blocked.has(email)) out.add(email);
+      if (!email || m.customer.doNotContact || blocked.has(email) || seen.has(email)) continue;
+      seen.add(email);
+      out.push({ email, customerId: m.customerId });
     }
-    return [...out];
+    return out;
   });
 }
 
@@ -172,42 +185,71 @@ async function enqueueAndMark(
   ctx: ServiceContext,
   id: string,
   dueAt: Date,
-  finalStatus: 'sent' | 'scheduled'
+  finalStatus: 'sent' | 'scheduled',
+  resolveData: ResolveSectionData
 ): Promise<Broadcast> {
   const broadcast = await get(ctx, id);
   if (broadcast.status !== 'draft' && broadcast.status !== 'scheduled') {
     throw new EmailValidationError(`Broadcast is already ${broadcast.status}.`);
   }
 
-  const [body, recipients, settings] = await Promise.all([
-    renderBody(ctx, broadcast),
+  if (!broadcast.templateId) {
+    throw new EmailValidationError('Attach a template before sending.');
+  }
+  const template = await withTenant(ctx, (tx) =>
+    tx.emailTemplate.findUnique({ where: { id: broadcast.templateId! } })
+  );
+  if (template?.source !== 'authored') {
+    throw new EmailNotFoundError('EmailTemplate', broadcast.templateId);
+  }
+  // A body with any personalized section renders PER RECIPIENT at dispatch
+  // (docs/31 §7). Otherwise render ONCE here and fan the same body out.
+  const personalized = bodyIsPersonalized(normalizeBody(template.body));
+
+  const [recipients, settings] = await Promise.all([
     expandRecipients(ctx, broadcast),
     getSettings(ctx),
   ]);
+  const body = personalized ? null : await renderBody(ctx, broadcast, resolveData);
 
   const campaignTag = `bcast_${id}`;
   const from = buildFrom(settings.fromName, settings.fromAddress);
+  const variables = { broadcast_id: id, campaign: campaignTag };
+
+  const buildPayload = () =>
+    personalized
+      ? {
+          defer: {
+            templateId: template.id,
+            subject: broadcast.subject,
+            ...(broadcast.preheader ? { preheader: broadcast.preheader } : {}),
+          },
+          from,
+          variables,
+        }
+      : {
+          raw: {
+            subject: body!.subject,
+            html: body!.html,
+            text: body!.text,
+            templateId: campaignTag,
+          },
+          from,
+          variables,
+        };
 
   const updated = await withTenant(ctx, async (tx) => {
     if (recipients.length > 0) {
       await tx.scheduledSend.createMany({
-        data: recipients.map((recipient) => ({
+        data: recipients.map((r) => ({
           tenantId: ctx.tenantId,
           broadcastId: id,
-          recipient,
+          recipient: r.email,
+          customerId: r.customerId,
           dueAt,
           status: 'pending',
-          dedupeKey: `bcast:${id}:${recipient}`,
-          payload: {
-            raw: {
-              subject: body.subject,
-              html: body.html,
-              text: body.text,
-              templateId: campaignTag,
-            },
-            from,
-            variables: { broadcast_id: id, campaign: campaignTag },
-          },
+          dedupeKey: `bcast:${id}:${r.email}`,
+          payload: buildPayload(),
         })),
         skipDuplicates: true,
       });
@@ -244,21 +286,26 @@ async function enqueueAndMark(
   return updated;
 }
 
-export async function sendNow(ctx: ServiceContext, id: string): Promise<Broadcast> {
-  return enqueueAndMark(ctx, id, new Date(), 'sent');
+export async function sendNow(
+  ctx: ServiceContext,
+  id: string,
+  resolveData: ResolveSectionData = makeStaticResolver(ctx)
+): Promise<Broadcast> {
+  return enqueueAndMark(ctx, id, new Date(), 'sent', resolveData);
 }
 
 export async function schedule(
   ctx: ServiceContext,
   id: string,
-  rawInput: unknown
+  rawInput: unknown,
+  resolveData: ResolveSectionData = makeStaticResolver(ctx)
 ): Promise<Broadcast> {
   const { scheduledAt } = ScheduleBroadcastInput.parse(rawInput);
   const dueAt = new Date(scheduledAt);
   if (dueAt.getTime() <= Date.now()) {
     throw new EmailValidationError('Scheduled time must be in the future.');
   }
-  return enqueueAndMark(ctx, id, dueAt, 'scheduled');
+  return enqueueAndMark(ctx, id, dueAt, 'scheduled', resolveData);
 }
 
 export async function cancel(ctx: ServiceContext, id: string): Promise<Broadcast> {

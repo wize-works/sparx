@@ -1,6 +1,6 @@
 # Site Builder Architecture
 
-**Version:** 1.0
+**Version:** 1.1
 **Author:** Brandon Korous
 **Last Updated:** 2026-05-30
 
@@ -18,14 +18,14 @@ all rendered by the existing tenant-aware storefront.
 
 ### What already exists (consume, do not rebuild)
 
-| Capability                | Where                                                                                   | Site Builder relationship                                                                     |
-| ------------------------- | --------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
-| TipTap content pages      | `Page` model (10-cms-pages), CMS dashboard, storefront `[...slug]` + `PageView`         | CMS keeps prose pages; Site Builder owns _section-composed_ pages                             |
-| Media library             | `MediaAsset` (15-cms-media), `mediaUrl()`, CMS media-picker                             | Reused for logos / section images                                                             |
-| Navigation menus          | `NavigationMenu`/`NavigationItem` (50-sitebuilder-navigation), Site Builder menu-editor | Owned by Site Builder; storefront layout consumes them; a layout slot references a menu by id |
-| Redirects, preview tokens | `Redirect`, `PreviewToken`, `?sparxPreview=`                                            | Reused for draft preview                                                                      |
-| Limited theme tokens      | `StorefrontTheme` (47-commerce-storefront), `themeToCss()`                              | **Write-through target** — see §4                                                             |
-| Onboarding state          | `GET/PATCH /v1/tenant/onboarding`, `tenants.settings.onboarding`                        | Extended by the onboarding wizard                                                             |
+| Capability                | Where                                                                                      | Site Builder relationship                                                                              |
+| ------------------------- | ------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------ |
+| TipTap content pages      | `Page` model (10-cms-pages), CMS dashboard, storefront `[...slug]` + `PageView`            | CMS keeps prose pages; Site Builder owns _section-composed_ pages                                      |
+| Media library             | `MediaAsset` (15-cms-media), `mediaUrl()`, CMS media-picker                                | Reused for logos / section images                                                                      |
+| Navigation menus          | `NavigationMenu`/`NavigationItem` (16-cms-navigation), CMS menu-editor (`/cms/navigation`) | Owned by CMS; Site Builder binds a menu into a layout slot by id (read-only); storefront consumes them |
+| Redirects, preview tokens | `Redirect`, `PreviewToken`, `?sparxPreview=`                                               | Reused for draft preview                                                                               |
+| Limited theme tokens      | `StorefrontTheme` (47-commerce-storefront), `themeToCss()`                                 | **Write-through target** — see §4                                                                      |
+| Onboarding state          | `GET/PATCH /v1/tenant/onboarding`, `tenants.settings.onboarding`                           | Extended by the onboarding wizard                                                                      |
 
 ### What this build adds
 
@@ -41,15 +41,19 @@ mode rendering, and the 5-step onboarding wizard.
   `commerce_storefront_themes`; it only upserts a _derived projection_ of the published
   light tokens into that row, inside the same `withTenant` transaction as the publish.
   Once a tenant has a `SiteConfig`, the customizer is the only writer of that row.
-- **Site Builder owns navigation.** The `NavigationMenu`/`NavigationItem` models live in
-  `50-sitebuilder-navigation.prisma` and the menu editor is under `/sitebuilder/navigation`.
-  A `SiteLayoutBlock` references a menu by nullable FK. The `/v1/navigation/*` REST endpoints
-  are module-neutral and unchanged (the storefront consumes the same rows); only dashboard +
-  schema ownership moved out of the CMS. A `NavigationItem` may link to a CMS `ContentEntry`
-  (a cross-module reference, resolved by Prisma's merged schema).
-- **Schema domain split.** Site Builder models live in `49-sitebuilder.prisma` (+
-  `50-sitebuilder-navigation.prisma` for nav); only inverse-relation arrays touch the tenant hub
-  (`02-tenant.prisma`) and one inverse touches `13-cms-editorial.prisma`.
+- **CMS owns navigation menus; Site Builder owns the layout slots.** The
+  `NavigationMenu`/`NavigationItem` models live in `16-cms-navigation.prisma` and the menu
+  editor is under `/cms/navigation` (menus are information architecture — content). Site Builder
+  owns only the layout SLOTS: `SiteLayoutBlock` references a menu by nullable FK
+  (`navigationMenuId`) and the slot editor at `/sitebuilder/navigation` reads the menu list
+  read-only to populate that picker — it never edits a menu tree. The `/v1/navigation/*` REST
+  endpoints are module-neutral and unchanged (the storefront consumes the same rows); table
+  names (`navigation_menus`/`navigation_items`) are unchanged, so the ownership move is a
+  no-op at the database level. A `NavigationItem` may link to a CMS `ContentEntry` — now an
+  intra-module reference. See [docs/30-sitebuilder-redesign.md](30-sitebuilder-redesign.md) §8.
+- **Schema domain split.** Site Builder models live in `49-sitebuilder.prisma`; navigation
+  menus live in `16-cms-navigation.prisma` (CMS domain). Only inverse-relation arrays touch the
+  tenant hub (`02-tenant.prisma`).
 - **One service, many transports.** REST and MCP are thin wrappers over the
   `packages/sitebuilder` service layer (mirrors the CRM contract). No business logic in
   routes.

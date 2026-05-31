@@ -8,6 +8,7 @@
 //   GET    /v1/sitebuilder/schedules      → list schedules
 //   DELETE /v1/sitebuilder/schedules/:id  → cancel a pending schedule
 
+import jwt from '@fastify/jwt';
 import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
 import { publishService, scheduleService } from '@sparx/sitebuilder';
@@ -18,11 +19,18 @@ import {
   toSitebuilderContext,
 } from '../../../lib/sitebuilder-context.js';
 
+void jwt; // keep the import — fastify-jwt type augmentation lives in plugins/auth.ts
+
 const PathId = z.object({ id: z.string().uuid() });
 const VersionsQuery = z.object({
   take: z.coerce.number().int().min(1).max(200).optional(),
   skip: z.coerce.number().int().min(0).optional(),
 });
+
+// Site-preview token TTL. Long enough for an editing session, short enough that
+// no DB revocation row is needed (it's re-minted on every dashboard render, and
+// only ever exposes the merchant's own draft). See lib/preview.ts.
+const SITE_PREVIEW_TTL_SECONDS = 60 * 60;
 
 const publishRoutes: FastifyPluginAsync = (app) => {
   app.post('/v1/sitebuilder/publish', async (request) => {
@@ -37,6 +45,21 @@ const publishRoutes: FastifyPluginAsync = (app) => {
     await requireSitebuilderModule(request);
     const snapshot = await publishService.getDraftSnapshot(toSitebuilderContext(request));
     return ok(snapshot);
+  });
+
+  // Mint a short-lived, tenant-scoped JWT that lets the PUBLIC storefront serve
+  // this tenant's DRAFT site composition to the dashboard preview iframe. No DB
+  // row (unlike CMS entry preview tokens) — the short TTL is the control, and it
+  // only exposes the merchant's own draft. `aud: site-preview` distinguishes it
+  // from session + CMS-entry tokens. Verified by lib/preview.ts#tryVerifySitePreview.
+  app.get('/v1/sitebuilder/preview-token', async (request) => {
+    const auth = requireRole(request, 'editor');
+    await requireSitebuilderModule(request);
+    const token = app.jwt.sign(
+      { tid: auth.tenantId, aud: 'site-preview' },
+      { expiresIn: SITE_PREVIEW_TTL_SECONDS }
+    );
+    return ok({ token, expires_in: SITE_PREVIEW_TTL_SECONDS });
   });
 
   app.get('/v1/sitebuilder/versions', async (request) => {

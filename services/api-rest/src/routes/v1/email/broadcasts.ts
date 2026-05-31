@@ -16,6 +16,7 @@ import { broadcastService } from '@sparx/email-platform';
 import { ok } from '@sparx/api-core/envelope';
 import { requireRole } from '@sparx/api-core/auth';
 import { requireEmailModule, toEmailContext } from '../../../lib/email-context.js';
+import { sectionResolver } from '../../../lib/email-sections.js';
 
 const IdParam = z.object({ id: z.string().uuid() });
 const EstimateQuery = z.object({ segment_id: z.string().uuid().optional() });
@@ -69,14 +70,16 @@ const emailBroadcastRoutes: FastifyPluginAsync = (app) => {
     requireRole(request, 'editor');
     await requireEmailModule(request);
     const { id } = IdParam.parse(request.params);
-    return ok(await broadcastService.sendNow(toEmailContext(request), id));
+    const ctx = toEmailContext(request);
+    return ok(await broadcastService.sendNow(ctx, id, sectionResolver(ctx)));
   });
 
   app.post('/v1/email/broadcasts/:id/schedule', async (request) => {
     requireRole(request, 'editor');
     await requireEmailModule(request);
     const { id } = IdParam.parse(request.params);
-    return ok(await broadcastService.schedule(toEmailContext(request), id, request.body));
+    const ctx = toEmailContext(request);
+    return ok(await broadcastService.schedule(ctx, id, request.body, sectionResolver(ctx)));
   });
 
   app.post('/v1/email/broadcasts/:id/cancel', async (request) => {

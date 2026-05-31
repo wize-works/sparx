@@ -10,7 +10,7 @@ import {
   Home,
   Image,
   LayoutTemplate,
-  Navigation,
+  PanelTop,
   Palette,
   Plus,
   Rocket,
@@ -26,7 +26,12 @@ export const sitebuilderManifest: ModuleManifest = {
     { id: 'themes', label: 'Themes', icon: LayoutTemplate, href: '/sitebuilder/themes' },
     { id: 'homepage', label: 'Homepage', icon: Home, href: '/sitebuilder/homepage' },
     { id: 'pages', label: 'Pages', icon: FileText, href: '/sitebuilder/pages' },
-    { id: 'navigation', label: 'Navigation', icon: Navigation, href: '/sitebuilder/navigation' },
+    {
+      id: 'navigation',
+      label: 'Header & footer',
+      icon: PanelTop,
+      href: '/sitebuilder/navigation',
+    },
     { id: 'publishing', label: 'Publishing', icon: Rocket, href: '/sitebuilder/publishing' },
   ],
   actions: [
@@ -45,8 +50,5 @@ export const sitebuilderManifest: ModuleManifest = {
   ],
   entityTypes: [
     { id: 'page', label: 'Page', routePrefix: '/sitebuilder/pages', hasDetailView: true },
-    // Menus are keyed by location string, not UUID — the entity id for the
-    // detail-view URL is the location (e.g. ?drawer=menu:header).
-    { id: 'menu', label: 'Menu', routePrefix: '/sitebuilder/navigation', hasDetailView: true },
   ],
 };

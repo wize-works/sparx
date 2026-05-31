@@ -17,8 +17,8 @@ const SECTIONS = [
   { href: '/sitebuilder/pages', title: 'Pages', desc: 'Build section-based landing pages.' },
   {
     href: '/sitebuilder/navigation',
-    title: 'Navigation',
-    desc: 'Header, footer, and announcement bar.',
+    title: 'Header & footer',
+    desc: 'Layout slots and which menu fills each.',
   },
   {
     href: '/sitebuilder/publishing',

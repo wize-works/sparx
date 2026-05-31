@@ -1,0 +1,31 @@
+{
+  "name": "@sparx/email-sections",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Sparx Email Section Composer — Zod section config schemas, the tier-tagged section registry, and the email body model shared by the render lib (@sparx/email), the service layer (@sparx/email-platform), REST/MCP, and the dashboard composer (docs/31-email-section-composer.md).",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "files": [
+    "src"
+  ],
+  "scripts": {
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --passWithNoTests",
+    "test:watch": "vitest",
+    "clean": "rm -rf .turbo dist *.tsbuildinfo"
+  },
+  "dependencies": {
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "^25.9.1",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.7"
+  }
+}

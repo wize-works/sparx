@@ -1,8 +1,9 @@
 'use client';
 
 // Header / footer / announcement editor. Each slot has a small known field set
-// plus, for header/footer, a reference to one of the navigation menus managed
-// on this same page. Saving upserts the slot's layout block.
+// plus, for header/footer, a reference to one of the CMS-owned navigation menus
+// (read-only here; edited under /cms/navigation). Saving upserts the slot's
+// layout block.
 
 import * as React from 'react';
 import { useRouter } from 'next/navigation';

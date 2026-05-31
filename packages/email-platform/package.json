@@ -36,6 +36,7 @@
     "@sparx/cms-editor": "workspace:*",
     "@sparx/db": "workspace:*",
     "@sparx/email": "workspace:*",
+    "@sparx/email-sections": "workspace:*",
     "@sparx/events": "workspace:*",
     "@sparx/storefront-themes": "workspace:*",
     "@sparx/ui": "workspace:*",

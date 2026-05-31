@@ -7,6 +7,7 @@
 
 import * as React from 'react';
 import {
+  Button,
   ColorPicker,
   Input,
   Label,
@@ -19,7 +20,11 @@ import {
   Switch,
   Textarea,
 } from '@sparx/ui';
+import { ImageIcon } from 'lucide-react';
 import type { SectionField } from '@sparx/sitebuilder-schemas';
+// The media library is shared dashboard infra (docs/29 §1) — Site Builder image
+// fields reuse the CMS asset picker rather than a parallel one.
+import { MediaPicker } from '../../cms/_components/media-picker';
 
 // Web-safe + popular Google fonts offered in font pickers.
 const FONT_OPTIONS = [
@@ -141,10 +146,11 @@ function Control({ field, id, value, onChange }: FieldControlProps & { id: strin
         </label>
       );
     case 'media':
+      return <MediaField field={field} value={value} onChange={onChange} />;
     case 'collection':
     case 'products':
-      // Id-based references. A richer picker (CMS MediaPicker / catalog search)
-      // can replace these inputs without changing the stored shape.
+      // Id-based references. A catalog search picker can replace these inputs
+      // later without changing the stored shape.
       return (
         <Input
           id={id}
@@ -176,6 +182,65 @@ function Control({ field, id, value, onChange }: FieldControlProps & { id: strin
         />
       );
   }
+}
+
+// Image field — opens the shared CMS asset picker and stores the picked
+// asset's id (the same shape the old raw text box stored, so nothing
+// downstream changes). Shows a thumbnail once an asset is picked this session.
+function MediaField({
+  value,
+  onChange,
+}: Omit<FieldControlProps, 'field'> & { field?: SectionField }) {
+  const [open, setOpen] = React.useState(false);
+  const [preview, setPreview] = React.useState<string | null>(null);
+  const assetId = typeof value === 'string' && value ? value : null;
+
+  return (
+    <div className="flex items-center gap-3">
+      <div className="flex h-16 w-16 flex-none items-center justify-center overflow-hidden rounded-md border border-[var(--color-border-default)] bg-[var(--color-bg-subtle)]">
+        {preview ? (
+          <img src={preview} alt="" className="h-full w-full object-cover" />
+        ) : (
+          <ImageIcon className="h-5 w-5 text-[var(--color-text-tertiary)]" />
+        )}
+      </div>
+      <div className="flex flex-col gap-1.5">
+        <div className="flex gap-2">
+          <Button type="button" size="sm" variant="secondary" onClick={() => setOpen(true)}>
+            {assetId ? 'Change image' : 'Choose image'}
+          </Button>
+          {assetId ? (
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              onClick={() => {
+                setPreview(null);
+                onChange(null);
+              }}
+            >
+              Remove
+            </Button>
+          ) : null}
+        </div>
+        {assetId ? (
+          <span className="font-mono text-[11px] text-[var(--color-text-muted)]">{assetId}</span>
+        ) : (
+          <span className="text-xs text-[var(--color-text-muted)]">No image selected</span>
+        )}
+      </div>
+      <MediaPicker
+        open={open}
+        onOpenChange={setOpen}
+        accept={['image/*']}
+        onPick={(asset) => {
+          setPreview(asset.src || null);
+          onChange(asset.assetId);
+          setOpen(false);
+        }}
+      />
+    </div>
+  );
 }
 
 // Repeatable group of item-field rows (e.g. testimonials). Each item is an

@@ -4,10 +4,13 @@ import type { SectionField } from '../fields';
 
 export const HeroConfig = z.object({
   backgroundMediaId: OptionalUuid,
-  heading: z.string().max(160).default(''),
-  subheading: z.string().max(400).default(''),
-  ctaLabel: z.string().max(60).default(''),
-  ctaUrl: LinkUrl.default(''),
+  heading: z.string().max(160).default('Your headline goes here'),
+  subheading: z
+    .string()
+    .max(400)
+    .default('Add a sentence that tells visitors what you offer and why it matters.'),
+  ctaLabel: z.string().max(60).default('Shop now'),
+  ctaUrl: LinkUrl.default('/products'),
   align: Align.default('center'),
   overlayOpacity: z.number().int().min(0).max(100).default(40),
 });

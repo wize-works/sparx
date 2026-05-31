@@ -4,10 +4,11 @@ import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { api, type ApiRestError } from '@/lib/api-rest-client';
 
-// Whole-tree replace save for a navigation menu. Navigation is owned by Site
-// Builder now, but the underlying api-rest endpoint (`PUT /v1/navigation/menus/
-// :location`) is module-neutral and stays put — the storefront consumes the
-// same rows. Only the dashboard ownership (this UI) moved out of the CMS.
+// Whole-tree replace save for a navigation menu. Navigation menus are owned by
+// the CMS module (docs/30 §8); the underlying api-rest endpoint (`PUT
+// /v1/navigation/menus/:location`) is module-neutral and stays put — the
+// storefront consumes the same rows. Site Builder only binds a menu into a
+// layout slot by id; it does not edit the menu tree.
 
 const ItemInput: z.ZodType<MenuItemInput> = z.lazy(() =>
   z
@@ -62,7 +63,7 @@ export async function saveMenu(
   } catch (err) {
     return { ok: false, error: friendly(err) };
   }
-  revalidatePath('/sitebuilder/navigation');
-  revalidatePath(`/sitebuilder/navigation/${location}`);
+  revalidatePath('/cms/navigation');
+  revalidatePath(`/cms/navigation/${location}`);
   return { ok: true };
 }

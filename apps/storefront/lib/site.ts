@@ -54,22 +54,32 @@ interface ErrorEnvelope {
 }
 
 /**
- * Fetch the tenant's published site snapshot, or null if nothing is published
- * (or the read fails — a brand-new/erroring store still renders via the
- * commerce fallback rather than throwing).
+ * Fetch the tenant's site snapshot, or null if nothing is published (or the
+ * read fails — a brand-new/erroring store still renders via the commerce
+ * fallback rather than throwing).
+ *
+ * With a `sitePreviewToken` (minted by the dashboard and forwarded from the
+ * `?sparxSitePreview=` query) the api-rest endpoint returns the DRAFT
+ * composition instead of the published snapshot, so the dashboard preview
+ * iframe reflects unsaved work. Preview reads are uncached (`no-store`).
  */
-export async function getPublishedSite(tenantSlug: string): Promise<PublishedSnapshot | null> {
+export async function getPublishedSite(
+  tenantSlug: string,
+  sitePreviewToken?: string
+): Promise<PublishedSnapshot | null> {
   try {
     const res = await fetch(
       `${BASE_URL}/v1/public/storefront/site?tenant=${encodeURIComponent(tenantSlug)}`,
-      {
-        // Site config changes on publish; the publish flow purges these tags
-        // (see app/api/revalidate — `site:<slug>` scope). Falls back to TTL.
-        next: {
-          revalidate: 300,
-          tags: ['sparx-storefront', `tenant:${tenantSlug}`, `site:${tenantSlug}`],
-        },
-      }
+      sitePreviewToken
+        ? { headers: { Authorization: `Preview ${sitePreviewToken}` }, cache: 'no-store' }
+        : {
+            // Site config changes on publish; the publish flow purges these tags
+            // (see app/api/revalidate — `site:<slug>` scope). Falls back to TTL.
+            next: {
+              revalidate: 300,
+              tags: ['sparx-storefront', `tenant:${tenantSlug}`, `site:${tenantSlug}`],
+            },
+          }
     );
     const json = (await res.json()) as SuccessEnvelope<PublishedSnapshot | null> | ErrorEnvelope;
     if (!res.ok || 'error' in json) return null;

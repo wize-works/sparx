@@ -1,10 +1,14 @@
 // brandService — resolves a tenant's email brand (the BrandTokens that
-// @sparx/email threads through every template/atom). Per the brand directive:
+// @sparx/email threads through every template/atom).
 //
-//   priority: Site Builder published snapshot (compiledTokens.light)  [not yet
-//             exposed — falls through]  →  commerce StorefrontTheme overlay  →
-//             EmailSettings.brandingOverride  →  Sparx defaults (null = use
-//             @sparx/email's defaultBrand).
+// Brand is the tenant-level source of truth (docs/30 §6): email READS it, never
+// overrides it. We read `TenantBrand` directly — the old cascade (Commerce
+// StorefrontTheme → EmailSettings.brandingOverride → defaults) is gone; those
+// sources were consolidated into TenantBrand by migration 20260610000000 and
+// `brandingOverride` is removed. The brand's identity palette/typography overlay
+// the default theme preset; unset tokens fall back to the preset, and a tenant
+// with no brand identity at all yields null (caller renders @sparx/email's
+// Sparx defaultBrand).
 //
 // Light palette only (email-client dark mode is unreliable). We read concrete
 // token values — never CSS custom properties — because React Email inlines
@@ -55,58 +59,50 @@ function tokensToBrand(
   };
 }
 
-interface BrandingOverride {
-  logoMediaId?: string | null;
-  colors?: { primary?: string };
-}
-
 /**
- * Resolve the tenant's email brand, or `null` when the tenant has no branding
- * customization (the caller then renders with @sparx/email's Sparx defaults).
+ * Resolve the tenant's email brand, or `null` when the tenant has no brand
+ * identity set (the caller then renders with @sparx/email's Sparx defaults).
  */
 export async function resolveEmailBrand(ctx: ServiceContext): Promise<BrandTokens | null> {
   return withTenant(ctx, async (tx) => {
-    const [theme, settings, tenant] = await Promise.all([
-      tx.storefrontTheme.findUnique({ where: { tenantId: ctx.tenantId } }),
-      tx.emailSettings.findUnique({ where: { tenantId: ctx.tenantId } }),
+    const [brand, tenant] = await Promise.all([
+      tx.tenantBrand.findUnique({ where: { tenantId: ctx.tenantId } }),
       tx.tenant.findUnique({ where: { id: ctx.tenantId }, select: { name: true, slug: true } }),
     ]);
 
+    // A tenant with no brand record → Sparx defaults (null signals "use
+    // @sparx/email's defaultBrand"). Guarding here also narrows `brand` to
+    // non-null for the rest of the function.
+    if (brand === null) return null;
+
     const slug = tenant?.slug ?? '';
-    const storeName = tenant?.name ?? undefined;
-    const override = (settings?.brandingOverride as BrandingOverride | null) ?? null;
+    const storeName = brand.businessName ?? tenant?.name ?? undefined;
 
-    // 1. Commerce StorefrontTheme → overlay over the default preset.
-    if (theme) {
-      const overlay: Partial<ThemeTokens> = {};
-      if (theme.colorPrimary) overlay.colorPrimary = theme.colorPrimary;
-      if (theme.colorPrimaryForeground)
-        overlay.colorPrimaryForeground = theme.colorPrimaryForeground;
-      if (theme.colorAccent) overlay.colorAccent = theme.colorAccent;
-      if (theme.colorBackground) overlay.colorBackground = theme.colorBackground;
-      if (theme.colorMuted) overlay.colorMuted = theme.colorMuted;
-      if (theme.fontHeading) overlay.fontHeading = theme.fontHeading;
-      if (theme.fontBody) overlay.fontBody = theme.fontBody;
+    // Likewise a brand row with no identity tokens at all → defaults.
+    const hasIdentity = [
+      brand.businessName,
+      brand.colorPrimary,
+      brand.colorPrimaryForeground,
+      brand.colorAccent,
+      brand.fontHeading,
+      brand.fontBody,
+      brand.logoLightMediaId,
+    ].some(Boolean);
+    if (!hasIdentity) return null;
 
-      const compiled = compileTokens(DEFAULT_THEME_KEY, { light: overlay }).light;
-      return tokensToBrand(compiled, {
-        logoUrl: logoUrlFor(theme.logoMediaId ?? override?.logoMediaId, slug),
-        storeName,
-      });
-    }
+    // Overlay the brand's identity palette/typography over the default preset;
+    // unset tokens inherit the preset. Email uses the light palette only.
+    const overlay: Partial<ThemeTokens> = {};
+    if (brand.colorPrimary) overlay.colorPrimary = brand.colorPrimary;
+    if (brand.colorPrimaryForeground) overlay.colorPrimaryForeground = brand.colorPrimaryForeground;
+    if (brand.colorAccent) overlay.colorAccent = brand.colorAccent;
+    if (brand.fontHeading) overlay.fontHeading = brand.fontHeading;
+    if (brand.fontBody) overlay.fontBody = brand.fontBody;
 
-    // 2. EmailSettings branding override (logo and/or primary color).
-    if (override && (override.colors?.primary || override.logoMediaId)) {
-      const overlay: Partial<ThemeTokens> = {};
-      if (override.colors?.primary) overlay.colorPrimary = override.colors.primary;
-      const compiled = compileTokens(DEFAULT_THEME_KEY, { light: overlay }).light;
-      return tokensToBrand(compiled, {
-        logoUrl: logoUrlFor(override.logoMediaId, slug),
-        storeName,
-      });
-    }
-
-    // 3. No customization → Sparx defaults (null signals "use defaultBrand").
-    return null;
+    const compiled = compileTokens(DEFAULT_THEME_KEY, { light: overlay }).light;
+    return tokensToBrand(compiled, {
+      logoUrl: logoUrlFor(brand.logoLightMediaId, slug),
+      storeName,
+    });
   });
 }

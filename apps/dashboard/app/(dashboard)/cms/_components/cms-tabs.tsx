@@ -11,6 +11,7 @@ import { cn } from '@sparx/ui';
 export type CmsSection =
   | 'pages'
   | 'types'
+  | 'navigation'
   | 'media'
   | 'redirects'
   | 'authors'
@@ -24,6 +25,7 @@ interface CmsTabsProps {
 const TABS: { section: CmsSection; href: string; label: string }[] = [
   { section: 'pages', href: '/cms', label: 'Pages' },
   { section: 'types', href: '/cms/types', label: 'Content types' },
+  { section: 'navigation', href: '/cms/navigation', label: 'Navigation' },
   { section: 'media', href: '/cms/media', label: 'Media' },
   { section: 'redirects', href: '/cms/redirects', label: 'Redirects' },
   { section: 'authors', href: '/cms/authors', label: 'Authors' },

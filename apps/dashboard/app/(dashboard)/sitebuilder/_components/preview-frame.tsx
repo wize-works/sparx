@@ -24,6 +24,9 @@ export interface PreviewFrameProps {
   path?: string;
   /** Bump to force a reload after a structural draft change. */
   refreshKey?: number;
+  /** Site-preview token. When set, the iframe renders the DRAFT composition
+   *  (the storefront falls back to published when it's absent/invalid). */
+  previewToken?: string | null;
 }
 
 export function PreviewFrame({
@@ -31,6 +34,7 @@ export function PreviewFrame({
   slug,
   path = '/',
   refreshKey = 0,
+  previewToken,
 }: PreviewFrameProps) {
   const [device, setDevice] = React.useState('desktop');
   const [manualNonce, setManualNonce] = React.useState(0);
@@ -40,7 +44,8 @@ export function PreviewFrame({
   // a fresh src/key remounts the iframe — a cross-origin contentWindow.reload()
   // would throw, so we reload by changing the URL instead.
   const nonce = refreshKey + manualNonce;
-  const query = `tenant=${encodeURIComponent(slug)}&sparxPreview=1`;
+  const previewParam = previewToken ? `&sparxSitePreview=${encodeURIComponent(previewToken)}` : '';
+  const query = `tenant=${encodeURIComponent(slug)}${previewParam}`;
   const src = `${storefrontUrl}${path}?${query}&v=${nonce}`;
   const openUrl = `${storefrontUrl}${path}?${query}`;
 

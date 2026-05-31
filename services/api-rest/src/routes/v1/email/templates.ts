@@ -19,6 +19,7 @@ import { templateService } from '@sparx/email-platform';
 import { ok } from '@sparx/api-core/envelope';
 import { requireRole } from '@sparx/api-core/auth';
 import { requireEmailModule, toEmailContext } from '../../../lib/email-context.js';
+import { sectionResolver } from '../../../lib/email-sections.js';
 
 const KeyParam = z.object({ key: z.string().min(1).max(63) });
 const IdParam = z.object({ id: z.string().uuid() });
@@ -51,8 +52,9 @@ const emailTemplateRoutes: FastifyPluginAsync = (app) => {
     requireRole(request, 'viewer');
     await requireEmailModule(request);
     const { key } = KeyParam.parse(request.params);
+    const ctx = toEmailContext(request);
     return ok(
-      await templateService.renderPreview(toEmailContext(request), { source: 'builtin', key })
+      await templateService.renderPreview(ctx, { source: 'builtin', key }, sectionResolver(ctx))
     );
   });
 
@@ -60,11 +62,13 @@ const emailTemplateRoutes: FastifyPluginAsync = (app) => {
     requireRole(request, 'editor');
     await requireEmailModule(request);
     const { key } = KeyParam.parse(request.params);
+    const ctx = toEmailContext(request);
     return ok(
       await templateService.testSend(
-        toEmailContext(request),
+        ctx,
         { source: 'builtin', key },
-        request.body
+        request.body,
+        sectionResolver(ctx)
       )
     );
   });
@@ -104,8 +108,9 @@ const emailTemplateRoutes: FastifyPluginAsync = (app) => {
     requireRole(request, 'viewer');
     await requireEmailModule(request);
     const { id } = IdParam.parse(request.params);
+    const ctx = toEmailContext(request);
     return ok(
-      await templateService.renderPreview(toEmailContext(request), { source: 'authored', id })
+      await templateService.renderPreview(ctx, { source: 'authored', id }, sectionResolver(ctx))
     );
   });
 
@@ -113,11 +118,13 @@ const emailTemplateRoutes: FastifyPluginAsync = (app) => {
     requireRole(request, 'editor');
     await requireEmailModule(request);
     const { id } = IdParam.parse(request.params);
+    const ctx = toEmailContext(request);
     return ok(
       await templateService.testSend(
-        toEmailContext(request),
+        ctx,
         { source: 'authored', id },
-        request.body
+        request.body,
+        sectionResolver(ctx)
       )
     );
   });

@@ -1,16 +1,19 @@
-// Site Builder — navigation menus.
+// CMS — navigation menus.
 //
-// Navigation is owned by the Site Builder (storefront) module: the merchant
-// edits header / footer / mega / custom_* menus in the Site Builder dashboard,
-// and the storefront renders them via the SiteLayoutBlock → NavigationMenu
-// reference. Items link to a CMS ContentEntry OR an external URL (exactly one,
-// validated at the API). The `entry` relation crosses into CMS-owned content —
-// that's a reference only; Prisma merges every schema file, so the cross-module
-// relation resolves regardless of which file each model lives in.
+// Navigation menus are information architecture — content — and are owned by the
+// CMS module: the merchant edits header / footer / mega / custom_* menus under
+// the CMS dashboard (/cms/navigation), and the storefront renders them via the
+// SiteLayoutBlock → NavigationMenu reference. Site Builder owns only the layout
+// SLOTS (header/footer/announcement) that point at a menu; it does not own the
+// menus themselves. See docs/30-sitebuilder-redesign.md §8.
 //
-// Tables are unchanged from when these models lived in 13-cms-editorial.prisma
-// (navigation_menus / navigation_items) — this is an ownership move, not a
-// data migration.
+// Items link to a CMS ContentEntry OR an external URL (exactly one, validated at
+// the API). The `entry` relation is now an intra-module reference.
+//
+// Table names (navigation_menus / navigation_items) are unchanged across every
+// ownership move this model has lived through (CMS → Site Builder → CMS) — the
+// `@@map` is the contract, so relocating the model between schema files is a
+// no-op at the database level, never a data migration.
 
 model NavigationMenu {
   id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
@@ -22,7 +25,7 @@ model NavigationMenu {
 
   tenant           Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   items            NavigationItem[]
-  // Site Builder header/footer slots reference this menu. docs/29 §2.
+  // Site Builder header/footer slots reference this menu by id. docs/30 §8.
   siteLayoutBlocks SiteLayoutBlock[]
 
   @@unique([tenantId, location])

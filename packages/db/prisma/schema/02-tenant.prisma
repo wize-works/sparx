@@ -20,6 +20,9 @@ model Tenant {
   createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz
   updatedAt        DateTime  @updatedAt @map("updated_at") @db.Timestamptz
 
+  // Platform core — brand identity (tenant-level source of truth, docs/30 §6)
+  brand TenantBrand?
+
   // Auth + audit
   users     User[]
   auditLogs AuditLog[]

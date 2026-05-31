@@ -19,15 +19,18 @@ import { resolveTenant } from '@/lib/tenant';
 export const dynamic = 'force-dynamic';
 
 interface RootPageProps {
-  searchParams?: Promise<{ sparxPreview?: string }>;
+  searchParams?: Promise<{ sparxPreview?: string; sparxSitePreview?: string }>;
 }
 
 export default async function StorefrontRoot({ searchParams }: RootPageProps) {
   const tenant = await resolveTenant();
   if (!tenant) notFound();
 
-  // Site Builder home composition wins when the merchant has published one.
-  const snapshot = await getPublishedSite(tenant.slug);
+  const sp = (await searchParams) ?? {};
+
+  // Site Builder home composition wins when the merchant has published one — or,
+  // with a site-preview token, the current unsaved draft.
+  const snapshot = await getPublishedSite(tenant.slug, sp.sparxSitePreview);
   const homeSections = sectionsForPage(snapshot, 'home');
   if (homeSections.length > 0) {
     const { defaultCurrency, defaultLocale } = tenant.storefront;
@@ -40,7 +43,7 @@ export default async function StorefrontRoot({ searchParams }: RootPageProps) {
   }
 
   // Empty-store fallback: the composed commerce homepage.
-  const previewToken = (await searchParams)?.sparxPreview;
+  const previewToken = sp.sparxPreview;
   const [cmsHome, collections, fresh] = await Promise.all([
     getPageBySlug(tenant.slug, 'home', previewToken ? { previewToken } : {}).catch(() => null),
     listCollections(tenant.slug).catch(() => []),

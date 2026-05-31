@@ -11,16 +11,18 @@ export const SaveBuiltinOverrideInput = z
 
 export type SaveBuiltinOverrideInput = z.infer<typeof SaveBuiltinOverrideInput>;
 
-// Authored marketing template — TipTap doc body (validated structurally by the
-// editor; stored as JSON).
-const TipTapDoc = z.object({ type: z.literal('doc'), content: z.array(z.unknown()).optional() });
+// Authored marketing template — a section-composer body (docs/31 §5). The body
+// shape (a {version, sections[]} list, or a legacy bare CmsDoc) is validated +
+// normalized by @sparx/email-sections' parseBody in the service; here it is an
+// opaque object so the zod layer doesn't duplicate the section registry.
+const SectionBody = z.unknown();
 
 export const CreateAuthoredTemplateInput = z
   .object({
     name: z.string().min(1).max(160),
     subject: z.string().min(1).max(255),
     preheader: z.string().max(255).optional(),
-    body: TipTapDoc,
+    body: SectionBody,
   })
   .strict();
 
@@ -31,7 +33,7 @@ export const UpdateAuthoredTemplateInput = z
     name: z.string().min(1).max(160).optional(),
     subject: z.string().min(1).max(255).optional(),
     preheader: z.string().max(255).nullable().optional(),
-    body: TipTapDoc.optional(),
+    body: SectionBody.optional(),
     status: z.enum(['draft', 'active', 'archived']).optional(),
   })
   .strict();

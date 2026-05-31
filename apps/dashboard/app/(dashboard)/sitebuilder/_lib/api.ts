@@ -51,8 +51,21 @@ export async function listSchedules(): Promise<SitePublishScheduleDto[]> {
   return schedules;
 }
 
-// Navigation menus live behind the module-neutral /v1/navigation endpoints,
-// but Site Builder is the dashboard owner of them now.
+// Navigation menus are CMS-owned content (docs/30 §8); Site Builder reads them
+// read-only — via the module-neutral /v1/navigation endpoints — to populate the
+// layout-slot menu picker. The menu trees are edited under /cms/navigation.
 export function listMenus(): Promise<NavMenuDto[]> {
   return api.get<NavMenuDto[]>('/v1/navigation/menus');
+}
+
+// Mint a short-lived site-preview token so the storefront preview iframe renders
+// the tenant's DRAFT composition instead of the published snapshot. Re-minted on
+// every render; null when minting fails (the preview then shows published).
+export async function getSitePreviewToken(): Promise<string | null> {
+  try {
+    const { token } = await api.get<{ token: string }>('/v1/sitebuilder/preview-token');
+    return token;
+  } catch {
+    return null;
+  }
 }

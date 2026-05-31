@@ -21,7 +21,10 @@ describe('section registry', () => {
     const hero = defaultSectionConfig('hero');
     expect(hero.align).toBe('center');
     expect(hero.overlayOpacity).toBe(40);
-    expect(hero.heading).toBe('');
+    // New sections ship with placeholder copy so they look intentional before
+    // the merchant edits them (rather than rendering blank).
+    expect(hero.heading).toBe('Your headline goes here');
+    expect(hero.ctaLabel).toBe('Shop now');
   });
 
   it('validates and fills section config from partial input', () => {
