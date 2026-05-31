@@ -27,35 +27,35 @@ import { SparxMark } from './sparx-mark';
 // @sparx/email's <EmailWordmark> instead; it inlines the same hex.
 
 export interface WordmarkProps extends React.HTMLAttributes<HTMLSpanElement> {
-    /** Font size in px. Default 22 (matches marketing header + email header). */
-    size?: number;
-    /** Render the Sparx monogram mark before the wordmark (icon + wordmark lockup). */
-    icon?: boolean;
+  /** Font size in px. Default 22 (matches marketing header + email header). */
+  size?: number;
+  /** Render the Sparx monogram mark before the wordmark (icon + wordmark lockup). */
+  icon?: boolean;
 }
 
 export function Wordmark({ size = 22, icon = false, className, style, ...rest }: WordmarkProps) {
-    return (
-        <span
-            className={cn('font-bold tracking-tight', icon && 'inline-flex items-center', className)}
-            style={{
-                fontSize: size,
-                fontFamily: "var(--font-wordmark, 'Inter', system-ui, sans-serif)",
-                fontWeight: 700,
-                letterSpacing: '-0.03em',
-                lineHeight: 1,
-                color: 'var(--color-text-primary)',
-                ...(icon ? { gap: Math.round(size * 0.28) } : {}),
-                ...style,
-            }}
-            {...rest}
-        >
-            {icon ? (
-                <SparxMark size={Math.round(size * 1.50)} />
-            ) : (
-                <span>
-                    Spar<span style={{ color: 'var(--sparx-primary)' }}>x</span>
-                </span>
-            )}
+  return (
+    <span
+      className={cn('font-bold tracking-tight', icon && 'inline-flex items-center', className)}
+      style={{
+        fontSize: size,
+        fontFamily: "var(--font-wordmark, 'Inter', system-ui, sans-serif)",
+        fontWeight: 700,
+        letterSpacing: '-0.03em',
+        lineHeight: 1,
+        color: 'var(--color-text-primary)',
+        ...(icon ? { gap: Math.round(size * 0.28) } : {}),
+        ...style,
+      }}
+      {...rest}
+    >
+      {icon ? (
+        <SparxMark size={Math.round(size * 1.5)} />
+      ) : (
+        <span>
+          Spar<span style={{ color: 'var(--sparx-primary)' }}>x</span>
         </span>
-    );
+      )}
+    </span>
+  );
 }
