@@ -5,55 +5,55 @@ import { Slot } from '@radix-ui/react-slot';
 import { cva, type VariantProps } from '../../utils/cva';
 import { cn } from '../../utils/cn';
 import { Spinner } from './spinner';
+import { colorClass, treatmentVariants, type ColorKey } from '../_recipes/variants';
+
+// Button — the four-axis API (docs/35). `color` (semantic palette, runtime-
+// extensible) is applied as a role-var class; `variant` (treatment), `size` and
+// `shape` are CVA variants. color × variant composes through the --c-* role vars.
 
 const buttonVariants = cva(
   [
-    'inline-flex items-center justify-center gap-2',
-    'rounded-md text-sm font-medium',
-    'transition-colors duration-150',
+    'inline-flex items-center justify-center',
+    'rounded-md font-medium',
+    'transition-[color,background-color,border-color,filter] duration-150',
     'focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:ring-offset-2 focus-visible:outline-none',
     'disabled:pointer-events-none disabled:opacity-40',
     'whitespace-nowrap select-none',
   ],
   {
     variants: {
-      variant: {
-        primary: 'bg-[var(--sparx-primary)] text-white hover:bg-[var(--sparx-primary-hover)]',
-        secondary:
-          'border border-[var(--color-border-default)] bg-[var(--color-bg-surface)] text-[var(--color-text-primary)] hover:bg-[var(--color-bg-subtle)]',
-        // Neutral, transparent-fill bordered button. Lower emphasis than
-        // `secondary` (no surface fill) — pairs well next to a primary action.
-        outline:
-          'border border-[var(--color-border-default)] bg-transparent text-[var(--color-text-primary)] hover:bg-[var(--color-bg-subtle)]',
-        // Tinted, borderless low-emphasis fill in the brand accent. The quiet
-        // counterpart to `primary` for secondary calls-to-action.
-        soft: 'bg-[var(--sparx-primary-tint)] text-[var(--sparx-primary)] hover:brightness-95',
-        ghost:
-          'text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-subtle)] hover:text-[var(--color-text-primary)]',
-        link: 'h-auto p-0 text-[var(--sparx-primary)] underline-offset-4 hover:underline',
-        danger: 'bg-[var(--color-danger)] text-white hover:opacity-90',
-        warning: 'bg-[var(--color-warning)] text-white hover:opacity-90',
-        module: 'bg-[var(--module-active)] text-white hover:opacity-90',
-        'module-outline':
-          'border border-[var(--module-active)] text-[var(--module-active)] hover:bg-[var(--module-active-tint)]',
-      },
+      variant: treatmentVariants,
       size: {
-        xs: 'h-7 px-2.5 text-xs',
-        sm: 'h-8 px-3 text-sm',
-        md: 'h-9 px-4 text-sm',
-        lg: 'h-10 px-5 text-base',
-        xl: 'h-11 px-6 text-base',
-        'icon-sm': 'h-8 w-8 p-0',
-        'icon-md': 'h-9 w-9 p-0',
-        'icon-lg': 'h-10 w-10 p-0',
+        xs: 'h-7 gap-1.5 px-2.5 text-xs',
+        sm: 'h-8 gap-1.5 px-3 text-sm',
+        md: 'h-9 gap-2 px-4 text-sm',
+        lg: 'h-10 gap-2 px-5 text-base',
+        xl: 'h-11 gap-2.5 px-6 text-base',
+      },
+      shape: {
+        default: '',
+        // Extra horizontal presence for a hero / primary action.
+        wide: 'min-w-32',
+        // Fills its container.
+        block: 'w-full',
+        // 1:1 icon button, field radius.
+        square: 'aspect-square p-0',
+        // 1:1 icon button, fully round.
+        circle: 'aspect-square rounded-full p-0',
       },
     },
-    defaultVariants: { variant: 'primary', size: 'md' },
+    defaultVariants: { variant: 'solid', size: 'md', shape: 'default' },
   }
 );
 
 export interface ButtonProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement>, VariantProps<typeof buttonVariants> {
+  extends
+    Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'color'>,
+    VariantProps<typeof buttonVariants> {
+  /** Semantic color slot. Known slots autocomplete; any string is accepted so
+   *  a runtime custom theme color (`color="brand-mint"`) works once its
+   *  `.sx-c-brand-mint` rule exists. Defaults to `primary`. */
+  color?: ColorKey | (string & {});
   loading?: boolean;
   leftIcon?: React.ReactNode;
   rightIcon?: React.ReactNode;
@@ -64,8 +64,10 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   (
     {
       className,
+      color = 'primary',
       variant,
       size,
+      shape,
       loading = false,
       leftIcon,
       rightIcon,
@@ -76,11 +78,13 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     },
     ref
   ) => {
+    const classes = cn(colorClass(color), buttonVariants({ variant, size, shape }), className);
+
     // Radix Slot requires exactly one child element — defer all content to it
     // and skip the icon/spinner slots. The provided child owns its layout.
     if (asChild) {
       return (
-        <Slot ref={ref} className={cn(buttonVariants({ variant, size }), className)} {...props}>
+        <Slot ref={ref} className={classes} {...props}>
           {children}
         </Slot>
       );
@@ -89,7 +93,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     return (
       <button
         ref={ref}
-        className={cn(buttonVariants({ variant, size }), className)}
+        className={classes}
         disabled={disabled ?? loading}
         aria-busy={loading || undefined}
         {...props}
