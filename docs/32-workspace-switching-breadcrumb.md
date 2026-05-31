@@ -49,7 +49,7 @@ dependency, while segment 1's switch/create depends on auth machinery that is
 
 - The breadcrumb renders `Tenant › Module › Section › Page` with responsive
   collapse to a `…` popover. Segment 1 already shows the tenant name; its menu has
-  *Workspace settings* + *Sign out*.
+  _Workspace settings_ + _Sign out_.
 - Segment 2 (module) renders in the module accent color and, on click, opens a
   menu of **that module's sections** (lateral nav).
 - RLS context flows end to end: `User.tenantId` → session (`requireSession()`,
@@ -71,7 +71,7 @@ dependency, while segment 1's switch/create depends on auth machinery that is
 ### 3.3 Deviation from the existing spec
 
 [24-dashboard-shell.md §4.2](24-dashboard-shell.md) currently says the **Module**
-popover lists *that module's sections*. Segment-2's new behavior (switch to sibling
+popover lists _that module's sections_. Segment-2's new behavior (switch to sibling
 modules) changes that. Sections remain reachable via segment 3 and the sidebar, so
 nothing is lost — but **§4.2 must be updated** when Phase 1 lands (see §8).
 
@@ -109,7 +109,7 @@ phases 3–5.
 Locks terminology (Workspace), confirms tenant = workspace = Better Auth org, and
 records the sequencing decision (ship UI first, defer switching). No code.
 
-### Phase 1 — Module switcher (segment 2) — *no backend dependency*
+### Phase 1 — Module switcher (segment 2) — _no backend dependency_
 
 - Rework `ModuleMenuBody` in `breadcrumb-trail.tsx`: replace the section list with a
   sibling-module list from `moduleManifests`, active module checked, click → module
@@ -122,7 +122,7 @@ records the sequencing decision (ship UI first, defer switching). No code.
 - **Risk:** low. No schema, no auth. **Test:** unit (active marking, enabled
   filtering) + a Playwright pass through the dropdown.
 
-### Phase 2 — Workspace segment UI (segment 1) — *switching still gated*
+### Phase 2 — Workspace segment UI (segment 1) — _switching still gated_
 
 - Rename copy to "Workspace" throughout the menu; keep showing the real workspace
   name.
@@ -133,7 +133,7 @@ records the sequencing decision (ship UI first, defer switching). No code.
 - **Risk:** low. **Outcome:** the final visual/IA is in place; only the gated
   actions light up later, so no rework of the menu when the backend lands.
 
-### Phase 3 — Enable Better Auth organizations — *auth + data foundation*
+### Phase 3 — Enable Better Auth organizations — _auth + data foundation_
 
 The load-bearing phase. Turn on the org plugin and back-fill the 1:1 mapping
 without breaking the scalar-`tenantId` world that everything currently reads.
@@ -154,7 +154,7 @@ without breaking the scalar-`tenantId` world that everything currently reads.
 - **Risk:** HIGH — touches every `tenantId` consumer, sign-up, and the session
   shape. Mitigations in §6.
 
-### Phase 4 — Wire workspace switching — *segment 1 lights up*
+### Phase 4 — Wire workspace switching — _segment 1 lights up_
 
 - API: `GET /v1/me/workspaces` (memberships for the current user),
   `POST /v1/me/active-workspace` (set active org → membership-checked → new
@@ -167,7 +167,7 @@ without breaking the scalar-`tenantId` world that everything currently reads.
   org's rows after switching; a user cannot set-active an org they don't belong to
   (membership + RLS both enforce).
 
-### Phase 5 — Create workspace — *segment 1 fully live*
+### Phase 5 — Create workspace — _segment 1 fully live_
 
 - `+ Create workspace` routes into onboarding ([15](15-merchant-onboarding-prd.md));
   refactor `signUpMerchant`'s tenant-creation into a reusable "create tenant +
@@ -179,7 +179,7 @@ without breaking the scalar-`tenantId` world that everything currently reads.
 - **Risk:** medium (billing: a new workspace is a new billable tenant — coordinate
   with [17-billing-subscriptions.md](17-billing-subscriptions.md)).
 
-### Phase 6 — Members & invitations *(future / optional)*
+### Phase 6 — Members & invitations _(future / optional)_
 
 Invite teammates to a workspace, manage roles. The org plugin ships invitation
 primitives; surface them in `/settings`. Out of scope for the breadcrumb itself;
@@ -187,15 +187,15 @@ listed so the menu's "Manage workspaces" destination has a known endpoint.
 
 ## 6. Risk register
 
-| # | Risk | Phase | Mitigation |
-|---|------|-------|------------|
-| R1 | Enabling the org plugin breaks the scalar-`tenantId` read path that all modules use | 3 | Back-fill org.id = tenant.id (1:1 literal); `getSession()` falls back to `User.tenantId` until `activeOrganizationId` is guaranteed; ship behind a check, not a flag-day cutover |
-| R2 | A switch leaks cross-tenant data | 3,4 | RLS is unchanged and remains the backstop; membership check gates set-active; integration test asserts isolation after switch |
-| R3 | Migration must run on private-IP Cloud SQL | 3 | Author against docker Postgres + `prisma migrate dev`, push to `main`, let the DB Migrate workflow + K8s Job apply it — never local Auth Proxy |
-| R4 | Throwaway UI if we build segment 1 before the backend | 2 | Phase 2 ships the *final* IA with switch/create gated; only the gated actions light up later — no menu rework |
-| R5 | Creating a workspace silently creates a billable tenant | 5 | Gate behind onboarding + billing confirmation; coordinate with doc 17 |
-| R6 | Module switcher shows modules the tenant hasn't paid for | 1 | Filter by enabled-module set from the module-gate; closes the existing §3.2 gap as a side effect |
-| R7 | Session shape change ripples to api-rest auth context | 3,4 | api-rest derives `tenantId` from the same active-org claim; add an integration test through `@sparx/api-core`'s `withTenant` wrapper |
+| #   | Risk                                                                                | Phase | Mitigation                                                                                                                                                                       |
+| --- | ----------------------------------------------------------------------------------- | ----- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| R1  | Enabling the org plugin breaks the scalar-`tenantId` read path that all modules use | 3     | Back-fill org.id = tenant.id (1:1 literal); `getSession()` falls back to `User.tenantId` until `activeOrganizationId` is guaranteed; ship behind a check, not a flag-day cutover |
+| R2  | A switch leaks cross-tenant data                                                    | 3,4   | RLS is unchanged and remains the backstop; membership check gates set-active; integration test asserts isolation after switch                                                    |
+| R3  | Migration must run on private-IP Cloud SQL                                          | 3     | Author against docker Postgres + `prisma migrate dev`, push to `main`, let the DB Migrate workflow + K8s Job apply it — never local Auth Proxy                                   |
+| R4  | Throwaway UI if we build segment 1 before the backend                               | 2     | Phase 2 ships the _final_ IA with switch/create gated; only the gated actions light up later — no menu rework                                                                    |
+| R5  | Creating a workspace silently creates a billable tenant                             | 5     | Gate behind onboarding + billing confirmation; coordinate with doc 17                                                                                                            |
+| R6  | Module switcher shows modules the tenant hasn't paid for                            | 1     | Filter by enabled-module set from the module-gate; closes the existing §3.2 gap as a side effect                                                                                 |
+| R7  | Session shape change ripples to api-rest auth context                               | 3,4   | api-rest derives `tenantId` from the same active-org claim; add an integration test through `@sparx/api-core`'s `withTenant` wrapper                                             |
 
 ## 7. API & data surface (summary)
 
@@ -206,7 +206,7 @@ listed so the menu's "Manage workspaces" destination has a known endpoint.
   `POST /v1/me/active-workspace`, `POST /v1/workspaces` (create; likely behind the
   onboarding flow).
 - **Unchanged:** RLS policies, `current_tenant_id()`, `withTenant()`, every
-  module's data access. Only the *value* of the active tenant becomes switchable.
+  module's data access. Only the _value_ of the active tenant becomes switchable.
 
 ## 8. Docs to update as phases land
 

@@ -80,36 +80,36 @@ Decisions locked in during the v2 documentation pass (vs. the original WizeWorks
 
 ## Document Index
 
-| #   | Document                            | Description                                                           |
-| --- | ----------------------------------- | --------------------------------------------------------------------- |
-| 01  | Platform Vision & Strategy          | Why Sparx exists, who it's for, how it competes                       |
-| 02  | Architecture Overview               | System design, infrastructure, tech stack                             |
-| 03  | Infrastructure & Deployment         | GKE, Terraform, CI/CD, environments                                   |
-| 04  | Domain & SSL Automation             | Subdomain provisioning, custom domains, cert management               |
-| 05  | Data Model                          | Core entities, relationships, multi-tenancy                           |
-| 06  | API Specification                   | REST + GraphQL, auth, versioning, webhooks                            |
-| 07  | MCP Server Spec                     | AI integration for Claude, ChatGPT, Copilot                           |
-| 08  | Site Builder Spec                   | Theme system, visual customizer, headless SDK                         |
-| 09  | E-Commerce Engine PRD               | Products, orders, cart, checkout, payments                            |
-| 10  | B2B & Wholesale PRD                 | Accounts, pricing, quotes, net terms, fleet                           |
-| 11  | CRM PRD                             | Contacts, pipeline, activity log, automation                          |
-| 12  | CMS PRD                             | Content, media, SEO, blog, landing pages                              |
-| 13  | Email Platform PRD                  | Postal infrastructure, automations, domain auth                       |
-| 14  | Dropship Integration PRD            | Supplier connectors, catalog sync, order routing                      |
-| 15  | Merchant Onboarding PRD             | 5-minute signup flow, progressive disclosure                          |
-| 16  | Multi-Tenancy & Security            | Isolation, Better Auth, RBAC, audit logs                              |
-| 17  | Billing & Subscriptions             | Modular pricing, Stripe, managed hosting                              |
-| 18  | Frontend Architecture               | Next.js, design system, monorepo                                      |
-| 19  | Testing Strategy                    | Unit, integration, E2E, load testing                                  |
-| 20  | Operational Runbook                 | Monitoring, incidents, backup, restore                                |
-| 21  | Cost & Scaling Guide                | Phased infrastructure, cost ceilings, upgrade triggers                |
-| 22  | Typesense Search Specification      | Day-1 search index, schemas, sync workers                             |
-| 23  | Frontend Component Architecture     | CVA + Shadcn + ModuleProvider, tokens, variants                       |
-| 24  | Domain Purchase & Management        | GoDaddy Reseller integration, instant connect, lifecycle              |
-| 25  | Monorepo Structure                  | pnpm workspaces + Turborepo layout, bootstrap order                   |
-| 26  | Domain Transfer Runbook             | GoDaddy → Cloudflare migration, ordered checklist, rollback paths     |
-| 27  | Customer Accounts & Storefront Auth | Layer-2 shopper auth, tenant-scoped, Argon2id, account area           |
-| 28  | Third-Party Inventory Sync          | Generic ERP/WMS mirror, source adapters, on-prem bridge, backlog      |
-| 29  | Site Builder Architecture           | Theme/section engine, draft→publish→schedule, light/dark, boundaries  |
-| 30  | Site Builder Redesign               | One-screen editor, layout/template model, assignment, navigation flip |
+| #   | Document                            | Description                                                             |
+| --- | ----------------------------------- | ----------------------------------------------------------------------- |
+| 01  | Platform Vision & Strategy          | Why Sparx exists, who it's for, how it competes                         |
+| 02  | Architecture Overview               | System design, infrastructure, tech stack                               |
+| 03  | Infrastructure & Deployment         | GKE, Terraform, CI/CD, environments                                     |
+| 04  | Domain & SSL Automation             | Subdomain provisioning, custom domains, cert management                 |
+| 05  | Data Model                          | Core entities, relationships, multi-tenancy                             |
+| 06  | API Specification                   | REST + GraphQL, auth, versioning, webhooks                              |
+| 07  | MCP Server Spec                     | AI integration for Claude, ChatGPT, Copilot                             |
+| 08  | Site Builder Spec                   | Theme system, visual customizer, headless SDK                           |
+| 09  | E-Commerce Engine PRD               | Products, orders, cart, checkout, payments                              |
+| 10  | B2B & Wholesale PRD                 | Accounts, pricing, quotes, net terms, fleet                             |
+| 11  | CRM PRD                             | Contacts, pipeline, activity log, automation                            |
+| 12  | CMS PRD                             | Content, media, SEO, blog, landing pages                                |
+| 13  | Email Platform PRD                  | Postal infrastructure, automations, domain auth                         |
+| 14  | Dropship Integration PRD            | Supplier connectors, catalog sync, order routing                        |
+| 15  | Merchant Onboarding PRD             | 5-minute signup flow, progressive disclosure                            |
+| 16  | Multi-Tenancy & Security            | Isolation, Better Auth, RBAC, audit logs                                |
+| 17  | Billing & Subscriptions             | Modular pricing, Stripe, managed hosting                                |
+| 18  | Frontend Architecture               | Next.js, design system, monorepo                                        |
+| 19  | Testing Strategy                    | Unit, integration, E2E, load testing                                    |
+| 20  | Operational Runbook                 | Monitoring, incidents, backup, restore                                  |
+| 21  | Cost & Scaling Guide                | Phased infrastructure, cost ceilings, upgrade triggers                  |
+| 22  | Typesense Search Specification      | Day-1 search index, schemas, sync workers                               |
+| 23  | Frontend Component Architecture     | CVA + Shadcn + ModuleProvider, tokens, variants                         |
+| 24  | Domain Purchase & Management        | GoDaddy Reseller integration, instant connect, lifecycle                |
+| 25  | Monorepo Structure                  | pnpm workspaces + Turborepo layout, bootstrap order                     |
+| 26  | Domain Transfer Runbook             | GoDaddy → Cloudflare migration, ordered checklist, rollback paths       |
+| 27  | Customer Accounts & Storefront Auth | Layer-2 shopper auth, tenant-scoped, Argon2id, account area             |
+| 28  | Third-Party Inventory Sync          | Generic ERP/WMS mirror, source adapters, on-prem bridge, backlog        |
+| 29  | Site Builder Architecture           | Theme/section engine, draft→publish→schedule, light/dark, boundaries    |
+| 30  | Site Builder Redesign               | One-screen editor, layout/template model, assignment, navigation flip   |
 | 32  | Workspace Switching & Breadcrumb    | Phased plan: module switcher + workspace switch/create, org-plugin risk |
