@@ -1,7 +1,7 @@
 // Flat ESLint config — root of the Sparx monorepo.
 // Per-package configs extend this via `import baseConfig from '../../eslint.config.js'`.
 //
-// The "no Tailwind classes in feature code" rule (per docs/23 §14) lives in the
+// The "no Tailwind classes in feature code" rule (per docs/23 §15) lives in the
 // apps/* configs, NOT here, so that packages/ui can freely write Tailwind.
 
 import js from '@eslint/js';
