@@ -1,7 +1,4 @@
-import Link from 'next/link';
-import { ArrowLeft } from 'lucide-react';
-
-import { Button, Container, Heading, Stack, Text } from '@sparx/ui';
+import { Container, PageHeader, Stack } from '@sparx/ui';
 
 import { api } from '@/lib/api-rest-client';
 
@@ -32,18 +29,15 @@ export default async function NewOrderPage({ searchParams }: PageProps) {
   return (
     <Container size="lg">
       <Stack gap={6} className="py-10">
-        <Stack gap={2}>
-          <Button color="primary" variant="link" size="sm" asChild>
-            <Link href="/crm/orders">
-              <ArrowLeft className="h-3.5 w-3.5" /> Back to orders
-            </Link>
-          </Button>
-          <Heading level={1}>New order</Heading>
-          <Text variant="muted">
-            Place an order manually. Totals are derived from line items + header shipping; the
-            service emits <code>order.created</code> after the transaction commits.
-          </Text>
-        </Stack>
+        <PageHeader
+          title="New order"
+          description={
+            <>
+              Place an order manually. Totals are derived from line items + header shipping; the
+              service emits <code>order.created</code> after the transaction commits.
+            </>
+          }
+        />
 
         <NewOrderForm
           customers={customers.map((c) => ({

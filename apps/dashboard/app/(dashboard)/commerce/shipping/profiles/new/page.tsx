@@ -1,5 +1,4 @@
-import Link from 'next/link';
-import { ArrowLeft, PackageOpen } from 'lucide-react';
+import { PackageOpen } from 'lucide-react';
 
 import { isModuleEnabled, requireSession } from '@sparx/auth';
 import {
@@ -9,8 +8,8 @@ import {
   CardHeader,
   Container,
   Heading,
+  PageHeader,
   Stack,
-  Text,
 } from '@sparx/ui';
 
 import { ModuleStub } from '../../../../../../components/module-stub';
@@ -37,21 +36,10 @@ export default async function NewShippingProfilePage() {
   return (
     <Container size="md">
       <Stack gap={6} className="py-10">
-        <Stack gap={2}>
-          <Link
-            href="/commerce/shipping"
-            className="inline-flex items-center gap-1 text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"
-          >
-            <ArrowLeft className="h-3.5 w-3.5" />
-            Back to shipping
-          </Link>
-          <Heading level={1}>New shipping profile</Heading>
-          <Text variant="muted">
-            Profiles let you route different product categories through different carriers. Most
-            merchants start with one general-goods profile and add hazmat or freight profiles only
-            when they need them.
-          </Text>
-        </Stack>
+        <PageHeader
+          title="New shipping profile"
+          description="Profiles let you route different product categories through different carriers. Most merchants start with one general-goods profile and add hazmat or freight profiles only when they need them."
+        />
 
         <Card>
           <CardHeader>

@@ -11,6 +11,7 @@ import {
   Container,
   EmptyState,
   Heading,
+  PageHeader,
   Stack,
   Table,
   TableBody,
@@ -65,22 +66,17 @@ export default async function ShippingPage() {
   return (
     <Container size="xl">
       <Stack gap={6} className="py-10">
-        <Stack gap={2}>
-          <Stack direction="row" align="center" gap={2}>
-            <Truck className="h-5 w-5" />
-            <Heading level={1}>Shipping</Heading>
+        <PageHeader
+          icon={<Truck className="h-5 w-5" />}
+          title="Shipping"
+          badge={
             <Badge color="module">
               {zones.length} zone{zones.length === 1 ? '' : 's'} · {profiles.length} profile
               {profiles.length === 1 ? '' : 's'}
             </Badge>
-          </Stack>
-          <Text variant="muted">
-            Zones map ship-to addresses (by country, region, postal range) to the rates a merchant
-            offers there. Profiles group products that share carrier eligibility (standard goods,
-            hazmat, freight). Real-time provider rates layer on top once you install a carrier from
-            Commerce → Providers; the manual rates here serve as the fallback.
-          </Text>
-        </Stack>
+          }
+          description="Zones map ship-to addresses (by country, region, postal range) to the rates a merchant offers there. Profiles group products that share carrier eligibility (standard goods, hazmat, freight). Real-time provider rates layer on top once you install a carrier from Commerce → Providers; the manual rates here serve as the fallback."
+        />
 
         <Card>
           <CardHeader>

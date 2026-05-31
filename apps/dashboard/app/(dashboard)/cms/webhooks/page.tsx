@@ -20,6 +20,7 @@ import {
   Container,
   EmptyState,
   Heading,
+  PageHeader,
   Stack,
   Text,
 } from '@sparx/ui';
@@ -31,18 +32,18 @@ export default function WebhooksPage() {
   return (
     <Container size="lg">
       <Stack gap={6} className="py-10">
-        <Stack gap={2}>
-          <Stack direction="row" align="center" gap={2}>
-            <Webhook className="h-5 w-5" />
-            <Heading level={1}>Webhooks</Heading>
-            <Badge variant="outline">coming soon</Badge>
-          </Stack>
-          <Text variant="muted">
-            Subscribe an external endpoint to <code>content.*</code> events so a publish in Sparx
-            triggers a downstream rebuild, cache purge, or notification. Backend wiring is live —
-            the dashboard editor lands in a follow-up.
-          </Text>
-        </Stack>
+        <PageHeader
+          icon={<Webhook className="h-5 w-5" />}
+          title="Webhooks"
+          badge={<Badge variant="outline">coming soon</Badge>}
+          description={
+            <>
+              Subscribe an external endpoint to <code>content.*</code> events so a publish in Sparx
+              triggers a downstream rebuild, cache purge, or notification. Backend wiring is live —
+              the dashboard editor lands in a follow-up.
+            </>
+          }
+        />
 
         <Card variant="module">
           <CardContent>

@@ -1,5 +1,4 @@
-import Link from 'next/link';
-import { ArrowLeft, PackageOpen } from 'lucide-react';
+import { PackageOpen } from 'lucide-react';
 
 import { isModuleEnabled, requireSession } from '@sparx/auth';
 import {
@@ -9,8 +8,8 @@ import {
   CardHeader,
   Container,
   Heading,
+  PageHeader,
   Stack,
-  Text,
 } from '@sparx/ui';
 
 import { ModuleStub } from '../../../../../../components/module-stub';
@@ -37,19 +36,10 @@ export default async function NewTaxZonePage() {
   return (
     <Container size="md">
       <Stack gap={6} className="py-10">
-        <Stack gap={2}>
-          <Link
-            href="/commerce/tax"
-            className="inline-flex items-center gap-1 text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"
-          >
-            <ArrowLeft className="h-3.5 w-3.5" />
-            Back to tax
-          </Link>
-          <Heading level={1}>Add tax zone</Heading>
-          <Text variant="muted">
-            One zone per (country, region) pair. Leave region empty for country-wide nexus.
-          </Text>
-        </Stack>
+        <PageHeader
+          title="Add tax zone"
+          description="One zone per (country, region) pair. Leave region empty for country-wide nexus."
+        />
 
         <Card>
           <CardHeader>

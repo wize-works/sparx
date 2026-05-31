@@ -3,7 +3,7 @@
 import * as React from 'react';
 import { MODULE_COLOR_KEYS } from '../../_recipes/variants';
 
-// Shared internals for the chart primitives (docs/34 §10). Everything here is
+// Shared internals for the chart primitives (docs/34 §15). Everything here is
 // themed off token CSS vars so charts inherit light/dark and the active
 // module's color automatically — feature code never names a hex.
 

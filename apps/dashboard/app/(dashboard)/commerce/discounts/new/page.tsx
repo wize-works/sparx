@@ -3,7 +3,6 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft } from 'lucide-react';
 
 import {
   Button,
@@ -16,6 +15,7 @@ import {
   Heading,
   Input,
   Label,
+  PageHeader,
   Stack,
   Text,
   Textarea,
@@ -89,20 +89,10 @@ export default function NewDiscountPage() {
   return (
     <Container size="lg">
       <Stack gap={6} className="py-10">
-        <Stack gap={2}>
-          <Link
-            href="/commerce/discounts"
-            className="inline-flex items-center gap-1 text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"
-          >
-            <ArrowLeft className="h-3.5 w-3.5" />
-            Back to discounts
-          </Link>
-          <Heading level={1}>New discount</Heading>
-          <Text variant="muted">
-            BOGO and bundle types land in Phase 4 (configurator). Conditions can be added on the
-            detail page after creation.
-          </Text>
-        </Stack>
+        <PageHeader
+          title="New discount"
+          description="BOGO and bundle types land in Phase 4 (configurator). Conditions can be added on the detail page after creation."
+        />
 
         <form onSubmit={onSubmit}>
           <Card>

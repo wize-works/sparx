@@ -8,9 +8,8 @@ import {
   CardTitle,
   Container,
   EmptyState,
-  Heading,
+  PageHeader,
   Stack,
-  Text,
 } from '@sparx/ui';
 
 import { api } from '@/lib/api-rest-client';
@@ -44,19 +43,15 @@ export default async function DuplicatesPage() {
   return (
     <Container size="xl">
       <Stack gap={6} className="py-10">
-        <Stack gap={2}>
-          <Stack direction="row" align="center" gap={3}>
-            <Heading level={1}>Find duplicates</Heading>
+        <PageHeader
+          title="Find duplicates"
+          badge={
             <Badge color="module">
               {groups.length} group{groups.length === 1 ? '' : 's'}
             </Badge>
-          </Stack>
-          <Text variant="muted">
-            Customers grouped by shared email, or by matching last name + company. Merge folds
-            duplicates into a chosen primary — all activities, deals, and tasks reattach
-            automatically.
-          </Text>
-        </Stack>
+          }
+          description="Customers grouped by shared email, or by matching last name + company. Merge folds duplicates into a chosen primary — all activities, deals, and tasks reattach automatically."
+        />
 
         {groups.length === 0 ? (
           <Card padding="none">

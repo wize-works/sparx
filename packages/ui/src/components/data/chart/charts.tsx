@@ -29,7 +29,7 @@ import {
 
 export type { ChartSeries } from './chart-utils';
 
-// Opinionated, token-themed chart components (docs/34 §10) built on Recharts.
+// Opinionated, token-themed chart components (docs/34 §15) built on Recharts.
 // Recharts itself never leaves this package — feature code passes plain
 // `data` + `series` and gets light/dark + active-module theming for free, the
 // same contract the rest of @sparx/ui follows for Radix.

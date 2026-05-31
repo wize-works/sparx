@@ -9,6 +9,7 @@ import {
   Container,
   EmptyState,
   Heading,
+  PageHeader,
   Stack,
   Text,
 } from '@sparx/ui';
@@ -33,16 +34,11 @@ export default async function AuthorsPage() {
   return (
     <Container size="lg">
       <Stack gap={6} className="py-10">
-        <Stack gap={2}>
-          <Stack direction="row" align="center" gap={2}>
-            <Heading level={1}>Authors</Heading>
-            <Badge variant="outline">{authors.length}</Badge>
-          </Stack>
-          <Text variant="muted">
-            Bylines for blog posts and editorial entries. An author is independent from a staff user
-            — a user can write under multiple pen names, an author can outlive a user row.
-          </Text>
-        </Stack>
+        <PageHeader
+          title="Authors"
+          badge={<Badge variant="outline">{authors.length}</Badge>}
+          description="Bylines for blog posts and editorial entries. An author is independent from a staff user — a user can write under multiple pen names, an author can outlive a user row."
+        />
 
         <AuthorCreateForm />
 

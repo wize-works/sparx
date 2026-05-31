@@ -10,6 +10,7 @@ import {
   Container,
   EmptyState,
   Heading,
+  PageHeader,
   Stack,
   Table,
   TableBody,
@@ -116,18 +117,12 @@ export default async function QaPage({
   return (
     <Container size="xl">
       <Stack gap={6} className="py-10">
-        <Stack gap={2}>
-          <Stack direction="row" align="center" gap={2}>
-            <HelpCircle className="h-5 w-5" />
-            <Heading level={1}>Questions &amp; answers</Heading>
-            <Badge color="module">{rows.length} shown</Badge>
-          </Stack>
-          <Text variant="muted">
-            Customer questions are moderated before they reach the storefront. Answering with the
-            staff badge marks the response as official; community answers can land too once the
-            question is published.
-          </Text>
-        </Stack>
+        <PageHeader
+          icon={<HelpCircle className="h-5 w-5" />}
+          title="Questions & answers"
+          badge={<Badge color="module">{rows.length} shown</Badge>}
+          description="Customer questions are moderated before they reach the storefront. Answering with the staff badge marks the response as official; community answers can land too once the question is published."
+        />
 
         <Stack direction="row" gap={2} wrap>
           {STATUS_FILTERS.map((f) => (

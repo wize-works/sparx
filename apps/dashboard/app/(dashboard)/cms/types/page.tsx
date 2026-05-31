@@ -16,7 +16,7 @@ import {
   CardTitle,
   Container,
   Grid,
-  Heading,
+  PageHeader,
   Stack,
   Text,
 } from '@sparx/ui';
@@ -52,22 +52,17 @@ export default async function ContentTypesPage() {
   return (
     <Container size="xl">
       <Stack gap={6} className="py-10">
-        <Stack direction="row" align="end" justify="between">
-          <Stack gap={2}>
-            <Stack direction="row" align="center" gap={2}>
-              <Database className="h-5 w-5" />
-              <Heading level={1}>Content types</Heading>
-              <Badge variant="outline">{types.length}</Badge>
-            </Stack>
-            <Text variant="muted">
-              Authoring spaces for blog posts, modules, FAQs, editorial sections, and any custom
-              merchant type. Pages have a dedicated tab; this view covers everything else.
-            </Text>
-          </Stack>
-          <Button asChild color="module" leftIcon={<Plus className="h-4 w-4" />}>
-            <Link href="/cms/types/new">New custom type</Link>
-          </Button>
-        </Stack>
+        <PageHeader
+          icon={<Database className="h-5 w-5" />}
+          title="Content types"
+          badge={<Badge variant="outline">{types.length}</Badge>}
+          description="Authoring spaces for blog posts, modules, FAQs, editorial sections, and any custom merchant type. Pages have a dedicated tab; this view covers everything else."
+          actions={
+            <Button asChild color="module" leftIcon={<Plus className="h-4 w-4" />}>
+              <Link href="/cms/types/new">New custom type</Link>
+            </Button>
+          }
+        />
 
         <Grid cols={1} mdCols={2} lgCols={3} gap={4}>
           {types

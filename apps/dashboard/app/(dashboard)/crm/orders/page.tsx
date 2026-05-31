@@ -8,7 +8,7 @@ import {
   CardContent,
   Container,
   EmptyState,
-  Heading,
+  PageHeader,
   Stack,
   Table,
   TableBody,
@@ -71,24 +71,21 @@ export default async function OrdersPage({ searchParams }: PageProps) {
   return (
     <Container size="xl">
       <Stack gap={6} className="py-10">
-        <Stack direction="row" align="end" justify="between" wrap>
-          <Stack gap={2}>
-            <Stack direction="row" align="center" gap={2}>
-              <ShoppingCart className="h-5 w-5" />
-              <Heading level={1}>Orders</Heading>
-              <Badge color="module">
-                {total} order{total === 1 ? '' : 's'}
-              </Badge>
-            </Stack>
-            <Text variant="muted">
-              Customer orders — placed, paid, fulfilled, delivered, refunded. Linked back to
-              customer records and (optionally) to a sales deal via the deal_orders join.
-            </Text>
-          </Stack>
-          <Button asChild color="module" leftIcon={<Plus className="h-4 w-4" />}>
-            <Link href="/crm/orders/new">New order</Link>
-          </Button>
-        </Stack>
+        <PageHeader
+          icon={<ShoppingCart className="h-5 w-5" />}
+          title="Orders"
+          badge={
+            <Badge color="module">
+              {total} order{total === 1 ? '' : 's'}
+            </Badge>
+          }
+          description="Customer orders — placed, paid, fulfilled, delivered, refunded. Linked back to customer records and (optionally) to a sales deal via the deal_orders join."
+          actions={
+            <Button asChild color="module" leftIcon={<Plus className="h-4 w-4" />}>
+              <Link href="/crm/orders/new">New order</Link>
+            </Button>
+          }
+        />
 
         {orders.length === 0 ? (
           <Card padding="none">

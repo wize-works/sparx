@@ -9,8 +9,8 @@ import {
   Container,
   EmptyState,
   Heading,
+  PageHeader,
   Stack,
-  Text,
 } from '@sparx/ui';
 
 import { api } from '@/lib/api-rest-client';
@@ -50,24 +50,24 @@ export default async function FitmentReferencePage() {
   return (
     <Container size="xl">
       <Stack gap={6} className="py-10">
-        <Stack direction="row" align="end" justify="between" wrap gap={4}>
-          <Stack gap={2}>
-            <Stack direction="row" align="center" gap={2}>
-              <Boxes className="h-5 w-5" />
-              <Heading level={1}>Fitment reference</Heading>
-              <Badge color="module">
-                {domains.length} domain{domains.length === 1 ? '' : 's'}
-              </Badge>
-            </Stack>
-            <Text variant="muted">
+        <PageHeader
+          icon={<Boxes className="h-5 w-5" />}
+          title="Fitment reference"
+          badge={
+            <Badge color="module">
+              {domains.length} domain{domains.length === 1 ? '' : 's'}
+            </Badge>
+          }
+          description={
+            <>
               The compatibility dictionary your products fit. Platform-seeded domains ({globalCount}
               ) are read-only and shared across all tenants; tenant-defined domains ({tenantCount})
               are yours alone. A vehicle store uses Make/Model/Engine + Year; a pet store uses
               Species/Breed + Weight; a phone-case shop uses Brand/Model. Each domain owns its own
               vocabulary.
-            </Text>
-          </Stack>
-        </Stack>
+            </>
+          }
+        />
 
         <Card>
           <CardHeader>

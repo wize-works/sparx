@@ -1,5 +1,3 @@
-import Link from 'next/link';
-import { ArrowLeft } from 'lucide-react';
 import { Container, Stack } from '@sparx/ui';
 import { QuestionDetailContent } from './_content';
 
@@ -10,13 +8,6 @@ export default async function QuestionDetailPage({ params }: { params: Promise<{
   return (
     <Container size="lg">
       <Stack gap={6} className="py-10">
-        <Link
-          href="/commerce/qa"
-          className="inline-flex items-center gap-1 text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"
-        >
-          <ArrowLeft className="h-3.5 w-3.5" />
-          Back to Q&amp;A
-        </Link>
         <QuestionDetailContent id={id} />
       </Stack>
     </Container>

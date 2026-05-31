@@ -6,22 +6,21 @@
 // sanitizing serializer and let the eye compare them. Restore lives on
 // the same page so the editor can review then act in one step.
 
-import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { renderDocToHtml } from '@sparx/cms-editor';
 import {
   Badge,
-  Button,
   Card,
   CardContent,
   CardHeader,
   Container,
   Grid,
   Heading,
+  PageHeader,
   Stack,
   Text,
 } from '@sparx/ui';
-import { ArrowLeft } from 'lucide-react';
+
 import { api, type ApiRestError } from '@/lib/api-rest-client';
 import { RestoreButton } from '../restore-button';
 
@@ -88,27 +87,30 @@ export default async function RevisionDiffPage({ params }: PageParams) {
     <Container size="xl">
       <Stack gap={6} className="py-10">
         <Stack gap={2}>
-          <Button color="primary" variant="link" size="sm" asChild>
-            <Link href={`/cms/${id}/revisions`}>
-              <ArrowLeft className="h-3.5 w-3.5" />
-              Back to revisions
-            </Link>
-          </Button>
-          <Stack direction="row" align="center" gap={2}>
-            <Heading level={1}>Revision #{revision.revision_number}</Heading>
-            <Badge color={revision.kind === 'manual' ? 'module' : 'outline'}>{revision.kind}</Badge>
-            <Badge color={revision.status === 'published' ? 'success' : 'outline'}>
-              {revision.status}
-            </Badge>
-          </Stack>
-          <Text variant="muted">
-            Saved{' '}
-            {new Date(revision.created_at).toLocaleString(undefined, {
-              dateStyle: 'medium',
-              timeStyle: 'short',
-            })}
-            {revision.summary ? ` — ${revision.summary}` : ''}
-          </Text>
+          <PageHeader
+            className="mb-0"
+            title={`Revision #${revision.revision_number}`}
+            badge={
+              <>
+                <Badge color={revision.kind === 'manual' ? 'module' : 'outline'}>
+                  {revision.kind}
+                </Badge>
+                <Badge color={revision.status === 'published' ? 'success' : 'outline'}>
+                  {revision.status}
+                </Badge>
+              </>
+            }
+            description={
+              <>
+                Saved{' '}
+                {new Date(revision.created_at).toLocaleString(undefined, {
+                  dateStyle: 'medium',
+                  timeStyle: 'short',
+                })}
+                {revision.summary ? ` — ${revision.summary}` : ''}
+              </>
+            }
+          />
           <Stack direction="row" align="center" gap={2}>
             <RestoreButton entryId={id} revisionNumber={revision.revision_number} />
           </Stack>

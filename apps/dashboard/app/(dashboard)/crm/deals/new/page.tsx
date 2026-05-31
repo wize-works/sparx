@@ -1,7 +1,4 @@
-import Link from 'next/link';
-import { ArrowLeft } from 'lucide-react';
-
-import { Button, Container, Heading, Stack, Text } from '@sparx/ui';
+import { Container, PageHeader, Stack } from '@sparx/ui';
 
 import { api } from '@/lib/api-rest-client';
 
@@ -50,18 +47,15 @@ export default async function NewDealPage({ searchParams }: PageProps) {
   return (
     <Container size="lg">
       <Stack gap={6} className="py-10">
-        <Stack gap={2}>
-          <Button color="primary" variant="link" size="sm" asChild>
-            <Link href="/crm/pipelines">
-              <ArrowLeft className="h-3.5 w-3.5" /> Back to pipelines
-            </Link>
-          </Button>
-          <Heading level={1}>New deal</Heading>
-          <Text variant="muted">
-            Track an opportunity through the pipeline. Stage probability feeds the forecast; moves
-            emit <code>crm.deal.stage_changed</code> for the email automation engine.
-          </Text>
-        </Stack>
+        <PageHeader
+          title="New deal"
+          description={
+            <>
+              Track an opportunity through the pipeline. Stage probability feeds the forecast; moves
+              emit <code>crm.deal.stage_changed</code> for the email automation engine.
+            </>
+          }
+        />
 
         <NewDealForm
           pipelines={pipelines.map((p) => ({

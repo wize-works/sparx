@@ -11,6 +11,7 @@ import {
   Container,
   EmptyState,
   Heading,
+  PageHeader,
   Stack,
   Table,
   TableBody,
@@ -58,25 +59,21 @@ export default async function LotsPage() {
   return (
     <Container size="xl">
       <Stack gap={6} className="py-10">
-        <Stack direction="row" align="end" justify="between" wrap gap={4}>
-          <Stack gap={2}>
-            <Stack direction="row" align="center" gap={2}>
-              <CircleAlert className="h-5 w-5" />
-              <Heading level={1}>Lot batches</Heading>
+        <PageHeader
+          icon={<CircleAlert className="h-5 w-5" />}
+          title="Lot batches"
+          badge={
+            <>
               {expiringSoon.length > 0 && (
                 <Badge color="warning">{expiringSoon.length} expiring within a year</Badge>
               )}
               {activeRecalls.length > 0 && (
                 <Badge color="danger">{activeRecalls.length} active recall</Badge>
               )}
-            </Stack>
-            <Text variant="muted">
-              Hazmat-flagged batches inform shipping routing automatically. Recalled lots flip their
-              unsold serials to scrapped and the dashboard surfaces affected customers so you can
-              email them.
-            </Text>
-          </Stack>
-        </Stack>
+            </>
+          }
+          description="Hazmat-flagged batches inform shipping routing automatically. Recalled lots flip their unsold serials to scrapped and the dashboard surfaces affected customers so you can email them."
+        />
 
         {activeRecalls.length > 0 && (
           <Card>

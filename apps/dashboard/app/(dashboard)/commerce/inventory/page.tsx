@@ -11,6 +11,7 @@ import {
   Container,
   EmptyState,
   Heading,
+  PageHeader,
   Stack,
   Table,
   TableBody,
@@ -135,24 +136,17 @@ export default async function InventoryPage({ searchParams }: PageProps) {
   return (
     <Container size="xl">
       <Stack gap={6} className="py-10">
-        <Stack direction="row" align="end" justify="between" wrap gap={4}>
-          <Stack gap={2}>
-            <Stack direction="row" align="center" gap={2}>
-              <Boxes className="h-5 w-5" />
-              <Heading level={1}>Inventory</Heading>
-              {fallbackWarehouse && <Badge color="module">{fallbackWarehouse.code}</Badge>}
-            </Stack>
-            <Text variant="muted">
-              On-hand is the authoritative count; allocated is the active reservation total across
-              carts, orders, and subscriptions; available = on-hand − allocated.
-            </Text>
-          </Stack>
-          <Stack direction="row" gap={2}>
+        <PageHeader
+          icon={<Boxes className="h-5 w-5" />}
+          title="Inventory"
+          badge={fallbackWarehouse && <Badge color="module">{fallbackWarehouse.code}</Badge>}
+          description="On-hand is the authoritative count; allocated is the active reservation total across carts, orders, and subscriptions; available = on-hand − allocated."
+          actions={
             <Button asChild variant="outline">
               <Link href="/commerce/warehouses">Manage warehouses</Link>
             </Button>
-          </Stack>
-        </Stack>
+          }
+        />
 
         {warehouses.length === 0 ? (
           <EmptyState

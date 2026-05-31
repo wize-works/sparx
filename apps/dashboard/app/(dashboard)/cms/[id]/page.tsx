@@ -1,6 +1,5 @@
-import Link from 'next/link';
-import { Button, Container, Stack } from '@sparx/ui';
-import { ArrowLeft } from 'lucide-react';
+import { Container, Stack } from '@sparx/ui';
+
 import { CmsPageDetailContent } from './_content';
 
 export const dynamic = 'force-dynamic';
@@ -19,14 +18,6 @@ export default async function EditCmsPage({ params }: PageParams) {
   return (
     <Container size="lg">
       <Stack gap={6} className="py-10">
-        <Stack gap={2}>
-          <Button color="primary" variant="link" size="sm" asChild>
-            <Link href="/cms">
-              <ArrowLeft className="h-3.5 w-3.5" />
-              Back to pages
-            </Link>
-          </Button>
-        </Stack>
         <CmsPageDetailContent id={id} />
       </Stack>
     </Container>

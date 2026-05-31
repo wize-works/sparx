@@ -8,8 +8,8 @@ import {
   CardHeader,
   Container,
   Heading,
+  PageHeader,
   Stack,
-  Text,
 } from '@sparx/ui';
 
 import { api } from '@/lib/api-rest-client';
@@ -70,18 +70,12 @@ export default async function StorefrontSettingsPage() {
   return (
     <Container size="lg">
       <Stack gap={6} className="py-10">
-        <Stack gap={2}>
-          <Stack direction="row" align="center" gap={2}>
-            <Settings2 className="h-5 w-5" />
-            <Heading level={1}>Storefront settings</Heading>
-            <Badge color="module">commerce defaults</Badge>
-          </Stack>
-          <Text variant="muted">
-            Tenant-wide commerce defaults. Sitebuilder owns layout — settings here govern currency,
-            channel toggles, abandonment thresholds, and per-checkout guardrails. The storefront and
-            B2B portal read these values at request time.
-          </Text>
-        </Stack>
+        <PageHeader
+          icon={<Settings2 className="h-5 w-5" />}
+          title="Storefront settings"
+          badge={<Badge color="module">commerce defaults</Badge>}
+          description="Tenant-wide commerce defaults. Sitebuilder owns layout — settings here govern currency, channel toggles, abandonment thresholds, and per-checkout guardrails. The storefront and B2B portal read these values at request time."
+        />
 
         <Card>
           <CardHeader>

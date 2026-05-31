@@ -1,6 +1,3 @@
-import Link from 'next/link';
-import { ArrowLeft } from 'lucide-react';
-
 import {
   Card,
   CardContent,
@@ -8,8 +5,8 @@ import {
   CardHeader,
   Container,
   Heading,
+  PageHeader,
   Stack,
-  Text,
 } from '@sparx/ui';
 
 import { api } from '@/lib/api-rest-client';
@@ -44,20 +41,10 @@ export default async function NewConfiguratorTemplatePage() {
   return (
     <Container size="lg">
       <Stack gap={6} className="py-10">
-        <Stack gap={2}>
-          <Link
-            href="/commerce/configurator"
-            className="inline-flex items-center gap-1 text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"
-          >
-            <ArrowLeft className="h-3.5 w-3.5" />
-            Back to configurator
-          </Link>
-          <Heading level={1}>New configurator template</Heading>
-          <Text variant="muted">
-            Bind a template to a configurable product. Start with a single option to learn the
-            grammar, then add rules + add-ons from the detail page.
-          </Text>
-        </Stack>
+        <PageHeader
+          title="New configurator template"
+          description="Bind a template to a configurable product. Start with a single option to learn the grammar, then add rules + add-ons from the detail page."
+        />
 
         <Card>
           <CardHeader>

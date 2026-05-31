@@ -8,8 +8,8 @@ import {
   CardContent,
   Container,
   EmptyState,
-  Heading,
   Input,
+  PageHeader,
   Stack,
   Table,
   TableBody,
@@ -85,25 +85,21 @@ export default async function ProductsPage({ searchParams }: PageProps) {
   return (
     <Container size="xl">
       <Stack gap={6} className="py-10">
-        <Stack direction="row" align="end" justify="between" wrap gap={4}>
-          <Stack gap={2}>
-            <Stack direction="row" align="center" gap={2}>
-              <PackageOpen className="h-5 w-5" />
-              <Heading level={1}>Products</Heading>
-              <Badge color="module">
-                {total} product{total === 1 ? '' : 's'}
-              </Badge>
-            </Stack>
-            <Text variant="muted">
-              Your catalog. Variants, options, fitment, and configurator templates hang off each
-              product. Draft → Active publishes to the storefront; archived rows stay searchable but
-              render as 410.
-            </Text>
-          </Stack>
-          <Button asChild color="module" leftIcon={<Plus className="h-4 w-4" />}>
-            <Link href="/commerce/products/new">New product</Link>
-          </Button>
-        </Stack>
+        <PageHeader
+          icon={<PackageOpen className="h-5 w-5" />}
+          title="Products"
+          badge={
+            <Badge color="module">
+              {total} product{total === 1 ? '' : 's'}
+            </Badge>
+          }
+          description="Your catalog. Variants, options, fitment, and configurator templates hang off each product. Draft → Active publishes to the storefront; archived rows stay searchable but render as 410."
+          actions={
+            <Button asChild color="module" leftIcon={<Plus className="h-4 w-4" />}>
+              <Link href="/commerce/products/new">New product</Link>
+            </Button>
+          }
+        />
 
         <form>
           <Card padding="sm">

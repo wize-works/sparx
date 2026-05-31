@@ -1,17 +1,16 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { ArrowLeft, KanbanSquare, List, BarChart3, Plus } from 'lucide-react';
+import { KanbanSquare, List, BarChart3, Plus } from 'lucide-react';
 
 import {
   Badge,
   Button,
   Container,
-  Heading,
+  PageHeader,
   Stack,
   Tabs,
   TabsList,
   TabsTrigger,
-  Text,
 } from '@sparx/ui';
 
 import { api, type ApiRestError } from '@/lib/api-rest-client';
@@ -84,48 +83,49 @@ export default async function PipelineDetailPage({ params, searchParams }: PageP
   return (
     <Container size="full" className="px-6">
       <Stack gap={6} className="py-8">
-        <Stack direction="row" align="end" justify="between" wrap>
-          <Stack gap={2}>
-            <Button asChild variant="ghost" size="sm" leftIcon={<ArrowLeft className="h-4 w-4" />}>
-              <Link href="/crm/pipelines">All pipelines</Link>
-            </Button>
-            <Stack direction="row" align="center" gap={2}>
-              <Heading level={1}>{pipeline.name}</Heading>
+        <PageHeader
+          title={pipeline.name}
+          badge={
+            <>
               {pipeline.isDefault && <Badge variant="outline">Default</Badge>}
               <Badge color="module">
                 {deals.length} open deal{deals.length === 1 ? '' : 's'}
               </Badge>
-            </Stack>
-            <Text variant="muted">
+            </>
+          }
+          description={
+            <>
               {pipeline.stages.length} stage{pipeline.stages.length === 1 ? '' : 's'} ·{' '}
               <code>{pipeline.slug}</code>
-            </Text>
-          </Stack>
-          <Stack direction="row" gap={2}>
-            <Tabs value={view}>
-              <TabsList>
-                <TabsTrigger value="kanban" asChild>
-                  <Link href={`/crm/pipelines/${pipeline.id}`}>
-                    <KanbanSquare className="h-3.5 w-3.5" /> Kanban
-                  </Link>
-                </TabsTrigger>
-                <TabsTrigger value="list" asChild>
-                  <Link href={`/crm/pipelines/${pipeline.id}?view=list`}>
-                    <List className="h-3.5 w-3.5" /> List
-                  </Link>
-                </TabsTrigger>
-                <TabsTrigger value="forecast" asChild>
-                  <Link href={`/crm/pipelines/${pipeline.id}?view=forecast`}>
-                    <BarChart3 className="h-3.5 w-3.5" /> Forecast
-                  </Link>
-                </TabsTrigger>
-              </TabsList>
-            </Tabs>
-            <Button asChild color="module" leftIcon={<Plus className="h-4 w-4" />}>
-              <Link href={`/crm/deals/new?pipelineId=${pipeline.id}`}>New deal</Link>
-            </Button>
-          </Stack>
-        </Stack>
+            </>
+          }
+          actions={
+            <>
+              <Tabs value={view}>
+                <TabsList>
+                  <TabsTrigger value="kanban" asChild>
+                    <Link href={`/crm/pipelines/${pipeline.id}`}>
+                      <KanbanSquare className="h-3.5 w-3.5" /> Kanban
+                    </Link>
+                  </TabsTrigger>
+                  <TabsTrigger value="list" asChild>
+                    <Link href={`/crm/pipelines/${pipeline.id}?view=list`}>
+                      <List className="h-3.5 w-3.5" /> List
+                    </Link>
+                  </TabsTrigger>
+                  <TabsTrigger value="forecast" asChild>
+                    <Link href={`/crm/pipelines/${pipeline.id}?view=forecast`}>
+                      <BarChart3 className="h-3.5 w-3.5" /> Forecast
+                    </Link>
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
+              <Button asChild color="module" leftIcon={<Plus className="h-4 w-4" />}>
+                <Link href={`/crm/deals/new?pipelineId=${pipeline.id}`}>New deal</Link>
+              </Button>
+            </>
+          }
+        />
 
         {view === 'kanban' && (
           <PipelineKanban

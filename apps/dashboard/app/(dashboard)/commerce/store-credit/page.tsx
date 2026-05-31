@@ -9,6 +9,7 @@ import {
   Container,
   EmptyState,
   Heading,
+  PageHeader,
   Stack,
   Table,
   TableBody,
@@ -74,17 +75,14 @@ export default async function StoreCreditPage() {
   return (
     <Container size="xl">
       <Stack gap={6} className="py-10">
-        <Stack gap={2}>
-          <Stack direction="row" align="center" gap={2}>
-            <CircleDollarSign className="h-5 w-5" />
-            <Heading level={1}>Store credit</Heading>
+        <PageHeader
+          icon={<CircleDollarSign className="h-5 w-5" />}
+          title="Store credit"
+          badge={
             <Badge color="module">{moneyFmt.format(outstandingCents / 100)} outstanding</Badge>
-          </Stack>
-          <Text variant="muted">
-            Per-customer credit balance — accrues from refunds, loyalty conversions, or manual
-            grants. Spent at checkout via the pricing pipeline.
-          </Text>
-        </Stack>
+          }
+          description="Per-customer credit balance — accrues from refunds, loyalty conversions, or manual grants. Spent at checkout via the pricing pipeline."
+        />
 
         <Card>
           <CardHeader>

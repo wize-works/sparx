@@ -8,7 +8,7 @@ import {
   CardContent,
   Container,
   EmptyState,
-  Heading,
+  PageHeader,
   Stack,
   Table,
   TableBody,
@@ -65,24 +65,21 @@ export default async function QuotesPage({ searchParams }: PageProps) {
   return (
     <Container size="xl">
       <Stack gap={6} className="py-10">
-        <Stack direction="row" align="end" justify="between" wrap>
-          <Stack gap={2}>
-            <Stack direction="row" align="center" gap={2}>
-              <FileText className="h-5 w-5" />
-              <Heading level={1}>Quotes</Heading>
-              <Badge color="module">
-                {total} quote{total === 1 ? '' : 's'}
-              </Badge>
-            </Stack>
-            <Text variant="muted">
-              Sales quotes — draft, submitted, accepted, declined, expired, converted to an order.
-              Accepted quotes convert atomically to a new Order via the quote detail page.
-            </Text>
-          </Stack>
-          <Button asChild color="module" leftIcon={<Plus className="h-4 w-4" />}>
-            <Link href="/crm/quotes/new">New quote</Link>
-          </Button>
-        </Stack>
+        <PageHeader
+          icon={<FileText className="h-5 w-5" />}
+          title="Quotes"
+          badge={
+            <Badge color="module">
+              {total} quote{total === 1 ? '' : 's'}
+            </Badge>
+          }
+          description="Sales quotes — draft, submitted, accepted, declined, expired, converted to an order. Accepted quotes convert atomically to a new Order via the quote detail page."
+          actions={
+            <Button asChild color="module" leftIcon={<Plus className="h-4 w-4" />}>
+              <Link href="/crm/quotes/new">New quote</Link>
+            </Button>
+          }
+        />
 
         {quotes.length === 0 ? (
           <Card padding="none">

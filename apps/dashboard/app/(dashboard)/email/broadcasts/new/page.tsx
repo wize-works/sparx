@@ -1,15 +1,4 @@
-import Link from 'next/link';
-import { ArrowLeft } from 'lucide-react';
-import {
-  Button,
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  Container,
-  Heading,
-  Stack,
-} from '@sparx/ui';
+import { Card, CardContent, CardHeader, CardTitle, Container, PageHeader, Stack } from '@sparx/ui';
 
 import { api } from '@/lib/api-rest-client';
 import { BroadcastComposer } from '../_components/broadcast-composer';
@@ -26,13 +15,7 @@ export default async function NewBroadcastPage() {
   return (
     <Container size="lg">
       <Stack gap={6} className="py-10">
-        <Button color="primary" variant="link" size="sm" asChild>
-          <Link href="/email/broadcasts">
-            <ArrowLeft className="h-3.5 w-3.5" />
-            Broadcasts
-          </Link>
-        </Button>
-        <Heading level={1}>New broadcast</Heading>
+        <PageHeader title="New broadcast" />
 
         <Card>
           <CardHeader>

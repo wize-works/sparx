@@ -1,8 +1,6 @@
-import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { ArrowLeft } from 'lucide-react';
 
-import { Button, Container, Heading, Stack, Text } from '@sparx/ui';
+import { Container, PageHeader, Stack } from '@sparx/ui';
 
 import { api, type ApiRestError } from '@/lib/api-rest-client';
 
@@ -44,18 +42,10 @@ export default async function EditPipelinePage({ params }: PageProps) {
   return (
     <Container size="lg">
       <Stack gap={6} className="py-10">
-        <Stack gap={2}>
-          <Button color="primary" variant="link" size="sm" asChild>
-            <Link href="/crm/pipelines">
-              <ArrowLeft className="h-3.5 w-3.5" /> All pipelines
-            </Link>
-          </Button>
-          <Heading level={1}>Edit {pipeline.name}</Heading>
-          <Text variant="muted">
-            Drag to reorder stages, edit names + probabilities, or add a new stage. Probability here
-            feeds the weighted forecast on the pipeline detail page.
-          </Text>
-        </Stack>
+        <PageHeader
+          title={`Edit ${pipeline.name}`}
+          description="Drag to reorder stages, edit names + probabilities, or add a new stage. Probability here feeds the weighted forecast on the pipeline detail page."
+        />
 
         <PipelineEditor
           pipeline={{

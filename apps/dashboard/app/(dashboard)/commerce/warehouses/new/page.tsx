@@ -3,7 +3,6 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft } from 'lucide-react';
 
 import {
   Button,
@@ -16,6 +15,7 @@ import {
   Heading,
   Input,
   Label,
+  PageHeader,
   Stack,
   Text,
 } from '@sparx/ui';
@@ -70,20 +70,10 @@ export default function NewWarehousePage() {
   return (
     <Container size="lg">
       <Stack gap={6} className="py-10">
-        <Stack gap={2}>
-          <Link
-            href="/commerce/warehouses"
-            className="inline-flex items-center gap-1 text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"
-          >
-            <ArrowLeft className="h-3.5 w-3.5" />
-            Back to warehouses
-          </Link>
-          <Heading level={1}>New warehouse</Heading>
-          <Text variant="muted">
-            Set the basics now; reorder defaults + hours of operation can be edited after the
-            warehouse exists.
-          </Text>
-        </Stack>
+        <PageHeader
+          title="New warehouse"
+          description="Set the basics now; reorder defaults + hours of operation can be edited after the warehouse exists."
+        />
 
         <form onSubmit={onSubmit}>
           <Card>

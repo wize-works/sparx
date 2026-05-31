@@ -9,8 +9,8 @@ import {
   Container,
   EmptyState,
   Heading,
+  PageHeader,
   Stack,
-  Text,
 } from '@sparx/ui';
 
 import { api } from '@/lib/api-rest-client';
@@ -56,22 +56,22 @@ export default async function CategoriesPage() {
   return (
     <Container size="xl">
       <Stack gap={6} className="py-10">
-        <Stack direction="row" align="end" justify="between" wrap gap={4}>
-          <Stack gap={2}>
-            <Stack direction="row" align="center" gap={2}>
-              <FolderTree className="h-5 w-5" />
-              <Heading level={1}>Categories</Heading>
-              <Badge color="module">
-                {countTree(tree)} categor{countTree(tree) === 1 ? 'y' : 'ies'}
-              </Badge>
-            </Stack>
-            <Text variant="muted">
+        <PageHeader
+          icon={<FolderTree className="h-5 w-5" />}
+          title="Categories"
+          badge={
+            <Badge color="module">
+              {countTree(tree)} categor{countTree(tree) === 1 ? 'y' : 'ies'}
+            </Badge>
+          }
+          description={
+            <>
               The organizational tree your shoppers browse. Drag-free for now: nest with the parent
               picker, reorder with the position field. Storefront URLs follow the category&apos;s
               path (<code>/category/&lt;handle&gt;</code>).
-            </Text>
-          </Stack>
-        </Stack>
+            </>
+          }
+        />
 
         <Card>
           <CardHeader>

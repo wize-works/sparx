@@ -1,7 +1,6 @@
-import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { Badge, Button, Container, Heading, Stack, Text } from '@sparx/ui';
-import { ArrowLeft } from 'lucide-react';
+import { Badge, Container, PageHeader, Stack } from '@sparx/ui';
+
 import { api, type ApiRestError } from '@/lib/api-rest-client';
 import { SchemaEditor } from './schema-editor';
 
@@ -37,15 +36,17 @@ export default async function EditTypeSchemaPage({ params }: PageParams) {
     return (
       <Container size="lg">
         <Stack gap={6} className="py-10">
-          <Stack gap={2}>
-            <Heading level={1}>{type.name}</Heading>
-            <Badge variant="outline">built-in</Badge>
-            <Text variant="muted">
-              Built-in content types are read-only — their schema is part of the platform and is
-              maintained in <code>packages/cms-schemas</code>. Fork it into a custom type to tailor
-              it for your tenant.
-            </Text>
-          </Stack>
+          <PageHeader
+            title={type.name}
+            badge={<Badge variant="outline">built-in</Badge>}
+            description={
+              <>
+                Built-in content types are read-only — their schema is part of the platform and is
+                maintained in <code>packages/cms-schemas</code>. Fork it into a custom type to
+                tailor it for your tenant.
+              </>
+            }
+          />
         </Stack>
       </Container>
     );
@@ -56,21 +57,14 @@ export default async function EditTypeSchemaPage({ params }: PageParams) {
   return (
     <Container size="lg">
       <Stack gap={6} className="py-10">
-        <Stack gap={2}>
-          <Button color="primary" variant="link" size="sm" asChild>
-            <Link href="/cms/types">
-              <ArrowLeft className="h-3.5 w-3.5" />
-              Back to content types
-            </Link>
-          </Button>
-          <Heading level={1}>
-            <code>{type.key}</code> schema
-          </Heading>
-          <Text variant="muted">
-            Edit the field definitions. Saving validates the JSON against the FieldDef union; an
-            invalid schema is rejected before persisting.
-          </Text>
-        </Stack>
+        <PageHeader
+          title={
+            <>
+              <code>{type.key}</code> schema
+            </>
+          }
+          description="Edit the field definitions. Saving validates the JSON against the FieldDef union; an invalid schema is rejected before persisting."
+        />
 
         <SchemaEditor
           typeKey={type.key}

@@ -1,4 +1,4 @@
-import { Badge, Container, Heading, Stack, Text } from '@sparx/ui';
+import { Badge, Container, PageHeader, Stack } from '@sparx/ui';
 import { api } from '@/lib/api-rest-client';
 import { RedirectsList } from './redirects-list';
 
@@ -19,15 +19,11 @@ export default async function RedirectsPage() {
   return (
     <Container size="lg">
       <Stack gap={6} className="py-10">
-        <Stack gap={2}>
-          <Stack direction="row" align="center" gap={2}>
-            <Heading level={1}>Redirects</Heading>
-            <Badge variant="outline">{redirects.length}</Badge>
-          </Stack>
-          <Text variant="muted">
-            Forward old URLs to new ones. Loops and chains over 8 hops are rejected at insert.
-          </Text>
-        </Stack>
+        <PageHeader
+          title="Redirects"
+          badge={<Badge variant="outline">{redirects.length}</Badge>}
+          description="Forward old URLs to new ones. Loops and chains over 8 hops are rejected at insert."
+        />
         <RedirectsList rows={redirects} />
       </Stack>
     </Container>

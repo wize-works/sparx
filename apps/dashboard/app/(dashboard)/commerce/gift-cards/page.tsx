@@ -9,6 +9,7 @@ import {
   Container,
   EmptyState,
   Heading,
+  PageHeader,
   Stack,
   Table,
   TableBody,
@@ -57,18 +58,14 @@ export default async function GiftCardsPage() {
   return (
     <Container size="xl">
       <Stack gap={6} className="py-10">
-        <Stack gap={2}>
-          <Stack direction="row" align="center" gap={2}>
-            <Gift className="h-5 w-5" />
-            <Heading level={1}>Gift cards</Heading>
+        <PageHeader
+          icon={<Gift className="h-5 w-5" />}
+          title="Gift cards"
+          badge={
             <Badge color="module">{moneyFmt.format(outstandingCents / 100)} outstanding</Badge>
-          </Stack>
-          <Text variant="muted">
-            Issue, look up, and adjust gift cards. Cards sold as a product (a future Phase 4
-            sellable product type) link back to the order item so a refund revokes the unspent
-            balance.
-          </Text>
-        </Stack>
+          }
+          description="Issue, look up, and adjust gift cards. Cards sold as a product (a future Phase 4 sellable product type) link back to the order item so a refund revokes the unspent balance."
+        />
 
         <Card>
           <CardHeader>

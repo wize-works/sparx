@@ -8,7 +8,7 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Eye } from 'lucide-react';
+import { Eye } from 'lucide-react';
 
 import {
   Button,
@@ -18,9 +18,9 @@ import {
   CardHeader,
   CardTitle,
   Container,
-  Heading,
   Input,
   Label,
+  PageHeader,
   Stack,
   Text,
 } from '@sparx/ui';
@@ -80,18 +80,15 @@ export default function NewSegmentPage() {
   return (
     <Container size="lg">
       <Stack gap={6} className="py-10">
-        <Stack gap={2}>
-          <Button color="primary" variant="link" size="sm" asChild>
-            <Link href="/crm/segments">
-              <ArrowLeft className="h-3.5 w-3.5" /> Back to segments
-            </Link>
-          </Button>
-          <Heading level={1}>New segment</Heading>
-          <Text variant="muted">
-            Segments are materialized incrementally; this rule is evaluated on every event that
-            could change a customer&apos;s projection (orders, opens, clicks, B2B updates).
-          </Text>
-        </Stack>
+        <PageHeader
+          title="New segment"
+          description={
+            <>
+              Segments are materialized incrementally; this rule is evaluated on every event that
+              could change a customer&apos;s projection (orders, opens, clicks, B2B updates).
+            </>
+          }
+        />
 
         <form onSubmit={onSubmit} noValidate>
           <Stack gap={6}>

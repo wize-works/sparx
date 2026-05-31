@@ -1,15 +1,13 @@
-import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { ArrowLeft } from 'lucide-react';
+
 import {
-  Button,
   Card,
   CardContent,
   CardHeader,
   CardTitle,
   Container,
   Grid,
-  Heading,
+  PageHeader,
   Stack,
 } from '@sparx/ui';
 
@@ -42,13 +40,7 @@ export default async function BuiltinTemplatePage({
   return (
     <Container size="xl">
       <Stack gap={6} className="py-10">
-        <Button color="primary" variant="link" size="sm" asChild>
-          <Link href="/email/templates">
-            <ArrowLeft className="h-3.5 w-3.5" />
-            Templates
-          </Link>
-        </Button>
-        <Heading level={1}>{view.name}</Heading>
+        <PageHeader title={view.name} />
 
         <Grid cols={1} lgCols={2} gap={6}>
           <Card>

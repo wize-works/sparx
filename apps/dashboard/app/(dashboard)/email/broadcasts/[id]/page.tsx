@@ -1,9 +1,7 @@
-import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { ArrowLeft } from 'lucide-react';
+
 import {
   Badge,
-  Button,
   Card,
   CardContent,
   CardHeader,
@@ -11,6 +9,7 @@ import {
   Container,
   Grid,
   Heading,
+  PageHeader,
   Stack,
   Text,
   type BadgeProps,
@@ -60,18 +59,11 @@ export default async function BroadcastDetailPage({ params }: { params: Promise<
   return (
     <Container size="xl">
       <Stack gap={6} className="py-10">
-        <Button color="primary" variant="link" size="sm" asChild>
-          <Link href="/email/broadcasts">
-            <ArrowLeft className="h-3.5 w-3.5" />
-            Broadcasts
-          </Link>
-        </Button>
-
-        <Stack direction="row" align="center" gap={3}>
-          <Heading level={1}>{broadcast.name}</Heading>
-          <Badge color={STATUS_BADGE[broadcast.status]}>{broadcast.status}</Badge>
-        </Stack>
-        <Text variant="muted">{broadcast.subject}</Text>
+        <PageHeader
+          title={broadcast.name}
+          badge={<Badge color={STATUS_BADGE[broadcast.status]}>{broadcast.status}</Badge>}
+          description={broadcast.subject}
+        />
 
         {broadcast.status === 'draft' || broadcast.status === 'scheduled' ? (
           <Card>

@@ -35,6 +35,7 @@ import {
   Users,
 } from 'lucide-react';
 import { api } from '@/lib/api-rest-client';
+import { OverviewChartCard, SAMPLE_REVENUE_14D } from './_components/overview-charts';
 
 // First real dashboard page. Minimal but representative — Stats row + active
 // modules grid + an empty-state placeholder for tasks. All DB-backed bits
@@ -206,6 +207,25 @@ export default async function DashboardHome() {
           />
         </Grid>
 
+        <Grid cols={1} mdCols={2} gap={4}>
+          <OverviewChartCard
+            title="Revenue"
+            description="Net revenue, last 14 days"
+            data={SAMPLE_REVENUE_14D}
+            series={[{ key: 'revenue', label: 'Revenue', color: 'commerce' }]}
+            type="area"
+            format="currency"
+          />
+          <OverviewChartCard
+            title="Orders"
+            description="Orders placed, last 14 days"
+            data={SAMPLE_REVENUE_14D}
+            series={[{ key: 'orders', label: 'Orders', color: 'commerce' }]}
+            type="bar"
+            format="number"
+          />
+        </Grid>
+
         <Stack gap={3}>
           <Stack direction="row" align="end" justify="between">
             <Heading level={3}>Active modules</Heading>
@@ -273,7 +293,7 @@ export default async function DashboardHome() {
               description="When you have things to do, they'll show up here."
               action={
                 <Button variant="outline" size="sm" asChild>
-                  <Link href="/cms">Set up your first page</Link>
+                  <Link href="/cms/pages">Set up your first page</Link>
                 </Button>
               }
             />

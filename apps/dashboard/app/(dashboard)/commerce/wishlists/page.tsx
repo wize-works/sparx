@@ -9,6 +9,7 @@ import {
   Container,
   EmptyState,
   Heading,
+  PageHeader,
   Stack,
   Table,
   TableBody,
@@ -46,19 +47,16 @@ export default async function WishlistsPage() {
   return (
     <Container size="xl">
       <Stack gap={6} className="py-10">
-        <Stack gap={2}>
-          <Stack direction="row" align="center" gap={2}>
-            <Heart className="h-5 w-5" />
-            <Heading level={1}>Wishlists</Heading>
+        <PageHeader
+          icon={<Heart className="h-5 w-5" />}
+          title="Wishlists"
+          badge={
             <Badge color="module">
               {wishlistCount} lists · {itemCount} items
             </Badge>
-          </Stack>
-          <Text variant="muted">
-            Analytics view. Customers own their wishlists; staff do not edit them. Use this list to
-            decide restock priority, promo targeting, and which abandoned-wishlist nudges to send.
-          </Text>
-        </Stack>
+          }
+          description="Analytics view. Customers own their wishlists; staff do not edit them. Use this list to decide restock priority, promo targeting, and which abandoned-wishlist nudges to send."
+        />
 
         <Card>
           <CardHeader>

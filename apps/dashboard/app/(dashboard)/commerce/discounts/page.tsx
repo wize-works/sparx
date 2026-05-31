@@ -11,6 +11,7 @@ import {
   Container,
   EmptyState,
   Heading,
+  PageHeader,
   Stack,
   Table,
   TableBody,
@@ -66,28 +67,24 @@ export default async function DiscountsPage() {
   return (
     <Container size="xl">
       <Stack gap={6} className="py-10">
-        <Stack direction="row" align="end" justify="between" wrap gap={4}>
-          <Stack gap={2}>
-            <Stack direction="row" align="center" gap={2}>
-              <Tag className="h-5 w-5" />
-              <Heading level={1}>Discounts</Heading>
-              <Badge color="module">
-                {active.length} active · {draft.length} draft
-              </Badge>
-            </Stack>
-            <Text variant="muted">
-              Codes activate when a shopper enters them; automatic discounts apply silently when
-              their conditions match. Stacking rules govern combining with subscribe-and-save and
-              loyalty.
-            </Text>
-          </Stack>
-          <Button asChild>
-            <Link href="/commerce/discounts/new">
-              <Plus className="h-4 w-4" />
-              Create discount
-            </Link>
-          </Button>
-        </Stack>
+        <PageHeader
+          icon={<Tag className="h-5 w-5" />}
+          title="Discounts"
+          badge={
+            <Badge color="module">
+              {active.length} active · {draft.length} draft
+            </Badge>
+          }
+          description="Codes activate when a shopper enters them; automatic discounts apply silently when their conditions match. Stacking rules govern combining with subscribe-and-save and loyalty."
+          actions={
+            <Button asChild>
+              <Link href="/commerce/discounts/new">
+                <Plus className="h-4 w-4" />
+                Create discount
+              </Link>
+            </Button>
+          }
+        />
 
         <Card>
           <CardHeader>

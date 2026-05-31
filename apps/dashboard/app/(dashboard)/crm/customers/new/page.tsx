@@ -3,7 +3,6 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft } from 'lucide-react';
 
 import {
   Button,
@@ -16,6 +15,7 @@ import {
   Heading,
   Input,
   Label,
+  PageHeader,
   Stack,
   Text,
   Textarea,
@@ -77,19 +77,10 @@ export default function NewCustomerPage() {
   return (
     <Container size="lg">
       <Stack gap={6} className="py-10">
-        <Stack gap={2}>
-          <Button color="primary" variant="link" size="sm" asChild>
-            <Link href="/crm">
-              <ArrowLeft className="h-3.5 w-3.5" />
-              Back to CRM
-            </Link>
-          </Button>
-          <Heading level={1}>New customer</Heading>
-          <Text variant="muted">
-            Add a contact manually. Prospects can later be promoted to retail or B2B with no row
-            migration.
-          </Text>
-        </Stack>
+        <PageHeader
+          title="New customer"
+          description="Add a contact manually. Prospects can later be promoted to retail or B2B with no row migration."
+        />
 
         <form onSubmit={onSubmit} noValidate>
           <Card>
@@ -181,7 +172,7 @@ export default function NewCustomerPage() {
             </CardContent>
             <CardFooter>
               <Button type="button" variant="ghost" asChild>
-                <Link href="/crm">Cancel</Link>
+                <Link href="/crm/customers">Cancel</Link>
               </Button>
               <Button type="submit" color="module" disabled={pending} loading={pending}>
                 Create customer

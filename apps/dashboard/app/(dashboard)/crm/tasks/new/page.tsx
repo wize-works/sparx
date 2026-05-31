@@ -1,8 +1,5 @@
-import Link from 'next/link';
-import { ArrowLeft } from 'lucide-react';
-
 import { requireSession } from '@sparx/auth';
-import { Button, Container, Heading, Stack, Text } from '@sparx/ui';
+import { Container, PageHeader, Stack } from '@sparx/ui';
 
 import { api } from '@/lib/api-rest-client';
 
@@ -42,18 +39,15 @@ export default async function NewTaskPage({ searchParams }: PageProps) {
   return (
     <Container size="md">
       <Stack gap={6} className="py-10">
-        <Stack gap={2}>
-          <Button color="primary" variant="link" size="sm" asChild>
-            <Link href="/crm/tasks">
-              <ArrowLeft className="h-3.5 w-3.5" /> Back to tasks
-            </Link>
-          </Button>
-          <Heading level={1}>New task</Heading>
-          <Text variant="muted">
-            Assign a follow-up to yourself or a teammate. Tasks linked to a customer or deal show up
-            on that record&apos;s task list as well.
-          </Text>
-        </Stack>
+        <PageHeader
+          title="New task"
+          description={
+            <>
+              Assign a follow-up to yourself or a teammate. Tasks linked to a customer or deal show
+              up on that record&apos;s task list as well.
+            </>
+          }
+        />
 
         <NewTaskForm
           currentUserId={session.user.id}

@@ -1,10 +1,12 @@
 # Sparx Platform — Dashboard Shell
 
-**Version:** 1.2
+**Version:** 1.3
 **Author:** Brandon Korous
 **Last Updated:** 2026-05-31
 
-> **1.2 (2026-05-31):** Sidebar moves to a **rail + contextual panel** model (§5) — a thin icon rail (modules, Home, Settings, search, Favorites/Recents flyouts) plus a contextual panel whose contents follow context: a module's sections when inside one, Favorites + Recents at platform level. This makes intra-module navigation a shell concern, so the working area drops its in-content section tabs and card-grid-as-nav (see [doc 34](34-dashboard-working-area-standard.md) §11).
+> **1.3 (2026-05-31):** Implementation refinements to §5. The rail is **collapsible** (persisted icon-only ↔ icon+label toggle), and **Favorites + Recents live in the rail** (inline groups), not the panel — so the contextual panel is purely the current module's sections, and at platform level shows a labeled directory of the enabled modules.
+>
+> **1.2 (2026-05-31):** Sidebar moves to a **rail + contextual panel** model (§5) — a thin icon rail (modules, Home, Settings, search, Favorites/Recents) plus a contextual panel whose contents follow context: a module's sections when inside one. This makes intra-module navigation a shell concern, so the working area drops its in-content section tabs and card-grid-as-nav (see [doc 34](34-dashboard-working-area-standard.md) §11).
 
 ---
 
@@ -110,7 +112,7 @@ export const moduleManifests = [
 
 Manifests for inactive modules are still imported (tree-shaking-friendly because they're plain objects) but are filtered against the tenant's active-module set before render. A disabled module's sections and actions never appear in the sidebar, ⌘K, or favorites — even if a user previously favorited one.
 
-A special, non-manifest **Home** item lives on the rail (above the module icons) and heads the contextual panel at the platform level, above Favorites. It is not a module, has no color, and is hardcoded in the shell.
+A special, non-manifest **Home** item lives on the rail (above the module icons) and heads the contextual panel's module directory at the platform level. It is not a module, has no color, and is hardcoded in the shell.
 
 ### 3.3 Action ID Stability
 
@@ -257,16 +259,18 @@ The sidebar is two columns: a constant **icon rail** and a **contextual panel** 
   rail        contextual panel
 ```
 
-**The rail** (top → bottom): Search (⌘K), Home, ★ Favorites (flyout), ⏱ Recents (flyout), a divider, then one icon per **enabled** module (active module tinted `--module-active`), and Settings pinned at the bottom. The rail never changes between routes.
+**The rail** (top → bottom): brand mark, Search (⌘K), Home, a divider, then a scrollable middle holding one icon per **enabled** module (active module tinted `--module-active`) followed by the **★ Favorites** and **⏱ Recents** groups, and Settings pinned at the bottom. The rail is the home for the cross-module shortcuts — they ride here so the contextual panel stays purely about the current module. The rail never changes between routes.
+
+The rail is **collapsible**: a persisted toggle at its foot (`sparx:rail-expanded`, published via `useRailExpanded()`) widens it from icon-only (`w-14`) to icon + label (`w-52`). Collapsed, Favorites/Recents render as their item icons under a quiet ★/⏱ group marker (hover gives the label); expanded, each group gains a text heading and every tile a label. Empty groups are omitted.
 
 **The contextual panel** changes contents by context — it is _not_ a mode flip, just different data:
 
-| Context                                      | Panel shows                                                                                                   |
-| -------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| Inside a module (`/commerce/*`, `/crm/*`, …) | That module's `sections` from its manifest, active section highlighted. Header = module name in module color. |
-| Platform level (`/`, `/settings`)            | **Favorites** + **Recents** (the cross-module shortcuts), so they stay first-class when no module is active.  |
+| Context                                      | Panel shows                                                                                                                |
+| -------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| Inside a module (`/commerce/*`, `/crm/*`, …) | That module's `sections` from its manifest, active section highlighted. Header = module name in module color.              |
+| Platform level (`/`, `/settings`)            | A **labeled directory** of the tenant's enabled modules (Home + module names), since there's no module context to fill it. |
 
-This keeps Favorites and Recents reachable (they fill the panel at the platform level, and are always one click away via their rail flyouts and ⌘K), while giving focused, vertical section navigation the moment you enter a module. The **tenant/workspace switcher** moves entirely to the breadcrumb's Workspace segment (§4.2) and the rail's account control — it is no longer a sidebar header.
+Favorites and Recents stay reachable everywhere because they live in the rail (and via ⌘K), while the panel gives focused, vertical section navigation the moment you enter a module. The **tenant/workspace switcher** moves entirely to the breadcrumb's Workspace segment (§4.2) and the rail's account control — it is no longer a sidebar header.
 
 ### 5.2 Section Behaviors
 
@@ -274,8 +278,8 @@ This keeps Favorites and Recents reachable (they fill the panel at the platform 
 | ------------------- | ----------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
 | Search (rail)       | n/a                                                   | Opens ⌘K                                                                                                                                 |
 | Home (rail)         | Static                                                | Navigate to platform dashboard                                                                                                           |
-| Favorites (rail ★)  | `user_favorites` table                                | Flyout; add via star or right-click; reorder via drag; also fills the panel at platform level                                            |
-| Recents (rail ⏱)    | `user_recents` table                                  | Flyout; mutated by navigation; chronological; also fills the panel at platform level                                                     |
+| Favorites (rail ★)  | `user_favorites` table                                | Inline rail group (icons collapsed / labeled when the rail is expanded); add via star or right-click                                     |
+| Recents (rail ⏱)    | `user_recents` table                                  | Inline rail group; mutated optimistically by navigation; chronological                                                                   |
 | Module icons (rail) | `moduleManifests` filtered by tenant's active modules | Read-only; activate new modules via Settings → Modules                                                                                   |
 | Contextual panel    | active module's manifest `sections`                   | Read-only navigation; the single intra-module nav surface (no in-content tabs — see [doc 34](34-dashboard-working-area-standard.md) §11) |
 | Settings (rail ⚙)   | Static                                                | Pinned to rail bottom                                                                                                                    |

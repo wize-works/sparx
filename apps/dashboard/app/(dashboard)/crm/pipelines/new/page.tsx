@@ -3,7 +3,6 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft } from 'lucide-react';
 
 import {
   Button,
@@ -13,9 +12,9 @@ import {
   CardHeader,
   CardTitle,
   Container,
-  Heading,
   Input,
   Label,
+  PageHeader,
   Stack,
   Text,
 } from '@sparx/ui';
@@ -56,17 +55,10 @@ export default function NewPipelinePage() {
   return (
     <Container size="md">
       <Stack gap={6} className="py-10">
-        <Stack gap={2}>
-          <Button color="primary" variant="link" size="sm" asChild>
-            <Link href="/crm/pipelines">
-              <ArrowLeft className="h-3.5 w-3.5" /> Back to pipelines
-            </Link>
-          </Button>
-          <Heading level={1}>New pipeline</Heading>
-          <Text variant="muted">
-            Create the pipeline shell now; add stages on the edit screen next.
-          </Text>
-        </Stack>
+        <PageHeader
+          title="New pipeline"
+          description="Create the pipeline shell now; add stages on the edit screen next."
+        />
 
         <form onSubmit={onSubmit} noValidate>
           <Card>

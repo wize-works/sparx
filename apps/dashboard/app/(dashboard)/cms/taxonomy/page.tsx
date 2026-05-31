@@ -7,6 +7,7 @@ import {
   Container,
   EmptyState,
   Heading,
+  PageHeader,
   Stack,
   Text,
 } from '@sparx/ui';
@@ -32,17 +33,12 @@ export default async function TaxonomyIndexPage() {
   return (
     <Container size="lg">
       <Stack gap={6} className="py-10">
-        <Stack gap={2}>
-          <Stack direction="row" align="center" gap={2}>
-            <Tag className="h-5 w-5" />
-            <Heading level={1}>Taxonomies</Heading>
-            <Badge variant="outline">{taxonomies.length}</Badge>
-          </Stack>
-          <Text variant="muted">
-            Tenant-defined vocabularies. Mark hierarchical to allow parent/child term nesting (good
-            for categories); leave flat for tag-style lists.
-          </Text>
-        </Stack>
+        <PageHeader
+          icon={<Tag className="h-5 w-5" />}
+          title="Taxonomies"
+          badge={<Badge variant="outline">{taxonomies.length}</Badge>}
+          description="Tenant-defined vocabularies. Mark hierarchical to allow parent/child term nesting (good for categories); leave flat for tag-style lists."
+        />
 
         <TaxonomyCreateForm />
 

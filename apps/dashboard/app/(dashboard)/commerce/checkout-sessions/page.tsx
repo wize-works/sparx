@@ -10,6 +10,7 @@ import {
   Container,
   EmptyState,
   Heading,
+  PageHeader,
   Stack,
   Table,
   TableBody,
@@ -52,18 +53,12 @@ export default async function CheckoutSessionsPage({
   return (
     <Container size="xl">
       <Stack gap={6} className="py-10">
-        <Stack gap={2}>
-          <Stack direction="row" align="center" gap={2}>
-            <CreditCard className="h-5 w-5" />
-            <Heading level={1}>Checkout sessions</Heading>
-            <Badge color="module">{sessions.length} in-flight</Badge>
-          </Stack>
-          <Text variant="muted">
-            Read-only diagnostic. The state machine advances cart_review → contact → shipping →
-            payment → review → completed. Sessions stuck in a non-terminal step are auto-expired on
-            TTL by the worker; staff can manually expire a session from the API if needed.
-          </Text>
-        </Stack>
+        <PageHeader
+          icon={<CreditCard className="h-5 w-5" />}
+          title="Checkout sessions"
+          badge={<Badge color="module">{sessions.length} in-flight</Badge>}
+          description="Read-only diagnostic. The state machine advances cart_review → contact → shipping → payment → review → completed. Sessions stuck in a non-terminal step are auto-expired on TTL by the worker; staff can manually expire a session from the API if needed."
+        />
 
         <Stack direction="row" gap={2} wrap>
           <FilterLink current={step} value={undefined} label="All in-flight" />

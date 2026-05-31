@@ -8,7 +8,7 @@ import {
   CardContent,
   Container,
   EmptyState,
-  Heading,
+  PageHeader,
   Stack,
   Table,
   TableBody,
@@ -64,24 +64,21 @@ export default async function B2bAccountsPage({ searchParams }: PageProps) {
   return (
     <Container size="xl">
       <Stack gap={6} className="py-10">
-        <Stack direction="row" align="end" justify="between" wrap>
-          <Stack gap={2}>
-            <Stack direction="row" align="center" gap={2}>
-              <Building2 className="h-5 w-5" />
-              <Heading level={1}>B2B accounts</Heading>
-              <Badge color="module">
-                {total} account{total === 1 ? '' : 's'}
-              </Badge>
-            </Stack>
-            <Text variant="muted">
-              Wholesale + fleet customers. Pricing tier, credit limit, and engine profiles feed the
-              fitment-aware catalog and the B2B portal pricing engine.
-            </Text>
-          </Stack>
-          <Button asChild color="module" leftIcon={<Plus className="h-4 w-4" />}>
-            <Link href="/crm/b2b/new">New B2B account</Link>
-          </Button>
-        </Stack>
+        <PageHeader
+          icon={<Building2 className="h-5 w-5" />}
+          title="B2B accounts"
+          badge={
+            <Badge color="module">
+              {total} account{total === 1 ? '' : 's'}
+            </Badge>
+          }
+          description="Wholesale + fleet customers. Pricing tier, credit limit, and engine profiles feed the fitment-aware catalog and the B2B portal pricing engine."
+          actions={
+            <Button asChild color="module" leftIcon={<Plus className="h-4 w-4" />}>
+              <Link href="/crm/b2b/new">New B2B account</Link>
+            </Button>
+          }
+        />
 
         {accounts.length === 0 ? (
           <Card padding="none">

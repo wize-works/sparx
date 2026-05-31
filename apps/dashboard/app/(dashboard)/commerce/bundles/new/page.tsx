@@ -1,6 +1,3 @@
-import Link from 'next/link';
-import { ArrowLeft } from 'lucide-react';
-
 import {
   Card,
   CardContent,
@@ -8,8 +5,8 @@ import {
   CardHeader,
   Container,
   Heading,
+  PageHeader,
   Stack,
-  Text,
 } from '@sparx/ui';
 
 import { api } from '@/lib/api-rest-client';
@@ -70,19 +67,10 @@ export default async function NewBundlePage() {
   return (
     <Container size="lg">
       <Stack gap={6} className="py-10">
-        <Stack gap={2}>
-          <Link
-            href="/commerce/bundles"
-            className="inline-flex items-center gap-1 text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"
-          >
-            <ArrowLeft className="h-3.5 w-3.5" />
-            Back to bundles
-          </Link>
-          <Heading level={1}>New bundle</Heading>
-          <Text variant="muted">
-            Pick the wrapper product, add components, then choose how price + inventory resolve.
-          </Text>
-        </Stack>
+        <PageHeader
+          title="New bundle"
+          description="Pick the wrapper product, add components, then choose how price + inventory resolve."
+        />
 
         <Card>
           <CardHeader>

@@ -4,25 +4,19 @@ import * as React from 'react';
 import Link from 'next/link';
 import { ModuleProvider, SidebarItem, SidebarNav, Text } from '@sparx/ui';
 import { Home } from 'lucide-react';
-import { getManifestForPath } from '../_shell/registry';
-import type { FavoriteRow, RecentRow } from '../_shell/service';
-import { FavoritesSection } from './favorites-section';
+import { getManifestForPath, moduleManifests } from '../_shell/registry';
 import { ModuleSectionItems } from './module-section-nav';
-import { RecentsSection } from './recents-section';
 
-// The contextual panel — the second column of the shell nav (docs/24 §5).
-// Its top follows context: inside a module it lists that module's sections;
-// at platform level it leads with Home. Favorites + Recents are ALWAYS present
-// (cross-module shortcuts you need everywhere): standalone at platform level,
-// and pinned in a footer below the scrolling sections inside a module. The
-// footer sits outside the ModuleProvider so the shortcuts stay brand-neutral
-// while the module color marks where you are.
+// The contextual panel — the second column of the shell nav (docs/24 §5). It is
+// purely about the current context:
+//   • inside a module  → that module's sections (the intra-module nav)
+//   • at platform level → a labeled directory of the enabled modules
+// Cross-module shortcuts (Favorites, Recents) live in the primary rail, not
+// here, so the panel never competes with the rail for the same job.
 
 interface ContextualPanelProps {
   pathname: string | null;
   enabledModules: readonly string[];
-  favorites: FavoriteRow[];
-  recents: RecentRow[];
   tenantName: string;
 }
 
@@ -44,48 +38,45 @@ function PanelHead({ eyebrow, title, dot }: { eyebrow: string; title: string; do
   );
 }
 
-export function ContextualPanel({
-  pathname,
-  enabledModules,
-  favorites,
-  recents,
-  tenantName,
-}: ContextualPanelProps) {
+export function ContextualPanel({ pathname, enabledModules, tenantName }: ContextualPanelProps) {
   const manifest = pathname ? getManifestForPath(pathname) : undefined;
   const activeModule = manifest && enabledModules.includes(manifest.id) ? manifest : undefined;
 
   if (activeModule) {
     return (
-      <div className="flex h-full flex-col">
-        <ModuleProvider module={activeModule.id} className="flex min-h-0 flex-1 flex-col">
-          <PanelHead eyebrow="Module" title={activeModule.label} dot />
-          <div className="min-h-0 flex-1 overflow-y-auto">
-            <SidebarNav label="Sections" className="gap-0.5 px-2 pb-3">
-              <ModuleSectionItems manifest={activeModule} pathname={pathname} />
-            </SidebarNav>
-          </div>
-        </ModuleProvider>
-        <div className="max-h-[40%] shrink-0 overflow-y-auto border-t border-[var(--color-border-default)]">
-          <SidebarNav label="Shortcuts" className="px-2 py-3">
-            <FavoritesSection favorites={favorites} />
-            <RecentsSection recents={recents} favorites={favorites} />
+      <ModuleProvider module={activeModule.id} className="flex h-full flex-col">
+        <PanelHead eyebrow="Module" title={activeModule.label} dot />
+        <div className="min-h-0 flex-1 overflow-y-auto">
+          <SidebarNav label="Sections" className="gap-0.5 px-2 pb-3">
+            <ModuleSectionItems manifest={activeModule} pathname={pathname} />
           </SidebarNav>
         </div>
-      </div>
+      </ModuleProvider>
     );
   }
 
-  // Platform level — Home, then the same cross-module shortcuts.
+  // Platform level — a labeled directory of the modules this tenant can open.
+  const modules = moduleManifests.filter((m) => enabledModules.includes(m.id));
   return (
     <div className="flex h-full flex-col">
       <PanelHead eyebrow="Workspace" title={tenantName} />
-      <SidebarNav label="Shortcuts" className="overflow-y-auto px-2 pb-3">
-        <SidebarItem asChild active={pathname === '/'} icon={<Home className="h-4 w-4" />}>
-          <Link href="/">Home</Link>
-        </SidebarItem>
-        <FavoritesSection favorites={favorites} />
-        <RecentsSection recents={recents} favorites={favorites} />
-      </SidebarNav>
+      <div className="min-h-0 flex-1 overflow-y-auto">
+        <SidebarNav label="Modules" className="px-2 pb-3">
+          <SidebarItem asChild active={pathname === '/'} icon={<Home className="h-4 w-4" />}>
+            <Link href="/">Home</Link>
+          </SidebarItem>
+          {modules.map((m) => {
+            const Icon = m.icon;
+            const active =
+              pathname === m.routePrefix || (pathname?.startsWith(`${m.routePrefix}/`) ?? false);
+            return (
+              <SidebarItem key={m.id} asChild active={active} icon={<Icon className="h-4 w-4" />}>
+                <Link href={m.routePrefix}>{m.label}</Link>
+              </SidebarItem>
+            );
+          })}
+        </SidebarNav>
+      </div>
     </div>
   );
 }

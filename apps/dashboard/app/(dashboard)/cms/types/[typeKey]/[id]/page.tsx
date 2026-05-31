@@ -1,8 +1,7 @@
-import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import type { FieldDef } from '@sparx/cms-schemas';
-import { Badge, Button, Container, Heading, Stack, Text } from '@sparx/ui';
-import { ArrowLeft } from 'lucide-react';
+import { Badge, Container, PageHeader, Stack, Text } from '@sparx/ui';
+
 import { api } from '@/lib/api-rest-client';
 import { EditEntryForm } from './edit-entry-form';
 
@@ -48,12 +47,9 @@ export default async function EditEntryPage({ params }: PageProps) {
   return (
     <Container size="lg">
       <Stack gap={6} className="py-10">
-        <Stack direction="row" align="end" justify="between">
-          <Stack gap={2}>
-            <Button asChild variant="ghost" size="sm" leftIcon={<ArrowLeft className="h-3 w-3" />}>
-              <Link href={`/cms/types/${typeKey}`}>Back to {type.plural_name.toLowerCase()}</Link>
-            </Button>
-            <Heading level={1}>Edit {type.name.toLowerCase()}</Heading>
+        <PageHeader
+          title={`Edit ${type.name.toLowerCase()}`}
+          badge={
             <Stack direction="row" align="center" gap={2}>
               <Badge color={entry.status === 'published' ? 'success' : 'outline'}>
                 {entry.status}
@@ -64,8 +60,8 @@ export default async function EditEntryPage({ params }: PageProps) {
                 </Text>
               )}
             </Stack>
-          </Stack>
-        </Stack>
+          }
+        />
         <EditEntryForm
           id={entry.id}
           typeKey={type.key}

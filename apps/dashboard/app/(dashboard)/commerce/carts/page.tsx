@@ -10,6 +10,7 @@ import {
   Container,
   EmptyState,
   Heading,
+  PageHeader,
   Stack,
   Table,
   TableBody,
@@ -71,18 +72,12 @@ export default async function CartsPage({
   return (
     <Container size="xl">
       <Stack gap={6} className="py-10">
-        <Stack gap={2}>
-          <Stack direction="row" align="center" gap={2}>
-            <ShoppingCart className="h-5 w-5" />
-            <Heading level={1}>Carts</Heading>
-            <Badge color="module">{carts.length} shown</Badge>
-          </Stack>
-          <Text variant="muted">
-            Read-only diagnostic view. Abandoned carts are flagged by the cart-abandonment worker
-            after 2 hours of inactivity; recovered carts converted into orders. Click an ID to
-            inspect the line items and pricing trace.
-          </Text>
-        </Stack>
+        <PageHeader
+          icon={<ShoppingCart className="h-5 w-5" />}
+          title="Carts"
+          badge={<Badge color="module">{carts.length} shown</Badge>}
+          description="Read-only diagnostic view. Abandoned carts are flagged by the cart-abandonment worker after 2 hours of inactivity; recovered carts converted into orders. Click an ID to inspect the line items and pricing trace."
+        />
 
         <Stack direction="row" gap={2}>
           <FilterLink current={filter} value={undefined} label="Abandoned" />

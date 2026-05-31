@@ -24,6 +24,7 @@ export const cmsManifest: ModuleManifest = {
   icon: FileText,
   routePrefix: '/cms',
   sections: [
+    { id: 'pages', label: 'Pages', icon: FileText, href: '/cms/pages' },
     { id: 'types', label: 'Content types', icon: Database, href: '/cms/types' },
     { id: 'navigation', label: 'Navigation', icon: Navigation, href: '/cms/navigation' },
     { id: 'media', label: 'Media', icon: ImageIcon, href: '/cms/media' },

@@ -3,7 +3,6 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft } from 'lucide-react';
 
 import {
   Button,
@@ -17,6 +16,7 @@ import {
   Input,
   Label,
   NativeSelect,
+  PageHeader,
   Stack,
   Text,
   Textarea,
@@ -98,20 +98,10 @@ export default function NewProductPage() {
   return (
     <Container size="lg">
       <Stack gap={6} className="py-10">
-        <Stack gap={2}>
-          <Button color="primary" variant="link" size="sm" asChild>
-            <Link href="/commerce/products">
-              <ArrowLeft className="h-3.5 w-3.5" />
-              Back to products
-            </Link>
-          </Button>
-          <Heading level={1}>New product</Heading>
-          <Text variant="muted">
-            Create the catalog row first; add variants, options, media, pricing, and fitment from
-            the product detail tabs. Anything not set here can be edited later — the only required
-            field is the title.
-          </Text>
-        </Stack>
+        <PageHeader
+          title="New product"
+          description="Create the catalog row first; add variants, options, media, pricing, and fitment from the product detail tabs. Anything not set here can be edited later — the only required field is the title."
+        />
 
         <form onSubmit={onSubmit} noValidate>
           <Stack gap={4}>

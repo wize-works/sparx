@@ -3,7 +3,7 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2 } from 'lucide-react';
 
 import {
   Button,
@@ -13,9 +13,9 @@ import {
   CardHeader,
   CardTitle,
   Container,
-  Heading,
   Input,
   Label,
+  PageHeader,
   Stack,
   Text,
   Textarea,
@@ -93,18 +93,15 @@ export default function NewB2bAccountPage() {
   return (
     <Container size="lg">
       <Stack gap={6} className="py-10">
-        <Stack gap={2}>
-          <Button color="primary" variant="link" size="sm" asChild>
-            <Link href="/crm/b2b">
-              <ArrowLeft className="h-3.5 w-3.5" /> Back to B2B accounts
-            </Link>
-          </Button>
-          <Heading level={1}>New B2B account</Heading>
-          <Text variant="muted">
-            Track a wholesale or fleet customer&apos;s pricing, credit, and engine profile so
-            commerce modules can quote, ship, and invoice them consistently.
-          </Text>
-        </Stack>
+        <PageHeader
+          title="New B2B account"
+          description={
+            <>
+              Track a wholesale or fleet customer&apos;s pricing, credit, and engine profile so
+              commerce modules can quote, ship, and invoice them consistently.
+            </>
+          }
+        />
 
         <form onSubmit={onSubmit} noValidate>
           <Card>

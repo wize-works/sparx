@@ -1,6 +1,5 @@
-import Link from 'next/link';
-import { Button, Container, Stack } from '@sparx/ui';
-import { ArrowLeft } from 'lucide-react';
+import { Container, Stack } from '@sparx/ui';
+
 import { TaxonomyDetailContent } from './_content';
 
 export const dynamic = 'force-dynamic';
@@ -14,12 +13,6 @@ export default async function TaxonomyDetailPage({ params }: PageParams) {
   return (
     <Container size="lg">
       <Stack gap={6} className="py-10">
-        <Button color="primary" variant="link" size="sm" asChild>
-          <Link href="/cms/taxonomy">
-            <ArrowLeft className="h-3.5 w-3.5" />
-            Back to taxonomies
-          </Link>
-        </Button>
         <TaxonomyDetailContent id={key} />
       </Stack>
     </Container>

@@ -3,7 +3,6 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft } from 'lucide-react';
 
 import {
   Button,
@@ -16,6 +15,7 @@ import {
   Heading,
   Input,
   Label,
+  PageHeader,
   Stack,
   Text,
   Textarea,
@@ -62,20 +62,10 @@ export default function NewPriceListPage() {
   return (
     <Container size="lg">
       <Stack gap={6} className="py-10">
-        <Stack gap={2}>
-          <Link
-            href="/commerce/pricing"
-            className="inline-flex items-center gap-1 text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"
-          >
-            <ArrowLeft className="h-3.5 w-3.5" />
-            Back to pricing
-          </Link>
-          <Heading level={1}>New price list</Heading>
-          <Text variant="muted">
-            Targeting (segment, B2B account) can be set after the list exists. Per-variant entries
-            are managed from the detail page.
-          </Text>
-        </Stack>
+        <PageHeader
+          title="New price list"
+          description="Targeting (segment, B2B account) can be set after the list exists. Per-variant entries are managed from the detail page."
+        />
 
         <form onSubmit={onSubmit}>
           <Card>

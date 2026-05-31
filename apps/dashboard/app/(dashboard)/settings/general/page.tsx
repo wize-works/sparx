@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation';
-import { Container, Heading, Stack, Text } from '@sparx/ui';
+import { Container, PageHeader, Stack } from '@sparx/ui';
 import { api, type ApiRestError } from '@/lib/api-rest-client';
 import { GeneralForm } from './general-form';
 
@@ -26,10 +26,10 @@ export default async function GeneralSettingsPage() {
   return (
     <Container size="lg">
       <Stack gap={6} className="py-10">
-        <Stack gap={2}>
-          <Heading level={1}>General settings</Heading>
-          <Text variant="muted">Update how your merchant account presents itself.</Text>
-        </Stack>
+        <PageHeader
+          title="General settings"
+          description="Update how your merchant account presents itself."
+        />
         <GeneralForm
           tenant={{ name: tenant.name, email: tenant.email, slug: tenant.slug, plan: tenant.plan }}
         />

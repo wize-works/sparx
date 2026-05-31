@@ -8,7 +8,7 @@ import {
   CardHeader,
   CardTitle,
   Container,
-  Heading,
+  PageHeader,
   Stack,
   Stat,
   Table,
@@ -87,16 +87,11 @@ export default async function ReportsPage() {
   return (
     <Container size="xl">
       <Stack gap={6} className="py-10">
-        <Stack gap={2}>
-          <Stack direction="row" align="center" gap={2}>
-            <BarChart3 className="h-5 w-5" />
-            <Heading level={1}>Reports</Heading>
-          </Stack>
-          <Text variant="muted">
-            Live tenant metrics. Numbers are derived from the source tables — a nightly rollup
-            (Phase 6 follow-up) will back this page once daily aggregates are big enough to matter.
-          </Text>
-        </Stack>
+        <PageHeader
+          icon={<BarChart3 className="h-5 w-5" />}
+          title="Reports"
+          description="Live tenant metrics. Numbers are derived from the source tables — a nightly rollup (Phase 6 follow-up) will back this page once daily aggregates are big enough to matter."
+        />
 
         <div className="grid gap-4 md:grid-cols-4">
           <Card variant="module">

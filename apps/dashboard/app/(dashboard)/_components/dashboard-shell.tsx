@@ -69,13 +69,18 @@ export function DashboardShell({
     <PreferencesProvider value={preferences}>
       <SidebarAppShell
         pathname={pathname}
-        rail={<RailNav pathname={pathname} enabledModules={enabledModules} />}
-        panel={
-          <ContextualPanel
+        rail={
+          <RailNav
             pathname={pathname}
             enabledModules={enabledModules}
             favorites={favorites}
             recents={recents}
+          />
+        }
+        panel={
+          <ContextualPanel
+            pathname={pathname}
+            enabledModules={enabledModules}
             tenantName={tenantName}
           />
         }

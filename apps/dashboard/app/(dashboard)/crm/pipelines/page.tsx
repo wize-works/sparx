@@ -10,7 +10,7 @@ import {
   CardTitle,
   Container,
   EmptyState,
-  Heading,
+  PageHeader,
   Stack,
   Text,
 } from '@sparx/ui';
@@ -58,31 +58,30 @@ export default async function PipelinesPage({ searchParams }: PageProps) {
   return (
     <Container size="xl">
       <Stack gap={6} className="py-10">
-        <Stack direction="row" align="end" justify="between" wrap>
-          <Stack gap={2}>
-            <Stack direction="row" align="center" gap={2}>
-              <KanbanSquare className="h-5 w-5" />
-              <Heading level={1}>Pipelines</Heading>
-              <Badge color="module">
-                {pipelines.length} pipeline{pipelines.length === 1 ? '' : 's'}
-              </Badge>
-            </Stack>
-            <Text variant="muted">
-              Each pipeline has its own ordered stage list. Deals move between stages on the Kanban
-              board; stage probability feeds the forecast.
-            </Text>
-          </Stack>
-          <Stack direction="row" gap={2}>
-            <Button asChild variant="ghost">
-              <Link href={includeArchived ? '/crm/pipelines' : '/crm/pipelines?includeArchived=1'}>
-                {includeArchived ? 'Hide archived' : 'Show archived'}
-              </Link>
-            </Button>
-            <Button asChild color="module" leftIcon={<Plus className="h-4 w-4" />}>
-              <Link href="/crm/pipelines/new">New pipeline</Link>
-            </Button>
-          </Stack>
-        </Stack>
+        <PageHeader
+          icon={<KanbanSquare className="h-5 w-5" />}
+          title="Pipelines"
+          badge={
+            <Badge color="module">
+              {pipelines.length} pipeline{pipelines.length === 1 ? '' : 's'}
+            </Badge>
+          }
+          description="Each pipeline has its own ordered stage list. Deals move between stages on the Kanban board; stage probability feeds the forecast."
+          actions={
+            <>
+              <Button asChild variant="ghost">
+                <Link
+                  href={includeArchived ? '/crm/pipelines' : '/crm/pipelines?includeArchived=1'}
+                >
+                  {includeArchived ? 'Hide archived' : 'Show archived'}
+                </Link>
+              </Button>
+              <Button asChild color="module" leftIcon={<Plus className="h-4 w-4" />}>
+                <Link href="/crm/pipelines/new">New pipeline</Link>
+              </Button>
+            </>
+          }
+        />
 
         {pipelines.length === 0 ? (
           <Card padding="none">

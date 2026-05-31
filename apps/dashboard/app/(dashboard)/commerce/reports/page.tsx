@@ -9,6 +9,7 @@ import {
   CardHeader,
   Container,
   Heading,
+  PageHeader,
   Stack,
   Table,
   TableBody,
@@ -114,17 +115,12 @@ export default async function ReportsPage({
   return (
     <Container size="xl">
       <Stack gap={6} className="py-10">
-        <Stack gap={2}>
-          <Stack direction="row" align="center" gap={2}>
-            <BarChart3 className="h-5 w-5" />
-            <Heading level={1}>Reports</Heading>
-            <Badge color="module">{revenue.rangeLabel}</Badge>
-          </Stack>
-          <Text variant="muted">
-            Live queries — no nightly rollup yet. Use the range selector to scope the period; the
-            inventory valuation is always as-of-now since stock on hand is a point-in-time value.
-          </Text>
-        </Stack>
+        <PageHeader
+          icon={<BarChart3 className="h-5 w-5" />}
+          title="Reports"
+          badge={<Badge color="module">{revenue.rangeLabel}</Badge>}
+          description="Live queries — no nightly rollup yet. Use the range selector to scope the period; the inventory valuation is always as-of-now since stock on hand is a point-in-time value."
+        />
 
         <Stack direction="row" gap={2} wrap>
           {RANGES.map((r) => (

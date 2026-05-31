@@ -11,6 +11,7 @@ import {
   Container,
   EmptyState,
   Heading,
+  PageHeader,
   Stack,
   Table,
   TableBody,
@@ -50,25 +51,20 @@ export default async function BundlesPage() {
   return (
     <Container size="xl">
       <Stack gap={6} className="py-10">
-        <Stack direction="row" align="end" justify="between" wrap gap={4}>
-          <Stack gap={2}>
-            <Stack direction="row" align="center" gap={2}>
-              <Package2 className="h-5 w-5" />
-              <Heading level={1}>Bundles</Heading>
-              <Badge color="module">{bundles.length}</Badge>
-            </Stack>
-            <Text variant="muted">
-              A bundle is a wrapper product that resolves to a fixed set of component variants. Use
-              the Configurator instead when components are user-selectable.
-            </Text>
-          </Stack>
-          <Button asChild>
-            <Link href="/commerce/bundles/new">
-              <Plus className="h-4 w-4" />
-              Create bundle
-            </Link>
-          </Button>
-        </Stack>
+        <PageHeader
+          icon={<Package2 className="h-5 w-5" />}
+          title="Bundles"
+          badge={<Badge color="module">{bundles.length}</Badge>}
+          description="A bundle is a wrapper product that resolves to a fixed set of component variants. Use the Configurator instead when components are user-selectable."
+          actions={
+            <Button asChild>
+              <Link href="/commerce/bundles/new">
+                <Plus className="h-4 w-4" />
+                Create bundle
+              </Link>
+            </Button>
+          }
+        />
 
         <Card>
           <CardHeader>

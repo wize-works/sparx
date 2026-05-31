@@ -11,6 +11,7 @@ import {
   Container,
   EmptyState,
   Heading,
+  PageHeader,
   Stack,
   Table,
   TableBody,
@@ -60,28 +61,24 @@ export default async function WarehousesPage() {
   return (
     <Container size="xl">
       <Stack gap={6} className="py-10">
-        <Stack direction="row" align="end" justify="between" wrap gap={4}>
-          <Stack gap={2}>
-            <Stack direction="row" align="center" gap={2}>
-              <WarehouseIcon className="h-5 w-5" />
-              <Heading level={1}>Warehouses</Heading>
-              <Badge color="module">
-                {active.length} active{inactive.length ? ` · ${inactive.length} inactive` : ''}
-              </Badge>
-            </Stack>
-            <Text variant="muted">
-              Inventory levels, lot batches, and serial units all sit beneath a warehouse. A tenant
-              needs at least one active warehouse before stock can be reserved or sold. Dropship
-              suppliers register as a virtual warehouse so the inventory model stays uniform.
-            </Text>
-          </Stack>
-          <Button asChild>
-            <Link href="/commerce/warehouses/new">
-              <Plus className="h-4 w-4" />
-              Add warehouse
-            </Link>
-          </Button>
-        </Stack>
+        <PageHeader
+          icon={<WarehouseIcon className="h-5 w-5" />}
+          title="Warehouses"
+          badge={
+            <Badge color="module">
+              {active.length} active{inactive.length ? ` · ${inactive.length} inactive` : ''}
+            </Badge>
+          }
+          description="Inventory levels, lot batches, and serial units all sit beneath a warehouse. A tenant needs at least one active warehouse before stock can be reserved or sold. Dropship suppliers register as a virtual warehouse so the inventory model stays uniform."
+          actions={
+            <Button asChild>
+              <Link href="/commerce/warehouses/new">
+                <Plus className="h-4 w-4" />
+                Add warehouse
+              </Link>
+            </Button>
+          }
+        />
 
         <Card>
           <CardHeader>

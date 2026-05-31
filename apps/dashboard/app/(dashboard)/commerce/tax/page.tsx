@@ -11,6 +11,7 @@ import {
   Container,
   EmptyState,
   Heading,
+  PageHeader,
   Stack,
   Table,
   TableBody,
@@ -45,21 +46,16 @@ export default async function TaxPage() {
   return (
     <Container size="xl">
       <Stack gap={6} className="py-10">
-        <Stack gap={2}>
-          <Stack direction="row" align="center" gap={2}>
-            <Receipt className="h-5 w-5" />
-            <Heading level={1}>Tax</Heading>
+        <PageHeader
+          icon={<Receipt className="h-5 w-5" />}
+          title="Tax"
+          badge={
             <Badge color="module">
               {activeZones.length} active zone{activeZones.length === 1 ? '' : 's'}
             </Badge>
-          </Stack>
-          <Text variant="muted">
-            Register a tax zone for every jurisdiction where the merchant has nexus. Manual rates
-            below run when no TaxProvider (Stripe Tax, TaxJar, Avalara) is installed; the provider
-            wins as soon as one is connected from Commerce → Providers. B2B exemption certificates
-            attach per customer or per B2B account.
-          </Text>
-        </Stack>
+          }
+          description="Register a tax zone for every jurisdiction where the merchant has nexus. Manual rates below run when no TaxProvider (Stripe Tax, TaxJar, Avalara) is installed; the provider wins as soon as one is connected from Commerce → Providers. B2B exemption certificates attach per customer or per B2B account."
+        />
 
         <Card>
           <CardHeader>

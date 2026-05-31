@@ -10,6 +10,7 @@ import {
   Container,
   EmptyState,
   Heading,
+  PageHeader,
   Stack,
   Table,
   TableBody,
@@ -64,21 +65,23 @@ export default async function SubscriptionsPage({
   return (
     <Container size="xl">
       <Stack gap={6} className="py-10">
-        <Stack gap={2}>
-          <Stack direction="row" align="center" gap={2}>
-            <Repeat2 className="h-5 w-5" />
-            <Heading level={1}>Subscriptions</Heading>
+        <PageHeader
+          icon={<Repeat2 className="h-5 w-5" />}
+          title="Subscriptions"
+          badge={
             <Badge color="module">
               {total} total · ${(mrrCents / 100).toFixed(2)} MRR
             </Badge>
-          </Stack>
-          <Text variant="muted">
-            Auto-ship orders driven by the subscription-billing worker. Renewal Orders land in CRM →
-            Orders with source=<code>subscription_renewal</code> so the rest of the fulfillment
-            pipeline treats them identically to one-off purchases. Pause / skip / cancel actions
-            live on the detail page.
-          </Text>
-        </Stack>
+          }
+          description={
+            <>
+              Auto-ship orders driven by the subscription-billing worker. Renewal Orders land in CRM
+              → Orders with source=<code>subscription_renewal</code> so the rest of the fulfillment
+              pipeline treats them identically to one-off purchases. Pause / skip / cancel actions
+              live on the detail page.
+            </>
+          }
+        />
 
         <Stack direction="row" gap={2}>
           <FilterLink current={status} value={undefined} label={`All (${total})`} />

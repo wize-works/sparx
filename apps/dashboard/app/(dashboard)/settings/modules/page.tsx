@@ -5,20 +5,9 @@
 // also runs any in-process bootstrap the module needs (CRM seeds the
 // default pipeline + built-in segments idempotently).
 
-import Link from 'next/link';
-import { ArrowLeft, Layers } from 'lucide-react';
+import { Layers } from 'lucide-react';
 import { requireSession } from '@sparx/auth';
-import {
-  Button,
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  Container,
-  Heading,
-  Stack,
-  Text,
-} from '@sparx/ui';
+import { Card, CardContent, CardHeader, CardTitle, Container, PageHeader, Stack } from '@sparx/ui';
 
 import { listModuleStateForCurrentTenant } from './actions';
 import { ModuleToggleRow } from './_components/module-toggle-row';
@@ -71,22 +60,17 @@ export default async function ModulesSettingsPage() {
   return (
     <Container size="xl">
       <Stack gap={6} className="py-10">
-        <Stack gap={2}>
-          <Button color="primary" variant="link" size="sm" asChild>
-            <Link href="/settings">
-              <ArrowLeft className="h-3.5 w-3.5" /> Back to settings
-            </Link>
-          </Button>
-          <Stack direction="row" align="center" gap={2}>
-            <Layers className="h-5 w-5" />
-            <Heading level={1}>Modules</Heading>
-          </Stack>
-          <Text variant="muted">
-            Activate or deactivate modules for this tenant. Disabled modules return 404 from their
-            API surface, run no consumers, and store no rows.
-            {!canEdit && ' Only owners and admins can change activation state.'}
-          </Text>
-        </Stack>
+        <PageHeader
+          icon={<Layers className="h-5 w-5" />}
+          title="Modules"
+          description={
+            <>
+              Activate or deactivate modules for this tenant. Disabled modules return 404 from their
+              API surface, run no consumers, and store no rows.
+              {!canEdit && ' Only owners and admins can change activation state.'}
+            </>
+          }
+        />
 
         <Card>
           <CardHeader>

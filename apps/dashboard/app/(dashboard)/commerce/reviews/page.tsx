@@ -10,6 +10,7 @@ import {
   Container,
   EmptyState,
   Heading,
+  PageHeader,
   Stack,
   Table,
   TableBody,
@@ -116,18 +117,18 @@ export default async function ReviewsPage({
   return (
     <Container size="xl">
       <Stack gap={6} className="py-10">
-        <Stack gap={2}>
-          <Stack direction="row" align="center" gap={2}>
-            <Star className="h-5 w-5" />
-            <Heading level={1}>Reviews</Heading>
-            <Badge color="module">{rows.length} shown</Badge>
-          </Stack>
-          <Text variant="muted">
-            Verified-purchase reviews auto-approve. Anonymous + non-verified land here for
-            moderation. Approving fires <code>review.published</code> so the storefront cache
-            invalidates.
-          </Text>
-        </Stack>
+        <PageHeader
+          icon={<Star className="h-5 w-5" />}
+          title="Reviews"
+          badge={<Badge color="module">{rows.length} shown</Badge>}
+          description={
+            <>
+              Verified-purchase reviews auto-approve. Anonymous + non-verified land here for
+              moderation. Approving fires <code>review.published</code> so the storefront cache
+              invalidates.
+            </>
+          }
+        />
 
         <Stack direction="row" gap={2} wrap>
           {STATUS_FILTERS.map((f) => (

@@ -11,6 +11,7 @@ import {
   Container,
   EmptyState,
   Heading,
+  PageHeader,
   Stack,
   Table,
   TableBody,
@@ -74,25 +75,20 @@ export default async function PricingPage() {
   return (
     <Container size="xl">
       <Stack gap={6} className="py-10">
-        <Stack direction="row" align="end" justify="between" wrap gap={4}>
-          <Stack gap={2}>
-            <Stack direction="row" align="center" gap={2}>
-              <DollarSign className="h-5 w-5" />
-              <Heading level={1}>Pricing</Heading>
-              <Badge color="module">{priceLists.length} price lists</Badge>
-            </Stack>
-            <Text variant="muted">
-              Resolution order: B2B contract price → price list → bulk tier → variant base.
-              Discounts apply on top via the Discounts page.
-            </Text>
-          </Stack>
-          <Button asChild>
-            <Link href="/commerce/pricing/new">
-              <Plus className="h-4 w-4" />
-              Add price list
-            </Link>
-          </Button>
-        </Stack>
+        <PageHeader
+          icon={<DollarSign className="h-5 w-5" />}
+          title="Pricing"
+          badge={<Badge color="module">{priceLists.length} price lists</Badge>}
+          description="Resolution order: B2B contract price → price list → bulk tier → variant base. Discounts apply on top via the Discounts page."
+          actions={
+            <Button asChild>
+              <Link href="/commerce/pricing/new">
+                <Plus className="h-4 w-4" />
+                Add price list
+              </Link>
+            </Button>
+          }
+        />
 
         <Card>
           <CardHeader>

@@ -10,6 +10,7 @@ import {
   Container,
   EmptyState,
   Heading,
+  PageHeader,
   Stack,
   Table,
   TableBody,
@@ -17,7 +18,6 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-  Text,
 } from '@sparx/ui';
 
 import { api } from '@/lib/api-rest-client';
@@ -57,18 +57,12 @@ export default async function ConfiguratorPage() {
   return (
     <Container size="xl">
       <Stack gap={6} className="py-10">
-        <Stack gap={2}>
-          <Stack direction="row" align="center" gap={2}>
-            <Settings2 className="h-5 w-5" />
-            <Heading level={1}>Configurator</Heading>
-            <Badge color="module">{templates.length}</Badge>
-          </Stack>
-          <Text variant="muted">
-            Templates drive any configurable product — play structures, beauty gift sets, custom
-            auto parts, configurable dogfood crates. Each template is a set of options + rules +
-            add-ons; the resolver turns a user&apos;s selections into a cart line.
-          </Text>
-        </Stack>
+        <PageHeader
+          icon={<Settings2 className="h-5 w-5" />}
+          title="Configurator"
+          badge={<Badge color="module">{templates.length}</Badge>}
+          description="Templates drive any configurable product — play structures, beauty gift sets, custom auto parts, configurable dogfood crates. Each template is a set of options + rules + add-ons; the resolver turns a user's selections into a cart line."
+        />
 
         <Card>
           <CardHeader>

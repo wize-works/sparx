@@ -8,8 +8,8 @@ import {
   CardContent,
   Container,
   EmptyState,
-  Heading,
   Input,
+  PageHeader,
   Stack,
   Table,
   TableBody,
@@ -70,24 +70,21 @@ export default async function CollectionsPage({ searchParams }: PageProps) {
   return (
     <Container size="xl">
       <Stack gap={6} className="py-10">
-        <Stack direction="row" align="end" justify="between" wrap gap={4}>
-          <Stack gap={2}>
-            <Stack direction="row" align="center" gap={2}>
-              <Layers className="h-5 w-5" />
-              <Heading level={1}>Collections</Heading>
-              <Badge color="module">
-                {total} collection{total === 1 ? '' : 's'}
-              </Badge>
-            </Stack>
-            <Text variant="muted">
-              Manual lists and rules-driven smart collections. Manual stays the same until you edit
-              it; rules re-project on the next index flush (Phase 1.5 wires the indexer).
-            </Text>
-          </Stack>
-          <Button asChild color="module" leftIcon={<Plus className="h-4 w-4" />}>
-            <Link href="/commerce/collections/new">New collection</Link>
-          </Button>
-        </Stack>
+        <PageHeader
+          icon={<Layers className="h-5 w-5" />}
+          title="Collections"
+          badge={
+            <Badge color="module">
+              {total} collection{total === 1 ? '' : 's'}
+            </Badge>
+          }
+          description="Manual lists and rules-driven smart collections. Manual stays the same until you edit it; rules re-project on the next index flush (Phase 1.5 wires the indexer)."
+          actions={
+            <Button asChild color="module" leftIcon={<Plus className="h-4 w-4" />}>
+              <Link href="/commerce/collections/new">New collection</Link>
+            </Button>
+          }
+        />
 
         <form>
           <Card padding="sm">

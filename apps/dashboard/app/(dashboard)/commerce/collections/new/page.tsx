@@ -3,7 +3,6 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft } from 'lucide-react';
 
 import {
   Button,
@@ -16,6 +15,7 @@ import {
   Heading,
   Input,
   Label,
+  PageHeader,
   Stack,
   Text,
   Textarea,
@@ -91,19 +91,10 @@ export default function NewCollectionPage() {
   return (
     <Container size="lg">
       <Stack gap={6} className="py-10">
-        <Stack gap={2}>
-          <Button color="primary" variant="link" size="sm" asChild>
-            <Link href="/commerce/collections">
-              <ArrowLeft className="h-3.5 w-3.5" />
-              Back to collections
-            </Link>
-          </Button>
-          <Heading level={1}>New collection</Heading>
-          <Text variant="muted">
-            Start with a name and a type. Manual collections let you hand-pick products; rules
-            collections re-project membership when products or their tags change.
-          </Text>
-        </Stack>
+        <PageHeader
+          title="New collection"
+          description="Start with a name and a type. Manual collections let you hand-pick products; rules collections re-project membership when products or their tags change."
+        />
 
         <form onSubmit={onSubmit} noValidate>
           <Stack gap={4}>

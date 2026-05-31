@@ -17,7 +17,7 @@ import {
   Container,
   EmptyState,
   Grid,
-  Heading,
+  PageHeader,
   Stack,
   Text,
 } from '@sparx/ui';
@@ -75,23 +75,23 @@ export default async function TypeListPage({ params }: PageProps) {
   return (
     <Container size="xl">
       <Stack gap={6} className="py-10">
-        <Stack direction="row" align="end" justify="between">
-          <Stack gap={2}>
-            <Stack direction="row" align="center" gap={2}>
-              <FileText className="h-5 w-5" />
-              <Heading level={1}>{type.plural_name}</Heading>
-              <Badge color={type.is_built_in ? 'outline' : 'default'}>
-                {type.is_built_in ? 'built-in' : 'custom'}
-              </Badge>
-            </Stack>
-            {type.description && <Text variant="muted">{type.description}</Text>}
-          </Stack>
-          {(!type.is_singleton || entries.length === 0) && (
-            <Button asChild color="module" leftIcon={<Plus className="h-4 w-4" />}>
-              <Link href={`/cms/types/${typeKey}/new`}>New {type.name.toLowerCase()}</Link>
-            </Button>
-          )}
-        </Stack>
+        <PageHeader
+          icon={<FileText className="h-5 w-5" />}
+          title={type.plural_name}
+          badge={
+            <Badge color={type.is_built_in ? 'outline' : 'default'}>
+              {type.is_built_in ? 'built-in' : 'custom'}
+            </Badge>
+          }
+          description={type.description ?? undefined}
+          actions={
+            (!type.is_singleton || entries.length === 0) && (
+              <Button asChild color="module" leftIcon={<Plus className="h-4 w-4" />}>
+                <Link href={`/cms/types/${typeKey}/new`}>New {type.name.toLowerCase()}</Link>
+              </Button>
+            )
+          }
+        />
 
         {entries.length === 0 ? (
           <Card variant="module" padding="none">

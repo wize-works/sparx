@@ -10,6 +10,7 @@ import {
   Container,
   EmptyState,
   Heading,
+  PageHeader,
   Stack,
   Table,
   TableBody,
@@ -84,19 +85,12 @@ export default async function ReturnsPage({
   return (
     <Container size="xl">
       <Stack gap={6} className="py-10">
-        <Stack gap={2}>
-          <Stack direction="row" align="center" gap={2}>
-            <Inbox className="h-5 w-5" />
-            <Heading level={1}>Returns</Heading>
-            <Badge color="module">{total} total</Badge>
-          </Stack>
-          <Text variant="muted">
-            Customer- or staff-initiated returns. Approve, generate a label, receive, inspect each
-            line, then settle as refund or store credit. Provider-driven refund settlement (Stripe,
-            etc.) happens via the order-payments path once a TaxProvider/PaymentProvider is wired
-            into the marketplace.
-          </Text>
-        </Stack>
+        <PageHeader
+          icon={<Inbox className="h-5 w-5" />}
+          title="Returns"
+          badge={<Badge color="module">{total} total</Badge>}
+          description="Customer- or staff-initiated returns. Approve, generate a label, receive, inspect each line, then settle as refund or store credit. Provider-driven refund settlement (Stripe, etc.) happens via the order-payments path once a TaxProvider/PaymentProvider is wired into the marketplace."
+        />
 
         <Stack direction="row" gap={2} wrap>
           {STATUS_FILTERS.map((f) => (

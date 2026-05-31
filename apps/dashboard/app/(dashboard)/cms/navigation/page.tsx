@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Button, Card, Container, Heading, Stack, Text } from '@sparx/ui';
+import { Button, Card, Container, Heading, PageHeader, Stack, Text } from '@sparx/ui';
 import { ArrowRight, Plus } from 'lucide-react';
 import { api } from '@/lib/api-rest-client';
 
@@ -36,13 +36,10 @@ export default async function CmsNavigationPage() {
   return (
     <Container size="xl">
       <Stack gap={6} className="py-10">
-        <Stack gap={2}>
-          <Heading level={1}>Navigation</Heading>
-          <Text variant="muted">
-            Build your menu trees. Site Builder wires them into the header, footer, and announcement
-            bar under its Header &amp; footer settings.
-          </Text>
-        </Stack>
+        <PageHeader
+          title="Navigation"
+          description="Build your menu trees. Site Builder wires them into the header, footer, and announcement bar under its Header & footer settings."
+        />
 
         <div className="grid gap-3">
           {PRESET_LOCATIONS.map(({ location, label, description }) => {

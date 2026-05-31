@@ -1,9 +1,11 @@
 # Sparx Platform — Dashboard Working-Area Standard
 
-**Version:** 1.1
+**Version:** 1.2
 **Author:** Brandon Korous
 **Last Updated:** 2026-05-31
 
+> **1.2 (2026-05-31):** Rollout landed (§17). `PageHeader` / `FilterBar` / `FormActionBar` built; in-content section tabs (cms/crm/email) and the in-content "← Back to X" links removed platform-wide (the breadcrumb owns up-nav). **Trend charts** added to @sparx/ui (`LineChart`/`BarChart`/`AreaChart`/`Sparkline`, token + `--module-active` themed, `--chart-1..6` palette) and onto the overviews (sample-labeled until reporting timeseries exists). **Landings converted to overview dashboards** — CRM list → `/crm/customers`, CMS Pages list → `/cms/pages`, each with a new `/{module}` overview; Email/Commerce already overview-shaped.
+>
 > **1.1 (2026-05-31):** Locked intra-module navigation as a **rail + contextual sidebar** (§11) — module sections move out of in-content tab strips and card-grid-as-nav into the shell's contextual panel; in-content tabs are now reserved for record facets only. Shell-side detail in [doc 24](24-dashboard-shell.md) §5.
 
 ---
@@ -62,7 +64,7 @@ Everything below specifies the shared pieces these archetypes are built from.
 
 ---
 
-## 5. Page Header — `PageHeader` (to build, `@sparx/ui`)
+## 5. Page Header — `PageHeader` (built, `@sparx/ui`)
 
 There is no shared `PageHeader` today; every page hand-rolls `Stack + Heading + Text`, which is why the anatomy drifts. Build one component and route every archetype (1, 2, 3, 5, 6) through it.
 
@@ -102,7 +104,7 @@ subtitle paragraph (muted, one or two sentences)
 - **Mobile cards:** title + key metadata + status badge per card; tapping the card navigates. This is the _only_ sanctioned card-list — it is the responsive form of the table, not a separate design choice.
 - **Browse/library views** (e.g. CMS Media) are the documented exception: a thumbnail grid is appropriate where the content _is_ visual. Everything record-shaped uses the table.
 
-### 7.1 FilterBar (to build, `@sparx/ui`)
+### 7.1 FilterBar (built, `@sparx/ui`)
 
 The audit found three filter styles (labeled inputs + an "Apply" button on products; pill toggles + search + sort on customers; a lone dropdown on pages). Standardize one toolbar above the table:
 
@@ -215,22 +217,24 @@ The not-yet-built modules (B2B, AI, Dropship) already share one template via `ap
 
 ## 15. Components: build vs. reuse
 
-| Need                        | Status   | Location                                                             |
-| --------------------------- | -------- | -------------------------------------------------------------------- |
-| `Container` (widths)        | ✅ reuse | `packages/ui/src/components/layout/container.tsx`                    |
-| `Card` + `variant="module"` | ✅ reuse | `packages/ui/src/components/layout/card.tsx`                         |
-| `Stat` (KPI card)           | ✅ reuse | `packages/ui/src/components/data/stat.tsx`                           |
-| `DataTable` / `Table`       | ✅ reuse | `packages/ui/src/components/data/{data-table,table}.tsx`             |
-| `EmptyState`                | ✅ reuse | `packages/ui/src/components/data/empty-state.tsx`                    |
-| `Tabs variant="default"`    | ✅ reuse | `packages/ui/src/components/navigation/tabs.tsx`                     |
-| `Grid` / `Stack`            | ✅ reuse | `packages/ui/src/components/layout/{grid,stack}.tsx`                 |
-| `Form*` primitives          | ✅ reuse | `packages/ui/src/components/form/form.tsx`                           |
-| `ModuleStub` (preview)      | ✅ reuse | `apps/dashboard/components/module-stub.tsx`                          |
-| **`PageHeader`**            | ✅ built | `packages/ui/src/components/layout/page-header.tsx` — the §5 anatomy |
-| **`FilterBar`**             | ✅ built | `packages/ui/src/components/data/filter-bar.tsx` — the §7.1 toolbar  |
-| **`FormActionBar`**         | ✅ built | `packages/ui/src/components/form/form-action-bar.tsx` — the §13 bar  |
+| Need                        | Status   | Location                                                                                                                                              |
+| --------------------------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Container` (widths)        | ✅ reuse | `packages/ui/src/components/layout/container.tsx`                                                                                                     |
+| `Card` + `variant="module"` | ✅ reuse | `packages/ui/src/components/layout/card.tsx`                                                                                                          |
+| `Stat` (KPI card)           | ✅ reuse | `packages/ui/src/components/data/stat.tsx`                                                                                                            |
+| `DataTable` / `Table`       | ✅ reuse | `packages/ui/src/components/data/{data-table,table}.tsx`                                                                                              |
+| `EmptyState`                | ✅ reuse | `packages/ui/src/components/data/empty-state.tsx`                                                                                                     |
+| `Tabs variant="default"`    | ✅ reuse | `packages/ui/src/components/navigation/tabs.tsx`                                                                                                      |
+| `Grid` / `Stack`            | ✅ reuse | `packages/ui/src/components/layout/{grid,stack}.tsx`                                                                                                  |
+| `Form*` primitives          | ✅ reuse | `packages/ui/src/components/form/form.tsx`                                                                                                            |
+| `ModuleStub` (preview)      | ✅ reuse | `apps/dashboard/components/module-stub.tsx`                                                                                                           |
+| **`PageHeader`**            | ✅ built | `packages/ui/src/components/layout/page-header.tsx` — the §5 anatomy                                                                                  |
+| **`FilterBar`**             | ✅ built | `packages/ui/src/components/data/filter-bar.tsx` — the §7.1 toolbar                                                                                   |
+| **`FormActionBar`**         | ✅ built | `packages/ui/src/components/form/form-action-bar.tsx` — the §13 bar                                                                                   |
+| **Trend charts**            | ✅ built | `packages/ui/src/components/data/chart/*` — `LineChart`/`BarChart`/`AreaChart`/`Sparkline` (Recharts, encapsulated; token + `--module-active` themed) |
+| **`OverviewChartCard`**     | ✅ built | `apps/dashboard/.../_components/overview-charts.tsx` — overview chart wrapper + the `SAMPLE_*` datasets (sample-labeled until live timeseries)        |
 
-Three small new shared components (built 2026-05-31 — all pure layout containers; actions/filters are slots, so they're decoupled from the Button API) + targeted prop fixes (mostly `variant="module"`) cover the entire standard. No primitive needs restyling.
+The three layout primitives (built 2026-05-31 — pure layout containers; actions/filters are slots, decoupled from the Button API) + the chart components + targeted prop fixes (mostly `variant="module"`) cover the standard. No primitive needs restyling. **Charts need a real data source:** today only point-in-time `/v1/{module}/reports/*` summaries exist — no timeseries endpoints — so the trend cards render `SAMPLE_*` data behind a "Sample data" badge until `*-timeseries` endpoints land.
 
 ---
 

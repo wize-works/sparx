@@ -8,7 +8,7 @@ import {
   CardContent,
   Container,
   EmptyState,
-  Heading,
+  PageHeader,
   Stack,
   Text,
 } from '@sparx/ui';
@@ -56,32 +56,29 @@ export default async function SegmentsPage({ searchParams }: PageProps) {
   return (
     <Container size="xl">
       <Stack gap={6} className="py-10">
-        <Stack direction="row" align="end" justify="between" wrap>
-          <Stack gap={2}>
-            <Stack direction="row" align="center" gap={2}>
-              <Layers className="h-5 w-5" />
-              <Heading level={1}>Segments</Heading>
-              <Badge color="module">
-                {segments.length} segment{segments.length === 1 ? '' : 's'}
-              </Badge>
-            </Stack>
-            <Text variant="muted">
-              Live customer audiences updated incrementally as events flow. Email broadcasts and
-              automations target segments by name; membership joins are O(1).
-            </Text>
-          </Stack>
-          <Stack direction="row" gap={2}>
-            <Button asChild variant="ghost">
-              <Link href={includeArchived ? '/crm/segments' : '/crm/segments?includeArchived=1'}>
-                {includeArchived ? 'Hide archived' : 'Show archived'}
-              </Link>
-            </Button>
-            <RecomputeButton />
-            <Button asChild color="module" leftIcon={<Plus className="h-4 w-4" />}>
-              <Link href="/crm/segments/new">New segment</Link>
-            </Button>
-          </Stack>
-        </Stack>
+        <PageHeader
+          icon={<Layers className="h-5 w-5" />}
+          title="Segments"
+          badge={
+            <Badge color="module">
+              {segments.length} segment{segments.length === 1 ? '' : 's'}
+            </Badge>
+          }
+          description="Live customer audiences updated incrementally as events flow. Email broadcasts and automations target segments by name; membership joins are O(1)."
+          actions={
+            <>
+              <Button asChild variant="ghost">
+                <Link href={includeArchived ? '/crm/segments' : '/crm/segments?includeArchived=1'}>
+                  {includeArchived ? 'Hide archived' : 'Show archived'}
+                </Link>
+              </Button>
+              <RecomputeButton />
+              <Button asChild color="module" leftIcon={<Plus className="h-4 w-4" />}>
+                <Link href="/crm/segments/new">New segment</Link>
+              </Button>
+            </>
+          }
+        />
 
         {segments.length === 0 ? (
           <Card padding="none">

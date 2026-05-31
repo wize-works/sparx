@@ -1,6 +1,4 @@
-import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
-import { ArrowLeft } from 'lucide-react';
 
 import type { ProviderKind, ProviderMetadata } from '@sparx/commerce-schemas';
 import {
@@ -11,8 +9,8 @@ import {
   CardHeader,
   Container,
   Heading,
+  PageHeader,
   Stack,
-  Text,
 } from '@sparx/ui';
 
 import { api, type ApiRestError } from '@/lib/api-rest-client';
@@ -57,25 +55,20 @@ export default async function InstallProviderPage({
   return (
     <Container size="lg">
       <Stack gap={6} className="py-10">
-        <Stack gap={2}>
-          <Link
-            href="/commerce/providers"
-            className="inline-flex items-center gap-1 text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"
-          >
-            <ArrowLeft className="h-3.5 w-3.5" />
-            Back to providers
-          </Link>
-          <Stack direction="row" align="center" gap={2}>
-            <Heading level={1}>Install {metadata.displayName}</Heading>
-            <Badge variant="outline">{kind}</Badge>
-            {metadata.sandboxAvailable && (
-              <Badge variant="outline" className="text-xs">
-                sandbox available
-              </Badge>
-            )}
-          </Stack>
-          <Text variant="muted">{metadata.description}</Text>
-        </Stack>
+        <PageHeader
+          title={`Install ${metadata.displayName}`}
+          badge={
+            <>
+              <Badge variant="outline">{kind}</Badge>
+              {metadata.sandboxAvailable && (
+                <Badge variant="outline" className="text-xs">
+                  sandbox available
+                </Badge>
+              )}
+            </>
+          }
+          description={metadata.description}
+        />
 
         <Card>
           <CardHeader>

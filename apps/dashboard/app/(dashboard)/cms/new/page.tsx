@@ -14,11 +14,12 @@ import {
   Heading,
   Input,
   Label,
+  PageHeader,
   Stack,
   Text,
 } from '@sparx/ui';
 import { ContentBlockEditor, EMPTY_DOC, type CmsDoc } from '@sparx/cms-editor';
-import { ArrowLeft } from 'lucide-react';
+
 import { createPage } from '../actions';
 
 export default function NewPage() {
@@ -47,19 +48,10 @@ export default function NewPage() {
   return (
     <Container size="lg">
       <Stack gap={6} className="py-10">
-        <Stack gap={2}>
-          <Button color="primary" variant="link" size="sm" asChild>
-            <Link href="/cms">
-              <ArrowLeft className="h-3.5 w-3.5" />
-              Back to pages
-            </Link>
-          </Button>
-          <Heading level={1}>New page</Heading>
-          <Text variant="muted">
-            Saves as a draft. Publish from the editor once the content is ready — nothing goes live
-            until you say so.
-          </Text>
-        </Stack>
+        <PageHeader
+          title="New page"
+          description="Saves as a draft. Publish from the editor once the content is ready — nothing goes live until you say so."
+        />
 
         <form onSubmit={onSubmit} noValidate>
           <Card variant="module">
@@ -102,7 +94,7 @@ export default function NewPage() {
             </CardContent>
             <CardFooter>
               <Button type="button" variant="ghost" asChild>
-                <Link href="/cms">Cancel</Link>
+                <Link href="/cms/pages">Cancel</Link>
               </Button>
               <Button type="submit" color="module" disabled={pending} loading={pending}>
                 Create draft

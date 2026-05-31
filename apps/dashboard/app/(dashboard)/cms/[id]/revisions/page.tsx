@@ -9,10 +9,11 @@ import {
   CardHeader,
   Container,
   Heading,
+  PageHeader,
   Stack,
   Text,
 } from '@sparx/ui';
-import { ArrowLeft, GitCompare, History } from 'lucide-react';
+import { GitCompare, History } from 'lucide-react';
 import { api, type ApiRestError } from '@/lib/api-rest-client';
 import { RestoreButton } from './restore-button';
 
@@ -52,22 +53,19 @@ export default async function RevisionsPage({ params }: { params: Promise<{ id: 
     <Container size="lg">
       <Stack gap={6} className="py-10">
         <Stack gap={2}>
-          <Button color="primary" variant="link" size="sm" asChild>
-            <Link href={`/cms/${id}`}>
-              <ArrowLeft className="h-3.5 w-3.5" />
-              Back to editor
-            </Link>
-          </Button>
-          <Stack direction="row" align="center" gap={2}>
-            <History className="h-5 w-5" />
-            <Heading level={1}>Revision history</Heading>
-            <Badge variant="outline">{revisions.length}</Badge>
-          </Stack>
-          <Text variant="muted">
-            Every save creates a revision. Click <strong>Restore</strong> to copy that
-            revision&apos;s content back onto the current entry — your edits never disappear;
-            restores create a fresh revision instead of overwriting history.
-          </Text>
+          <PageHeader
+            className="mb-0"
+            icon={<History className="h-5 w-5" />}
+            title="Revision history"
+            badge={<Badge variant="outline">{revisions.length}</Badge>}
+            description={
+              <>
+                Every save creates a revision. Click <strong>Restore</strong> to copy that
+                revision&apos;s content back onto the current entry — your edits never disappear;
+                restores create a fresh revision instead of overwriting history.
+              </>
+            }
+          />
           <Text size="sm" variant="muted">
             Editing: <strong>{entry.body.title ?? '(untitled)'}</strong>
             {entry.slug && (

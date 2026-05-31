@@ -1,7 +1,4 @@
-import Link from 'next/link';
-import { ArrowLeft } from 'lucide-react';
-
-import { Button, Container, Heading, Stack, Text } from '@sparx/ui';
+import { Container, PageHeader, Stack } from '@sparx/ui';
 
 import { api } from '@/lib/api-rest-client';
 
@@ -40,18 +37,10 @@ export default async function NewQuotePage({ searchParams }: PageProps) {
   return (
     <Container size="lg">
       <Stack gap={6} className="py-10">
-        <Stack gap={2}>
-          <Button color="primary" variant="link" size="sm" asChild>
-            <Link href="/crm/quotes">
-              <ArrowLeft className="h-3.5 w-3.5" /> Back to quotes
-            </Link>
-          </Button>
-          <Heading level={1}>New quote</Heading>
-          <Text variant="muted">
-            Drafts can be edited freely. Submitting locks the quote; accepted quotes convert to a
-            new Order atomically via the detail page.
-          </Text>
-        </Stack>
+        <PageHeader
+          title="New quote"
+          description="Drafts can be edited freely. Submitting locks the quote; accepted quotes convert to a new Order atomically via the detail page."
+        />
 
         <NewQuoteForm
           customers={customers.map((c) => ({

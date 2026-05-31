@@ -11,7 +11,7 @@ import {
   CardTitle,
   Container,
   EmptyState,
-  Heading,
+  PageHeader,
   Stack,
   Text,
 } from '@sparx/ui';
@@ -53,41 +53,40 @@ export default async function TasksPage({ searchParams }: PageProps) {
   return (
     <Container size="xl">
       <Stack gap={6} className="py-10">
-        <Stack direction="row" align="end" justify="between" wrap>
-          <Stack gap={2}>
-            <Stack direction="row" align="center" gap={2}>
-              <CheckSquare className="h-5 w-5" />
-              <Heading level={1}>Tasks</Heading>
+        <PageHeader
+          icon={<CheckSquare className="h-5 w-5" />}
+          title="Tasks"
+          badge={
+            <>
               <Badge color="module">{openTasks.length} open</Badge>
               {overdueTasks.length > 0 && (
                 <Badge color="danger">{overdueTasks.length} overdue</Badge>
               )}
-            </Stack>
-            <Text variant="muted">
-              Follow-ups attached to customers, deals, or standalone reminders. Overdue tasks
-              trigger an email reminder to the assignee via the automation engine.
-            </Text>
-          </Stack>
-          <Stack direction="row" gap={2}>
-            <Button
-              asChild
-              color={scope === 'me' ? 'module' : 'neutral'}
-              variant={scope === 'me' ? 'solid' : 'ghost'}
-            >
-              <Link href="/crm/tasks?scope=me">My tasks</Link>
-            </Button>
-            <Button
-              asChild
-              color={scope === 'all' ? 'module' : 'neutral'}
-              variant={scope === 'all' ? 'solid' : 'ghost'}
-            >
-              <Link href="/crm/tasks?scope=all">Team tasks</Link>
-            </Button>
-            <Button asChild color="module" leftIcon={<Plus className="h-4 w-4" />}>
-              <Link href="/crm/tasks/new">New task</Link>
-            </Button>
-          </Stack>
-        </Stack>
+            </>
+          }
+          description="Follow-ups attached to customers, deals, or standalone reminders. Overdue tasks trigger an email reminder to the assignee via the automation engine."
+          actions={
+            <>
+              <Button
+                asChild
+                color={scope === 'me' ? 'module' : 'neutral'}
+                variant={scope === 'me' ? 'solid' : 'ghost'}
+              >
+                <Link href="/crm/tasks?scope=me">My tasks</Link>
+              </Button>
+              <Button
+                asChild
+                color={scope === 'all' ? 'module' : 'neutral'}
+                variant={scope === 'all' ? 'solid' : 'ghost'}
+              >
+                <Link href="/crm/tasks?scope=all">Team tasks</Link>
+              </Button>
+              <Button asChild color="module" leftIcon={<Plus className="h-4 w-4" />}>
+                <Link href="/crm/tasks/new">New task</Link>
+              </Button>
+            </>
+          }
+        />
 
         {overdueTasks.length > 0 && (
           <Card variant="module">

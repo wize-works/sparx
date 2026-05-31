@@ -2,16 +2,14 @@
 // the MCP transport (mcp.sparx.works). Server component fetches the list;
 // the client-side IssueKeyForm + RevokeKeyButton live in ./_components.
 
-import Link from 'next/link';
-import { ArrowLeft, KeyRound } from 'lucide-react';
+import { KeyRound } from 'lucide-react';
 import {
-  Button,
   Card,
   CardContent,
   CardHeader,
   CardTitle,
   Container,
-  Heading,
+  PageHeader,
   Stack,
   Text,
 } from '@sparx/ui';
@@ -30,22 +28,11 @@ export default async function AiIntegrationsPage() {
   return (
     <Container size="xl">
       <Stack gap={6} className="py-10">
-        <Stack gap={2}>
-          <Button color="primary" variant="link" size="sm" asChild>
-            <Link href="/settings">
-              <ArrowLeft className="h-3.5 w-3.5" /> Back to settings
-            </Link>
-          </Button>
-          <Stack direction="row" align="center" gap={2}>
-            <KeyRound className="h-5 w-5" />
-            <Heading level={1}>AI Integrations</Heading>
-          </Stack>
-          <Text variant="muted">
-            Issue API keys for Claude Desktop, ChatGPT custom GPTs, or Microsoft Copilot. Each key
-            is scoped — grant only the permissions the assistant needs. Keys are shown once at
-            issuance; copy and store securely.
-          </Text>
-        </Stack>
+        <PageHeader
+          icon={<KeyRound className="h-5 w-5" />}
+          title="AI Integrations"
+          description="Issue API keys for Claude Desktop, ChatGPT custom GPTs, or Microsoft Copilot. Each key is scoped — grant only the permissions the assistant needs. Keys are shown once at issuance; copy and store securely."
+        />
 
         <Card>
           <CardHeader>

@@ -10,9 +10,8 @@ import {
   CardTitle,
   Container,
   Grid,
-  Heading,
+  PageHeader,
   Stack,
-  Text,
 } from '@sparx/ui';
 import {
   CreditCard,
@@ -96,13 +95,10 @@ export default function SettingsPage() {
   return (
     <Container size="xl">
       <Stack gap={8} className="py-10">
-        <Stack gap={2}>
-          <Heading level={1}>Settings</Heading>
-          <Text variant="muted">
-            Manage your store, team, and integrations. Each section will land here as the platform
-            comes online.
-          </Text>
-        </Stack>
+        <PageHeader
+          title="Settings"
+          description="Manage your store, team, and integrations. Each section will land here as the platform comes online."
+        />
 
         <Grid cols={1} mdCols={2} lgCols={3} gap={4}>
           {GROUPS.map((g) => (

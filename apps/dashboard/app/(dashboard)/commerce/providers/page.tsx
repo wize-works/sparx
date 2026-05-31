@@ -25,6 +25,7 @@ import {
   Container,
   EmptyState,
   Heading,
+  PageHeader,
   Stack,
   Table,
   TableBody,
@@ -100,22 +101,16 @@ export default async function ProvidersPage() {
   return (
     <Container size="xl">
       <Stack gap={6} className="py-10">
-        <Stack gap={2}>
-          <Stack direction="row" align="center" gap={2}>
-            <Plug className="h-5 w-5" />
-            <Heading level={1}>Providers</Heading>
+        <PageHeader
+          icon={<Plug className="h-5 w-5" />}
+          title="Providers"
+          badge={
             <Badge color="module">
               {installed.length} installed · {available.length} available
             </Badge>
-          </Stack>
-          <Text variant="muted">
-            Pick a payment / tax / shipping / subscription provider per environment. Sparx-branded
-            options wrap a real provider underneath (Stripe for Sparx Pay, Shippo for Sparx
-            Shipping) so a merchant who doesn&apos;t want to manage carrier accounts can still
-            transact. Sandbox installs run real provider calls against the provider&apos;s test
-            environment.
-          </Text>
-        </Stack>
+          }
+          description="Pick a payment / tax / shipping / subscription provider per environment. Sparx-branded options wrap a real provider underneath (Stripe for Sparx Pay, Shippo for Sparx Shipping) so a merchant who doesn't want to manage carrier accounts can still transact. Sandbox installs run real provider calls against the provider's test environment."
+        />
 
         {KIND_ORDER.map((kind) => (
           <KindSection

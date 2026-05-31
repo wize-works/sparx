@@ -8,7 +8,7 @@ import {
   Container,
   EmptyState,
   Grid,
-  Heading,
+  PageHeader,
   Stack,
   Text,
 } from '@sparx/ui';
@@ -43,19 +43,13 @@ export default async function MediaPage() {
   return (
     <Container size="xl">
       <Stack gap={6} className="py-10">
-        <Stack direction="row" align="end" justify="between">
-          <Stack gap={2}>
-            <Stack direction="row" align="center" gap={2}>
-              <ImageIcon className="h-5 w-5" />
-              <Heading level={1}>Media library</Heading>
-              <Badge variant="outline">{assets.length}</Badge>
-            </Stack>
-            <Text variant="muted">
-              Images, video, and other files used across your pages and posts.
-            </Text>
-          </Stack>
-          <UploadButton />
-        </Stack>
+        <PageHeader
+          icon={<ImageIcon className="h-5 w-5" />}
+          title="Media library"
+          badge={<Badge variant="outline">{assets.length}</Badge>}
+          description="Images, video, and other files used across your pages and posts."
+          actions={<UploadButton />}
+        />
 
         {assets.length === 100 && (
           <Text size="xs" variant="muted" role="note">

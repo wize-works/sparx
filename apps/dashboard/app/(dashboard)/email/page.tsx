@@ -22,6 +22,7 @@ import {
 } from '@sparx/ui';
 
 import { api } from '@/lib/api-rest-client';
+import { OverviewChartCard, SAMPLE_EMAIL_ENGAGEMENT_8W } from '../_components/overview-charts';
 import { EmailShell } from './_components/email-shell';
 import { OverviewStats } from './_components/overview-stats';
 import { TestSendForm } from './test-send-form';
@@ -89,6 +90,18 @@ export default async function EmailOverviewPage() {
       actions={<Badge color="module">Active</Badge>}
     >
       {overview ? <OverviewStats overview={overview} /> : null}
+
+      <OverviewChartCard
+        title="Engagement"
+        description="Open & click rate, last 8 weeks"
+        data={SAMPLE_EMAIL_ENGAGEMENT_8W}
+        series={[
+          { key: 'open', label: 'Open rate', color: 'module' },
+          { key: 'click', label: 'Click rate' },
+        ]}
+        type="line"
+        format="percent"
+      />
 
       <Stack gap={3}>
         <Heading level={3}>Surfaces</Heading>

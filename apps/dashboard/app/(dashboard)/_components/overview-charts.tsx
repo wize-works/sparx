@@ -14,7 +14,7 @@ import {
   type ChartSeries,
 } from '@sparx/ui';
 
-// Overview dashboard charts (docs/34 §10). The chart primitives are token-themed
+// Overview dashboard charts (docs/34 §15). The chart primitives are token-themed
 // and the hero series defaults to the active module's color (set by each
 // module layout's <ModuleProvider>), so a Commerce chart is orange, CRM cyan, etc.
 //

@@ -1,5 +1,4 @@
-import Link from 'next/link';
-import { ArrowLeft, PackageOpen } from 'lucide-react';
+import { PackageOpen } from 'lucide-react';
 
 import { isModuleEnabled, requireSession } from '@sparx/auth';
 import {
@@ -9,8 +8,8 @@ import {
   CardHeader,
   Container,
   Heading,
+  PageHeader,
   Stack,
-  Text,
 } from '@sparx/ui';
 
 import { ModuleStub } from '../../../../../../components/module-stub';
@@ -37,20 +36,10 @@ export default async function NewShippingZonePage() {
   return (
     <Container size="md">
       <Stack gap={6} className="py-10">
-        <Stack gap={2}>
-          <Link
-            href="/commerce/shipping"
-            className="inline-flex items-center gap-1 text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"
-          >
-            <ArrowLeft className="h-3.5 w-3.5" />
-            Back to shipping
-          </Link>
-          <Heading level={1}>New shipping zone</Heading>
-          <Text variant="muted">
-            Zones are evaluated highest-priority first. A zone with no countries matches any address
-            and is typically used as a low-priority catch-all.
-          </Text>
-        </Stack>
+        <PageHeader
+          title="New shipping zone"
+          description="Zones are evaluated highest-priority first. A zone with no countries matches any address and is typically used as a low-priority catch-all."
+        />
 
         <Card>
           <CardHeader>
