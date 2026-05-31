@@ -1,14 +1,15 @@
-// Collection detail = its products. Hero header on top, paginated grid below.
+// Collection detail = its products. Resolves the merchant's `collection`-scope
+// layout (or the seeded default) and renders it through the shared
+// SectionRenderer bound to this collection: a header section + a product-grid
+// section (count + grid + pagination). Metadata + breadcrumbs are page chrome.
 
 import type { Metadata } from 'next';
-import Image from 'next/image';
 import { notFound } from 'next/navigation';
 
 import { Breadcrumbs } from '@/components/breadcrumbs';
-import { Pagination } from '@/components/pagination';
-import { ProductGrid } from '@/components/product-grid';
+import { SectionRenderer } from '@/components/section-renderer';
 import { getCollection, listCollectionProducts } from '@/lib/commerce';
-import { mediaUrl } from '@/lib/media';
+import { getPublishedSite, resolveTemplateSections } from '@/lib/site';
 import { resolveTenant } from '@/lib/tenant';
 
 export const dynamic = 'force-dynamic';
@@ -41,10 +42,24 @@ export default async function CollectionDetailPage({ params, searchParams }: Pag
 
   const collection = await getCollection(tenant.slug, handle);
   if (!collection) notFound();
-  const { items, total, perPage } = await listCollectionProducts(tenant.slug, handle, page, 24);
-  const totalPages = Math.max(1, Math.ceil(total / perPage));
+
+  // The collection-scope layout: the merchant's published one, or the seeded
+  // default (parity). A site-preview token resolves the draft instead.
+  const snapshot = await getPublishedSite(tenant.slug, one(sp.sparxSitePreview));
+  const sections = resolveTemplateSections(snapshot, 'collection');
+
+  // Page size comes from the product-grid section's config (default 24 = today).
+  const gridSection = sections.find((s) => s.sectionType === 'collection-products');
+  const requestedPerPage =
+    typeof gridSection?.config.perPage === 'number' ? gridSection.config.perPage : 24;
+
+  const { items, total, perPage } = await listCollectionProducts(
+    tenant.slug,
+    handle,
+    page,
+    requestedPerPage
+  );
   const { defaultCurrency: currency, defaultLocale: locale } = tenant.storefront;
-  const hero = mediaUrl(collection.heroMediaId, tenant.slug);
 
   return (
     <div className="sf-container">
@@ -56,67 +71,16 @@ export default async function CollectionDetailPage({ params, searchParams }: Pag
         ]}
       />
 
-      <header
-        style={{
-          position: 'relative',
-          borderRadius: 'var(--sf-radius-lg)',
-          overflow: 'hidden',
-          marginBottom: '2rem',
-          background: hero ? undefined : 'var(--sf-bg-subtle)',
+      <SectionRenderer
+        sections={sections}
+        ctx={{
+          tenantSlug: tenant.slug,
+          currency,
+          locale,
+          collection,
+          collectionExtras: { items, total, page, perPage, currentParams: sp },
         }}
-      >
-        {hero ? (
-          <Image
-            src={hero}
-            alt=""
-            aria-hidden="true"
-            width={1280}
-            height={260}
-            priority
-            sizes="100vw"
-            style={{ width: '100%', height: '260px', objectFit: 'cover', display: 'block' }}
-          />
-        ) : null}
-        <div
-          style={{
-            padding: hero ? '2rem' : '2.5rem 0',
-            ...(hero
-              ? {
-                  position: 'absolute',
-                  inset: 'auto 0 0 0',
-                  background: 'linear-gradient(transparent, rgb(0 0 0 / 0.6))',
-                  color: '#fff',
-                }
-              : {}),
-          }}
-        >
-          <h1 className="sf-h1" style={hero ? { color: '#fff' } : undefined}>
-            {collection.name}
-          </h1>
-          {collection.description ? (
-            <p style={{ marginTop: '0.5rem', maxWidth: '60ch', lineHeight: 1.6 }}>
-              {collection.description}
-            </p>
-          ) : null}
-        </div>
-      </header>
-
-      <div className="sf-toolbar">
-        <span className="sf-toolbar__count">
-          {total} {total === 1 ? 'product' : 'products'}
-        </span>
-      </div>
-
-      <ProductGrid products={items} tenantSlug={tenant.slug} currency={currency} locale={locale} />
-
-      {totalPages > 1 ? (
-        <Pagination
-          basePath={`/collections/${handle}`}
-          currentParams={sp}
-          page={page}
-          totalPages={totalPages}
-        />
-      ) : null}
+      />
     </div>
   );
 }

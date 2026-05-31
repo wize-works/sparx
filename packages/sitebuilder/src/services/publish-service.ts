@@ -23,6 +23,7 @@ import { getOrCreateConfig } from './_config';
 import {
   materializeWithinTx,
   publishWithinTx,
+  readDraft,
   toPublishedSnapshot,
   type PublishedSnapshot,
 } from './publish-internals';
@@ -171,10 +172,7 @@ export async function getPublishedSnapshot(ctx: ServiceContext): Promise<Publish
 export async function getDraftSnapshot(ctx: ServiceContext): Promise<PublishedSnapshot> {
   return withTenant(ctx, async (tx) => {
     const config = await getOrCreateConfig(tx, ctx.tenantId);
-    const [sections, layout] = await Promise.all([
-      tx.siteSection.findMany({ orderBy: [{ pageKey: 'asc' }, { position: 'asc' }] }),
-      tx.siteLayoutBlock.findMany({ orderBy: { slot: 'asc' } }),
-    ]);
+    const draft = await readDraft(tx);
     const settings = (config.draftSettings ?? {}) as {
       tokens?: { light?: Record<string, string>; dark?: Record<string, string> };
     };
@@ -185,20 +183,8 @@ export async function getDraftSnapshot(ctx: ServiceContext): Promise<PublishedSn
       themeKey: config.themeKey,
       appearancePolicy: config.appearancePolicy,
       compiledTokens: compiled,
-      sections: sections.map((s) => ({
-        id: s.id,
-        pageKey: s.pageKey,
-        sectionType: s.sectionType,
-        position: s.position,
-        visible: s.visible,
-        config: (s.config ?? {}) as Record<string, unknown>,
-      })),
-      layout: layout.map((b) => ({
-        slot: b.slot,
-        navigationMenuId: b.navigationMenuId,
-        config: (b.config ?? {}) as Record<string, unknown>,
-        visible: b.visible,
-      })),
+      sections: draft.sections,
+      layout: draft.layout,
     };
     return overlayBrand(tx, ctx.tenantId, snapshot, presentation);
   });

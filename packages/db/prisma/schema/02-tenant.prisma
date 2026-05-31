@@ -182,6 +182,7 @@ model Tenant {
   // Sitebuilder module — theme/layout/page composition + publish history (docs/29)
   siteConfig           SiteConfig?
   siteVersions         SiteVersion[]
+  siteTemplates        SiteTemplate[]
   siteSections         SiteSection[]
   siteLayoutBlocks     SiteLayoutBlock[]
   sitePublishSchedules SitePublishSchedule[]

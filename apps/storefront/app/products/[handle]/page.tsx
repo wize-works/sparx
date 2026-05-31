@@ -1,18 +1,14 @@
-// Product detail page (PDP). Server-loads the product, then hands the
-// interactive core (gallery + variants + add-to-cart) to <ProductDetail>.
-// Below the fold: description, fitment (domain-aware), reviews summary, and a
-// related-products rail. Emits Product + Breadcrumb JSON-LD for SEO.
+// Product detail page (PDP). Server-loads the product, resolves the merchant's
+// `product`-scope layout (or the seeded default), and renders it through the
+// shared SectionRenderer bound to this product. The interactive core, fitment,
+// reviews, Q&A and related rail are all bound sections (docs/30 §4). Metadata,
+// JSON-LD and breadcrumbs stay as page chrome around the composed template.
 
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
 import { Breadcrumbs } from '@/components/breadcrumbs';
-import { FitmentTable } from '@/components/fitment-table';
-import { ProductCard } from '@/components/product-card';
-import { ProductDetail } from '@/components/product-detail';
-import { RatingStars } from '@/components/rating-stars';
-import { ReviewForm } from '@/components/review-form';
-import { QuestionForm } from '@/components/question-form';
+import { SectionRenderer } from '@/components/section-renderer';
 import {
   getProduct,
   listFitmentDomains,
@@ -21,13 +17,17 @@ import {
   type PublicFitmentDomain,
 } from '@/lib/commerce';
 import { mediaUrl } from '@/lib/media';
+import { getPublishedSite, resolveTemplateSections } from '@/lib/site';
 import { resolveTenant } from '@/lib/tenant';
 
 export const dynamic = 'force-dynamic';
 
 interface PageProps {
   params: Promise<{ handle: string }>;
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
 }
+
+const one = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v);
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const tenant = await resolveTenant();
@@ -47,26 +47,42 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   };
 }
 
-export default async function ProductDetailPage({ params }: PageProps) {
+export default async function ProductDetailPage({ params, searchParams }: PageProps) {
   const tenant = await resolveTenant();
   if (!tenant) notFound();
   const { handle } = await params;
+  const sp = (await searchParams) ?? {};
   const product = await getProduct(tenant.slug, handle);
   if (!product) notFound();
 
+  // The product-scope layout: the merchant's published one, or the seeded
+  // default (parity). A site-preview token resolves the draft instead.
+  const snapshot = await getPublishedSite(tenant.slug, one(sp.sparxSitePreview));
+  const sections = resolveTemplateSections(snapshot, 'product');
+
+  // Fetch only the supplementary data the resolved layout renders. The related
+  // rail's count comes from its section config (default 4 — today's behavior).
+  const relatedSection = sections.find((s) => s.sectionType === 'product-related');
+  const relatedLimit =
+    typeof relatedSection?.config.limit === 'number' ? relatedSection.config.limit : 4;
+  const needsQuestions = sections.some((s) => s.sectionType === 'product-questions');
+  const needsFitment =
+    product.fitments.length > 0 && sections.some((s) => s.sectionType === 'product-fitment');
+
   const [related, questions] = await Promise.all([
-    listRelatedProducts(tenant.slug, product, 4),
-    listProductQuestions(tenant.slug, product.handle),
+    relatedSection ? listRelatedProducts(tenant.slug, product, relatedLimit) : Promise.resolve([]),
+    needsQuestions ? listProductQuestions(tenant.slug, product.handle) : Promise.resolve([]),
   ]);
-  const { defaultCurrency: currency, defaultLocale: locale, showStockBelow } = tenant.storefront;
 
   // Fitment rows carry a domain slug + label but not the per-level labels
   // (Make/Model/Engine). Fetch the domains (cached) and map by slug so the
   // table can render vertical-appropriate column headers.
-  const fitmentDomains = product.fitments.length
+  const fitmentDomains = needsFitment
     ? await listFitmentDomains(tenant.slug).catch<PublicFitmentDomain[]>(() => [])
     : [];
-  const domainsBySlug = Object.fromEntries(fitmentDomains.map((d) => [d.slug, d]));
+  const fitmentDomainsBySlug = Object.fromEntries(fitmentDomains.map((d) => [d.slug, d]));
+
+  const { defaultCurrency: currency, defaultLocale: locale, showStockBelow } = tenant.storefront;
 
   const primaryImage = mediaUrl(product.images[0]?.mediaAssetId ?? null, tenant.slug);
   const productJsonLd = {
@@ -111,109 +127,17 @@ export default async function ProductDetailPage({ params }: PageProps) {
         ]}
       />
 
-      <ProductDetail
-        product={product}
-        tenantSlug={tenant.slug}
-        currency={currency}
-        locale={locale}
-        showStockBelow={showStockBelow}
+      <SectionRenderer
+        sections={sections}
+        ctx={{
+          tenantSlug: tenant.slug,
+          currency,
+          locale,
+          showStockBelow,
+          product,
+          productExtras: { related, questions, fitmentDomainsBySlug },
+        }}
       />
-
-      {/* Description */}
-      {product.description ? (
-        <section className="sf-section sf-container--prose" style={{ paddingInline: 0 }}>
-          <h2 className="sf-h2" style={{ marginBottom: '1rem' }}>
-            Details
-          </h2>
-          <div className="sparx-content" style={{ whiteSpace: 'pre-wrap', lineHeight: 1.7 }}>
-            {product.description}
-          </div>
-        </section>
-      ) : null}
-
-      {/* Fitment — domain-aware (vehicle / pet / device / …) */}
-      {product.fitments.length > 0 ? (
-        <section className="sf-section">
-          <h2 className="sf-h2" style={{ marginBottom: '1rem' }}>
-            Compatibility
-          </h2>
-          <FitmentTable fitments={product.fitments} domainsBySlug={domainsBySlug} />
-        </section>
-      ) : null}
-
-      {/* Reviews */}
-      <section className="sf-section">
-        <h2 className="sf-h2" style={{ marginBottom: '1rem' }}>
-          Reviews
-        </h2>
-        {product.reviewCount > 0 && product.averageRating != null ? (
-          <div
-            style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.25rem' }}
-          >
-            <RatingStars rating={product.averageRating} count={product.reviewCount} />
-          </div>
-        ) : (
-          <p className="sf-muted" style={{ marginBottom: '1.25rem' }}>
-            No reviews yet — be the first.
-          </p>
-        )}
-        <ReviewForm tenantSlug={tenant.slug} handle={product.handle} />
-      </section>
-
-      {/* Questions & answers */}
-      <section className="sf-section">
-        <h2 className="sf-h2" style={{ marginBottom: '1rem' }}>
-          Questions &amp; answers
-        </h2>
-        {questions.length > 0 ? (
-          <ul className="sf-qa" style={{ listStyle: 'none', padding: 0, margin: '0 0 1.25rem' }}>
-            {questions.map((q) => (
-              <li key={q.id} className="sf-qa__item">
-                <p className="sf-qa__q">
-                  <strong>Q:</strong> {q.body}
-                  {q.displayName ? (
-                    <span className="sf-muted" style={{ fontWeight: 400 }}>
-                      {' '}
-                      — {q.displayName}
-                    </span>
-                  ) : null}
-                </p>
-                {q.answers.map((a) => (
-                  <p key={a.id} className="sf-qa__a">
-                    <strong>A:</strong> {a.body}
-                    {a.isOfficial ? <span className="sf-qa__official">Store</span> : null}
-                  </p>
-                ))}
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="sf-muted" style={{ marginBottom: '1.25rem' }}>
-            No questions yet — ask the first one.
-          </p>
-        )}
-        <QuestionForm tenantSlug={tenant.slug} handle={product.handle} />
-      </section>
-
-      {/* Related */}
-      {related.length > 0 ? (
-        <section className="sf-section">
-          <div className="sf-section__head">
-            <h2 className="sf-h2">You may also like</h2>
-          </div>
-          <div className="sf-grid">
-            {related.map((p) => (
-              <ProductCard
-                key={p.id}
-                product={p}
-                tenantSlug={tenant.slug}
-                currency={currency}
-                locale={locale}
-              />
-            ))}
-          </div>
-        </section>
-      ) : null}
     </div>
   );
 }

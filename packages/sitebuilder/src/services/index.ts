@@ -4,6 +4,7 @@
 
 export * as themeService from './theme-service';
 export * as sectionService from './section-service';
+export * as templateService from './template-service';
 export * as layoutService from './layout-service';
 export * as publishService from './publish-service';
 export * as scheduleService from './schedule-service';

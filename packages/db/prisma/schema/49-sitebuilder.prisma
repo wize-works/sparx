@@ -64,14 +64,40 @@ model SiteVersion {
   @@map("sitebuilder_versions")
 }
 
-// Draft page composition — one row per section instance. pageKey is "home"
-// or a CMS page slug (cross-domain reference by value, no FK). Published
-// copies are denormalized into SiteVersion.sectionsSnapshot.
-model SiteSection {
+// A reusable, scoped page layout (docs/30 §4, docs/handoffs/sitebuilder-phase3-spec.md §3).
+// Sections (SiteSection) hang off a template instead of a bare pageKey string.
+// `scope` types the layout (home | product | collection | cms-page | custom) and
+// determines its data context + allowed section types; `key` is stable within
+// (tenant, scope) — "default" for a scope's single Phase-3 layout, a slug for
+// cms-page / custom standalone pages. Tenant-scoped, ENABLE+FORCE RLS.
+model SiteTemplate {
   id       String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   tenantId String @map("tenant_id") @db.Uuid
 
-  pageKey     String  @map("page_key") @db.VarChar(255)
+  scope String @db.VarChar(31)
+  key   String @db.VarChar(255)
+  name  String @db.VarChar(255)
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  tenant   Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  sections SiteSection[]
+
+  @@unique([tenantId, scope, key])
+  @@index([tenantId, scope])
+  @@map("sitebuilder_templates")
+}
+
+// Draft page composition — one row per section instance, hanging off a
+// SiteTemplate (Phase 3 re-key; was a bare `pageKey` string). Published copies
+// are denormalized into SiteVersion.sectionsSnapshot (which also carries the
+// owning template's scope/key so old + new snapshots both resolve).
+model SiteSection {
+  id         String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId   String @map("tenant_id") @db.Uuid
+  templateId String @map("template_id") @db.Uuid
+
   sectionType String  @map("section_type") @db.VarChar(63)
   position    Int
   visible     Boolean @default(true)
@@ -80,9 +106,10 @@ model SiteSection {
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
 
-  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant   Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  template SiteTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
 
-  @@index([tenantId, pageKey, position])
+  @@index([tenantId, templateId, position])
   @@map("sitebuilder_sections")
 }
 

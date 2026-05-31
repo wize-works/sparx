@@ -8,6 +8,7 @@
 export * from './common';
 export * from './fields';
 export * from './section-registry';
+export * from './default-templates';
 export * from './site-settings';
 export * from './inputs';
 
@@ -19,3 +20,5 @@ export * from './sections/rich-text';
 export * from './sections/image-banner';
 export * from './sections/testimonials';
 export * from './sections/email-signup';
+export * from './sections/product-bound';
+export * from './sections/collection-bound';

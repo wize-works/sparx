@@ -3,6 +3,11 @@
 // skipped gracefully (a snapshot may carry a section type this storefront
 // version doesn't know how to render yet). Each section is themed purely via
 // the `--sf-*` tokens injected in the layout — no raw Tailwind (brand rule).
+//
+// Phase 3: bound sections (product/collection scope) resolve from the assigned
+// item supplied on the context (docs/handoffs/sitebuilder-phase3-spec.md §6).
+// Static sections ignore the binding; bound sections render nothing when their
+// binding is absent.
 
 import type { SectionSnapshot } from '@/lib/site';
 import type {
@@ -13,7 +18,23 @@ import type {
   ImageBannerConfig,
   TestimonialsConfig,
   EmailSignupConfig,
+  ProductBuyBoxConfig,
+  ProductDescriptionConfig,
+  ProductFitmentConfig,
+  ProductReviewsConfig,
+  ProductQuestionsConfig,
+  ProductRelatedConfig,
+  CollectionHeaderConfig,
+  CollectionProductsConfig,
 } from '@sparx/sitebuilder-schemas';
+
+import type {
+  PublicProduct,
+  PublicProductListItem,
+  PublicQuestion,
+  PublicCollection,
+  PublicFitmentDomain,
+} from '@/lib/commerce';
 
 import { HeroSection } from './sections/hero';
 import { FeaturedProductsSection } from './sections/featured-products';
@@ -22,12 +43,38 @@ import { RichTextSection } from './sections/rich-text';
 import { ImageBannerSection } from './sections/image-banner';
 import { TestimonialsSection } from './sections/testimonials';
 import { EmailSignupSection } from './sections/email-signup';
+import { ProductBuyBoxSection } from './sections/product-buy-box';
+import { ProductDescriptionSection } from './sections/product-description';
+import { ProductFitmentSection } from './sections/product-fitment';
+import { ProductReviewsSection } from './sections/product-reviews';
+import { ProductQuestionsSection } from './sections/product-questions';
+import { ProductRelatedSection } from './sections/product-related';
+import { CollectionHeaderSection } from './sections/collection-header';
+import { CollectionProductsSection } from './sections/collection-products';
 
 /** Everything a section needs from the tenant beyond its own config. */
 export interface SectionContext {
   tenantSlug: string;
   currency: string;
   locale: string;
+  // Tenant storefront display setting (PDP buy box "only N left" threshold).
+  showStockBelow?: number;
+  // Product binding — present only when rendering a `product`-scope template.
+  product?: PublicProduct;
+  productExtras?: {
+    related: PublicProductListItem[];
+    questions: PublicQuestion[];
+    fitmentDomainsBySlug: Record<string, PublicFitmentDomain>;
+  };
+  // Collection binding — present only when rendering a `collection`-scope template.
+  collection?: PublicCollection;
+  collectionExtras?: {
+    items: PublicProductListItem[];
+    total: number;
+    page: number;
+    perPage: number;
+    currentParams: Record<string, string | string[] | undefined>;
+  };
 }
 
 // Published configs are validated + defaulted at publish time (the section
@@ -50,6 +97,26 @@ function renderSection(section: SectionSnapshot, ctx: SectionContext): React.Rea
       return <TestimonialsSection config={c as unknown as TestimonialsConfig} ctx={ctx} />;
     case 'email-signup':
       return <EmailSignupSection config={c as unknown as EmailSignupConfig} />;
+    case 'product-buy-box':
+      return <ProductBuyBoxSection config={c as unknown as ProductBuyBoxConfig} ctx={ctx} />;
+    case 'product-description':
+      return (
+        <ProductDescriptionSection config={c as unknown as ProductDescriptionConfig} ctx={ctx} />
+      );
+    case 'product-fitment':
+      return <ProductFitmentSection config={c as unknown as ProductFitmentConfig} ctx={ctx} />;
+    case 'product-reviews':
+      return <ProductReviewsSection config={c as unknown as ProductReviewsConfig} ctx={ctx} />;
+    case 'product-questions':
+      return <ProductQuestionsSection config={c as unknown as ProductQuestionsConfig} ctx={ctx} />;
+    case 'product-related':
+      return <ProductRelatedSection config={c as unknown as ProductRelatedConfig} ctx={ctx} />;
+    case 'collection-header':
+      return <CollectionHeaderSection config={c as unknown as CollectionHeaderConfig} ctx={ctx} />;
+    case 'collection-products':
+      return (
+        <CollectionProductsSection config={c as unknown as CollectionProductsConfig} ctx={ctx} />
+      );
     default:
       // Unknown section type — skip rather than crash the page.
       return null;

@@ -13,9 +13,18 @@ import {
 
 import { writeAuditLog } from '../audit';
 import { SitebuilderNotFoundError } from '../errors';
+import { getOrCreateTemplate, pageKeyForTemplate, scopeKeyForPageKey } from './template-service';
 
 export interface SectionSnapshot {
   id: string;
+  // Phase 3: the owning template's scope + key (doc 30 §4). Optional because
+  // pre-Phase-3 stored versions carry only `pageKey`; the storefront's read-time
+  // shim maps pageKey → scope/key for those. New publishes always set them.
+  scope?: string;
+  templateKey?: string;
+  templateId?: string;
+  // Back-compat: "home" or a slug, derived from the template. Pre-Phase-3
+  // storefront readers still key composition off this.
   pageKey: string;
   sectionType: string;
   position: number;
@@ -46,22 +55,42 @@ export interface PublishedSnapshot {
   layout: LayoutSnapshot[];
 }
 
-async function readDraft(
+function toSectionSnapshot(s: {
+  id: string;
+  templateId: string;
+  sectionType: string;
+  position: number;
+  visible: boolean;
+  config: Prisma.JsonValue;
+  template: { scope: string; key: string };
+}): SectionSnapshot {
+  return {
+    id: s.id,
+    scope: s.template.scope,
+    templateKey: s.template.key,
+    templateId: s.templateId,
+    pageKey: pageKeyForTemplate(s.template),
+    sectionType: s.sectionType,
+    position: s.position,
+    visible: s.visible,
+    config: (s.config ?? {}) as Record<string, unknown>,
+  };
+}
+
+// Exported so getDraftSnapshot (publish-service) renders the live preview off the
+// exact same draft assembly the publish path snapshots — one reader, no drift.
+export async function readDraft(
   tx: TxClient
 ): Promise<{ sections: SectionSnapshot[]; layout: LayoutSnapshot[] }> {
   const [sections, layout] = await Promise.all([
-    tx.siteSection.findMany({ orderBy: [{ pageKey: 'asc' }, { position: 'asc' }] }),
+    tx.siteSection.findMany({
+      include: { template: { select: { scope: true, key: true } } },
+      orderBy: [{ templateId: 'asc' }, { position: 'asc' }],
+    }),
     tx.siteLayoutBlock.findMany({ orderBy: { slot: 'asc' } }),
   ]);
   return {
-    sections: sections.map((s) => ({
-      id: s.id,
-      pageKey: s.pageKey,
-      sectionType: s.sectionType,
-      position: s.position,
-      visible: s.visible,
-      config: (s.config ?? {}) as Record<string, unknown>,
-    })),
+    sections: sections.map(toSectionSnapshot),
     layout: layout.map((b) => ({
       slot: b.slot,
       navigationMenuId: b.navigationMenuId,
@@ -154,6 +183,19 @@ export async function publishWithinTx(
   return version;
 }
 
+// Resolve a snapshot section's owning (scope, key, name): explicit on Phase-3
+// snapshots, derived from the legacy pageKey otherwise.
+function resolveScopeKey(s: SectionSnapshot): { scope: string; key: string; name: string } {
+  if (s.scope && s.templateKey) {
+    return {
+      scope: s.scope,
+      key: s.templateKey,
+      name: s.scope === 'home' ? 'Home' : s.templateKey,
+    };
+  }
+  return scopeKeyForPageKey(s.pageKey);
+}
+
 /**
  * Restore the draft (config + sections + layout) from a published version's
  * snapshot — the first half of a rollback. The caller then re-publishes the
@@ -176,19 +218,33 @@ export async function materializeWithinTx(
     },
   });
 
-  // Rebuild the draft section rows to match the snapshot.
+  // Rebuild the draft section rows to match the snapshot. Sections now hang off
+  // a template, so resolve each section's (scope, key) — explicit on Phase-3
+  // snapshots, derived from pageKey on legacy ones — to a get-or-created template
+  // first (ids survive a rollback and stay referenced by future publishes).
   await tx.siteSection.deleteMany({});
   if (sections.length > 0) {
-    await tx.siteSection.createMany({
-      data: sections.map((s) => ({
+    const templateIdByKey = new Map<string, string>();
+    const rows: Prisma.SiteSectionCreateManyInput[] = [];
+    for (const s of sections) {
+      const { scope, key, name } = resolveScopeKey(s);
+      const mapKey = `${scope} ${key}`;
+      let templateId = templateIdByKey.get(mapKey);
+      if (!templateId) {
+        const template = await getOrCreateTemplate(tx, tenantId, scope, key, name);
+        templateId = template.id;
+        templateIdByKey.set(mapKey, templateId);
+      }
+      rows.push({
         tenantId,
-        pageKey: s.pageKey,
+        templateId,
         sectionType: s.sectionType,
         position: s.position,
         visible: s.visible,
         config: s.config as Prisma.InputJsonValue,
-      })),
-    });
+      });
+    }
+    await tx.siteSection.createMany({ data: rows });
   }
 
   // Rebuild the layout blocks to match the snapshot.

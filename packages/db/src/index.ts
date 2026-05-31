@@ -128,6 +128,7 @@ export type {
   // Sitebuilder
   SiteConfig,
   SiteVersion,
+  SiteTemplate,
   SiteSection,
   SiteLayoutBlock,
   SitePublishSchedule,
