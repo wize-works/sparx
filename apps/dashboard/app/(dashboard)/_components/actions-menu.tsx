@@ -24,9 +24,11 @@ import {
   Check,
   Copy,
   ExternalLink,
+  LayoutGrid,
   Layout,
   MoreHorizontal,
   PanelRight,
+  Rows3,
   Square,
   Star,
   StarOff,
@@ -35,10 +37,15 @@ import {
   addFavoriteAction,
   removeFavoriteAction,
   setDefaultDetailViewAction,
+  setDefaultListViewAction,
 } from '../_shell/actions';
 import { findFavoritableByPath } from '../_shell/registry';
 import type { FavoriteRow } from '../_shell/service';
-import type { DefaultDetailView, UserPreferences } from '../_shell/preferences-types';
+import type {
+  DefaultDetailView,
+  DefaultListView,
+  UserPreferences,
+} from '../_shell/preferences-types';
 
 // The `...` Actions menu — a searchable, grouped command list per
 // docs/24-dashboard-shell.md §4.6.
@@ -61,6 +68,11 @@ const DETAIL_VIEW_OPTIONS: { value: DefaultDetailView; label: string; icon: type
     { value: 'fullPage', label: 'Full page', icon: Layout },
     { value: 'newTab', label: 'New tab', icon: ExternalLink },
   ];
+
+const LIST_VIEW_OPTIONS: { value: DefaultListView; label: string; icon: typeof PanelRight }[] = [
+  { value: 'table', label: 'Table', icon: Rows3 },
+  { value: 'card', label: 'Cards', icon: LayoutGrid },
+];
 
 export function ActionsMenu({ favorites, preferences }: ActionsMenuProps) {
   const pathname = usePathname();
@@ -135,6 +147,26 @@ export function ActionsMenu({ favorites, preferences }: ActionsMenuProps) {
     });
   }
 
+  function handleSetListView(next: DefaultListView) {
+    if (next === preferences.defaultListView) {
+      close();
+      return;
+    }
+    close();
+    startTransition(async () => {
+      try {
+        await setDefaultListViewAction(next);
+        // Same as the detail view: list pages read the preference server-side
+        // to pick table vs card rendering, so refresh so it takes effect now.
+        router.refresh();
+        const label = LIST_VIEW_OPTIONS.find((o) => o.value === next)?.label.toLowerCase() ?? next;
+        toast.success(`Default list view set to ${label}`);
+      } catch {
+        toast.error('Could not update preference');
+      }
+    });
+  }
+
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <Tooltip>
@@ -186,8 +218,32 @@ export function ActionsMenu({ favorites, preferences }: ActionsMenuProps) {
                 return (
                   <CommandItem
                     key={opt.value}
-                    value={`default view ${opt.label}`}
+                    value={`default detail view ${opt.label}`}
                     onSelect={() => handleSetDefaultView(opt.value)}
+                  >
+                    <Icon className="h-4 w-4" />
+                    {opt.label}
+                    {isCurrent && (
+                      <CommandShortcut>
+                        <Check className="h-4 w-4" />
+                      </CommandShortcut>
+                    )}
+                  </CommandItem>
+                );
+              })}
+            </CommandGroup>
+
+            <CommandSeparator />
+
+            <CommandGroup heading="Default list view">
+              {LIST_VIEW_OPTIONS.map((opt) => {
+                const Icon = opt.icon;
+                const isCurrent = preferences.defaultListView === opt.value;
+                return (
+                  <CommandItem
+                    key={opt.value}
+                    value={`default list view ${opt.label}`}
+                    onSelect={() => handleSetListView(opt.value)}
                   >
                     <Icon className="h-4 w-4" />
                     {opt.label}

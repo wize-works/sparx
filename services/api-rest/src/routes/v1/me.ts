@@ -27,9 +27,11 @@ import { ok } from '@sparx/api-core/envelope';
 import { requireAuth } from '@sparx/api-core/auth';
 
 const DEFAULT_DETAIL_VIEWS = ['drawer', 'modal', 'fullPage', 'newTab'] as const;
+const DEFAULT_LIST_VIEWS = ['table', 'card'] as const;
 
 const PreferencesPatch = z.object({
   defaultDetailView: z.enum(DEFAULT_DETAIL_VIEWS).optional(),
+  defaultListView: z.enum(DEFAULT_LIST_VIEWS).optional(),
 });
 
 const ActionIdParam = z.object({
@@ -52,19 +54,28 @@ const RecentsQuery = z.object({
   take: z.coerce.number().int().min(1).max(100).optional(),
 });
 
-const DEFAULT_PREFERENCES = { defaultDetailView: 'drawer' as const };
+const DEFAULT_PREFERENCES = {
+  defaultDetailView: 'drawer' as const,
+  defaultListView: 'table' as const,
+};
 
 function parsePreferences(raw: unknown): {
   defaultDetailView: (typeof DEFAULT_DETAIL_VIEWS)[number];
+  defaultListView: (typeof DEFAULT_LIST_VIEWS)[number];
 } {
   if (!raw || typeof raw !== 'object') return DEFAULT_PREFERENCES;
   const obj = raw as Record<string, unknown>;
   const view = obj.defaultDetailView;
+  const listView = obj.defaultListView;
   return {
     defaultDetailView:
       typeof view === 'string' && (DEFAULT_DETAIL_VIEWS as readonly string[]).includes(view)
         ? (view as (typeof DEFAULT_DETAIL_VIEWS)[number])
         : DEFAULT_PREFERENCES.defaultDetailView,
+    defaultListView:
+      typeof listView === 'string' && (DEFAULT_LIST_VIEWS as readonly string[]).includes(listView)
+        ? (listView as (typeof DEFAULT_LIST_VIEWS)[number])
+        : DEFAULT_PREFERENCES.defaultListView,
   };
 }
 

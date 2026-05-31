@@ -17,6 +17,7 @@ import {
   getUserPreferences as svcGetUserPreferences,
   setUserPreferences as svcSetUserPreferences,
   type DefaultDetailView,
+  type DefaultListView,
   type UserPreferences,
 } from './preferences';
 
@@ -88,6 +89,15 @@ export async function setDefaultDetailViewAction(
   // Click-handlers throughout the dashboard read preferences from the
   // server-rendered shell, so a preference change must rebuild the layout
   // tree. Same revalidation pattern as favorites.
+  revalidatePath('/', 'layout');
+  return result;
+}
+
+export async function setDefaultListViewAction(next: DefaultListView): Promise<UserPreferences> {
+  const ctx = await ctxFromSession();
+  const result = await svcSetUserPreferences(ctx.userId, { defaultListView: next });
+  // List pages read the preference server-side to pick table vs card rendering,
+  // so rebuild the layout tree on change — same pattern as the detail view.
   revalidatePath('/', 'layout');
   return result;
 }

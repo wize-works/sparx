@@ -7,7 +7,7 @@ import { DEFAULT_PREFERENCES, type UserPreferences } from './preferences-types';
 // `./preferences-types` instead of this file — see the comment there.
 
 export { DEFAULT_PREFERENCES };
-export type { DefaultDetailView, UserPreferences } from './preferences-types';
+export type { DefaultDetailView, DefaultListView, UserPreferences } from './preferences-types';
 
 export async function getUserPreferences(_userId: string): Promise<UserPreferences> {
   return api.get<UserPreferences>('/v1/me/preferences');
