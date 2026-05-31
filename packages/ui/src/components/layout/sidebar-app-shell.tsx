@@ -1,10 +1,11 @@
 'use client';
 
 import * as React from 'react';
-import { Menu } from 'lucide-react';
+import { Menu, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import { Button } from '../primitives/button';
 import { Drawer, DrawerContent, DrawerTitle } from '../overlay/drawer';
 import { useMediaQuery } from '../../hooks/use-media-query';
+import { cn } from '../../utils/cn';
 
 // SidebarAppShell is the canonical authenticated-app layout: pinned sidebar +
 // top header + scrolling content. It owns the responsive concerns that
@@ -32,8 +33,23 @@ import { useMediaQuery } from '../../hooks/use-media-query';
 // contents follow context (a module's sections, or Favorites/Recents at the
 // platform level). Below `md` both collapse into the hamburger Drawer, which
 // renders the single vertical `mobileNav` tree instead.
+//
+// The rail is collapsible: a toggle at its foot expands it from icon-only to
+// icon + label (so the module glyphs are legible) and the choice persists in
+// localStorage. The expanded state is published via `RailExpandedContext` —
+// the `rail` content reads it with `useRailExpanded()` to grow labels.
 
+const RAIL_EXPANDED_STORAGE_KEY = 'sparx:rail-expanded';
 const DETAIL_WIDTH_STORAGE_KEY = 'sparx:detail-width';
+
+// Published to the `rail` subtree so it can render labels alongside icons when
+// the user expands the rail.
+const RailExpandedContext = React.createContext(false);
+
+/** Read whether the icon rail is currently expanded to show labels. */
+export function useRailExpanded(): boolean {
+  return React.useContext(RailExpandedContext);
+}
 const DETAIL_WIDTH_DEFAULT = 40; // percent of main area
 const DETAIL_WIDTH_MIN = 25;
 const DETAIL_WIDTH_MAX = 65;
@@ -96,6 +112,7 @@ export function SidebarAppShell({
   const [mobileNavOpen, setMobileNavOpen] = React.useState(false);
   const isDesktop = useMediaQuery('(min-width: 768px)');
   const detailWidth = useDetailWidth();
+  const railExpanded = useRailExpandedState();
 
   React.useEffect(() => {
     if (isFirstRender.current) {
@@ -118,17 +135,26 @@ export function SidebarAppShell({
         Skip to content
       </a>
 
-      <div className="hidden md:flex">
-        <nav
-          aria-label={mobileNavLabel}
-          className="flex h-full w-14 shrink-0 flex-col items-center gap-1 border-r border-[var(--color-border-default)] bg-[var(--color-bg-surface)] py-2"
-        >
-          {rail}
-        </nav>
-        <div className="flex h-full w-60 shrink-0 flex-col border-r border-[var(--color-border-default)] bg-[var(--color-bg-surface)]">
-          {panel}
+      <RailExpandedContext.Provider value={railExpanded.value}>
+        <div className="hidden md:flex">
+          <nav
+            aria-label={mobileNavLabel}
+            className={cn(
+              'flex h-full shrink-0 flex-col gap-1 border-r border-[var(--color-border-default)] bg-[var(--color-bg-surface)] py-2 transition-[width] duration-150 ease-out',
+              railExpanded.value ? 'w-52 items-stretch px-2' : 'w-14 items-center'
+            )}
+          >
+            {rail}
+            <RailToggle
+              expanded={railExpanded.value}
+              onToggle={() => railExpanded.setValue(!railExpanded.value)}
+            />
+          </nav>
+          <div className="flex h-full w-60 shrink-0 flex-col border-r border-[var(--color-border-default)] bg-[var(--color-bg-surface)]">
+            {panel}
+          </div>
         </div>
-      </div>
+      </RailExpandedContext.Provider>
 
       <Drawer open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
         <DrawerContent side="left" className="flex w-72 max-w-[85vw] flex-col gap-1 p-3" hideClose>
@@ -209,6 +235,61 @@ export function SidebarAppShell({
         </Drawer>
       )}
     </div>
+  );
+}
+
+// ── Rail expand/collapse ───────────────────────────────────
+
+interface RailExpandedState {
+  value: boolean;
+  setValue: (next: boolean) => void;
+}
+
+function useRailExpandedState(): RailExpandedState {
+  const [value, setValueState] = React.useState(false);
+
+  React.useEffect(() => {
+    try {
+      if (window.localStorage.getItem(RAIL_EXPANDED_STORAGE_KEY) === 'true') {
+        setValueState(true);
+      }
+    } catch {
+      // storage disabled — stay collapsed
+    }
+  }, []);
+
+  const setValue = React.useCallback((next: boolean) => {
+    setValueState(next);
+    try {
+      window.localStorage.setItem(RAIL_EXPANDED_STORAGE_KEY, String(next));
+    } catch {
+      // ignore — in-memory state still updates
+    }
+  }, []);
+
+  return { value, setValue };
+}
+
+function RailToggle({ expanded, onToggle }: { expanded: boolean; onToggle: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      title={expanded ? 'Collapse navigation' : 'Expand navigation'}
+      aria-label={expanded ? 'Collapse navigation' : 'Expand navigation'}
+      aria-expanded={expanded}
+      className={cn(
+        'flex h-10 items-center rounded-xl text-[var(--color-text-tertiary)] transition-colors hover:bg-[var(--color-bg-subtle)] hover:text-[var(--color-text-primary)] focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:outline-none',
+        expanded ? 'w-full justify-start gap-3 px-3' : 'w-10 justify-center'
+      )}
+    >
+      {expanded ? (
+        <PanelLeftClose className="h-5 w-5 shrink-0" />
+      ) : (
+        <PanelLeftOpen className="h-5 w-5 shrink-0" />
+      )}
+      {expanded && <span className="text-sm font-medium">Collapse</span>}
+    </button>
   );
 }
 
