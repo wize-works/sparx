@@ -18,6 +18,7 @@ COPY packages/db ./packages/db
 COPY packages/auth ./packages/auth
 COPY packages/events ./packages/events
 COPY packages/email ./packages/email
+COPY packages/email-sections ./packages/email-sections
 COPY packages/crm-schemas ./packages/crm-schemas
 COPY packages/crm ./packages/crm
 COPY packages/storefront-themes ./packages/storefront-themes

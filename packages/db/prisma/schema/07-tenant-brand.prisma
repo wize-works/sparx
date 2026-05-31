@@ -1,0 +1,45 @@
+// Tenant brand — the platform-wide source of truth for brand IDENTITY, owned
+// ABOVE every module (not Site Builder, Commerce, or Email). It is captured in
+// onboarding, survives any single module being gated off, and is READ-ONLY to
+// every consumer (docs/30 §6): no module may override these tokens.
+//
+// The storefront theme APPLIES brand as its foundation and layers presentation
+// tokens on top, but cannot redefine identity (brand color = brand color,
+// everywhere). Email reads it directly for its BrandTokens (replacing the old
+// EmailSettings.brandingOverride). Commerce's StorefrontTheme logo/favicon/
+// palette source from here rather than being independently editable identity.
+//
+// Media ids (logo/favicon) are plain UUID soft references — no FK to MediaAsset
+// — mirroring StorefrontTheme, so brand stays decoupled from the CMS media
+// table being present. PK = tenantId (one brand per tenant).
+
+model TenantBrand {
+  tenantId String @id @map("tenant_id") @db.Uuid
+
+  businessName String? @map("business_name") @db.VarChar(255)
+  tagline      String? @db.VarChar(255)
+
+  // Brand assets (soft references to MediaAsset by id).
+  logoLightMediaId String? @map("logo_light_media_id") @db.Uuid
+  logoDarkMediaId  String? @map("logo_dark_media_id") @db.Uuid
+  faviconMediaId   String? @map("favicon_media_id") @db.Uuid
+
+  // Core identity palette (hex). Presentation tokens stay in the storefront theme.
+  colorPrimary           String? @map("color_primary") @db.VarChar(7)
+  colorPrimaryForeground String? @map("color_primary_foreground") @db.VarChar(7)
+  colorAccent            String? @map("color_accent") @db.VarChar(7)
+
+  // Brand typography (font family names).
+  fontHeading String? @map("font_heading") @db.VarChar(127)
+  fontBody    String? @map("font_body") @db.VarChar(127)
+
+  // Social handles / links, keyed by platform: { instagram: "https://…", … }.
+  socials Json @default("{}")
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@map("tenant_brands")
+}

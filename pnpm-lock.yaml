@@ -1271,6 +1271,9 @@ importers:
       '@sparx/auth':
         specifier: workspace:*
         version: link:../../packages/auth
+      '@sparx/cms-editor':
+        specifier: workspace:*
+        version: link:../../packages/cms-editor
       '@sparx/cms-schemas':
         specifier: workspace:*
         version: link:../../packages/cms-schemas

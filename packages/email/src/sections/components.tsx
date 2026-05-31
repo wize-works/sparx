@@ -428,7 +428,7 @@ const LoyaltyPoints: SectionComponent = ({ config, data }) => {
   return (
     <Section>
       {c.heading ? <SectionHeading>{c.heading}</SectionHeading> : null}
-      <EmailHeading level={1}>{loyalty.pointsLabel} pts</EmailHeading>
+      <EmailHeading level={1}>{loyalty.pointsLabel}</EmailHeading>
       {loyalty.tierName ? (
         <Text style={{ ...typography.muted, color: brand.foreground, margin: 0 }}>
           {loyalty.tierName}

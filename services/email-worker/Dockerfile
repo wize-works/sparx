@@ -18,6 +18,7 @@ COPY pnpm-workspace.yaml pnpm-lock.yaml package.json ./
 COPY tsconfig.base.json ./
 COPY packages/db ./packages/db
 COPY packages/email ./packages/email
+COPY packages/email-sections ./packages/email-sections
 COPY packages/events ./packages/events
 COPY packages/storefront-themes ./packages/storefront-themes
 COPY packages/cms-editor ./packages/cms-editor

@@ -9,25 +9,28 @@
 // return `none` here; their per-recipient resolution lands with P5.
 
 import { withTenant } from '@sparx/db';
-import { collectionService, discountService, productService } from '@sparx/commerce';
+import { discountService, productService } from '@sparx/commerce';
 import { renderDocToHtml } from '@sparx/cms-editor/serialize';
-import type { CmsDoc } from '@sparx/cms-editor';
 import {
+  AbandonedCartConfig,
   ActivePromotionConfig,
   CollectionGridConfig,
   FeaturedProductsConfig,
   ImageConfig,
   LatestBlogPostsConfig,
+  RecommendedProductsConfig,
   RichTextConfig,
   type BlogPostData,
+  type CartLineData,
   type CollectionTileData,
   type EmailSectionInstance,
+  type OrderSummaryData,
   type ProductCardData,
   type SectionData,
   type SectionDataMap,
 } from '@sparx/email-sections';
 import type { ServiceContext } from '@sparx/email-platform';
-import { z } from 'zod';
+import type { z } from 'zod';
 
 /** Recipient binding for personalized sections (resolved at dispatch, P5). */
 export interface EmailRecipient {
@@ -96,9 +99,7 @@ async function resolveFeatured(
   } else if (c.source === 'manual' && c.productIds.length) {
     const all = (await productService.list(ctx, { status: 'active', take: 100 })).items;
     const byId = new Map(all.map((p) => [p.id, p]));
-    items = c.productIds
-      .map((id) => byId.get(id))
-      .filter((p): p is ProductItem => Boolean(p));
+    items = c.productIds.map((id) => byId.get(id)).filter((p): p is ProductItem => Boolean(p));
   } else {
     items = (
       await productService.list(ctx, { status: 'active', take: c.limit, sortBy: 'createdAt' })
@@ -138,11 +139,7 @@ async function resolveCollections(
   return { kind: 'collections', collections };
 }
 
-async function resolveBlog(
-  ctx: ServiceContext,
-  slug: string,
-  raw: unknown
-): Promise<SectionData> {
+async function resolveBlog(ctx: ServiceContext, slug: string, raw: unknown): Promise<SectionData> {
   const c = parsed(LatestBlogPostsConfig, raw);
   const rows = await withTenant(ctx, (tx) =>
     tx.contentEntry.findMany({
@@ -204,17 +201,122 @@ async function resolvePromotion(ctx: ServiceContext, raw: unknown): Promise<Sect
   return { kind: 'promotion', promotion: null };
 }
 
+// ── Personalized resolvers (per recipient) ───────────────────────────────────
+
+async function resolveCart(
+  ctx: ServiceContext,
+  slug: string,
+  raw: unknown,
+  recipient?: EmailRecipient
+): Promise<SectionData> {
+  const c = parsed(AbandonedCartConfig, raw);
+  if (!recipient?.customerId) return { kind: 'cart', lines: [] };
+  // Most recent un-recovered cart (open or abandoned) with its lines.
+  const cart = await withTenant(ctx, (tx) =>
+    tx.cart.findFirst({
+      where: { customerId: recipient.customerId, recoveredAt: null },
+      orderBy: { updatedAt: 'desc' },
+      select: {
+        items: {
+          select: {
+            quantity: true,
+            unitPriceCents: true,
+            variant: { select: { product: { select: { title: true } } } },
+          },
+        },
+      },
+    })
+  );
+  if (!cart?.items.length) return { kind: 'cart', lines: [] };
+  const lines: CartLineData[] = cart.items.slice(0, c.maxItems).map((it) => ({
+    title: it.variant.product.title,
+    quantity: it.quantity,
+    priceLabel: c.showPrices ? money(it.unitPriceCents) : undefined,
+  }));
+  return { kind: 'cart', lines, recoverUrl: storefrontUrl(slug, '/cart') };
+}
+
+async function resolveRecentOrder(
+  ctx: ServiceContext,
+  raw: unknown,
+  recipient?: EmailRecipient
+): Promise<SectionData> {
+  if (!recipient?.customerId) return { kind: 'order', order: null };
+  const order = await withTenant(ctx, (tx) =>
+    tx.order.findFirst({
+      where: { customerId: recipient.customerId },
+      orderBy: { placedAt: 'desc' },
+      select: {
+        orderNumber: true,
+        status: true,
+        total: true,
+        placedAt: true,
+        items: { select: { name: true, quantity: true } },
+      },
+    })
+  );
+  if (!order) return { kind: 'order', order: null };
+  const summary: OrderSummaryData = {
+    numberLabel: order.orderNumber,
+    statusLabel: order.status,
+    totalLabel: `$${Number(order.total).toFixed(2)}`,
+    dateLabel: order.placedAt.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    }),
+    items: order.items.map((i) => ({ title: i.name, quantity: i.quantity })),
+  };
+  return { kind: 'order', order: summary };
+}
+
+async function resolveLoyalty(
+  ctx: ServiceContext,
+  recipient?: EmailRecipient
+): Promise<SectionData> {
+  // No points model exists — the loyalty section surfaces the store-credit
+  // balance (docs/31 §6 loyalty-points; revisit if a points engine lands).
+  if (!recipient?.customerId) return { kind: 'loyalty', loyalty: null };
+  const bal = await discountService.getStoreCreditBalance(ctx, recipient.customerId);
+  if (!bal || bal.balanceCents <= 0) return { kind: 'loyalty', loyalty: null };
+  return {
+    kind: 'loyalty',
+    loyalty: { pointsLabel: money(bal.balanceCents), tierName: 'Store credit available' },
+  };
+}
+
+async function resolveRecommended(
+  ctx: ServiceContext,
+  slug: string,
+  raw: unknown
+): Promise<SectionData> {
+  // v1 stand-in: newest products (flagged isFallback). A real per-recipient
+  // recommendation source is deferred (docs/31 §13.1).
+  const c = parsed(RecommendedProductsConfig, raw);
+  const items = (
+    await productService.list(ctx, { status: 'active', take: c.limit, sortBy: 'createdAt' })
+  ).items;
+  const products: ProductCardData[] = items.slice(0, c.limit).map((p) => ({
+    title: p.title,
+    priceLabel: money(p.priceMinCents),
+    url: storefrontUrl(slug, `/products/${p.handle}`),
+    imageUrl: p.imageUrl ?? undefined,
+  }));
+  return { kind: 'products', products, isFallback: true };
+}
+
 // ── Entry points ─────────────────────────────────────────────────────────────
 
 async function resolveOne(
   ctx: ServiceContext,
   slug: string,
-  section: EmailSectionInstance
+  section: EmailSectionInstance,
+  recipient?: EmailRecipient
 ): Promise<SectionData> {
   switch (section.type) {
     case 'rich-text': {
       const c = parsed(RichTextConfig, section.config);
-      return { kind: 'rich-text', html: renderDocToHtml(c.doc as unknown as CmsDoc) };
+      return { kind: 'rich-text', html: renderDocToHtml(c.doc) };
     }
     case 'image': {
       const c = parsed(ImageConfig, section.config);
@@ -228,7 +330,14 @@ async function resolveOne(
       return resolveBlog(ctx, slug, section.config);
     case 'active-promotion':
       return resolvePromotion(ctx, section.config);
-    // Personalized sections resolve per recipient at dispatch (P5).
+    case 'abandoned-cart':
+      return resolveCart(ctx, slug, section.config, recipient);
+    case 'recent-order':
+      return resolveRecentOrder(ctx, section.config, recipient);
+    case 'loyalty-points':
+      return resolveLoyalty(ctx, recipient);
+    case 'recommended-products':
+      return resolveRecommended(ctx, slug, section.config);
     default:
       return { kind: 'none' };
   }
@@ -241,19 +350,21 @@ async function resolveOne(
 export async function resolveBody(
   ctx: ServiceContext,
   sections: EmailSectionInstance[],
-  _recipient?: EmailRecipient
+  recipient?: EmailRecipient
 ): Promise<SectionDataMap> {
   const slug = await tenantSlug(ctx);
   const out: SectionDataMap = {};
   await Promise.all(
     sections.map(async (s) => {
-      out[s.id] = await resolveOne(ctx, slug, s);
+      out[s.id] = await resolveOne(ctx, slug, s, recipient);
     })
   );
   return out;
 }
 
-/** A `resolveData` callback bound to a request's email context. */
+/** A `resolveData` callback bound to a request's email context. Render-once
+ *  (no recipient) — personalized sections render empty (preview/non-personalized
+ *  broadcasts). The per-recipient path calls resolveBody with a recipient. */
 export function sectionResolver(ctx: ServiceContext) {
   return (sections: EmailSectionInstance[]): Promise<SectionDataMap> => resolveBody(ctx, sections);
 }
