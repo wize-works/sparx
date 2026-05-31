@@ -70,30 +70,31 @@ export async function resolveEmailBrand(ctx: ServiceContext): Promise<BrandToken
       tx.tenant.findUnique({ where: { id: ctx.tenantId }, select: { name: true, slug: true } }),
     ]);
 
-    const slug = tenant?.slug ?? '';
-    const storeName = brand?.businessName ?? tenant?.name ?? undefined;
+    // A tenant with no brand record → Sparx defaults (null signals "use
+    // @sparx/email's defaultBrand"). Guarding here also narrows `brand` to
+    // non-null for the rest of the function.
+    if (brand === null) return null;
 
-    // A tenant with no brand record and no identity tokens → Sparx defaults
-    // (null signals "use @sparx/email's defaultBrand").
-    const hasIdentity =
-      brand !== null &&
-      Boolean(
-        brand.businessName ||
-        brand.colorPrimary ||
-        brand.colorPrimaryForeground ||
-        brand.colorAccent ||
-        brand.fontHeading ||
-        brand.fontBody ||
-        brand.logoLightMediaId
-      );
+    const slug = tenant?.slug ?? '';
+    const storeName = brand.businessName ?? tenant?.name ?? undefined;
+
+    // Likewise a brand row with no identity tokens at all → defaults.
+    const hasIdentity = [
+      brand.businessName,
+      brand.colorPrimary,
+      brand.colorPrimaryForeground,
+      brand.colorAccent,
+      brand.fontHeading,
+      brand.fontBody,
+      brand.logoLightMediaId,
+    ].some(Boolean);
     if (!hasIdentity) return null;
 
     // Overlay the brand's identity palette/typography over the default preset;
     // unset tokens inherit the preset. Email uses the light palette only.
     const overlay: Partial<ThemeTokens> = {};
     if (brand.colorPrimary) overlay.colorPrimary = brand.colorPrimary;
-    if (brand.colorPrimaryForeground)
-      overlay.colorPrimaryForeground = brand.colorPrimaryForeground;
+    if (brand.colorPrimaryForeground) overlay.colorPrimaryForeground = brand.colorPrimaryForeground;
     if (brand.colorAccent) overlay.colorAccent = brand.colorAccent;
     if (brand.fontHeading) overlay.fontHeading = brand.fontHeading;
     if (brand.fontBody) overlay.fontBody = brand.fontBody;
