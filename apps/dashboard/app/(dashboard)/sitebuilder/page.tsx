@@ -3,6 +3,11 @@ import { Badge, Card, Heading, Text } from '@sparx/ui';
 import { getConfig, listThemes } from './_lib/api';
 
 const SECTIONS = [
+  {
+    href: '/sitebuilder/brand',
+    title: 'Brand',
+    desc: 'Logo, colors, and type — read everywhere your business appears.',
+  },
   { href: '/sitebuilder/design', title: 'Design', desc: 'Theme, colors, fonts, and live preview.' },
   {
     href: '/sitebuilder/themes',

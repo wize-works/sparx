@@ -41,6 +41,10 @@ import { RecentsSection } from './recents-section';
 export interface DashboardShellProps {
   user: { id: string; email: string; name?: string | null };
   tenantName: string;
+  /** Module slugs active for this tenant (manifest ids). Filters the sidebar
+   *  Modules section and the breadcrumb module switcher so a tenant never sees
+   *  a module it hasn't activated. */
+  enabledModules: readonly string[];
   favorites: FavoriteRow[];
   recents: RecentRow[];
   preferences: UserPreferences;
@@ -52,6 +56,7 @@ export interface DashboardShellProps {
 export function DashboardShell({
   user,
   tenantName,
+  enabledModules,
   favorites,
   recents,
   preferences,
@@ -93,7 +98,12 @@ export function DashboardShell({
           </Text>
         </Stack>
       </SidebarHeader>
-      <NavSections pathname={pathname} favorites={favorites} recents={recents} />
+      <NavSections
+        pathname={pathname}
+        enabledModules={enabledModules}
+        favorites={favorites}
+        recents={recents}
+      />
       <SidebarFooter>
         <UserMenu user={user} displayName={displayName} />
       </SidebarFooter>
@@ -105,7 +115,7 @@ export function DashboardShell({
       <SidebarAppShell
         pathname={pathname}
         sidebar={sidebar}
-        headerStart={<BreadcrumbTrail tenantName={tenantName} />}
+        headerStart={<BreadcrumbTrail tenantName={tenantName} enabledModules={enabledModules} />}
         headerActions={<DashboardHeader favorites={favorites} preferences={preferences} />}
         detail={inlineDetail}
         onDetailClose={closeDetail}
@@ -129,13 +139,20 @@ export function DashboardShell({
 
 function NavSections({
   pathname,
+  enabledModules,
   favorites,
   recents,
 }: {
   pathname: string | null;
+  enabledModules: readonly string[];
   favorites: FavoriteRow[];
   recents: RecentRow[];
 }) {
+  // Only surface modules the tenant has activated (docs/24 §4.2 — a disabled
+  // module never appears in the sidebar, ⌘K, or breadcrumb). Keep the manifest
+  // declaration order; filter, don't reorder.
+  const visibleManifests = moduleManifests.filter((m) => enabledModules.includes(m.id));
+
   return (
     <SidebarNav>
       <SidebarSection>
@@ -149,7 +166,7 @@ function NavSections({
 
       <SidebarSection>
         <SidebarSectionLabel>Modules</SidebarSectionLabel>
-        {moduleManifests.map((manifest) => {
+        {visibleManifests.map((manifest) => {
           const Icon = manifest.icon;
           const isActive =
             pathname === manifest.routePrefix || pathname?.startsWith(`${manifest.routePrefix}/`);

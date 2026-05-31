@@ -1,8 +1,8 @@
 # Sparx Platform — Dashboard Shell
 
-**Version:** 1.0
+**Version:** 1.1
 **Author:** Brandon Korous
-**Last Updated:** 2026-05-29
+**Last Updated:** 2026-05-30
 
 ---
 
@@ -133,14 +133,33 @@ A special, non-manifest **Home** item is rendered as the first sidebar entry abo
 
 ### 4.2 Breadcrumb Behaviors
 
-| Segment                    | Click behavior                                                                                                                                                              |
-| -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Tenant (root)              | Popover: tenant switcher (plan, members, Settings, Invite, other tenants user belongs to, add account, log out)                                                             |
-| Module                     | Popover: list of that module's `sections` from its manifest. Module-level controls (Settings) appear in popover header.                                                     |
-| Section                    | Popover: contextually-relevant entities (recent or pinned) within that section. For sections without a useful child list, the popover degenerates to a navigate-only click. |
-| Page (rightmost / current) | Special-cased. If the entity is renamable, opens an inline rename textbox. Otherwise no-op.                                                                                 |
+The first segment is the **Workspace** (the user-facing name for the tenant; see
+[docs/32](32-workspace-switching-breadcrumb.md)). The breadcrumb is the merchant's
+primary "where am I / take me elsewhere" control, so the two leftmost segments are
+_switchers_, not just links.
+
+| Segment                    | Click behavior                                                                                                                                                                                                                                                            |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Workspace (root)           | Menu: workspace settings + sign out today. Switch-to-another-workspace, create-workspace, members/invite land in [docs/32](32-workspace-switching-breadcrumb.md) Phase 2+ (needs the org plugin).                                                                         |
+| Module                     | **Split control.** The label is a link to the module home; an adjacent `▾` opens a switcher listing the _other modules the tenant has enabled_ (active one checked + accent-colored). Sections are reached via the sidebar and segment 3 — they are **not** in this menu. |
+| Section                    | Navigate-only link.                                                                                                                                                                                                                                                       |
+| Page (rightmost / current) | Plain text (non-interactive). Inline rename for renamable entities is a future enhancement.                                                                                                                                                                               |
+
+Only **enabled** modules appear in the Module switcher (and the sidebar Modules
+section) — filtered against the tenant's active-module set via
+`listEnabledModules()` in `@sparx/auth`.
 
 Each non-current segment shows a chevron divider on its right.
+
+#### 4.2.1 Mobile
+
+Below `md`, the multi-segment inline trail is replaced by a single **context chip**
+(module-color dot + current module/page name + `▾`). Tapping it opens a **bottom
+sheet** with grouped, full-width touch rows: **Workspace** (name + settings + sign
+out), **Modules** (enabled set, active checked), and **\<Module\> pages** (the
+current module's sections). Desktop and mobile render are toggled by Tailwind `md:`
+visibility (both in the DOM) so there is no first-paint flash from a post-mount
+media-query resolve.
 
 ### 4.3 Module Color Cue
 

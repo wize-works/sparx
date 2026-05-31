@@ -70,6 +70,7 @@ import crmRoutes from './routes/v1/crm/index.js';
 import sitebuilderRoutes from './routes/v1/sitebuilder/index.js';
 import commerceRoutes from './routes/v1/commerce/index.js';
 import tenantRoutes from './routes/v1/tenant.js';
+import brandRoutes from './routes/v1/brand.js';
 import meRoutes from './routes/v1/me.js';
 import userRoutes from './routes/v1/users.js';
 import emailTestRoutes from './routes/v1/email/test.js';
@@ -445,6 +446,7 @@ export async function createApp(): Promise<FastifyInstance> {
   await app.register(sitebuilderRoutes);
   await app.register(commerceRoutes);
   await app.register(tenantRoutes);
+  await app.register(brandRoutes);
   await app.register(meRoutes);
   await app.register(userRoutes);
   await app.register(emailTestRoutes);

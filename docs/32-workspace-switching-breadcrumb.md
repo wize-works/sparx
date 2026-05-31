@@ -1,6 +1,6 @@
 # 32 — Workspace Switching & the Smart Breadcrumb
 
-**Version:** 0.1 (planning)
+**Version:** 0.2 (Phase 1 shipped)
 **Author:** Brandon Korous
 **Last Updated:** 2026-05-30
 
@@ -92,11 +92,27 @@ nothing is lost — but **§4.2 must be updated** when Phase 1 lands (see §8).
 - `Sign out`.
 - Single-membership case: no switch list; just create / manage / sign out.
 
-**Segment 2 — Module switcher**
+**Segment 2 — Module switcher (desktop)** — _split control (locked)_
 
-- Click the label → navigate to the active module's `routePrefix` home.
-- Dropdown lists **enabled** sibling modules, each a link to its home, with the
-  active module checked and rendered in its accent color.
+- The module name is a **link** → the active module's `routePrefix` home.
+- An adjacent `▾` button opens the switcher: **enabled** sibling modules, each a
+  link to its home, active one checked + accent-colored.
+
+**Mobile (< md) — condensed chip + bottom sheet (locked)**
+
+The multi-segment trail does not fit a phone header, and the two switchers are
+exactly the segments that would collapse into `…`. So below `md` the trail becomes
+a single **context chip** (module-color dot + current module/page name + `▾`) that
+opens a **bottom sheet** with grouped, full-width touch rows:
+
+- **Workspace** — name (✓) + settings + sign out (switch/create gated to Phase 2).
+- **Modules** — enabled set, active checked.
+- **\<Module\> pages** — the current module's sections (lateral nav, surfaced here
+  since the desktop module menu no longer lists sections).
+
+Desktop/mobile are toggled by Tailwind `md:` visibility (both in the DOM), not a
+post-mount media query — avoids a first-paint flash. The bottom sheet is shared
+infrastructure: Phase 2 lights up its Workspace group's switch/create rows.
 
 ## 5. Phased plan
 
@@ -109,18 +125,26 @@ phases 3–5.
 Locks terminology (Workspace), confirms tenant = workspace = Better Auth org, and
 records the sequencing decision (ship UI first, defer switching). No code.
 
-### Phase 1 — Module switcher (segment 2) — _no backend dependency_
+### Phase 1 — Module switcher + mobile sheet ✅ _shipped 2026-05-30_
 
-- Rework `ModuleMenuBody` in `breadcrumb-trail.tsx`: replace the section list with a
-  sibling-module list from `moduleManifests`, active module checked, click → module
-  home. Keep the module-accent color on the trigger.
-- Filter the list (and the sidebar's Modules section) by the tenant's
-  **enabled-module set** so disabled modules never appear — closes the §3.2 gap.
-  Source the enabled set from the existing module-gate (`@sparx/auth`
-  `isModuleEnabled` / tenant settings) passed down from the layout.
-- Update [24-dashboard-shell.md §4.2](24-dashboard-shell.md).
-- **Risk:** low. No schema, no auth. **Test:** unit (active marking, enabled
-  filtering) + a Playwright pass through the dropdown.
+What landed:
+
+- **`listEnabledModules(tenantId)`** added to `@sparx/auth`'s module-gate (one
+  `tenants` read, same default-deny as `isModuleEnabled`). Computed in the
+  dashboard `layout.tsx` and threaded through `DashboardShell` →
+  `BreadcrumbTrail` + the sidebar `NavSections`.
+- **Sidebar Modules section** now filters to the enabled set (closes the §3.2
+  gap — disabled modules no longer render).
+- **Desktop module segment** rebuilt as a split control (label → home, `▾` →
+  enabled-sibling switcher, active checked + accent). The module segment is now
+  interactive even when it is the current page.
+- **Mobile** breadcrumb rebuilt as the condensed chip + bottom sheet described in
+  §4. Desktop/mobile toggled by `md:` visibility.
+- [24-dashboard-shell.md §4.2 + §4.2.1](24-dashboard-shell.md) updated.
+- Typecheck + lint clean (no new warnings); no schema, no auth changes.
+
+Deferred from this phase: automated tests (unit for active-marking/enabled-filter,
+Playwright for the dropdown + bottom sheet) — see §9 / TODO.
 
 ### Phase 2 — Workspace segment UI (segment 1) — _switching still gated_
 

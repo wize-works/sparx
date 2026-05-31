@@ -1,8 +1,9 @@
 'use client';
 
 import * as React from 'react';
-import { Button, Heading, Input, Label, Stack, Text } from '@sparx/ui';
+import { Button, ColorPicker, Heading, Input, Label, Stack, Text } from '@sparx/ui';
 import { saveBusinessAction } from '../_lib/actions';
+import { BrandImageField } from '@/app/(dashboard)/sitebuilder/_components/brand-image-field';
 import type { StepNav } from './onboarding-wizard';
 
 // A small, opinionated category list. It's stored on the tenant's onboarding
@@ -32,13 +33,23 @@ export function StepBusiness({
 }) {
   const [name, setName] = React.useState(initialName);
   const [category, setCategory] = React.useState(initialCategory ?? '');
+  const [logo, setLogo] = React.useState<{ id: string | null; url: string | null }>({
+    id: null,
+    url: null,
+  });
+  const [primary, setPrimary] = React.useState<string | null>(null);
   const [error, setError] = React.useState<string | null>(null);
   const [pending, startTransition] = React.useTransition();
 
   function onContinue() {
     setError(null);
     startTransition(async () => {
-      const res = await saveBusinessAction({ name, category: category || null });
+      const res = await saveBusinessAction({
+        name,
+        category: category || null,
+        logoMediaId: logo.id,
+        colorPrimary: primary,
+      });
       if (res.ok) nav.onNext();
       else setError(res.error);
     });
@@ -82,6 +93,29 @@ export function StepBusiness({
         <Text size="xs" variant="muted">
           Helps us suggest a theme. You can pick any theme regardless.
         </Text>
+      </Stack>
+
+      <Stack gap={3}>
+        <Stack gap={1}>
+          <Text size="sm">Brand basics (optional)</Text>
+          <Text size="xs" variant="muted">
+            Add your logo and main color now, or set them anytime in Brand.
+          </Text>
+        </Stack>
+        <BrandImageField
+          label="Logo"
+          value={logo.id}
+          previewUrl={logo.url}
+          onChange={(id, url) => setLogo({ id, url })}
+        />
+        <Stack gap={2}>
+          <Label>Primary color</Label>
+          <ColorPicker
+            value={primary ?? ''}
+            onChange={(v) => setPrimary(v || null)}
+            ariaLabel="Primary brand color"
+          />
+        </Stack>
       </Stack>
 
       {error && (

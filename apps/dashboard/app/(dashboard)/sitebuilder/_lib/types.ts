@@ -67,6 +67,35 @@ export interface TenantDto {
   slug: string;
 }
 
+// Tenant brand — the platform-wide source of truth for brand identity
+// (docs/30 §6). Tenant-level, above every module: read-only to consumers
+// (email, CRM, the storefront theme). Edited here in the Site Builder, but the
+// record is owned at the tenant level, not by the Storefront module. Media
+// fields store asset ids; the panel resolves them to URLs for the brand board
+// preview via `resolveMediaUrl`.
+export interface BrandDto {
+  tenantId: string;
+  businessName: string | null;
+  tagline: string | null;
+  logoLightMediaId: string | null;
+  logoDarkMediaId: string | null;
+  faviconMediaId: string | null;
+  colorPrimary: string | null;
+  colorPrimaryForeground: string | null;
+  colorAccent: string | null;
+  fontHeading: string | null;
+  fontBody: string | null;
+  socials: Record<string, string>;
+}
+
+// Best-fit asset URLs for the three brand images, resolved server-side so the
+// board preview can render logos on first paint without a client round-trip.
+export interface BrandMediaUrls {
+  logoLight: string | null;
+  logoDark: string | null;
+  favicon: string | null;
+}
+
 // Navigation menus are CMS-owned content (docs/30 §8); Site Builder reads this
 // shape read-only to bind a menu into a layout slot. api-rest returns items as
 // a flat list spanning every depth (the Prisma include is non-recursive); the

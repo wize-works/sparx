@@ -2,8 +2,10 @@
 
 import { revalidatePath } from 'next/cache';
 import { api, type ApiRestError } from '@/lib/api-rest-client';
+import { resolveMediaUrl } from './api';
 import type {
   AppearancePolicy,
+  BrandDto,
   SiteConfigDto,
   SiteLayoutBlockDto,
   SitePublishScheduleDto,
@@ -81,6 +83,20 @@ export async function upsertLayout(
   input: { navigationMenuId?: string | null; config?: Record<string, unknown>; visible?: boolean }
 ): Promise<ActionResult<SiteLayoutBlockDto>> {
   return run(() => api.put<SiteLayoutBlockDto>(`/v1/sitebuilder/layout/${slot}`, input));
+}
+
+// Brand is tenant-level (docs/30 §6) — PATCH merges the provided fields into
+// the single tenant_brands row. All fields optional; a present null clears.
+export type BrandPatch = Partial<Omit<BrandDto, 'tenantId'>>;
+
+export async function updateBrand(input: BrandPatch): Promise<ActionResult<BrandDto>> {
+  return run(() => api.patch<BrandDto>('/v1/brand', input));
+}
+
+// Resolve a freshly-picked/uploaded asset id to a preview URL for the brand
+// board, without touching revalidation (pure read).
+export async function resolveBrandMedia(mediaId: string | null): Promise<string | null> {
+  return resolveMediaUrl(mediaId);
 }
 
 export async function publishNow(note?: string): Promise<ActionResult<SiteVersionDto>> {

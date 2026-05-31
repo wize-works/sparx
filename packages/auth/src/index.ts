@@ -12,6 +12,7 @@ export {
 export { getSession, requireSession, type SparxSession } from './session';
 export {
   isModuleEnabled,
+  listEnabledModules,
   requireModule,
   invalidateModuleCache,
   moduleDisabledEnvelope,

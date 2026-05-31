@@ -1,4 +1,4 @@
-import { requireSession } from '@sparx/auth';
+import { listEnabledModules, requireSession } from '@sparx/auth';
 import { api } from '@/lib/api-rest-client';
 import { DashboardShell } from './_components/dashboard-shell';
 import { getUserPreferences } from './_shell/preferences';
@@ -25,17 +25,19 @@ export default async function DashboardLayout({
 
   const ctx = { userId: user.id, tenantId: user.tenantId };
 
-  const [tenant, favorites, recents, preferences] = await Promise.all([
+  const [tenant, favorites, recents, preferences, enabledModules] = await Promise.all([
     api.get<{ name: string }>('/v1/tenant'),
     listFavorites(ctx),
     listRecents(ctx),
     getUserPreferences(user.id),
+    listEnabledModules(user.tenantId),
   ]);
 
   return (
     <DashboardShell
       user={user}
       tenantName={tenant?.name ?? 'Workspace'}
+      enabledModules={enabledModules}
       favorites={favorites}
       recents={recents}
       preferences={preferences}

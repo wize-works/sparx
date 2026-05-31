@@ -29,6 +29,19 @@ export type ModuleSlug =
   | 'dropship'
   | 'ai';
 
+// Canonical ordering is irrelevant here — callers (sidebar, breadcrumb) order
+// by their own manifest list. This is just the closed set we probe.
+const ALL_MODULES: readonly ModuleSlug[] = [
+  'storefront',
+  'commerce',
+  'cms',
+  'crm',
+  'email',
+  'b2b',
+  'dropship',
+  'ai',
+];
+
 export class ModuleDisabledError extends Error {
   readonly code = 'MODULE_DISABLED' as const;
   readonly module: ModuleSlug;
@@ -90,6 +103,20 @@ export async function isModuleEnabled(tenantId: string, module: ModuleSlug): Pro
 
   cache.set(key, { enabled, expiresAt: Date.now() + TTL_MS });
   return enabled;
+}
+
+/** List every module enabled for a tenant in a single `tenants` read. The
+ *  shell uses this to filter the sidebar + breadcrumb module switcher so a
+ *  tenant never sees modules it hasn't activated. Same default-deny semantics
+ *  as `isModuleEnabled` (an unset flag = not active). Not cached — it's one
+ *  row read per dashboard render, and the per-module LRU keys wouldn't help a
+ *  whole-set query. */
+export async function listEnabledModules(tenantId: string): Promise<ModuleSlug[]> {
+  const tenant = await prisma.tenant.findUnique({
+    where: { id: tenantId },
+    select: { settings: true },
+  });
+  return ALL_MODULES.filter((m) => readModuleFlag(tenant?.settings, m));
 }
 
 function readModuleFlag(settings: unknown, module: ModuleSlug): boolean {

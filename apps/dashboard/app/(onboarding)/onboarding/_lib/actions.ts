@@ -50,19 +50,30 @@ function toWizardTheme(t: ThemePreset): WizardThemeOption {
 
 // Step 1 — Business. Saves the store name + category, then silently enables the
 // `storefront` + `commerce` modules so the later steps' endpoints respond
-// (theme catalog + product create are both module-gated).
+// (theme catalog + product create are both module-gated). Also seeds the
+// tenant-level brand (docs/30 §6): businessName always, plus an optional logo
+// and primary color the merchant can set inline here. Brand is ungated, so this
+// seeds the source of truth before any module choice — a tenant always has a
+// brand even if Storefront is later turned off.
 export async function saveBusinessAction(input: {
   name: string;
   category: string | null;
+  logoMediaId?: string | null;
+  colorPrimary?: string | null;
 }): Promise<WizardResult> {
   try {
     const name = input.name.trim();
     if (!name) return { ok: false, error: 'Store name is required.' };
 
+    const brandPatch: Record<string, unknown> = { businessName: name };
+    if (input.logoMediaId) brandPatch.logoLightMediaId = input.logoMediaId;
+    if (input.colorPrimary) brandPatch.colorPrimary = input.colorPrimary;
+
     await api.patch('/v1/tenant', { name });
     await Promise.all([
       api.patch('/v1/tenant/modules/storefront', { enabled: true }),
       api.patch('/v1/tenant/modules/commerce', { enabled: true }),
+      api.patch('/v1/brand', brandPatch),
     ]);
     await patchOnboarding({
       category: input.category,

@@ -4,6 +4,7 @@
 import 'server-only';
 import { api } from '@/lib/api-rest-client';
 import type {
+  BrandDto,
   NavMenuDto,
   SiteConfigDto,
   SiteLayoutBlockDto,
@@ -49,6 +50,37 @@ export async function listSchedules(): Promise<SitePublishScheduleDto[]> {
     '/v1/sitebuilder/schedules'
   );
   return schedules;
+}
+
+// Tenant brand — the tenant-level source of truth (docs/30 §6). Ungated
+// (/v1/brand is platform-level like /v1/tenant), so this read works regardless
+// of which modules are enabled.
+export function getBrand(): Promise<BrandDto> {
+  return api.get<BrandDto>('/v1/brand');
+}
+
+interface AssetVariant {
+  format: string;
+  width: number;
+  url: string;
+}
+
+// Resolve a media asset id to a browser-usable URL for the brand board
+// preview. Prefers a ~512w webp, falls back to the first variant. Returns null
+// when the id is absent or the asset can't be read (e.g. still transcoding).
+export async function resolveMediaUrl(mediaId: string | null): Promise<string | null> {
+  if (!mediaId) return null;
+  try {
+    const asset = await api.get<{ variants?: AssetVariant[] }>(`/v1/media/assets/${mediaId}`);
+    const variants = asset.variants ?? [];
+    if (variants.length === 0) return null;
+    const webp = variants
+      .filter((v) => v.format === 'webp')
+      .sort((a, b) => Math.abs(a.width - 512) - Math.abs(b.width - 512));
+    return webp[0]?.url ?? variants[0]?.url ?? null;
+  } catch {
+    return null;
+  }
 }
 
 // Navigation menus are CMS-owned content (docs/30 §8); Site Builder reads them

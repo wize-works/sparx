@@ -7,6 +7,7 @@
 import type { ModuleManifest } from '@sparx/ui/shell';
 import {
   FileText,
+  Fingerprint,
   Home,
   Image,
   LayoutTemplate,
@@ -22,6 +23,9 @@ export const sitebuilderManifest: ModuleManifest = {
   icon: LayoutTemplate,
   routePrefix: '/sitebuilder',
   sections: [
+    // Brand is the tenant-level identity foundation (docs/30 §6) — first in the
+    // rail, above the presentation layers (theme/design) that read from it.
+    { id: 'brand', label: 'Brand', icon: Fingerprint, href: '/sitebuilder/brand' },
     { id: 'design', label: 'Design', icon: Palette, href: '/sitebuilder/design' },
     { id: 'themes', label: 'Themes', icon: LayoutTemplate, href: '/sitebuilder/themes' },
     { id: 'homepage', label: 'Homepage', icon: Home, href: '/sitebuilder/homepage' },
