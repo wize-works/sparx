@@ -262,11 +262,12 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 // Maps a WCAG rating to a token-backed badge tone. Fail → danger, the partial
 // AA-Large pass → warning, AA/AAA → success.
-function contrastTone(rating: string): { text: string; bg: string } {
-  if (rating === 'Fail') return { text: 'var(--color-danger-text)', bg: 'var(--color-danger-tint)' };
+function contrastTone(rating: string): React.CSSProperties {
+  if (rating === 'Fail')
+    return { color: 'var(--color-danger-text)', backgroundColor: 'var(--color-danger-tint)' };
   if (rating === 'AA Large')
-    return { text: 'var(--color-warning-text)', bg: 'var(--color-warning-tint)' };
-  return { text: 'var(--color-success-text)', bg: 'var(--color-success-tint)' };
+    return { color: 'var(--color-warning-text)', backgroundColor: 'var(--color-warning-tint)' };
+  return { color: 'var(--color-success-text)', backgroundColor: 'var(--color-success-tint)' };
 }
 
 // A color field with a clear-to-default affordance (brand colors are optional;

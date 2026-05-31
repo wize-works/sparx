@@ -1,22 +1,9 @@
 import { z } from 'zod';
 
 // Per-tenant email settings. All fields optional — PATCH semantics (only the
-// provided fields are updated). Branding override is the fallback brand used
-// until a storefront theme is published (see the brand resolver, P4).
-
-export const BrandingOverrideSchema = z
-  .object({
-    logoMediaId: z.string().uuid().nullable().optional(),
-    colors: z
-      .object({
-        primary: z
-          .string()
-          .regex(/^#[0-9a-fA-F]{6}$/, 'Use a 6-digit hex color.')
-          .optional(),
-      })
-      .optional(),
-  })
-  .strict();
+// provided fields are updated). Brand identity (logo/colors/type) is NOT here:
+// it is read from the tenant-level TenantBrand (docs/30 §6); email may never
+// override the brand. The former `brandingOverride` field was removed in 1D-5.
 
 export const UpdateEmailSettingsInput = z
   .object({
@@ -24,7 +11,6 @@ export const UpdateEmailSettingsInput = z
     fromAddress: z.string().email('Enter a valid email address.').nullable().optional(),
     replyTo: z.string().email('Enter a valid email address.').nullable().optional(),
     physicalAddress: z.string().max(2000).nullable().optional(),
-    brandingOverride: BrandingOverrideSchema.optional(),
     defaultSendingDomainId: z.string().uuid().nullable().optional(),
   })
   .strict();

@@ -20,10 +20,12 @@ model EmailSettings {
   fromAddress      String? @map("from_address") @db.VarChar(255)
   replyTo          String? @map("reply_to") @db.VarChar(255)
   // CAN-SPAM / GDPR-required physical postal address rendered in the footer.
-  physicalAddress  String? @map("physical_address") @db.Text
-  // Logo + brand colors used only when no published Site Builder snapshot
-  // exists (the resolveEmailBrand fallback overlay). { logoMediaId, colors }.
-  brandingOverride Json    @default("{}") @map("branding_override")
+  physicalAddress String? @map("physical_address") @db.Text
+
+  // NOTE: brand identity (logo/colors/type) is NOT stored here. It is read from
+  // the tenant-level TenantBrand (docs/30 §6) by resolveEmailBrand — email may
+  // never override the brand. The old `branding_override` column was removed in
+  // migration 20260610000100.
 
   defaultSendingDomainId String? @map("default_sending_domain_id") @db.Uuid
 

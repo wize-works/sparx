@@ -21,7 +21,6 @@ export interface EmailSettingsView {
   fromAddress: string | null;
   replyTo: string | null;
   physicalAddress: string | null;
-  brandingOverride: Record<string, unknown>;
   defaultSendingDomainId: string | null;
 }
 
@@ -32,7 +31,6 @@ function toView(tenantId: string, row: EmailSettings | null): EmailSettingsView 
     fromAddress: row?.fromAddress ?? null,
     replyTo: row?.replyTo ?? null,
     physicalAddress: row?.physicalAddress ?? null,
-    brandingOverride: (row?.brandingOverride as Record<string, unknown>) ?? {},
     defaultSendingDomainId: row?.defaultSendingDomainId ?? null,
   };
 }
@@ -52,9 +50,6 @@ export async function update(ctx: ServiceContext, rawInput: unknown): Promise<Em
     ...(input.fromAddress !== undefined ? { fromAddress: input.fromAddress } : {}),
     ...(input.replyTo !== undefined ? { replyTo: input.replyTo } : {}),
     ...(input.physicalAddress !== undefined ? { physicalAddress: input.physicalAddress } : {}),
-    ...(input.brandingOverride !== undefined
-      ? { brandingOverride: input.brandingOverride as object }
-      : {}),
     ...(input.defaultSendingDomainId !== undefined
       ? { defaultSendingDomainId: input.defaultSendingDomainId }
       : {}),

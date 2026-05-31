@@ -117,7 +117,6 @@ export interface EmailSettingsView {
   fromAddress: string | null;
   replyTo: string | null;
   physicalAddress: string | null;
-  brandingOverride: { logoMediaId?: string | null; colors?: { primary?: string } };
   defaultSendingDomainId: string | null;
 }
 

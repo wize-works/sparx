@@ -151,6 +151,12 @@ export function BrandBoard(props: BrandBoardValues) {
             Accent
           </span>
         </div>
+        {buttonFails ? (
+          <p className="text-xs text-[var(--color-danger-text)]">
+            Low contrast ({buttonRatio?.toFixed(1)}:1) — this button text may be hard to read. Aim
+            for 4.5:1 or higher.
+          </p>
+        ) : null}
       </div>
 
       {/* Socials */}
@@ -201,7 +207,13 @@ function LogoTile({
         style={{ backgroundColor: bg }}
       >
         {logo ? (
-          <img src={logo} alt="" className="max-h-full max-w-full object-contain" />
+          <img
+            src={logo}
+            alt={`${name} logo`}
+            loading="lazy"
+            decoding="async"
+            className="max-h-full max-w-full object-contain"
+          />
         ) : (
           <div className="flex items-center gap-1.5" style={{ color: text }}>
             <ImageIcon className="h-4 w-4 opacity-60" />

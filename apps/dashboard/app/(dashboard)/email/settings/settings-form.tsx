@@ -24,8 +24,8 @@ export function SettingsForm({ initial }: SettingsFormProps) {
     setFieldErrors({});
 
     // No brand fields here on purpose — email brand (color, fonts, logo) is
-    // inherited from the storefront theme set in Site Builder, never re-entered
-    // per channel. brandingOverride is left untouched (the PATCH is partial).
+    // read from the tenant-level brand (docs/30 §6), never re-entered per
+    // channel and never overridable from email.
     const input = {
       fromName: fromName.trim() || null,
       fromAddress: fromAddress.trim() || null,
@@ -124,15 +124,15 @@ export function SettingsForm({ initial }: SettingsFormProps) {
           <CardContent>
             <Stack gap={2}>
               <Text size="sm" weight="medium">
-                Brand is inherited from Site Builder
+                Brand is set once, for everything
               </Text>
               <Text size="sm" variant="muted">
-                Email colors, fonts, and logo come from your storefront theme — there&apos;s nothing
-                to set per channel. Update your brand once and every transactional and marketing
-                email adopts it automatically.
+                Email colors, fonts, and logo come from your brand — there&apos;s nothing to set per
+                channel. Update your brand once and every transactional and marketing email adopts
+                it automatically.
               </Text>
               <Button variant="link" size="sm" asChild>
-                <Link href="/sitebuilder/themes">Manage brand in Site Builder →</Link>
+                <Link href="/sitebuilder/brand">Manage brand →</Link>
               </Button>
             </Stack>
           </CardContent>

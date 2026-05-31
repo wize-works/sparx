@@ -81,7 +81,12 @@ export function BrandImageField({
           }`}
         >
           {previewUrl ? (
-            <img src={previewUrl} alt="" className="h-full w-full object-contain" />
+            <img
+              src={previewUrl}
+              alt=""
+              decoding="async"
+              className="h-full w-full object-contain"
+            />
           ) : (
             <ImageIcon className="h-5 w-5 text-[var(--color-text-tertiary)]" />
           )}
