@@ -73,5 +73,11 @@ export interface DevLastSend {
 }
 
 export async function readLastDevSend(): Promise<DevLastSend> {
-  return api.get<DevLastSend>('/v1/email/last-console-send');
+  // Best-effort: this is a dev-only convenience readout. In production the
+  // route returns `{enabled:false}` for non-console providers, and a non-admin
+  // caller gets a 403 — neither should take down the whole Email overview page.
+  // Degrade to a safe default rather than throwing into the server render.
+  return api
+    .get<DevLastSend>('/v1/email/last-console-send')
+    .catch(() => ({ enabled: false, send: null }));
 }
