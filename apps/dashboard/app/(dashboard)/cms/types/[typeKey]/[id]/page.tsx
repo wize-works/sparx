@@ -45,7 +45,7 @@ export default async function EditEntryPage({ params }: PageProps) {
   }
 
   return (
-    <Container size="lg">
+    <Container size="xl">
       <Stack gap={6} className="py-10">
         <PageHeader
           title={`Edit ${type.name.toLowerCase()}`}

@@ -4,7 +4,7 @@ import { AuthoredForm } from '../_components/authored-form';
 
 export default function NewTemplatePage() {
   return (
-    <Container size="lg">
+    <Container size="md">
       <Stack gap={6} className="py-10">
         <PageHeader title="New marketing template" />
 

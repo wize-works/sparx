@@ -81,7 +81,7 @@ export function NewTaxZoneForm() {
           </Text>
         )}
         <Stack direction="row" gap={2} justify="end">
-          <Button type="submit" disabled={pending}>
+          <Button color="module" type="submit" disabled={pending}>
             {pending ? 'Creating…' : 'Create zone'}
           </Button>
         </Stack>

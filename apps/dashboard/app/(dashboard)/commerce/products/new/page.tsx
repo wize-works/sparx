@@ -96,7 +96,7 @@ export default function NewProductPage() {
   }
 
   return (
-    <Container size="lg">
+    <Container size="md">
       <Stack gap={6} className="py-10">
         <PageHeader
           title="New product"

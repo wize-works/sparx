@@ -57,7 +57,7 @@ export default async function BundlesPage() {
           badge={<Badge color="module">{bundles.length}</Badge>}
           description="A bundle is a wrapper product that resolves to a fixed set of component variants. Use the Configurator instead when components are user-selectable."
           actions={
-            <Button asChild>
+            <Button color="module" asChild>
               <Link href="/commerce/bundles/new">
                 <Plus className="h-4 w-4" />
                 Create bundle
@@ -82,7 +82,7 @@ export default async function BundlesPage() {
                 title="No bundles yet"
                 description="Create a wrapper product first (e.g. ‘Starter Beauty Kit’), then bundle its components here."
                 action={
-                  <Button asChild>
+                  <Button color="module" asChild>
                     <Link href="/commerce/bundles/new">Create bundle</Link>
                   </Button>
                 }

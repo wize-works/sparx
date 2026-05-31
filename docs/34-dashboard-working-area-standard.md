@@ -1,9 +1,11 @@
 # Sparx Platform — Dashboard Working-Area Standard
 
-**Version:** 1.2
+**Version:** 1.3
 **Author:** Brandon Korous
 **Last Updated:** 2026-05-31
 
+> **1.3 (2026-05-31):** Post-rollout review feedback. Content width gains a third tier — **Full** (§3) for canvas/builder workspaces (Site Builder editor, the pipeline Kanban board) where the work surface itself wants the whole viewport. The drawer/modal detail view now adopts the record's **module color** (the `@detail` slot wraps content in the owning `ModuleProvider` — previously it inherited the `:root` indigo). Commerce primary CTAs corrected to `color="module"`. Next: the list **filter/search toolbar** redesign (§7) and a `defaultListView` (table/cards) preference mirroring `defaultDetailView`.
+>
 > **1.2 (2026-05-31):** Rollout landed (§17). `PageHeader` / `FilterBar` / `FormActionBar` built; in-content section tabs (cms/crm/email) and the in-content "← Back to X" links removed platform-wide (the breadcrumb owns up-nav). **Trend charts** added to @sparx/ui (`LineChart`/`BarChart`/`AreaChart`/`Sparkline`, token + `--module-active` themed, `--chart-1..6` palette) and onto the overviews (sample-labeled until reporting timeseries exists). **Landings converted to overview dashboards** — CRM list → `/crm/customers`, CMS Pages list → `/cms/pages`, each with a new `/{module}` overview; Email/Commerce already overview-shaped.
 >
 > **1.1 (2026-05-31):** Locked intra-module navigation as a **rail + contextual sidebar** (§11) — module sections move out of in-content tab strips and card-grid-as-nav into the shell's contextual panel; in-content tabs are now reserved for record facets only. Shell-side detail in [doc 24](24-dashboard-shell.md) §5.
@@ -26,26 +28,27 @@ Today that working area is improvised per page. A live audit of 19 representativ
 
 1. **Archetype, not improvisation.** Every working-area page is exactly one of six archetypes (§4). The archetype dictates the layout; pages do not invent their own.
 2. **Compose primitives, never restyle them.** The building blocks live in `@sparx/ui` (`Container`, `Card`, `Stat`, `DataTable`, `EmptyState`, `Tabs`, `Grid`, `Stack`, `Form`). Feature code arranges them; it never reaches for raw Tailwind or one-off colors. (Per [doc 23](23-frontend-component-architecture.md) §1.)
-3. **The module color is automatic — let it be.** Every surface is wrapped in `<ModuleProvider>`, which sets `--module-active`. Primary actions, card stripes, tab underlines, and stat icons all read that variable. A page should never hardcode indigo (or any hue) — if it looks indigo on a Commerce page, it's missing `variant="module"`.
+3. **The module color is automatic — let it be.** Every surface is wrapped in `<ModuleProvider>`, which sets `--module-active`. Primary actions, card stripes, tab underlines, and stat icons all read that variable. A page should never hardcode indigo (or any hue) — if it looks indigo on a Commerce page, the primary action is missing `color="module"`. This holds in the drawer/modal too: the `@detail` slot renders outside the module layout, so it wraps content in the record's owning `ModuleProvider` (keyed by entity type) — never assume the route's layout supplies the color.
 4. **One primary action per header, top-right.** Actions live in the page header, right-aligned. Never below the header, never duplicated into the body, never a second competing primary.
 5. **The breadcrumb is the back button.** The shell breadcrumb already provides up-navigation. The working area carries no in-content "← Back to X" link.
 6. **Section navigation belongs to the shell, not the content.** Switching between a module's sections is the contextual sidebar's job (§11), not in-content tabs or a card grid. The working area is for _content_; in-content tabs are reserved for the facets of a single record (§11.1).
-7. **Two widths, decided by intent.** Workspaces are wide; focused tasks are narrow (§3). No per-page max-width guessing.
+7. **Three widths, decided by intent.** Canvas/builder tools fill the viewport; workspaces are wide; focused tasks are narrow (§3). No per-page max-width guessing.
 
 ---
 
 ## 3. Content Width
 
-The shell applies no max-width; each page wraps its content in the shared `Container` (`packages/ui/src/components/layout/container.tsx`). There are exactly **two** allowed widths, chosen by whether the page is a _workspace_ (you survey and navigate) or a _focused task_ (you fill one thing out):
+The shell applies no max-width; each page wraps its content in the shared `Container` (`packages/ui/src/components/layout/container.tsx`). There are exactly **three** allowed widths, chosen by what the page _is_ — a canvas tool, a workspace you survey and navigate, or a focused task you fill one thing out:
 
-| Width       | `Container size` | Max    | Used by archetypes                                                              |
+| Width       | `Container size` | Max    | Used by                                                                         |
 | ----------- | ---------------- | ------ | ------------------------------------------------------------------------------- |
+| **Full**    | `full`           | none   | Canvas/builder tools: the Site Builder editor, the pipeline Kanban board        |
 | **Wide**    | `xl`             | 1280px | Module Overview, Collection/List, Record Detail, Settings Index, Module Preview |
 | **Focused** | `md`             | 768px  | Create/Edit Form, single-section settings forms                                 |
 
-`md` (768px) comfortably fits the two-column field rows seen on the deal/product forms. A form that genuinely needs three+ columns may opt up to `lg` (1024px), but that is the documented exception, not a free choice. The four ad-hoc widths in the audit (820 / 960 / 1040 / 1200) collapse to these two.
+`md` (768px) comfortably fits the two-column field rows seen on the deal/product forms. A form that genuinely needs three+ columns or an embedded sub-editor (a line-items grid, a segment rule-builder) may opt up to `lg` (1024px), but that is the documented exception, not a free choice. The four ad-hoc widths in the audit (820 / 960 / 1040 / 1200) collapse to these.
 
-> **Record Detail vs. Form.** A _detail_ page (tabs, multiple panels, the rich edit surface for an entity like a product) is a workspace → **Wide**. A _form_ page (`/new`, a simple single-card edit) is a focused task → **Focused**. The tell: a detail page has in-content tabs and inline/auto save; a form page has one card and an explicit Save/Cancel bar.
+> **Full vs. Wide vs. Form.** **Full** is reserved for tools whose _work surface itself_ wants the whole viewport — a drag-and-drop builder, a Kanban board — and still carries the `Container`'s own horizontal padding. It is not a license for ordinary pages to go edge-to-edge. A _detail_ page (tabs, multiple panels, the rich edit surface for an entity like a product) is a workspace → **Wide**. A _form_ page (`/new`, a simple single-card edit) is a focused task → **Focused**. The tell: a detail page has in-content tabs and inline/auto save; a form page has one card and an explicit Save/Cancel bar.
 
 ---
 

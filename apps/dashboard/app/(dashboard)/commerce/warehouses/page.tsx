@@ -71,7 +71,7 @@ export default async function WarehousesPage() {
           }
           description="Inventory levels, lot batches, and serial units all sit beneath a warehouse. A tenant needs at least one active warehouse before stock can be reserved or sold. Dropship suppliers register as a virtual warehouse so the inventory model stays uniform."
           actions={
-            <Button asChild>
+            <Button color="module" asChild>
               <Link href="/commerce/warehouses/new">
                 <Plus className="h-4 w-4" />
                 Add warehouse
@@ -96,7 +96,7 @@ export default async function WarehousesPage() {
                 title="No warehouses yet"
                 description="Add your first warehouse to start tracking stock. A merchant with only digital goods can use a single virtual warehouse."
                 action={
-                  <Button asChild>
+                  <Button color="module" asChild>
                     <Link href="/commerce/warehouses/new">Create warehouse</Link>
                   </Button>
                 }

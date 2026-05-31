@@ -39,7 +39,7 @@ export default async function NewConfiguratorTemplatePage() {
   const products = await loadProducts();
 
   return (
-    <Container size="lg">
+    <Container size="md">
       <Stack gap={6} className="py-10">
         <PageHeader
           title="New configurator template"

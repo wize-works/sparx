@@ -11,7 +11,7 @@ interface PageParams {
 export default async function TaxonomyDetailPage({ params }: PageParams) {
   const { key } = await params;
   return (
-    <Container size="lg">
+    <Container size="xl">
       <Stack gap={6} className="py-10">
         <TaxonomyDetailContent id={key} />
       </Stack>

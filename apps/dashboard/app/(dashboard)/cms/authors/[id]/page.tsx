@@ -11,7 +11,7 @@ interface PageParams {
 export default async function EditAuthorPage({ params }: PageParams) {
   const { id } = await params;
   return (
-    <Container size="lg">
+    <Container size="xl">
       <Stack gap={6} className="py-10">
         <AuthorDetailContent id={id} />
       </Stack>

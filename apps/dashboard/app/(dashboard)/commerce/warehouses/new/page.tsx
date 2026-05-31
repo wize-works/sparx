@@ -68,7 +68,7 @@ export default function NewWarehousePage() {
   }
 
   return (
-    <Container size="lg">
+    <Container size="md">
       <Stack gap={6} className="py-10">
         <PageHeader
           title="New warehouse"
@@ -185,7 +185,7 @@ export default function NewWarehousePage() {
                   <Button variant="ghost" asChild>
                     <Link href="/commerce/warehouses">Cancel</Link>
                   </Button>
-                  <Button type="submit" disabled={pending}>
+                  <Button color="module" type="submit" disabled={pending}>
                     {pending ? 'Saving…' : 'Create warehouse'}
                   </Button>
                 </Stack>

@@ -154,7 +154,7 @@ export default async function InventoryPage({ searchParams }: PageProps) {
             title="No warehouses yet"
             description="Create a warehouse before tracking inventory."
             action={
-              <Button asChild>
+              <Button color="module" asChild>
                 <Link href="/commerce/warehouses/new">Add warehouse</Link>
               </Button>
             }

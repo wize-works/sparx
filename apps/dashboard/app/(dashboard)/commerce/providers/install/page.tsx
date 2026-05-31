@@ -53,7 +53,7 @@ export default async function InstallProviderPage({
   if (!metadata.kinds.includes(kind as ProviderKind)) redirect('/commerce/providers');
 
   return (
-    <Container size="lg">
+    <Container size="md">
       <Stack gap={6} className="py-10">
         <PageHeader
           title={`Install ${metadata.displayName}`}

@@ -68,7 +68,7 @@ export default async function StorefrontSettingsPage() {
   };
 
   return (
-    <Container size="lg">
+    <Container size="md">
       <Stack gap={6} className="py-10">
         <PageHeader
           icon={<Settings2 className="h-5 w-5" />}

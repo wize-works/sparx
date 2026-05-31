@@ -60,7 +60,7 @@ export default function NewPriceListPage() {
   }
 
   return (
-    <Container size="lg">
+    <Container size="md">
       <Stack gap={6} className="py-10">
         <PageHeader
           title="New price list"
@@ -138,7 +138,7 @@ export default function NewPriceListPage() {
                   <Button variant="ghost" asChild>
                     <Link href="/commerce/pricing">Cancel</Link>
                   </Button>
-                  <Button type="submit" disabled={pending}>
+                  <Button color="module" type="submit" disabled={pending}>
                     {pending ? 'Saving…' : 'Create price list'}
                   </Button>
                 </Stack>

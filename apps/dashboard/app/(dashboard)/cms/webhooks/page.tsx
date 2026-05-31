@@ -30,7 +30,7 @@ export const dynamic = 'force-dynamic';
 
 export default function WebhooksPage() {
   return (
-    <Container size="lg">
+    <Container size="xl">
       <Stack gap={6} className="py-10">
         <PageHeader
           icon={<Webhook className="h-5 w-5" />}

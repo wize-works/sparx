@@ -11,7 +11,7 @@ export const dynamic = 'force-dynamic';
 
 export default function NewAuthorPage() {
   return (
-    <Container size="lg">
+    <Container size="md">
       <Stack gap={6} className="py-10">
         <PageHeader
           title="New author"

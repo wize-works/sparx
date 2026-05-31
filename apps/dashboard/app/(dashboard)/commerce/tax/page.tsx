@@ -69,7 +69,7 @@ export default async function TaxPage() {
                   Country-wide or region-narrowed (US-CA, US-OR…). Click a zone to add rates.
                 </CardDescription>
               </Stack>
-              <Button asChild>
+              <Button color="module" asChild>
                 <Link href="/commerce/tax/zones/new">
                   <Plus className="h-4 w-4" />
                   Add zone
@@ -84,7 +84,7 @@ export default async function TaxPage() {
                 title="No tax zones yet"
                 description="Add a zone for every jurisdiction with nexus."
                 action={
-                  <Button asChild>
+                  <Button color="module" asChild>
                     <Link href="/commerce/tax/zones/new">Create zone</Link>
                   </Button>
                 }

@@ -50,7 +50,7 @@ export default async function RevisionsPage({ params }: { params: Promise<{ id: 
   }
 
   return (
-    <Container size="lg">
+    <Container size="xl">
       <Stack gap={6} className="py-10">
         <Stack gap={2}>
           <PageHeader

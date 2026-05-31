@@ -10,7 +10,7 @@ export default async function ShippingProfileDetailPage({
 }) {
   const { id } = await params;
   return (
-    <Container size="lg">
+    <Container size="xl">
       <Stack gap={6} className="py-10">
         <ShippingProfileDetailContent id={id} />
       </Stack>

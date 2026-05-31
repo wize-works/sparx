@@ -20,7 +20,7 @@ const SAMPLE_SCHEMA = JSON.stringify(
 
 export default function NewContentTypePage() {
   return (
-    <Container size="lg">
+    <Container size="md">
       <Stack gap={6} className="py-10">
         <PageHeader
           title="New custom content type"

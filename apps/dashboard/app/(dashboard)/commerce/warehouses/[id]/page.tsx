@@ -10,7 +10,7 @@ interface PageProps {
 export default async function WarehouseDetailPage({ params }: PageProps) {
   const { id } = await params;
   return (
-    <Container size="lg">
+    <Container size="xl">
       <Stack gap={6} className="py-10">
         <WarehouseDetailContent id={id} />
       </Stack>

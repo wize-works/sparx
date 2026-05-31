@@ -152,12 +152,20 @@ layout (keeps live preview + docked inspector + in-canvas selection).
       brand select `+tokens`; dashboard `_lib/brand-feel.ts` (NEW: preset tables + resolve/reverse-match +
       cleanTokens), `brand-panel.tsx` ("Shape & feel" section + FeelSelect), `brand-board.tsx` (Applied
       samples honor feel), `_lib/types.ts` `BrandDto += tokens`, `theme-inspector.tsx` `brandCols += tokens`.
-  > **⚠️ PROD MIGRATION (consolidated):** these are applied to LOCAL docker only. Pending for prod, in order:
-  > the 1D trio (…000000/000100/000200), `20260610000300_tenant_brand_tokens` (§2.4), and
-  > `20260611000000_sitebuilder_templates` (§3.0, re-keys `sitebuilder_sections` + drops `page_key`). Deploy the
-  > code first, then ONE `gh workflow run db-migrate.yml` — `prisma migrate deploy` applies ALL pending at once.
-  > §3.0 is the only destructive step (drops `page_key`); it is backfilled first and the storefront still reads
-  > the derived `pageKey` from the snapshot, so it is safe with the deployed code.
+  > **⚠️ PROD MIGRATION — first attempt 2026-05-31:** the 1D trio (…000000/000100/000200) +
+  > `20260610000300_tenant_brand_tokens` (§2.4) **applied successfully**; `20260611000000_sitebuilder_templates`
+  > (§3.0) **FAILED** with `23502` (`template_id contains null values`). Root cause: the backfill ran as `sparx_owner`
+  > (non-superuser, subject to FORCE RLS) with no `app.tenant_id` set → `current_tenant_id()` = NULL → the
+  > `SELECT DISTINCT`/`UPDATE` over FORCE-RLS `sitebuilder_sections` saw **zero rows**, so `SET NOT NULL`'s
+  > full-table scan (RLS-exempt) hit the un-backfilled rows. Passed locally only because docker's `sparx_owner`
+  > is the container superuser (bypasses RLS). **FIXED 2026-05-31:** the backfill now loops tenants and
+  > `set_config('app.tenant_id', …)` per tenant (same idiom as `20260610000000_tenant_brand`); proven against a
+  > non-superuser-owner + FORCE-RLS scratch repro (bug: 3 nulls → fix: 0 nulls, SET NOT NULL OK). See
+  > [[feedback_sparx_db_rls_pattern]]. **To recover:** push the fix → the next `db-migrate` run auto-clears the
+  > failed `_prisma_migrations` row (`clearFailedMigrations` in `run-migrations.ts`) and re-applies §3.0 cleanly
+  > (manual fallback: `gh workflow run db-migrate.yml -f resolve_migration=20260611000000_sitebuilder_templates`).
+  > §3.0 is the only destructive step (drops `page_key`); the code is already deployed and degrades gracefully
+  > (storefront falls back to `DEFAULT_TEMPLATES`) until §3.0 lands.
 - [ ] **§2.5** — retire the email designer (Phase 1 done → constraint lifted).
 - [ ] **Acceptance:** the full design → compose → publish loop happens on one screen.
 

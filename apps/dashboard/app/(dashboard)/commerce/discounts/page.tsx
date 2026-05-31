@@ -77,7 +77,7 @@ export default async function DiscountsPage() {
           }
           description="Codes activate when a shopper enters them; automatic discounts apply silently when their conditions match. Stacking rules govern combining with subscribe-and-save and loyalty."
           actions={
-            <Button asChild>
+            <Button color="module" asChild>
               <Link href="/commerce/discounts/new">
                 <Plus className="h-4 w-4" />
                 Create discount
@@ -103,7 +103,7 @@ export default async function DiscountsPage() {
                 title="No discounts yet"
                 description="Create a code (e.g. WELCOME10) for new-customer promos, or an automatic discount that applies when conditions are met."
                 action={
-                  <Button asChild>
+                  <Button color="module" asChild>
                     <Link href="/commerce/discounts/new">Create discount</Link>
                   </Button>
                 }

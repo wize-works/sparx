@@ -30,7 +30,7 @@ export default async function NewEntryPage({ params }: PageProps) {
   }
 
   return (
-    <Container size="lg">
+    <Container size="md">
       <Stack gap={6} className="py-10">
         <PageHeader
           title={`New ${type.name.toLowerCase()}`}

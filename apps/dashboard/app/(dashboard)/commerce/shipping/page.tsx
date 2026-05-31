@@ -91,7 +91,7 @@ export default async function ShippingPage() {
                   quote shipping.
                 </CardDescription>
               </Stack>
-              <Button asChild>
+              <Button color="module" asChild>
                 <Link href="/commerce/shipping/zones/new">
                   <Plus className="h-4 w-4" />
                   Add zone
@@ -106,7 +106,7 @@ export default async function ShippingPage() {
                 title="No shipping zones yet"
                 description="Add at least one zone covering the countries you sell to."
                 action={
-                  <Button asChild>
+                  <Button color="module" asChild>
                     <Link href="/commerce/shipping/zones/new">Create zone</Link>
                   </Button>
                 }
@@ -177,7 +177,7 @@ export default async function ShippingPage() {
                   needs land in their own profile.
                 </CardDescription>
               </Stack>
-              <Button asChild>
+              <Button color="module" asChild>
                 <Link href="/commerce/shipping/profiles/new">
                   <Plus className="h-4 w-4" />
                   Add profile
@@ -192,7 +192,7 @@ export default async function ShippingPage() {
                 title="No shipping profiles yet"
                 description="Create one profile per shipping pattern (standard, hazmat, freight)."
                 action={
-                  <Button asChild>
+                  <Button color="module" asChild>
                     <Link href="/commerce/shipping/profiles/new">Create profile</Link>
                   </Button>
                 }

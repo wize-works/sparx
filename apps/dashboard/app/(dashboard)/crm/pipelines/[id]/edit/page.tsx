@@ -40,7 +40,7 @@ export default async function EditPipelinePage({ params }: PageProps) {
   }
 
   return (
-    <Container size="lg">
+    <Container size="md">
       <Stack gap={6} className="py-10">
         <PageHeader
           title={`Edit ${pipeline.name}`}

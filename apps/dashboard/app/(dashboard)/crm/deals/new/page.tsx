@@ -45,7 +45,7 @@ export default async function NewDealPage({ searchParams }: PageProps) {
   const initialPipelineId = stringParam(sp.pipelineId) ?? pipelines[0]?.id ?? null;
 
   return (
-    <Container size="lg">
+    <Container size="md">
       <Stack gap={6} className="py-10">
         <PageHeader
           title="New deal"
