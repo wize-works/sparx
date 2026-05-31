@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { PackageOpen, Plus, Search } from 'lucide-react';
+import { PackageOpen, Plus } from 'lucide-react';
 
 import {
   Badge,
@@ -8,7 +8,7 @@ import {
   CardContent,
   Container,
   EmptyState,
-  Input,
+  Grid,
   PageHeader,
   Stack,
   Table,
@@ -18,11 +18,12 @@ import {
   TableHeader,
   TableRow,
   Text,
-  NativeSelect,
 } from '@sparx/ui';
 
 import { api } from '@/lib/api-rest-client';
 import { EntityRowLink } from '../../_components/entity-row-link';
+import { ListToolbar } from '../../_components/list-toolbar';
+import { getUserPreferences } from '../../_shell/preferences';
 
 interface ProductListItem {
   id: string;
@@ -37,13 +38,10 @@ interface ProductListItem {
   updatedAt: string;
 }
 
-// Products index — list view + filter chips + search. Filters live in the
-// query string so saved views / shared links serialize cleanly.
-//
-// Phase 1.1 surfaces title / handle / status / vendor / tags / variant
-// count / updated-at. Price columns light up in Phase 1.2 once variants
-// land (price_min_cents / price_max_cents are populated by the
-// commerce-indexer worker watching variant.* events).
+// Products index — the pilot for the ListToolbar (docs/34 §7.1): live search +
+// quick filters + sort + Table/Cards toggle, all driven through the query
+// string. Filters live in the URL so saved views / shared links serialize
+// cleanly; the toggle falls back to the user's `defaultListView` preference.
 
 export const dynamic = 'force-dynamic';
 
@@ -57,30 +55,49 @@ const STATUS_VARIANT: Record<string, 'success' | 'warning' | 'outline'> = {
   archived: 'warning',
 };
 
+const STATUS_OPTIONS = [
+  { value: 'draft', label: 'Draft' },
+  { value: 'active', label: 'Active' },
+  { value: 'archived', label: 'Archived' },
+];
+
+const SORT_OPTIONS = [
+  { value: 'updatedAt', label: 'Recently updated' },
+  { value: 'title', label: 'Title A–Z' },
+  { value: 'createdAt', label: 'Newest' },
+];
+
 export default async function ProductsPage({ searchParams }: PageProps) {
   const params = await searchParams;
   const status = parseStatus(stringParam(params.status));
+  // vendor / tag / type stay URL-readable for deep links; the toolbar surfaces
+  // status + search + sort. Search covers title / handle / vendor.
   const vendor = stringParam(params.vendor);
   const tag = stringParam(params.tag);
   const productType = stringParam(params.type);
   const q = stringParam(params.q);
-  const includeArchived = stringParam(params.archived) === '1';
+  const sortBy = stringParam(params.sort_by) ?? 'updatedAt';
+  // Selecting the Archived status implies surfacing archived rows at all.
+  const includeArchived = status === 'archived' || stringParam(params.archived) === '1';
 
-  const query = new URLSearchParams({
-    take: '100',
-    sort_by: 'updatedAt',
-    ...(includeArchived ? { include_archived: 'true' } : {}),
-    ...(status ? { status } : {}),
-    ...(vendor ? { vendor } : {}),
-    ...(tag ? { tag } : {}),
-    ...(productType ? { product_type: productType } : {}),
-    ...(q ? { q } : {}),
-  });
-
-  const { data: products, meta } = await api.getPaged<ProductListItem[]>(
-    `/v1/commerce/products?${query.toString()}`
-  );
+  const [{ data: products, meta }, prefs] = await Promise.all([
+    api.getPaged<ProductListItem[]>(
+      `/v1/commerce/products?${new URLSearchParams({
+        take: '100',
+        sort_by: sortBy,
+        ...(includeArchived ? { include_archived: 'true' } : {}),
+        ...(status ? { status } : {}),
+        ...(vendor ? { vendor } : {}),
+        ...(tag ? { tag } : {}),
+        ...(productType ? { product_type: productType } : {}),
+        ...(q ? { q } : {}),
+      }).toString()}`
+    ),
+    getUserPreferences(),
+  ]);
   const total = (meta?.total as number | undefined) ?? products.length;
+  // `?view=` overrides; absent → the user's saved default (§7.2).
+  const view = (stringParam(params.view) ?? prefs.defaultListView) === 'card' ? 'card' : 'table';
 
   return (
     <Container size="xl">
@@ -101,47 +118,12 @@ export default async function ProductsPage({ searchParams }: PageProps) {
           }
         />
 
-        <form>
-          <Card padding="sm">
-            <CardContent>
-              <Stack direction="row" align="center" gap={3} wrap>
-                <Stack direction="row" align="center" gap={2} className="min-w-[280px] flex-1">
-                  <Search className="h-4 w-4 text-[var(--color-text-muted)]" />
-                  <Input name="q" placeholder="Title, handle, or vendor" defaultValue={q ?? ''} />
-                </Stack>
-                <NativeSelect
-                  name="status"
-                  defaultValue={status ?? ''}
-                  aria-label="Status"
-                  className="w-auto"
-                >
-                  <option value="">All statuses</option>
-                  <option value="draft">Draft</option>
-                  <option value="active">Active</option>
-                  <option value="archived">Archived</option>
-                </NativeSelect>
-                <Input name="vendor" placeholder="Vendor" defaultValue={vendor ?? ''} />
-                <Input name="tag" placeholder="Tag" defaultValue={tag ?? ''} />
-                <Stack direction="row" align="center" gap={2}>
-                  <input
-                    type="checkbox"
-                    id="archived"
-                    name="archived"
-                    value="1"
-                    defaultChecked={includeArchived}
-                    className="h-4 w-4"
-                  />
-                  <Text size="sm" as="label" htmlFor="archived">
-                    Include archived
-                  </Text>
-                </Stack>
-                <Button type="submit" variant="outline">
-                  Apply
-                </Button>
-              </Stack>
-            </CardContent>
-          </Card>
-        </form>
+        <ListToolbar
+          searchPlaceholder="Search title, handle, or vendor…"
+          filters={[{ key: 'status', label: 'Statuses', options: STATUS_OPTIONS }]}
+          sortOptions={SORT_OPTIONS}
+          enableViewToggle
+        />
 
         {products.length === 0 ? (
           <Card padding="none">
@@ -162,6 +144,45 @@ export default async function ProductsPage({ searchParams }: PageProps) {
               }
             />
           </Card>
+        ) : view === 'card' ? (
+          <Grid cols={1} mdCols={2} lgCols={3} gap={4}>
+            {products.map((p) => (
+              <Card key={p.id} variant="module" padding="md">
+                <Stack gap={3}>
+                  <Stack direction="row" align="start" justify="between" gap={2}>
+                    <Stack gap={1} className="min-w-0">
+                      <EntityRowLink
+                        href={`/commerce/products/${p.id}`}
+                        entityType="product"
+                        entityId={p.id}
+                        className="truncate text-sm font-medium hover:text-[var(--module-active)] hover:underline"
+                      >
+                        {p.title}
+                      </EntityRowLink>
+                      <Text size="xs" variant="muted">
+                        /{p.handle}
+                      </Text>
+                    </Stack>
+                    <Badge color={STATUS_VARIANT[p.status] ?? 'outline'} className="text-xs">
+                      {p.status}
+                    </Badge>
+                  </Stack>
+                  <Stack direction="row" align="center" justify="between" gap={2}>
+                    <Text size="sm" variant="muted">
+                      {p.vendor ?? '—'}
+                    </Text>
+                    <Text size="sm" className="tabular-nums">
+                      {formatPriceRange(p.priceMinCents, p.priceMaxCents)}
+                    </Text>
+                  </Stack>
+                  <Text size="xs" variant="muted">
+                    {p.variantCount} variant{p.variantCount === 1 ? '' : 's'} · updated{' '}
+                    {new Date(p.updatedAt).toLocaleDateString()}
+                  </Text>
+                </Stack>
+              </Card>
+            ))}
+          </Grid>
         ) : (
           <Card padding="none">
             <CardContent className="p-0">

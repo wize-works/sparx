@@ -434,3 +434,75 @@ generalizes into the cascade with no change to the bound section family or rende
    §9). Confirm.
 
 All three honor doc 30; none reopen the contract. With sign-off, the build order is §9.
+
+_Signed off 2026-05-30 — code-defined defaults, drop `page_key`, enrich the snapshot. 3.0–3.2 shipped and
+verified live on E2E Shop (PDP bound-section parity, 2026-05-31)._
+
+---
+
+## 13. 3.3 build plan — "Layouts" scope, _the correct fix_ (locked 2026-05-31)
+
+3.3 turned out to be more than UI. The public section API is still `pageKey`-shaped, and
+`scopeKeyForPageKey` maps `home → home/default`, **everything else → `custom/<pageKey>`** — so **no
+`pageKey` reaches `scope='product'|'collection'`**. The editor cannot address the new scopes through
+today's API. §8 anticipated this. With **zero merchants on the platform**, the decision (B.K., 2026-05-31)
+is to do the correct fix — retire `pageKey` from the live section API rather than carry the translation
+layer — sequenced deploy-small so the e2e store never breaks mid-rollout.
+
+### 13.1 Locked decisions
+
+- **Section parent = `templateId`** (mirrors the FK). A small **templates resource** resolves/creates a
+  template by `(scope, key)`. The editor resolves the template, then does section CRUD by `templateId`.
+- **`pageKey` retired from the live API** (routes, MCP, dashboard, input schemas, `SectionView`). The
+  only survivor is the storefront **snapshot read shim** (`apps/storefront/lib/site.ts`) — pre-Phase-3
+  published `SiteVersion`s carry `pageKey`, so mapping old snapshots stays; that's data back-compat, not
+  API cruft. `scopeKeyForPageKey`/`pageKeyForTemplate` move there (or stay internal to publish read).
+- **First edit = explicit "Customize this layout"** (B.K.): a never-customized scope shows the seeded
+  `DEFAULT_TEMPLATES` read-only with a CTA; clicking it materializes the default into real `SiteSection`
+  rows under `(scope, key='default')` and enters edit mode. _Trivially switchable to implicit-on-first-
+  mutation later — same materialize call, different trigger._
+- **Scope safety in the service**: `create`/reorder reject a `sectionType` not in the template scope's
+  `registry.scopes` (`isSectionAllowedInScope`).
+- **Nav**: a manifest-driven **"Layouts"** group in the SB contextual panel listing Home / Products /
+  Collections / Pages. New routes reuse the existing `SectionBuilder` shell, parameterized by scope.
+- **Sample-item preview**: a `preview against [sample ▾]` picker (dashboard reads a few products/
+  collections from the commerce public API) sets the canvas path to that PDP/PLP + the §1 preview token.
+  Graceful empty-state when the store has no products/collections. **Storefront needs zero changes** —
+  the 3.2 PDP/PLP cutover already reads scope from the (draft) snapshot.
+
+### 13.2 Target API
+
+| Method                                          | Body / query                                      | Purpose                                                                                      |
+| ----------------------------------------------- | ------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| `GET /v1/sitebuilder/templates`                 | `?scope=` (optional)                              | List templates (`id, scope, key, name`).                                                     |
+| `POST /v1/sitebuilder/templates`                | `{ scope, key?, name? }`                          | Get-or-create an (empty) template; `key` defaults `'default'`.                               |
+| `POST /v1/sitebuilder/templates/materialize`    | `{ scope, key? }`                                 | Get-or-create + if empty, copy `DEFAULT_TEMPLATES[scope]` into rows. The "Customize" action. |
+| `GET /v1/sitebuilder/sections`                  | `?template_id=`                                   | List a template's sections.                                                                  |
+| `POST /v1/sitebuilder/sections`                 | `{ templateId, sectionType, config?, position? }` | Add (scope-validated).                                                                       |
+| `POST /v1/sitebuilder/sections/reorder`         | `{ templateId, orderedIds }`                      | Reorder within a template.                                                                   |
+| `PATCH` / `DELETE /v1/sitebuilder/sections/:id` | (by id)                                           | Unchanged.                                                                                   |
+
+`SectionView` becomes `{ id, tenantId, templateId, scope, templateKey, sectionType, position, visible, config, createdAt, updatedAt }` (drops `pageKey`).
+
+### 13.3 Increments (deploy-small; every intermediate state works)
+
+- **3.3a — Backend, additive.** Add the templates resource (`templateService.materializeDefault` +
+  routes), `templateId`-native `sectionService` methods, and scope validation. Section routes accept
+  **either** `template_id` **or** `page_key` (alias) so the un-migrated dashboard + MCP keep working.
+  Integration tests cover the `template_id` paths. Ship.
+- **3.3b — Dashboard, Layouts UI.** Manifest "Layouts" group + Products/Collections routes; editor
+  resolves `templateId`; scope-restricted gallery; read-only bindings inspector; sample-item preview
+  picker; explicit "Customize". Migrate Home/Pages calls to `templateId` too. Ship — dashboard is now
+  fully `templateId`-native.
+- **3.3c — Cleanup.** Remove the `page_key` alias from routes/service/input schemas/`SectionView`; cut
+  MCP tools to `templateId`/`scope+key`; relocate the legacy-`pageKey` mapping to the snapshot read path
+  only. Update tests. Ship — zero `pageKey` in the live API.
+
+### 13.4 Acceptance (adds to §10)
+
+- Open Products layout (never customized) → seeded default renders read-only; PDP preview (sample item +
+  token) matches the live default. Click "Customize" → rows materialize, edits reflect in preview before
+  publish, and `product-related` hidden / heading changed shows on **every** product after publish.
+- Scope safety: API/MCP reject `collection-products` in a product template.
+- Mobile: the Layouts editor collapses to the single-column Edit/Preview switch like the rest of the SB.
+- Green gate throughout; no `pageKey` reachable in the live API after 3.3c.
