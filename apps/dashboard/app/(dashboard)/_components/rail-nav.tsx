@@ -100,11 +100,11 @@ export function RailNav({ pathname, enabledModules, favorites, recents }: RailNa
   return (
     <>
       <div
-        className={`flex items-center ${expanded ? 'w-full gap-3 px-1 py-1' : 'justify-center'}`}
+        className={`flex items-center ${expanded ? 'w-full gap-2 px-2 py-1' : 'justify-center'}`}
       >
         <div
           aria-hidden
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[var(--module-active)] text-sm font-bold text-white"
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[var(--module-active)] text-sm font-bold text-white"
         >
           S
         </div>
