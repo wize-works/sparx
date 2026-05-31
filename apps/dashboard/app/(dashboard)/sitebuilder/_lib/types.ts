@@ -2,7 +2,7 @@
 // interfaces (not the Prisma row types) so client components can import them
 // without pulling the service package / Prisma into the browser bundle.
 
-import type { ThemePreset } from '@sparx/storefront-themes';
+import type { PresentationOverlayV2, ThemePreset } from '@sparx/storefront-themes';
 
 export type ThemeDto = ThemePreset;
 
@@ -11,6 +11,8 @@ export type AppearancePolicy = 'light-only' | 'dark-only' | 'auto' | 'toggle';
 export interface SiteSettingsDto {
   tokens?: { light?: Record<string, string>; dark?: Record<string, string> };
   customCss?: string;
+  // Token Model v2 presentation overlay (docs/33), edited by the theme inspector.
+  presentation?: PresentationOverlayV2;
 }
 
 export interface SiteConfigDto {

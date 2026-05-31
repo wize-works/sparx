@@ -17,6 +17,8 @@
 // These interfaces mirror the publish output in
 // packages/sitebuilder/src/services/publish-internals.ts — keep them in sync.
 
+import type { CompiledThemeV2 } from '@sparx/storefront-themes';
+
 export interface SectionSnapshot {
   id: string;
   pageKey: string;
@@ -38,6 +40,9 @@ export interface PublishedSnapshot {
   themeKey: string;
   appearancePolicy: string;
   compiledTokens: { light: Record<string, string>; dark: Record<string, string> };
+  // Token Model v2 compiled set (docs/33) — present on snapshots from a
+  // v2-aware api-rest; preferred over `compiledTokens` by the theme builder.
+  compiledV2?: CompiledThemeV2;
   sections: SectionSnapshot[];
   layout: LayoutSnapshot[];
 }

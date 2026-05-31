@@ -10,3 +10,4 @@ export * from './color';
 export * from './compile';
 export * from './css';
 export * from './legacy';
+export * from './tenant';

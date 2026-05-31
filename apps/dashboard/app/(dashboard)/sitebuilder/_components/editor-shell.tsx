@@ -66,6 +66,7 @@ export function useEditorCanvas(): EditorCanvasApi {
 const ROOT = '/sitebuilder';
 const CANVAS_SCOPES: readonly string[] = [
   ROOT,
+  '/sitebuilder/design',
   '/sitebuilder/navigation',
   '/sitebuilder/homepage',
   '/sitebuilder/pages',

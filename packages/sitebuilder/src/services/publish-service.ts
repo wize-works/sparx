@@ -9,7 +9,12 @@
 import { PublishInput, RollbackInput } from '@sparx/sitebuilder-schemas';
 import type { SiteVersion } from '@sparx/db';
 import { withTenant, type TxClient } from '@sparx/db';
-import { applyBrandIdentityTokens, compileTokens } from '@sparx/storefront-themes';
+import {
+  applyBrandIdentityTokens,
+  compileTokens,
+  compileThemeForTenant,
+  type PresentationOverlayV2,
+} from '@sparx/storefront-themes';
 
 import { publishSitebuilderEvent } from '../events';
 import type { ServiceContext } from '../errors';
@@ -102,10 +107,17 @@ export async function rollback(ctx: ServiceContext, rawInput: unknown): Promise<
 // LIVE here, overlaid on top of the (published or draft) compiled tokens so a
 // brand edit reflects on the storefront without a full re-publish, and so brand
 // always WINS over theme/merchant identity values. Read-only — never written back.
+//
+// This is also where the Token Model v2 set is compiled (docs/33): the same live
+// brand columns + the presentation overlay (from the version snapshot or the
+// draft config) are layered over the theme preset via compileThemeForTenant. By
+// compiling at READ rather than baking at publish, a brand edit reflects
+// immediately on the v2 path too, and the stored SiteVersion shape is untouched.
 async function overlayBrand(
   tx: TxClient,
   tenantId: string,
-  snapshot: PublishedSnapshot
+  snapshot: PublishedSnapshot,
+  presentation: PresentationOverlayV2 | null
 ): Promise<PublishedSnapshot> {
   const brand = await tx.tenantBrand.findUnique({
     where: { tenantId },
@@ -117,8 +129,24 @@ async function overlayBrand(
       fontBody: true,
     },
   });
-  if (!brand) return snapshot;
-  return { ...snapshot, compiledTokens: applyBrandIdentityTokens(snapshot.compiledTokens, brand) };
+  const compiledTokens = brand
+    ? applyBrandIdentityTokens(snapshot.compiledTokens, brand)
+    : snapshot.compiledTokens;
+  const compiledV2 = compileThemeForTenant({
+    themeKey: snapshot.themeKey,
+    brand,
+    presentation,
+  });
+  return { ...snapshot, compiledTokens, compiledV2 };
+}
+
+// The presentation overlay persisted in a settings JSON blob (draft config or a
+// published version's snapshot). Typed loosely at the boundary, then trusted by
+// the v2 compiler (which reads only nullable string slots).
+function readPresentation(settings: unknown): PresentationOverlayV2 | null {
+  if (!settings || typeof settings !== 'object') return null;
+  const p = (settings as { presentation?: unknown }).presentation;
+  return p && typeof p === 'object' ? p : null;
 }
 
 /** The published snapshot for the storefront. Null when nothing is published. */
@@ -128,7 +156,8 @@ export async function getPublishedSnapshot(ctx: ServiceContext): Promise<Publish
     if (!config?.publishedVersionId) return null;
     const version = await tx.siteVersion.findUnique({ where: { id: config.publishedVersionId } });
     if (!version) return null;
-    return overlayBrand(tx, ctx.tenantId, toPublishedSnapshot(version));
+    const presentation = readPresentation(version.settingsSnapshot);
+    return overlayBrand(tx, ctx.tenantId, toPublishedSnapshot(version), presentation);
   });
 }
 
@@ -147,6 +176,7 @@ export async function getDraftSnapshot(ctx: ServiceContext): Promise<PublishedSn
       tokens?: { light?: Record<string, string>; dark?: Record<string, string> };
     };
     const compiled = compileTokens(config.themeKey, settings.tokens ?? {});
+    const presentation = readPresentation(config.draftSettings);
     const snapshot: PublishedSnapshot = {
       versionNumber: 0,
       themeKey: config.themeKey,
@@ -167,6 +197,6 @@ export async function getDraftSnapshot(ctx: ServiceContext): Promise<PublishedSn
         visible: b.visible,
       })),
     };
-    return overlayBrand(tx, ctx.tenantId, snapshot);
+    return overlayBrand(tx, ctx.tenantId, snapshot, presentation);
   });
 }

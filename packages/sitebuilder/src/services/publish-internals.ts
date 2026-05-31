@@ -5,7 +5,11 @@
 // SAME transaction as the publish.
 
 import type { Prisma, SiteConfig, SiteVersion, TxClient } from '@sparx/db';
-import { compileTokens, toStorefrontThemeColumns } from '@sparx/storefront-themes';
+import {
+  compileTokens,
+  toStorefrontThemeColumns,
+  type CompiledThemeV2,
+} from '@sparx/storefront-themes';
 
 import { writeAuditLog } from '../audit';
 import { SitebuilderNotFoundError } from '../errors';
@@ -30,7 +34,14 @@ export interface PublishedSnapshot {
   versionNumber: number;
   themeKey: string;
   appearancePolicy: string;
+  // v1 compiled tokens (kept for the legacy bridge + write-through to
+  // StorefrontTheme). Never dropped — existing tenants render off it as fallback.
   compiledTokens: { light: Record<string, string>; dark: Record<string, string> };
+  // Token Model v2 compiled set — the storefront's preferred read path
+  // (docs/33). Computed LIVE at read (publish-service.overlayBrand) from the
+  // theme key + tenant brand + presentation overlay, so brand edits reflect
+  // without a re-publish; absent only when a brand row can't be read.
+  compiledV2?: CompiledThemeV2;
   sections: SectionSnapshot[];
   layout: LayoutSnapshot[];
 }

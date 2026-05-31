@@ -5,7 +5,11 @@
 // compiled v2 theme; anything the merchant hasn't customized falls through to
 // the preset / storefront.css default — zero code changes per merchant.
 
-import { buildLegacyThemeCss } from '@sparx/storefront-themes';
+import {
+  buildLegacyThemeCss,
+  buildThemeCssV2,
+  type CompiledThemeV2,
+} from '@sparx/storefront-themes';
 
 import type { TenantTheme } from './tenant';
 
@@ -23,11 +27,16 @@ interface ThemeV2Sources {
   themeKey: string;
   tenantTheme: TenantTheme | null;
   snapshotTokens?: { light: Record<string, string>; dark: Record<string, string> } | null;
+  // A snapshot compiled directly by the v2 engine (api-rest, brand + presentation
+  // over the preset). When present it IS the source of truth — emit it as-is and
+  // skip the v1→v2 legacy bridge entirely.
+  compiledV2?: CompiledThemeV2 | null;
 }
 
 /** Build the storefront theme stylesheet from the v2 token engine. */
 export function buildStorefrontThemeCss(sources: ThemeV2Sources): string {
-  const { themeKey, tenantTheme, snapshotTokens } = sources;
+  const { themeKey, tenantTheme, snapshotTokens, compiledV2 } = sources;
+  if (compiledV2) return buildThemeCssV2(compiledV2);
   return buildLegacyThemeCss({
     themeKey,
     brand: tenantTheme

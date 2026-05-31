@@ -1,15 +1,15 @@
-import { Heading, Text } from '@sparx/ui';
-import { getConfig, getSitePreviewToken, getTenant, listThemes, listVersions } from '../_lib/api';
-import { Customizer } from '../_components/customizer';
-import { storefrontOrigin } from '../_lib/storefront';
+import { getBrand, getConfig, listThemes, listVersions } from '../_lib/api';
+import { ThemeInspector } from '../_components/theme-inspector';
 
+// Theme scope. Renders in the editor shell's inspector column; the persistent
+// canvas (mounted in the layout) shows the live storefront, and the inspector
+// streams compiled v2 theme CSS to it as the merchant edits.
 export default async function DesignPage() {
-  const [config, themes, tenant, versions, previewToken] = await Promise.all([
+  const [config, themes, brand, versions] = await Promise.all([
     getConfig(),
     listThemes(),
-    getTenant(),
+    getBrand(),
     listVersions(),
-    getSitePreviewToken(),
   ]);
 
   // Unpublished changes: the draft has been touched since the live version.
@@ -19,19 +19,12 @@ export default async function DesignPage() {
     : false;
 
   return (
-    <div className="flex flex-col gap-5">
-      <div>
-        <Heading level={1}>Design</Heading>
-        <Text variant="muted">Customize your theme and preview changes live.</Text>
-      </div>
-      <Customizer
-        config={config}
-        themes={themes}
-        storefrontUrl={storefrontOrigin(tenant.slug)}
-        slug={tenant.slug}
-        hasUnpublishedChanges={hasUnpublishedChanges}
-        previewToken={previewToken}
-      />
-    </div>
+    <ThemeInspector
+      config={config}
+      themes={themes}
+      brand={brand}
+      isPublished={config.publishedVersionId !== null}
+      hasUnpublishedChanges={hasUnpublishedChanges}
+    />
   );
 }

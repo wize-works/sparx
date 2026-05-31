@@ -91,6 +91,7 @@ function buildThemeCss(
     themeKey,
     tenantTheme: theme,
     snapshotTokens: snapshot?.compiledTokens ?? null,
+    compiledV2: snapshot?.compiledV2 ?? null,
   });
 }
 
