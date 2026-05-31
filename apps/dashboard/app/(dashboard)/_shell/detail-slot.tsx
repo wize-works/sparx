@@ -1,5 +1,6 @@
 import 'server-only';
 import * as React from 'react';
+import { ModuleProvider, type SparxModule } from '@sparx/ui';
 import { parseDetailToken } from './detail-registry';
 import { AuthorDetailContent } from '../cms/authors/[id]/_content';
 import { CmsPageDetailContent } from '../cms/[id]/_content';
@@ -71,13 +72,56 @@ const detailComponents: Record<string, DetailComponent> = {
   'tax-zone': TaxZoneDetailContent,
 };
 
+// Each entity type's owning module. The `@detail` slot renders OUTSIDE any
+// module `layout.tsx`, so without this the drawer/modal content inherits the
+// `:root` default of `--module-active` (storefront indigo) — the Publish
+// button, section rules, and badges all come out indigo regardless of which
+// module the record belongs to. Wrapping the content in the right
+// ModuleProvider restores the correct accent (CMS teal, CRM cyan, etc.).
+const detailModules: Record<string, SparxModule> = {
+  // CMS
+  page: 'cms',
+  media: 'cms',
+  author: 'cms',
+  taxonomy: 'cms',
+  menu: 'cms',
+  // CRM
+  customer: 'crm',
+  'b2b-account': 'crm',
+  deal: 'crm',
+  quote: 'crm',
+  order: 'crm',
+  segment: 'crm',
+  // Commerce
+  product: 'commerce',
+  collection: 'commerce',
+  warehouse: 'commerce',
+  review: 'commerce',
+  'qa-question': 'commerce',
+  subscription: 'commerce',
+  return: 'commerce',
+  bundle: 'commerce',
+  cart: 'commerce',
+  'provider-installation': 'commerce',
+  'price-list': 'commerce',
+  'configurator-template': 'commerce',
+  'shipping-profile': 'commerce',
+  'shipping-zone': 'commerce',
+  'tax-zone': 'commerce',
+};
+
 // Renders the detail content for a given (typeId, id), or null when the type
 // has no registered server component. Returns a node — callers wrap it in a
-// Suspense boundary so the fetch streams.
+// Suspense boundary so the fetch streams. The content is wrapped in its
+// module's provider so the drawer/modal adopts the correct accent color.
 export function renderDetailContent(typeId: string, id: string): React.ReactNode {
   const Content = detailComponents[typeId];
   if (!Content) return null;
-  return <Content id={id} />;
+  return (
+    <ModuleProvider module={detailModules[typeId] ?? 'platform'}>
+      <Content id={id} />
+    </ModuleProvider>
+  );
 }
 
 // The `@detail` parallel-slot page. Both the index slot and the catch-all
