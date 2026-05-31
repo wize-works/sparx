@@ -211,10 +211,11 @@ async function resolveCart(
 ): Promise<SectionData> {
   const c = parsed(AbandonedCartConfig, raw);
   if (!recipient?.customerId) return { kind: 'cart', lines: [] };
+  const customerId = recipient.customerId;
   // Most recent un-recovered cart (open or abandoned) with its lines.
   const cart = await withTenant(ctx, (tx) =>
     tx.cart.findFirst({
-      where: { customerId: recipient.customerId, recoveredAt: null },
+      where: { customerId, recoveredAt: null },
       orderBy: { updatedAt: 'desc' },
       select: {
         items: {
@@ -242,9 +243,10 @@ async function resolveRecentOrder(
   recipient?: EmailRecipient
 ): Promise<SectionData> {
   if (!recipient?.customerId) return { kind: 'order', order: null };
+  const customerId = recipient.customerId;
   const order = await withTenant(ctx, (tx) =>
     tx.order.findFirst({
-      where: { customerId: recipient.customerId },
+      where: { customerId },
       orderBy: { placedAt: 'desc' },
       select: {
         orderNumber: true,
