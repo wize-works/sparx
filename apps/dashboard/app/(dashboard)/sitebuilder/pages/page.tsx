@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { Card, Heading, Text } from '@sparx/ui';
-import { getTenant, listSections } from '../_lib/api';
+import { getSitePreviewToken, getTenant, listSections } from '../_lib/api';
 import { PageBuilder } from '../_components/page-builder';
 import { storefrontOrigin } from '../_lib/storefront';
 import { PageSlugForm } from './page-slug-form';
@@ -11,9 +11,10 @@ export default async function PagesPage({
   searchParams: Promise<{ page?: string }>;
 }) {
   const pageKey = (await searchParams).page?.trim() ?? '';
-  const [sections, tenant] = await Promise.all([
+  const [sections, tenant, previewToken] = await Promise.all([
     pageKey ? listSections(pageKey) : Promise.resolve([]),
     getTenant(),
+    getSitePreviewToken(),
   ]);
 
   return (
@@ -44,6 +45,7 @@ export default async function PagesPage({
             storefrontUrl={storefrontOrigin(tenant.slug)}
             slug={tenant.slug}
             previewPath={`/${pageKey}`}
+            previewToken={previewToken}
           />
         </div>
       ) : null}

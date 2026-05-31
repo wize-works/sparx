@@ -5,7 +5,12 @@ import type { SectionField } from '../fields';
 export const RichTextConfig = z.object({
   heading: z.string().max(160).default(''),
   // Sanitized HTML produced by the customizer's rich-text editor.
-  html: z.string().max(20000).default(''),
+  html: z
+    .string()
+    .max(20000)
+    .default(
+      '<p>Write your story here. Use this space to tell visitors about your brand, your products, or what makes you different.</p>'
+    ),
   align: Align.default('left'),
   width: z.enum(['narrow', 'normal']).default('normal'),
 });

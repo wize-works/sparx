@@ -36,6 +36,20 @@ export {
   type AuthoredEmailInput,
 } from './send';
 
+// Section-composed bodies (docs/31): render an ordered section-instance list +
+// resolved data map into a branded SendableEmail.
+export {
+  renderSections,
+  composeSections,
+  type RenderSectionsInput,
+  type RenderSectionsOptions,
+} from './sections/render';
+export {
+  SECTION_COMPONENTS,
+  type SectionComponent,
+  type SectionRenderProps,
+} from './sections/components';
+
 export {
   PasswordResetEmail,
   WelcomeMerchantEmail,

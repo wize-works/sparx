@@ -29,7 +29,9 @@
   },
   "dependencies": {
     "@react-email/components": "^1.0.12",
-    "@react-email/render": "^2.0.8"
+    "@react-email/render": "^2.0.8",
+    "@sparx/email-sections": "workspace:*",
+    "zod": "^4.4.3"
   },
   "peerDependencies": {
     "react": "^19.0.0"

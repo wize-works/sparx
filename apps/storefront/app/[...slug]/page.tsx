@@ -14,7 +14,7 @@ export const dynamic = 'force-dynamic';
 
 interface SlugPageProps {
   params: Promise<{ slug: string[] }>;
-  searchParams?: Promise<{ sparxPreview?: string }>;
+  searchParams?: Promise<{ sparxPreview?: string; sparxSitePreview?: string }>;
 }
 
 function buildSlug(parts: string[]): string {
@@ -47,10 +47,11 @@ export default async function StorefrontPage({ params, searchParams }: SlugPageP
   if (!tenant) notFound();
 
   const slug = buildSlug((await params).slug);
-  const previewToken = (await searchParams)?.sparxPreview;
+  const sp = (await searchParams) ?? {};
+  const previewToken = sp.sparxPreview;
   const [page, snapshot] = await Promise.all([
     getPageBySlug(tenant.slug, slug, previewToken ? { previewToken } : {}),
-    getPublishedSite(tenant.slug),
+    getPublishedSite(tenant.slug, sp.sparxSitePreview),
   ]);
   const sections = sectionsForPage(snapshot, slug);
 

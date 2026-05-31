@@ -1,14 +1,15 @@
 import { Heading, Text } from '@sparx/ui';
-import { getConfig, getTenant, listThemes, listVersions } from '../_lib/api';
+import { getConfig, getSitePreviewToken, getTenant, listThemes, listVersions } from '../_lib/api';
 import { Customizer } from '../_components/customizer';
 import { storefrontOrigin } from '../_lib/storefront';
 
 export default async function DesignPage() {
-  const [config, themes, tenant, versions] = await Promise.all([
+  const [config, themes, tenant, versions, previewToken] = await Promise.all([
     getConfig(),
     listThemes(),
     getTenant(),
     listVersions(),
+    getSitePreviewToken(),
   ]);
 
   // Unpublished changes: the draft has been touched since the live version.
@@ -29,6 +30,7 @@ export default async function DesignPage() {
         storefrontUrl={storefrontOrigin(tenant.slug)}
         slug={tenant.slug}
         hasUnpublishedChanges={hasUnpublishedChanges}
+        previewToken={previewToken}
       />
     </div>
   );

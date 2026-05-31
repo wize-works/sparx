@@ -47,6 +47,8 @@ export interface CustomizerProps {
   storefrontUrl: string;
   slug: string;
   hasUnpublishedChanges: boolean;
+  /** Site-preview token so the iframe renders the draft composition. */
+  previewToken?: string | null;
 }
 
 export function Customizer({
@@ -55,6 +57,7 @@ export function Customizer({
   storefrontUrl,
   slug,
   hasUnpublishedChanges,
+  previewToken,
 }: CustomizerProps) {
   const router = useRouter();
   const iframeRef = React.useRef<HTMLIFrameElement>(null);
@@ -196,7 +199,9 @@ export function Customizer({
             </div>
           </Panel>
 
-          <Panel title="Colors" aside={<ModeSwitch mode={previewMode} onChange={switchMode} />}>
+          {/* Light/Dark is a single control in the preview header (above) — the
+              Colors panel edits whichever mode is shown there. */}
+          <Panel title="Colors">
             {colorFields.map((f) => (
               <div key={f.key} className="flex flex-col gap-1.5">
                 <Label>{f.label}</Label>
@@ -266,7 +271,9 @@ export function Customizer({
             <iframe
               ref={iframeRef}
               title="Storefront preview"
-              src={`${storefrontUrl}/?tenant=${encodeURIComponent(slug)}&sparxPreview=1`}
+              src={`${storefrontUrl}/?tenant=${encodeURIComponent(slug)}${
+                previewToken ? `&sparxSitePreview=${encodeURIComponent(previewToken)}` : ''
+              }`}
               className="h-[calc(100vh-280px)] w-full rounded-md border-0 bg-white"
               style={deviceWidth ? { width: deviceWidth, maxWidth: '100%' } : undefined}
             />

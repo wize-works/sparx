@@ -90,3 +90,45 @@ export async function tryVerifyPreviewToken(
 
   return { entryId: claims.sub, tenantId: claims.tid, jti: claims.jti };
 }
+
+interface SitePreviewClaims {
+  tid: string;
+  aud: string;
+  iat?: number;
+  exp?: number;
+}
+
+// Verify a Site Builder *site-preview* token. Unlike the CMS entry token above,
+// this is tenant-scoped (no entry, no per-token DB row): it authorizes reading
+// the tenant's whole draft site composition, and a short JWT TTL is the only
+// control — minting requires an authenticated dashboard editor, and the draft
+// it exposes is the merchant's own. Returns true when a valid token for
+// `tenantId` is present, false when none is offered. Throws when a token IS
+// offered but invalid (a bad token is a signal, not a silent fall-through to
+// published — which is exactly the bug this whole change fixes).
+export function tryVerifySitePreview(
+  app: FastifyInstance,
+  request: FastifyRequest,
+  tenantId: string
+): boolean {
+  const auth = request.headers.authorization;
+  const token = auth?.startsWith('Preview ') ? auth.slice('Preview '.length) : null;
+  if (!token) return false;
+
+  let claims: SitePreviewClaims;
+  try {
+    claims = app.jwt.verify<SitePreviewClaims>(token);
+  } catch {
+    throw Object.assign(new Error('Invalid site preview token.'), {
+      statusCode: 401,
+      code: 'INVALID_PREVIEW_TOKEN',
+    });
+  }
+  if (claims.aud !== 'site-preview' || claims.tid !== tenantId) {
+    throw Object.assign(new Error('Token is not a valid site preview token.'), {
+      statusCode: 401,
+      code: 'INVALID_PREVIEW_TOKEN',
+    });
+  }
+  return true;
+}

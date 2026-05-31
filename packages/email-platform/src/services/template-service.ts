@@ -15,17 +15,18 @@
 import { withTenant } from '@sparx/db';
 import type { EmailTemplate, Prisma } from '@sparx/db';
 import {
-  renderAuthoredEmail,
+  renderSections,
   renderTemplate,
   sendEmail,
   type DeliveryResult,
   type TemplateSend,
 } from '@sparx/email';
-// Serializer from the server-safe subpath so backends (api-rest, api-mcp,
-// email-worker) don't pull the React/TipTap editor + @sparx/ui into runtime.
-// CmsDoc is type-only (erased), so importing it from the index is fine.
-import { renderDocToHtml } from '@sparx/cms-editor/serialize';
-import type { CmsDoc } from '@sparx/cms-editor';
+import {
+  normalizeBody,
+  parseBody,
+  type EmailSectionInstance,
+  type SectionDataMap,
+} from '@sparx/email-sections';
 
 import { writeAuditLog } from '../audit';
 import { publishEmailEvent } from '../events';
@@ -47,7 +48,10 @@ function buildFrom(fromName: string | null, fromAddress: string | null): string 
   return fromName ? `${fromName} <${fromAddress}>` : fromAddress;
 }
 
-const EMPTY_DOC: CmsDoc = { type: 'doc', content: [] };
+// Resolves a section list to its data map (commerce/CMS reads). Injected by the
+// caller (api-rest) so this package stays free of @sparx/commerce — keeping the
+// email-worker image, which imports this barrel, lean (docs/31 §8).
+export type ResolveSectionData = (sections: EmailSectionInstance[]) => Promise<SectionDataMap>;
 
 // ── Views ──────────────────────────────────────────────────────────────────
 
@@ -222,7 +226,7 @@ export async function createAuthored(
         name: input.name,
         subject: input.subject,
         preheader: input.preheader ?? null,
-        body: input.body as Prisma.InputJsonValue,
+        body: parseBody(input.body) as unknown as Prisma.InputJsonValue,
         status: 'draft',
         createdById: ctx.userId ?? null,
       },
@@ -263,7 +267,9 @@ export async function updateAuthored(
         ...(input.name !== undefined ? { name: input.name } : {}),
         ...(input.subject !== undefined ? { subject: input.subject } : {}),
         ...(input.preheader !== undefined ? { preheader: input.preheader } : {}),
-        ...(input.body !== undefined ? { body: input.body as Prisma.InputJsonValue } : {}),
+        ...(input.body !== undefined
+          ? { body: parseBody(input.body) as unknown as Prisma.InputJsonValue }
+          : {}),
         ...(input.status !== undefined ? { status: input.status } : {}),
       },
     });
@@ -301,7 +307,8 @@ export interface RenderedPreview {
 async function renderTarget(
   ctx: ServiceContext,
   target: PreviewTarget,
-  to: string
+  to: string,
+  resolveData: ResolveSectionData
 ): Promise<RenderedPreview & { templateId?: string }> {
   const brand = (await resolveEmailBrand(ctx)) ?? undefined;
 
@@ -325,11 +332,11 @@ async function renderTarget(
   }
 
   const row = await getAuthored(ctx, target.id);
-  const doc = (row.body as CmsDoc | null) ?? EMPTY_DOC;
-  const bodyHtml = renderDocToHtml(doc);
   if (!row.subject) throw new EmailValidationError('Template has no subject.');
-  const rendered = await renderAuthoredEmail(
-    { to, subject: row.subject, preheader: row.preheader ?? undefined, bodyHtml },
+  const { sections } = normalizeBody(row.body);
+  const data = await resolveData(sections);
+  const rendered = await renderSections(
+    { sections, subject: row.subject, preheader: row.preheader ?? undefined, to, data },
     { brand }
   );
   return { subject: row.subject, html: rendered.html, text: rendered.text };
@@ -337,19 +344,29 @@ async function renderTarget(
 
 export async function renderPreview(
   ctx: ServiceContext,
-  target: PreviewTarget
+  target: PreviewTarget,
+  resolveData: ResolveSectionData
 ): Promise<RenderedPreview> {
-  const { subject, html, text } = await renderTarget(ctx, target, 'preview@example.com');
+  const { subject, html, text } = await renderTarget(
+    ctx,
+    target,
+    'preview@example.com',
+    resolveData
+  );
   return { subject, html, text };
 }
 
 export async function testSend(
   ctx: ServiceContext,
   target: PreviewTarget,
-  rawInput: unknown
+  rawInput: unknown,
+  resolveData: ResolveSectionData
 ): Promise<DeliveryResult> {
   const { to } = TestSendInput.parse(rawInput);
-  const [rendered, settings] = await Promise.all([renderTarget(ctx, target, to), getSettings(ctx)]);
+  const [rendered, settings] = await Promise.all([
+    renderTarget(ctx, target, to, resolveData),
+    getSettings(ctx),
+  ]);
 
   // Synchronous escape hatch — staff-triggered smoke test. Stamp tenant_id so
   // any resulting webhook events attribute correctly.

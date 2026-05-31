@@ -16,6 +16,7 @@ import { broadcastService } from '@sparx/email-platform';
 import { ok } from '@sparx/api-core/envelope';
 import { requireRole } from '@sparx/api-core/auth';
 import { requireEmailModule, toEmailContext } from '../../../lib/email-context.js';
+import { sectionResolver } from '../../../lib/email-sections.js';
 
 const IdParam = z.object({ id: z.string().uuid() });
 const EstimateQuery = z.object({ segment_id: z.string().uuid().optional() });

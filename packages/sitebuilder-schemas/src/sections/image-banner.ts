@@ -4,10 +4,10 @@ import type { SectionField } from '../fields';
 
 export const ImageBannerConfig = z.object({
   imageMediaId: OptionalUuid,
-  heading: z.string().max(160).default(''),
+  heading: z.string().max(160).default('Your banner headline'),
   subheading: z.string().max(300).default(''),
-  ctaLabel: z.string().max(60).default(''),
-  ctaUrl: LinkUrl.default(''),
+  ctaLabel: z.string().max(60).default('Learn more'),
+  ctaUrl: LinkUrl.default('/products'),
   align: Align.default('left'),
   height: z.enum(['sm', 'md', 'lg']).default('md'),
 });

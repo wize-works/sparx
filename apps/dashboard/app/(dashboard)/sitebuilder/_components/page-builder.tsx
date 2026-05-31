@@ -16,6 +16,8 @@ export interface PageBuilderProps {
   slug: string;
   /** Storefront path this page renders at ("/" for home, "/<slug>" otherwise). */
   previewPath?: string;
+  /** Site-preview token so the preview iframe renders the draft composition. */
+  previewToken?: string | null;
 }
 
 export function PageBuilder({
@@ -24,6 +26,7 @@ export function PageBuilder({
   storefrontUrl,
   slug,
   previewPath = '/',
+  previewToken,
 }: PageBuilderProps) {
   const [nonce, setNonce] = React.useState(0);
   const bumpPreview = React.useCallback(() => setNonce((n) => n + 1), []);
@@ -38,6 +41,7 @@ export function PageBuilder({
         slug={slug}
         path={previewPath}
         refreshKey={nonce}
+        previewToken={previewToken}
       />
     </div>
   );
