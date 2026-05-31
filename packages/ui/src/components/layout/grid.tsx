@@ -11,6 +11,14 @@ export interface GridProps extends React.HTMLAttributes<HTMLDivElement> {
   /** Responsive cols at the `lg` breakpoint. */
   lgCols?: Cols;
   gap?: Gap;
+  /**
+   * Auto-fill mode for card galleries: each item keeps roughly this minimum
+   * width and the row packs as many columns as fit (each growing to fill the
+   * track). Use this instead of fixed `cols` for card/grid list views so cards
+   * stay a tidy width on full-bleed pages instead of stretching. e.g. `'18rem'`.
+   * Overrides `cols` / `mdCols` / `lgCols` when set.
+   */
+  minItemWidth?: string;
 }
 
 const COLS: Record<Cols, string> = {
@@ -63,17 +71,29 @@ const GAP: Record<Gap, string> = {
 };
 
 export const Grid = React.forwardRef<HTMLDivElement, GridProps>(
-  ({ className, cols = 1, mdCols, lgCols, gap = 4, ...props }, ref) => (
+  ({ className, cols = 1, mdCols, lgCols, gap = 4, minItemWidth, style, ...props }, ref) => (
     <div
       ref={ref}
       className={cn(
         'grid',
-        COLS[cols],
-        mdCols && MD_COLS[mdCols],
-        lgCols && LG_COLS[lgCols],
+        // Auto-fill mode drives columns via inline style; skip the static
+        // col-count classes so they don't fight `grid-template-columns`.
+        !minItemWidth && COLS[cols],
+        !minItemWidth && mdCols && MD_COLS[mdCols],
+        !minItemWidth && lgCols && LG_COLS[lgCols],
         GAP[gap],
         className
       )}
+      style={
+        minItemWidth
+          ? {
+              // `min(…, 100%)` keeps a single card from overflowing a viewport
+              // narrower than minItemWidth.
+              gridTemplateColumns: `repeat(auto-fill, minmax(min(${minItemWidth}, 100%), 1fr))`,
+              ...style,
+            }
+          : style
+      }
       {...props}
     />
   )

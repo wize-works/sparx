@@ -145,7 +145,7 @@ export default async function ProductsPage({ searchParams }: PageProps) {
             />
           </Card>
         ) : view === 'card' ? (
-          <Grid cols={1} mdCols={2} lgCols={3} gap={4}>
+          <Grid minItemWidth="18rem" gap={4}>
             {products.map((p) => (
               <Card key={p.id} variant="module" padding="md">
                 <Stack gap={3}>
