@@ -43,19 +43,18 @@ export function compileTokens(themeKey: string, overlay?: ThemeOverlay): Compile
   };
 }
 
-// Token → StorefrontTheme column. The light values for these tokens are
-// written through to the commerce-owned commerce_storefront_themes row on
-// publish. Tokens NOT listed here (colorForeground, colorBorder,
-// containerWidth) have no column and reach the storefront only via the
-// Site Builder public snapshot.
+// Token → StorefrontTheme column. The light values for these PRESENTATION
+// tokens are written through to the commerce-owned commerce_storefront_themes
+// row on publish so the storefront's no-snapshot fallback read path keeps
+// working. Identity tokens (colorPrimary/PrimaryForeground/Accent, fontHeading/
+// Body) are NOT written through — they're owned by the tenant-level brand
+// (docs/30 §6), read live and overlaid at render; their StorefrontTheme columns
+// were removed in migration 20260610000200. Tokens with no column at all
+// (colorForeground, colorBorder, containerWidth) reach the storefront only via
+// the Site Builder public snapshot.
 export const STOREFRONT_THEME_WRITETHROUGH: { token: keyof ThemeTokens; column: string }[] = [
-  { token: 'colorPrimary', column: 'colorPrimary' },
-  { token: 'colorPrimaryForeground', column: 'colorPrimaryForeground' },
-  { token: 'colorAccent', column: 'colorAccent' },
   { token: 'colorBackground', column: 'colorBackground' },
   { token: 'colorMuted', column: 'colorMuted' },
-  { token: 'fontHeading', column: 'fontHeading' },
-  { token: 'fontBody', column: 'fontBody' },
   { token: 'radiusBase', column: 'radiusBase' },
 ];
 

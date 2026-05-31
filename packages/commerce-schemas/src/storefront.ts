@@ -29,23 +29,14 @@ export const UpdateStorefrontSettingsInput = z.object({
 });
 export type UpdateStorefrontSettingsInput = z.infer<typeof UpdateStorefrontSettingsInput>;
 
-// Theme tokens — limited set of CSS variables a tenant can override on
-// the storefront without touching Sitebuilder. Anything beyond this list
-// goes through Sitebuilder's theme editor.
+// Theme tokens — the PRESENTATION-only subset a tenant can override on the
+// storefront without touching Sitebuilder. Brand IDENTITY (primary/accent
+// colour, typography, logo, favicon) is owned by the tenant-level brand
+// (docs/30 §6) and is NOT settable here — those columns were removed from
+// StorefrontTheme in migration 20260610000200. Anything beyond presentation
+// goes through Sitebuilder's theme editor / the Brand panel.
 export const StorefrontThemeTokens = z
   .object({
-    colorPrimary: z
-      .string()
-      .regex(/^#[0-9A-Fa-f]{6}$/)
-      .optional(),
-    colorPrimaryForeground: z
-      .string()
-      .regex(/^#[0-9A-Fa-f]{6}$/)
-      .optional(),
-    colorAccent: z
-      .string()
-      .regex(/^#[0-9A-Fa-f]{6}$/)
-      .optional(),
     colorBackground: z
       .string()
       .regex(/^#[0-9A-Fa-f]{6}$/)
@@ -54,16 +45,10 @@ export const StorefrontThemeTokens = z
       .string()
       .regex(/^#[0-9A-Fa-f]{6}$/)
       .optional(),
-    fontHeading: z.string().min(1).max(127).optional(),
-    fontBody: z.string().min(1).max(127).optional(),
     radiusBase: z
       .string()
       .regex(/^\d+(?:\.\d+)?(?:px|rem|em)$/)
       .optional(),
-    // Logo + favicon are media assets, picked from the shared library.
-    logoMediaId: Uuid.optional(),
-    logoDarkMediaId: Uuid.optional(),
-    faviconMediaId: Uuid.optional(),
   })
   .partial();
 export type StorefrontThemeTokens = z.infer<typeof StorefrontThemeTokens>;

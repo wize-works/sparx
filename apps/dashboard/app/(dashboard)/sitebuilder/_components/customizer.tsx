@@ -7,6 +7,7 @@
 // then refresh.
 
 import * as React from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
   Button,
@@ -19,7 +20,7 @@ import {
   SelectValue,
   Textarea,
 } from '@sparx/ui';
-import type { ThemeSettingField } from '@sparx/storefront-themes';
+import { BRAND_IDENTITY_TOKEN_KEYS, type ThemeSettingField } from '@sparx/storefront-themes';
 import { selectTheme, updateSettings } from '../_lib/actions';
 import type { AppearancePolicy, SiteConfigDto, ThemeDto } from '../_lib/types';
 import { PublishBar } from './publish-bar';
@@ -148,8 +149,18 @@ export function Customizer({
     postToPreview({ light, dark, mode, css: customCss });
   };
 
-  const colorFields = (theme?.settingsSchema ?? []).filter((f) => f.group === 'colors');
-  const typeFields = (theme?.settingsSchema ?? []).filter((f) => f.group === 'typography');
+  // Identity tokens (brand/primary colour, accent, type) are owned by the
+  // tenant-level brand (docs/30 §6) and edited in the Brand panel — never here.
+  // The customizer edits PRESENTATION tokens only, so a merchant can't set a
+  // value the brand overlay silently overrides at render ("preview tells the
+  // truth"). Brand wins live on the storefront + this preview alike.
+  const identityTokens = new Set<string>(BRAND_IDENTITY_TOKEN_KEYS);
+  const colorFields = (theme?.settingsSchema ?? []).filter(
+    (f) => f.group === 'colors' && !identityTokens.has(f.key)
+  );
+  const typeFields = (theme?.settingsSchema ?? []).filter(
+    (f) => f.group === 'typography' && !identityTokens.has(f.key)
+  );
   const layoutFields = (theme?.settingsSchema ?? []).filter((f) => f.group === 'layout');
   const deviceWidth = DEVICES.find((d) => d.id === device)?.width ?? null;
 
@@ -199,28 +210,51 @@ export function Customizer({
             </div>
           </Panel>
 
-          {/* Light/Dark is a single control in the preview header (above) — the
-              Colors panel edits whichever mode is shown there. */}
-          <Panel title="Colors">
-            {colorFields.map((f) => (
-              <div key={f.key} className="flex flex-col gap-1.5">
-                <Label>{f.label}</Label>
-                <ColorPicker value={tokenValue(f)} onChange={(v) => onTokenChange(f.key, v)} />
-                {f.help ? <p className="text-xs text-[var(--color-text-muted)]">{f.help}</p> : null}
-              </div>
-            ))}
+          {/* Brand owns identity (logo, brand colour, accent, type). It's edited
+              once in Brand and read everywhere — including this preview — so it
+              isn't editable here. */}
+          <Panel title="Brand">
+            <p className="text-xs text-[var(--color-text-muted)]">
+              Your logo, brand colour, accent, and fonts come from your brand and apply across the
+              storefront, email, and more. The preview reflects them live.
+            </p>
+            <Link
+              href="/sitebuilder/brand"
+              className="text-xs font-medium text-[var(--module-active)] hover:underline"
+            >
+              Edit brand →
+            </Link>
           </Panel>
 
-          <Panel title="Fonts">
-            {typeFields.map((f) => (
-              <FieldControl
-                key={f.key}
-                field={{ key: f.key, label: f.label, type: 'font' }}
-                value={light[f.key] ?? theme?.tokenDefaults.light[f.key] ?? ''}
-                onChange={(v) => onSharedChange(f.key, v as string)}
-              />
-            ))}
-          </Panel>
+          {/* Light/Dark is a single control in the preview header (above) — the
+              Colors panel edits whichever mode is shown there. Identity colours
+              (primary, accent) live in Brand; only presentation colours here. */}
+          {colorFields.length > 0 ? (
+            <Panel title="Colors">
+              {colorFields.map((f) => (
+                <div key={f.key} className="flex flex-col gap-1.5">
+                  <Label>{f.label}</Label>
+                  <ColorPicker value={tokenValue(f)} onChange={(v) => onTokenChange(f.key, v)} />
+                  {f.help ? (
+                    <p className="text-xs text-[var(--color-text-muted)]">{f.help}</p>
+                  ) : null}
+                </div>
+              ))}
+            </Panel>
+          ) : null}
+
+          {typeFields.length > 0 ? (
+            <Panel title="Fonts">
+              {typeFields.map((f) => (
+                <FieldControl
+                  key={f.key}
+                  field={{ key: f.key, label: f.label, type: 'font' }}
+                  value={light[f.key] ?? theme?.tokenDefaults.light[f.key] ?? ''}
+                  onChange={(v) => onSharedChange(f.key, v as string)}
+                />
+              ))}
+            </Panel>
+          ) : null}
 
           <Panel title="Layout">
             {layoutFields.map((f) => (

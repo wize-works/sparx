@@ -50,21 +50,25 @@ describe('sitebuilder publish lifecycle', () => {
     expect(version.versionNumber).toBe(1);
     expect(version.themeKey).toBe('industrial');
 
-    // Write-through: StorefrontTheme.colorPrimary === industrial light primary.
-    const theme = await readStorefrontTheme(test.tenant.tenantId);
-    expect(theme?.colorPrimary).toBe('#cc1010');
-    expect(theme?.fontHeading).toBe('Oswald');
-
     // Event fired after commit.
     const published = test.publisher.events.filter((e) => e.topic === 'sitebuilder.published');
     expect(published).toHaveLength(1);
 
-    // getPublishedSnapshot reflects the live version.
+    // getPublishedSnapshot reflects the live version. Identity tokens
+    // (colorPrimary) still appear in the compiled snapshot — they come from the
+    // theme preset here (this tenant has no brand overlay).
     const snap = await publishService.getPublishedSnapshot(test.ctx);
     expect(snap?.themeKey).toBe('industrial');
     expect(snap?.sections).toHaveLength(1);
     expect(snap?.compiledTokens.light.colorPrimary).toBe('#cc1010');
     expect(snap?.compiledTokens.dark.colorPrimary).toBe('#ef4444');
+
+    // Write-through: StorefrontTheme mirrors the compiled light *presentation*
+    // tokens only — brand identity (colour/type/logo) is owned by TenantBrand
+    // now (docs/30 §6), not this row.
+    const theme = await readStorefrontTheme(test.tenant.tenantId);
+    expect(theme?.colorBackground).toBe(snap?.compiledTokens.light.colorBackground);
+    expect(theme?.radiusBase).toBe(snap?.compiledTokens.light.radiusBase);
   });
 
   it('rollback — restores a prior version and republishes as a new version', async () => {
@@ -72,8 +76,11 @@ describe('sitebuilder publish lifecycle', () => {
     await themeService.selectTheme(test.ctx, { themeKey: 'apex' });
     const v2 = await publishService.publishNow(test.ctx);
     expect(v2.versionNumber).toBe(2);
+    // Write-through tracks the active version's compiled *presentation* tokens
+    // (identity is brand-owned now, no longer mirrored here).
     let theme = await readStorefrontTheme(test.tenant.tenantId);
-    expect(theme?.colorPrimary).toBe('#4f46e5'); // apex
+    let snap = await publishService.getPublishedSnapshot(test.ctx);
+    expect(theme?.colorBackground).toBe(snap?.compiledTokens.light.colorBackground); // apex
 
     // Roll back to v1 (industrial) → creates v3, restores tokens + draft theme.
     test.publisher.clear();
@@ -82,7 +89,8 @@ describe('sitebuilder publish lifecycle', () => {
     expect(v3.themeKey).toBe('industrial');
 
     theme = await readStorefrontTheme(test.tenant.tenantId);
-    expect(theme?.colorPrimary).toBe('#cc1010'); // back to industrial
+    snap = await publishService.getPublishedSnapshot(test.ctx);
+    expect(theme?.colorBackground).toBe(snap?.compiledTokens.light.colorBackground); // industrial
 
     const config = await themeService.getConfig(test.ctx);
     expect(config.themeKey).toBe('industrial');

@@ -220,20 +220,15 @@ const publicContentRoutes: FastifyPluginAsync = (app) => {
     // storefront's token layer interprets as "use the default theme".
     const [theme, storefront, brand] = await withTenant({ tenantId: tenant.id }, (tx) =>
       Promise.all([
+        // PRESENTATION tokens only. Identity (colours, type, logo, favicon) comes
+        // from the tenant brand below — those StorefrontTheme columns were removed
+        // in migration 20260610000200 (docs/30 §6).
         tx.storefrontTheme.findUnique({
           where: { tenantId: tenant.id },
           select: {
-            colorPrimary: true,
-            colorPrimaryForeground: true,
-            colorAccent: true,
             colorBackground: true,
             colorMuted: true,
-            fontHeading: true,
-            fontBody: true,
             radiusBase: true,
-            logoMediaId: true,
-            logoDarkMediaId: true,
-            faviconMediaId: true,
           },
         }),
         tx.storefrontSettings.findUnique({
@@ -273,18 +268,19 @@ const publicContentRoutes: FastifyPluginAsync = (app) => {
     const mergedTheme =
       theme || brand
         ? {
-            colorPrimary: brand?.colorPrimary ?? theme?.colorPrimary ?? null,
-            colorPrimaryForeground:
-              brand?.colorPrimaryForeground ?? theme?.colorPrimaryForeground ?? null,
-            colorAccent: brand?.colorAccent ?? theme?.colorAccent ?? null,
+            // Identity — brand only (StorefrontTheme no longer stores these).
+            colorPrimary: brand?.colorPrimary ?? null,
+            colorPrimaryForeground: brand?.colorPrimaryForeground ?? null,
+            colorAccent: brand?.colorAccent ?? null,
+            fontHeading: brand?.fontHeading ?? null,
+            fontBody: brand?.fontBody ?? null,
+            logoMediaId: brand?.logoLightMediaId ?? null,
+            logoDarkMediaId: brand?.logoDarkMediaId ?? null,
+            faviconMediaId: brand?.faviconMediaId ?? null,
+            // Presentation — theme-owned.
             colorBackground: theme?.colorBackground ?? null,
             colorMuted: theme?.colorMuted ?? null,
-            fontHeading: brand?.fontHeading ?? theme?.fontHeading ?? null,
-            fontBody: brand?.fontBody ?? theme?.fontBody ?? null,
             radiusBase: theme?.radiusBase ?? null,
-            logoMediaId: brand?.logoLightMediaId ?? theme?.logoMediaId ?? null,
-            logoDarkMediaId: brand?.logoDarkMediaId ?? theme?.logoDarkMediaId ?? null,
-            faviconMediaId: brand?.faviconMediaId ?? theme?.faviconMediaId ?? null,
           }
         : null;
 

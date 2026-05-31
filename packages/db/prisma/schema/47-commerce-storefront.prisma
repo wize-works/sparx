@@ -28,24 +28,20 @@ model StorefrontSettings {
   @@map("commerce_storefront_settings")
 }
 
-// Limited token overrides applied on top of @sparx/ui's storefront
-// variants. Anything beyond this list goes through Sitebuilder's full
-// theme editor.
+// PRESENTATION-only token overrides applied on top of @sparx/ui's storefront
+// variants. Brand IDENTITY (primary/accent colour, typography, logo, favicon)
+// is owned by the tenant-level TenantBrand (docs/30 §6) and read live + overlaid
+// at render — it is NOT mirrored here. The former identity columns
+// (color_primary/_primary_foreground/_accent, font_heading/_body,
+// logo_media_id/logo_dark_media_id/favicon_media_id) were removed in migration
+// 20260610000200 once every reader cut over to brand.
 
 model StorefrontTheme {
   tenantId String @id @map("tenant_id") @db.Uuid
 
-  colorPrimary           String? @map("color_primary") @db.VarChar(7)
-  colorPrimaryForeground String? @map("color_primary_foreground") @db.VarChar(7)
-  colorAccent            String? @map("color_accent") @db.VarChar(7)
-  colorBackground        String? @map("color_background") @db.VarChar(7)
-  colorMuted             String? @map("color_muted") @db.VarChar(7)
-  fontHeading            String? @map("font_heading") @db.VarChar(127)
-  fontBody               String? @map("font_body") @db.VarChar(127)
-  radiusBase             String? @map("radius_base") @db.VarChar(15)
-  logoMediaId            String? @map("logo_media_id") @db.Uuid
-  logoDarkMediaId        String? @map("logo_dark_media_id") @db.Uuid
-  faviconMediaId         String? @map("favicon_media_id") @db.Uuid
+  colorBackground String? @map("color_background") @db.VarChar(7)
+  colorMuted      String? @map("color_muted") @db.VarChar(7)
+  radiusBase      String? @map("radius_base") @db.VarChar(15)
 
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz

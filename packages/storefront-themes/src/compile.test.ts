@@ -28,12 +28,17 @@ describe('compileTokens', () => {
     expect(getTheme('does-not-exist').key).toBe('apex');
   });
 
-  it('projects light tokens onto StorefrontTheme columns for write-through', () => {
+  it('projects light PRESENTATION tokens onto StorefrontTheme columns for write-through', () => {
     const { light } = compileTokens('industrial');
     const cols = toStorefrontThemeColumns(light);
-    expect(cols.colorPrimary).toBe('#cc1010');
-    expect(cols.fontHeading).toBe('Oswald');
-    // colorForeground/colorBorder/containerWidth have no column — not written through.
+    // Presentation tokens are written through.
+    expect(cols.colorBackground).toBe(light.colorBackground);
+    expect(cols.colorMuted).toBe(light.colorMuted);
+    expect(cols.radiusBase).toBe(light.radiusBase);
+    // Identity tokens are brand-owned (docs/30 §6) — NOT written through.
+    expect(cols.colorPrimary).toBeUndefined();
+    expect(cols.fontHeading).toBeUndefined();
+    // colorForeground/colorBorder/containerWidth have no column either.
     expect(cols.colorForeground).toBeUndefined();
     expect(cols.containerWidth).toBeUndefined();
   });

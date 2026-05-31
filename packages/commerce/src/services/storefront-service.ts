@@ -104,6 +104,9 @@ export async function updateSettings(ctx: ServiceContext, rawInput: unknown): Pr
   });
 }
 
+// Presentation-only theme overrides. Brand identity (primary/accent colour,
+// typography, logo, favicon) is owned by the tenant-level brand (docs/30 §6) and
+// is NOT stored here — those columns were removed in migration 20260610000200.
 export async function getTheme(ctx: ServiceContext): Promise<Record<string, string | null>> {
   return withTenant(ctx, async (tx) => {
     const row = await tx.storefrontTheme.findUnique({
@@ -112,17 +115,9 @@ export async function getTheme(ctx: ServiceContext): Promise<Record<string, stri
     const empty: Record<string, string | null> = {};
     if (!row) return empty;
     return {
-      colorPrimary: row.colorPrimary,
-      colorPrimaryForeground: row.colorPrimaryForeground,
-      colorAccent: row.colorAccent,
       colorBackground: row.colorBackground,
       colorMuted: row.colorMuted,
-      fontHeading: row.fontHeading,
-      fontBody: row.fontBody,
       radiusBase: row.radiusBase,
-      logoMediaId: row.logoMediaId,
-      logoDarkMediaId: row.logoDarkMediaId,
-      faviconMediaId: row.faviconMediaId,
     };
   });
 }
