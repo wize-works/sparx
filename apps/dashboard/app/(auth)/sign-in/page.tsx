@@ -100,7 +100,7 @@ export default function SignInPage() {
           <Text size="sm" variant="muted">
             New here?
           </Text>
-          <Button variant="link" size="sm" asChild>
+          <Button color="primary" variant="link" size="sm" asChild>
             <Link href="/sign-up">Create an account</Link>
           </Button>
         </Stack>

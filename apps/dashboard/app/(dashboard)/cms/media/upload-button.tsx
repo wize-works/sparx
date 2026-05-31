@@ -102,7 +102,7 @@ export function UploadButton() {
         tabIndex={-1}
       />
       <Button
-        variant="module"
+        color="module"
         leftIcon={<Upload className="h-4 w-4" />}
         onClick={() => fileRef.current?.click()}
         disabled={progress?.status === 'uploading' || progress?.status === 'reserving'}

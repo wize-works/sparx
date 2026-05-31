@@ -266,7 +266,7 @@ export function CollectionMembershipEditor({
             <Text size="sm">Saved</Text>
           </Stack>
         )}
-        <Button type="button" variant="module" onClick={save} disabled={pending} loading={pending}>
+        <Button type="button" color="module" onClick={save} disabled={pending} loading={pending}>
           Save membership
         </Button>
       </Stack>

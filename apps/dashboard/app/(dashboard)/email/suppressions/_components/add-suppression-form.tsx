@@ -92,7 +92,7 @@ export function AddSuppressionForm() {
               </SelectContent>
             </Select>
           </Stack>
-          <Button type="submit" variant="module" loading={pending} disabled={pending}>
+          <Button type="submit" color="module" loading={pending} disabled={pending}>
             <Plus className="h-4 w-4" />
             Suppress
           </Button>

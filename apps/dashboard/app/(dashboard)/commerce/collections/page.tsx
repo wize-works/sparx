@@ -74,7 +74,7 @@ export default async function CollectionsPage({ searchParams }: PageProps) {
             <Stack direction="row" align="center" gap={2}>
               <Layers className="h-5 w-5" />
               <Heading level={1}>Collections</Heading>
-              <Badge variant="module">
+              <Badge color="module">
                 {total} collection{total === 1 ? '' : 's'}
               </Badge>
             </Stack>
@@ -83,7 +83,7 @@ export default async function CollectionsPage({ searchParams }: PageProps) {
               it; rules re-project on the next index flush (Phase 1.5 wires the indexer).
             </Text>
           </Stack>
-          <Button asChild variant="module" leftIcon={<Plus className="h-4 w-4" />}>
+          <Button asChild color="module" leftIcon={<Plus className="h-4 w-4" />}>
             <Link href="/commerce/collections/new">New collection</Link>
           </Button>
         </Stack>
@@ -121,7 +121,7 @@ export default async function CollectionsPage({ searchParams }: PageProps) {
                     Featured only
                   </Text>
                 </Stack>
-                <Button type="submit" variant="secondary">
+                <Button type="submit" variant="outline">
                   Apply
                 </Button>
               </Stack>
@@ -141,7 +141,7 @@ export default async function CollectionsPage({ searchParams }: PageProps) {
               }
               action={
                 total === 0 ? (
-                  <Button asChild variant="module" leftIcon={<Plus className="h-4 w-4" />}>
+                  <Button asChild color="module" leftIcon={<Plus className="h-4 w-4" />}>
                     <Link href="/commerce/collections/new">New collection</Link>
                   </Button>
                 ) : undefined
@@ -188,7 +188,7 @@ export default async function CollectionsPage({ searchParams }: PageProps) {
                       </TableCell>
                       <TableCell>
                         <Badge
-                          variant={c.type === 'rules' ? 'module' : 'outline'}
+                          color={c.type === 'rules' ? 'module' : 'outline'}
                           className="text-xs"
                         >
                           {c.type === 'rules' ? (

@@ -258,7 +258,8 @@ export function MenuEditor({
             </Stack>
             <Button
               type="button"
-              variant="module-outline"
+              color="module"
+              variant="outline"
               size="sm"
               leftIcon={<Plus className="h-3.5 w-3.5" />}
               onClick={addRoot}
@@ -288,7 +289,7 @@ export function MenuEditor({
           <Stack direction="row" align="center" gap={3}>
             <Button
               type="button"
-              variant="module"
+              color="module"
               leftIcon={<Save className="h-4 w-4" />}
               onClick={onSave}
               disabled={pending}
@@ -530,6 +531,7 @@ function EntryField({
           <Label htmlFor={id}>Entry ID</Label>
           <Button
             type="button"
+            color="primary"
             variant="link"
             size="xs"
             onClick={() => setMode('picker')}
@@ -554,6 +556,7 @@ function EntryField({
         <Label htmlFor={id}>Published entry</Label>
         <Button
           type="button"
+          color="primary"
           variant="link"
           size="xs"
           onClick={() => setMode('manual')}

@@ -215,22 +215,22 @@ The not-yet-built modules (B2B, AI, Dropship) already share one template via `ap
 
 ## 15. Components: build vs. reuse
 
-| Need                        | Status   | Location                                                 |
-| --------------------------- | -------- | -------------------------------------------------------- |
-| `Container` (widths)        | ✅ reuse | `packages/ui/src/components/layout/container.tsx`        |
-| `Card` + `variant="module"` | ✅ reuse | `packages/ui/src/components/layout/card.tsx`             |
-| `Stat` (KPI card)           | ✅ reuse | `packages/ui/src/components/data/stat.tsx`               |
-| `DataTable` / `Table`       | ✅ reuse | `packages/ui/src/components/data/{data-table,table}.tsx` |
-| `EmptyState`                | ✅ reuse | `packages/ui/src/components/data/empty-state.tsx`        |
-| `Tabs variant="default"`    | ✅ reuse | `packages/ui/src/components/navigation/tabs.tsx`         |
-| `Grid` / `Stack`            | ✅ reuse | `packages/ui/src/components/layout/{grid,stack}.tsx`     |
-| `Form*` primitives          | ✅ reuse | `packages/ui/src/components/form/form.tsx`               |
-| `ModuleStub` (preview)      | ✅ reuse | `apps/dashboard/components/module-stub.tsx`              |
-| **`PageHeader`**            | ❌ build | new in `@sparx/ui` — composes the §5 anatomy             |
-| **`FilterBar`**             | ❌ build | new in `@sparx/ui` — composes the §7.1 toolbar           |
-| **`FormActionBar`**         | ❌ build | new in `@sparx/ui` — the §13 right-aligned bar           |
+| Need                        | Status   | Location                                                             |
+| --------------------------- | -------- | -------------------------------------------------------------------- |
+| `Container` (widths)        | ✅ reuse | `packages/ui/src/components/layout/container.tsx`                    |
+| `Card` + `variant="module"` | ✅ reuse | `packages/ui/src/components/layout/card.tsx`                         |
+| `Stat` (KPI card)           | ✅ reuse | `packages/ui/src/components/data/stat.tsx`                           |
+| `DataTable` / `Table`       | ✅ reuse | `packages/ui/src/components/data/{data-table,table}.tsx`             |
+| `EmptyState`                | ✅ reuse | `packages/ui/src/components/data/empty-state.tsx`                    |
+| `Tabs variant="default"`    | ✅ reuse | `packages/ui/src/components/navigation/tabs.tsx`                     |
+| `Grid` / `Stack`            | ✅ reuse | `packages/ui/src/components/layout/{grid,stack}.tsx`                 |
+| `Form*` primitives          | ✅ reuse | `packages/ui/src/components/form/form.tsx`                           |
+| `ModuleStub` (preview)      | ✅ reuse | `apps/dashboard/components/module-stub.tsx`                          |
+| **`PageHeader`**            | ✅ built | `packages/ui/src/components/layout/page-header.tsx` — the §5 anatomy |
+| **`FilterBar`**             | ✅ built | `packages/ui/src/components/data/filter-bar.tsx` — the §7.1 toolbar  |
+| **`FormActionBar`**         | ✅ built | `packages/ui/src/components/form/form-action-bar.tsx` — the §13 bar  |
 
-Three small new shared components + targeted prop fixes (mostly `variant="module"`) cover the entire standard. No primitive needs restyling.
+Three small new shared components (built 2026-05-31 — all pure layout containers; actions/filters are slots, so they're decoupled from the Button API) + targeted prop fixes (mostly `variant="module"`) cover the entire standard. No primitive needs restyling.
 
 ---
 

@@ -20,7 +20,7 @@ export default function NotFound() {
               title="Asset not found"
               description="This media asset doesn't exist, was deleted, or belongs to a different tenant. Head back to the library to find what you need."
               action={
-                <Button asChild variant="module">
+                <Button asChild color="module">
                   <Link href="/cms/media">Back to media library</Link>
                 </Button>
               }

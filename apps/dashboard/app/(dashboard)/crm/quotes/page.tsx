@@ -72,7 +72,7 @@ export default async function QuotesPage({ searchParams }: PageProps) {
             <Stack direction="row" align="center" gap={2}>
               <FileText className="h-5 w-5" />
               <Heading level={1}>Quotes</Heading>
-              <Badge variant="module">
+              <Badge color="module">
                 {total} quote{total === 1 ? '' : 's'}
               </Badge>
             </Stack>
@@ -81,7 +81,7 @@ export default async function QuotesPage({ searchParams }: PageProps) {
               Accepted quotes convert atomically to a new Order via the quote detail page.
             </Text>
           </Stack>
-          <Button asChild variant="module" leftIcon={<Plus className="h-4 w-4" />}>
+          <Button asChild color="module" leftIcon={<Plus className="h-4 w-4" />}>
             <Link href="/crm/quotes/new">New quote</Link>
           </Button>
         </Stack>
@@ -121,7 +121,7 @@ export default async function QuotesPage({ searchParams }: PageProps) {
                         </EntityRowLink>
                       </TableCell>
                       <TableCell>
-                        <Badge variant={STATUS_VARIANT[q.status] ?? 'outline'} className="text-xs">
+                        <Badge color={STATUS_VARIANT[q.status] ?? 'outline'} className="text-xs">
                           {q.status}
                         </Badge>
                       </TableCell>

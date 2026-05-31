@@ -94,9 +94,7 @@ export async function PriceListDetailContent({ id }: Props) {
           <Stack direction="row" align="center" gap={3} wrap>
             <DollarSign className="h-5 w-5" />
             <Heading level={1}>{priceList.name}</Heading>
-            <Badge variant={STATUS_VARIANT[priceList.status] ?? 'outline'}>
-              {priceList.status}
-            </Badge>
+            <Badge color={STATUS_VARIANT[priceList.status] ?? 'outline'}>{priceList.status}</Badge>
             <Badge variant="outline" className="font-mono text-xs">
               {priceList.currency}
             </Badge>

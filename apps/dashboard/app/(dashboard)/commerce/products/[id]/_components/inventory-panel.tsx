@@ -255,7 +255,7 @@ function VariantInventoryRow({
         </TableCell>
         <TableCell>
           {reorderPoint !== null ? (
-            <Badge variant={belowReorder ? 'warning' : 'outline'} className="text-xs">
+            <Badge color={belowReorder ? 'warning' : 'outline'} className="text-xs">
               ≤ {reorderPoint}
             </Badge>
           ) : (

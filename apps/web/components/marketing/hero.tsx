@@ -74,7 +74,7 @@ export function Hero() {
               <Button size="lg" style={{ backgroundColor: '#0A0A0A' }}>
                 Launch your store
               </Button>
-              <Button size="lg" variant="secondary">
+              <Button size="lg" variant="outline">
                 See the platform
               </Button>
             </div>

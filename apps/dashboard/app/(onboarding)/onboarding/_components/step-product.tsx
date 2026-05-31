@@ -62,7 +62,7 @@ export function StepProduct({ nav }: { nav: StepNav }) {
               Bulk-import a catalog from a connected supplier instead of adding products by hand.
             </Text>
           </Stack>
-          <Button variant="secondary" disabled>
+          <Button variant="outline" disabled>
             Connect
           </Button>
         </Stack>
@@ -83,7 +83,7 @@ export function StepProduct({ nav }: { nav: StepNav }) {
             Skip for now
           </Button>
           <Button
-            variant="module"
+            color="module"
             onClick={onCreate}
             disabled={pending || !title.trim()}
             loading={pending}

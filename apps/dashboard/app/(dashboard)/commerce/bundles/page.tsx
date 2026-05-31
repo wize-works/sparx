@@ -55,7 +55,7 @@ export default async function BundlesPage() {
             <Stack direction="row" align="center" gap={2}>
               <Package2 className="h-5 w-5" />
               <Heading level={1}>Bundles</Heading>
-              <Badge variant="module">{bundles.length}</Badge>
+              <Badge color="module">{bundles.length}</Badge>
             </Stack>
             <Text variant="muted">
               A bundle is a wrapper product that resolves to a fixed set of component variants. Use

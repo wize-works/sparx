@@ -69,8 +69,8 @@ export async function B2bAccountDetailContent({ id }: Props) {
           <Stack direction="row" align="center" gap={3} wrap>
             <Building2 className="h-5 w-5" />
             <Heading level={1}>{account.companyName}</Heading>
-            <Badge variant={STATUS_VARIANT[account.status] ?? 'outline'}>{account.status}</Badge>
-            {account.pricingTier && <Badge variant="module">{account.pricingTier}</Badge>}
+            <Badge color={STATUS_VARIANT[account.status] ?? 'outline'}>{account.status}</Badge>
+            {account.pricingTier && <Badge color="module">{account.pricingTier}</Badge>}
             {account.website && (
               <a
                 href={account.website}

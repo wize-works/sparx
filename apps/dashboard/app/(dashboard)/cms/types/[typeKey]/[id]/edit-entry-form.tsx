@@ -58,7 +58,8 @@ export function EditEntryForm({
       <Stack direction="row" align="center" justify="end" gap={2}>
         <Button
           type="button"
-          variant={status === 'published' ? 'module-outline' : 'module'}
+          color="module"
+          variant={status === 'published' ? 'outline' : 'solid'}
           size="sm"
           onClick={() => void togglePublish()}
           disabled={busy}
@@ -67,7 +68,7 @@ export function EditEntryForm({
         </Button>
         <Button
           type="button"
-          variant="danger"
+          color="danger"
           size="sm"
           onClick={() => void handleDelete()}
           disabled={busy}

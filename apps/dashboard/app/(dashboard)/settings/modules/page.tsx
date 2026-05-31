@@ -72,7 +72,7 @@ export default async function ModulesSettingsPage() {
     <Container size="xl">
       <Stack gap={6} className="py-10">
         <Stack gap={2}>
-          <Button variant="link" size="sm" asChild>
+          <Button color="primary" variant="link" size="sm" asChild>
             <Link href="/settings">
               <ArrowLeft className="h-3.5 w-3.5" /> Back to settings
             </Link>

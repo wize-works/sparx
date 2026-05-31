@@ -50,7 +50,7 @@ export default async function WishlistsPage() {
           <Stack direction="row" align="center" gap={2}>
             <Heart className="h-5 w-5" />
             <Heading level={1}>Wishlists</Heading>
-            <Badge variant="module">
+            <Badge color="module">
               {wishlistCount} lists · {itemCount} items
             </Badge>
           </Stack>

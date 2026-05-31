@@ -125,7 +125,7 @@ export async function ConfiguratorTemplateDetailContent({ id }: Props) {
           <Stack direction="row" align="center" gap={3} wrap>
             <Settings2 className="h-5 w-5" />
             <Heading level={1}>{template.name}</Heading>
-            <Badge variant={STATUS_VARIANT[template.status] ?? 'outline'}>{template.status}</Badge>
+            <Badge color={STATUS_VARIANT[template.status] ?? 'outline'}>{template.status}</Badge>
           </Stack>
           <Text size="sm" variant="muted">
             Product:{' '}

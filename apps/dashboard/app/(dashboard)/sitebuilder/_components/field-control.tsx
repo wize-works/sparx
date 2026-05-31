@@ -206,7 +206,7 @@ function MediaField({
       </div>
       <div className="flex flex-col gap-1.5">
         <div className="flex gap-2">
-          <Button type="button" size="sm" variant="secondary" onClick={() => setOpen(true)}>
+          <Button type="button" size="sm" variant="outline" onClick={() => setOpen(true)}>
             {assetId ? 'Change image' : 'Choose image'}
           </Button>
           {assetId ? (

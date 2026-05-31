@@ -218,7 +218,7 @@ function OgImageField({
   if (!hasAsset) {
     return (
       <Stack direction="row" align="center" gap={2}>
-        <Button type="button" variant="secondary" size="sm" onClick={onPick}>
+        <Button type="button" variant="outline" size="sm" onClick={onPick}>
           Pick image
         </Button>
         <Text size="xs" variant="muted">

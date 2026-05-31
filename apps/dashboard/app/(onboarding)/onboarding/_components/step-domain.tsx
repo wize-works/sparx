@@ -112,7 +112,13 @@ export function StepDomain({ initialSlug, nav }: { initialSlug: string; nav: Ste
                   Try:
                 </Text>
                 {check.result.suggestions.map((s) => (
-                  <Button key={s} variant="link" size="sm" onClick={() => setSlug(s)}>
+                  <Button
+                    key={s}
+                    color="primary"
+                    variant="link"
+                    size="sm"
+                    onClick={() => setSlug(s)}
+                  >
                     {s}
                   </Button>
                 ))}
@@ -136,12 +142,7 @@ export function StepDomain({ initialSlug, nav }: { initialSlug: string; nav: Ste
           <Button variant="ghost" onClick={nav.onSkip} disabled={pending || nav.navPending}>
             Skip for now
           </Button>
-          <Button
-            variant="module"
-            onClick={onUse}
-            disabled={pending || !available}
-            loading={pending}
-          >
+          <Button color="module" onClick={onUse} disabled={pending || !available} loading={pending}>
             Use this address
           </Button>
         </Stack>

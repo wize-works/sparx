@@ -301,7 +301,7 @@ export function BundleEditor({
                   </option>
                 ))}
               </select>
-              <Button type="button" variant="secondary" onClick={addComponent}>
+              <Button type="button" variant="outline" onClick={addComponent}>
                 Add
               </Button>
             </Stack>

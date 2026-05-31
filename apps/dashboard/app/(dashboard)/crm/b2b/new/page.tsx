@@ -94,7 +94,7 @@ export default function NewB2bAccountPage() {
     <Container size="lg">
       <Stack gap={6} className="py-10">
         <Stack gap={2}>
-          <Button variant="link" size="sm" asChild>
+          <Button color="primary" variant="link" size="sm" asChild>
             <Link href="/crm/b2b">
               <ArrowLeft className="h-3.5 w-3.5" /> Back to B2B accounts
             </Link>
@@ -342,7 +342,7 @@ export default function NewB2bAccountPage() {
               <Button variant="ghost" asChild>
                 <Link href="/crm/b2b">Cancel</Link>
               </Button>
-              <Button type="submit" variant="module" disabled={pending} loading={pending}>
+              <Button type="submit" color="module" disabled={pending} loading={pending}>
                 Create B2B account
               </Button>
             </CardFooter>

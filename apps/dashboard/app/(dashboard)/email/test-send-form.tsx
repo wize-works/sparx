@@ -64,7 +64,7 @@ export function TestSendForm({ devLastSend }: TestSendFormProps) {
             </Select>
           </Stack>
           <Stack direction="row" gap={2}>
-            <Button type="submit" variant="module" disabled={pending} loading={pending}>
+            <Button type="submit" color="module" disabled={pending} loading={pending}>
               Send test
             </Button>
           </Stack>
@@ -74,7 +74,7 @@ export function TestSendForm({ devLastSend }: TestSendFormProps) {
       {result?.ok && result.send && (
         <Stack gap={1}>
           <Stack direction="row" align="center" gap={2}>
-            <Badge variant="success">Accepted</Badge>
+            <Badge color="success">Accepted</Badge>
             <Text size="sm">
               <Code>{result.send.templateId}</Code> → {result.send.to}
             </Text>

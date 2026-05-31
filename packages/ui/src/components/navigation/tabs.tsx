@@ -22,18 +22,24 @@ const tabsListVariants = cva('inline-flex items-center', {
 });
 
 type TabsListVariant = NonNullable<VariantProps<typeof tabsListVariants>['variant']>;
-const TabsListVariantContext = React.createContext<TabsListVariant>('default');
+type TabsSize = 'sm' | 'md' | 'lg';
+const TabsListContext = React.createContext<{ variant: TabsListVariant; size: TabsSize }>({
+  variant: 'default',
+  size: 'md',
+});
 
 export interface TabsListProps
   extends
     React.ComponentPropsWithoutRef<typeof TabsPrimitive.List>,
-    VariantProps<typeof tabsListVariants> {}
+    VariantProps<typeof tabsListVariants> {
+  size?: TabsSize;
+}
 
 export const TabsList = React.forwardRef<
   React.ElementRef<typeof TabsPrimitive.List>,
   TabsListProps
->(({ className, variant = 'default', children, ...props }, ref) => (
-  <TabsListVariantContext.Provider value={variant ?? 'default'}>
+>(({ className, variant = 'default', size = 'md', children, ...props }, ref) => (
+  <TabsListContext.Provider value={{ variant: variant ?? 'default', size }}>
     <TabsPrimitive.List
       ref={ref}
       className={cn(tabsListVariants({ variant }), className)}
@@ -41,38 +47,53 @@ export const TabsList = React.forwardRef<
     >
       {children}
     </TabsPrimitive.List>
-  </TabsListVariantContext.Provider>
+  </TabsListContext.Provider>
 ));
 TabsList.displayName = TabsPrimitive.List.displayName;
 
-const triggerByVariant: Record<TabsListVariant, string> = {
-  default: cn(
-    'relative -mb-px inline-flex h-9 items-center px-3 text-sm font-medium',
+const SIZE_DEFAULT: Record<TabsSize, string> = {
+  sm: 'h-8 px-2.5 text-xs',
+  md: 'h-9 px-3 text-sm',
+  lg: 'h-10 px-4 text-base',
+};
+const SIZE_PILLS: Record<TabsSize, string> = {
+  sm: 'h-6 px-2.5 text-xs',
+  md: 'h-7 px-3 text-sm',
+  lg: 'h-9 px-4 text-base',
+};
+
+function triggerClasses(variant: TabsListVariant, size: TabsSize): string {
+  if (variant === 'pills') {
+    return cn(
+      'inline-flex items-center rounded-sm font-medium',
+      SIZE_PILLS[size],
+      'text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]',
+      'transition-colors duration-150',
+      'focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:outline-none',
+      'disabled:pointer-events-none disabled:opacity-40',
+      'data-[state=active]:bg-[var(--color-bg-surface)] data-[state=active]:text-[var(--color-text-primary)] data-[state=active]:shadow-sm'
+    );
+  }
+  return cn(
+    'relative -mb-px inline-flex items-center font-medium',
+    SIZE_DEFAULT[size],
     'text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]',
     'border-b-2 border-transparent transition-colors duration-150',
     'focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:outline-none',
     'disabled:pointer-events-none disabled:opacity-40',
     'data-[state=active]:border-[var(--module-active)] data-[state=active]:text-[var(--module-active-text)]'
-  ),
-  pills: cn(
-    'inline-flex h-7 items-center rounded-sm px-3 text-sm font-medium',
-    'text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]',
-    'transition-colors duration-150',
-    'focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:outline-none',
-    'disabled:pointer-events-none disabled:opacity-40',
-    'data-[state=active]:bg-[var(--color-bg-surface)] data-[state=active]:text-[var(--color-text-primary)] data-[state=active]:shadow-sm'
-  ),
-};
+  );
+}
 
 export const TabsTrigger = React.forwardRef<
   React.ElementRef<typeof TabsPrimitive.Trigger>,
   React.ComponentPropsWithoutRef<typeof TabsPrimitive.Trigger>
 >(({ className, ...props }, ref) => {
-  const variant = React.useContext(TabsListVariantContext);
+  const { variant, size } = React.useContext(TabsListContext);
   return (
     <TabsPrimitive.Trigger
       ref={ref}
-      className={cn(triggerByVariant[variant], className)}
+      className={cn(triggerClasses(variant, size), className)}
       {...props}
     />
   );

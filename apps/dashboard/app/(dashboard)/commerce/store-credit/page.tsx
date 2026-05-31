@@ -78,7 +78,7 @@ export default async function StoreCreditPage() {
           <Stack direction="row" align="center" gap={2}>
             <CircleDollarSign className="h-5 w-5" />
             <Heading level={1}>Store credit</Heading>
-            <Badge variant="module">{moneyFmt.format(outstandingCents / 100)} outstanding</Badge>
+            <Badge color="module">{moneyFmt.format(outstandingCents / 100)} outstanding</Badge>
           </Stack>
           <Text variant="muted">
             Per-customer credit balance — accrues from refunds, loyalty conversions, or manual

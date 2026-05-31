@@ -93,7 +93,8 @@ export function LineItemsEditor({ onChange, initialItems }: LineItemsEditorProps
               <Button
                 type="button"
                 variant="ghost"
-                size="icon-sm"
+                shape="square"
+                size="sm"
                 onClick={() => removeItem(idx)}
                 aria-label="Remove line item"
               >
@@ -170,7 +171,7 @@ export function LineItemsEditor({ onChange, initialItems }: LineItemsEditorProps
       <Stack direction="row" justify="between" align="center">
         <Button
           type="button"
-          variant="secondary"
+          variant="outline"
           size="sm"
           onClick={addItem}
           leftIcon={<Plus className="h-3.5 w-3.5" />}

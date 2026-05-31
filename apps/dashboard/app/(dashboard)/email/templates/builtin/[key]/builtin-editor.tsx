@@ -85,7 +85,7 @@ export function BuiltinEditor({ view }: { view: BuiltinTemplateView }) {
         </Stack>
 
         <Stack direction="row" gap={2}>
-          <Button type="submit" variant="module" loading={pending} disabled={pending}>
+          <Button type="submit" color="module" loading={pending} disabled={pending}>
             Save template
           </Button>
         </Stack>

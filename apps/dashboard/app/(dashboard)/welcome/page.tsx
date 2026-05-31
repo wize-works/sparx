@@ -15,7 +15,7 @@ export default async function WelcomePage() {
         <Stack gap={2}>
           <Stack direction="row" align="center" gap={2}>
             <Heading level={1}>Welcome to Sparx</Heading>
-            {progress.state.finishedAt && <Badge variant="success">All set</Badge>}
+            {progress.state.finishedAt && <Badge color="success">All set</Badge>}
           </Stack>
           <Text variant="muted">
             A short checklist to get your store production-ready. You can skip and come back any

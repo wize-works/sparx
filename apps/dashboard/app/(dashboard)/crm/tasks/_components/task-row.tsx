@@ -91,7 +91,7 @@ export function TaskRow({ task, overdue }: { task: TaskCard; overdue?: boolean }
           {task.title}
         </Text>
         <Stack direction="row" align="center" gap={2} wrap>
-          <Badge variant={PRIORITY_VARIANT[task.priority] ?? 'outline'} className="text-xs">
+          <Badge color={PRIORITY_VARIANT[task.priority] ?? 'outline'} className="text-xs">
             {task.priority}
           </Badge>
           {task.customerId && (

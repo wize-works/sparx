@@ -23,12 +23,30 @@ export const COLOR_KEYS = [
   'module',
 ] as const;
 
-export type ColorKey = (typeof COLOR_KEYS)[number];
+/** Per-module brand colors, addressable directly as a `color` slot (independent
+ *  of the active ModuleProvider). Backed by `--module-{name}` + `.sx-c-{name}`. */
+export const MODULE_COLOR_KEYS = [
+  'storefront',
+  'commerce',
+  'cms',
+  'crm',
+  'email',
+  'b2b',
+  'ai',
+  'dropship',
+] as const;
 
-/** `color` → role-var class. Object form so CVA can use it as a variant map for
- *  the known slots; unknown runtime colors are handled by the component via
- *  `sx-c-${color}` directly (see `colorClass`). */
-export const colorVariants: Record<ColorKey, string> = {
+export type SemanticColorKey = (typeof COLOR_KEYS)[number];
+export type ModuleColorKey = (typeof MODULE_COLOR_KEYS)[number];
+export type ColorKey = SemanticColorKey | ModuleColorKey;
+
+/** Every known color slot (semantic + per-module), for showcases/iteration. */
+export const ALL_COLOR_KEYS: readonly ColorKey[] = [...COLOR_KEYS, ...MODULE_COLOR_KEYS];
+
+/** `color` → role-var class for the semantic slots. Module + runtime-custom
+ *  colors are handled by the component via `sx-c-${color}` directly
+ *  (see `colorClass`), so they don't need an entry here. */
+export const colorVariants: Record<SemanticColorKey, string> = {
   primary: 'sx-c-primary',
   secondary: 'sx-c-secondary',
   accent: 'sx-c-accent',

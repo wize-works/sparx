@@ -37,7 +37,8 @@ export function DatePicker({
     <Popover>
       <PopoverTrigger asChild>
         <Button
-          variant="secondary"
+          color="neutral"
+          variant="outline"
           disabled={disabled}
           aria-label={value ? format(value, dateFormat) : (ariaLabel ?? placeholder)}
           className={cn(

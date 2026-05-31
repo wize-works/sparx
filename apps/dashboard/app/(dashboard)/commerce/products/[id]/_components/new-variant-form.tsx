@@ -193,7 +193,7 @@ export function NewVariantForm({ productId, options, onCreated, onCancel }: Prop
           <Button type="button" variant="ghost" onClick={onCancel}>
             Cancel
           </Button>
-          <Button type="submit" variant="module" disabled={pending} loading={pending}>
+          <Button type="submit" color="module" disabled={pending} loading={pending}>
             Add variant
           </Button>
         </Stack>

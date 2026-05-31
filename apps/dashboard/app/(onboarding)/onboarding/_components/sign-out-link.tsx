@@ -25,7 +25,7 @@ export function SignOutLink() {
   }
 
   return (
-    <Button variant="link" size="sm" onClick={onClick} disabled={pending}>
+    <Button color="primary" variant="link" size="sm" onClick={onClick} disabled={pending}>
       Save &amp; exit
     </Button>
   );

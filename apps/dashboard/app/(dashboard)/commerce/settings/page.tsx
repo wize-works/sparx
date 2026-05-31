@@ -74,7 +74,7 @@ export default async function StorefrontSettingsPage() {
           <Stack direction="row" align="center" gap={2}>
             <Settings2 className="h-5 w-5" />
             <Heading level={1}>Storefront settings</Heading>
-            <Badge variant="module">commerce defaults</Badge>
+            <Badge color="module">commerce defaults</Badge>
           </Stack>
           <Text variant="muted">
             Tenant-wide commerce defaults. Sitebuilder owns layout — settings here govern currency,

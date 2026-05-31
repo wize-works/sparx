@@ -66,7 +66,7 @@ export default async function ContentTypesPage() {
               merchant type. Pages have a dedicated tab; this view covers everything else.
             </Text>
           </Stack>
-          <Button asChild variant="module" leftIcon={<Plus className="h-4 w-4" />}>
+          <Button asChild color="module" leftIcon={<Plus className="h-4 w-4" />}>
             <Link href="/cms/types/new">New custom type</Link>
           </Button>
         </Stack>
@@ -89,7 +89,7 @@ export default async function ContentTypesPage() {
                         </Text>
                       )}
                       <Stack direction="row" align="center" gap={2}>
-                        <Badge variant={t.is_built_in ? 'outline' : 'default'}>
+                        <Badge color={t.is_built_in ? 'outline' : 'default'}>
                           {t.is_built_in ? 'built-in' : 'custom'}
                         </Badge>
                         {t.is_singleton && <Badge variant="outline">singleton</Badge>}
@@ -103,7 +103,8 @@ export default async function ContentTypesPage() {
                     <Stack direction="row" gap={2}>
                       <Button
                         asChild
-                        variant="module-outline"
+                        color="module"
+                        variant="outline"
                         size="sm"
                         rightIcon={<ArrowRight className="h-3 w-3" />}
                       >

@@ -143,7 +143,7 @@ export function InventoryRowEditor({
         </TableCell>
         <TableCell>
           {row.reorderPoint !== null ? (
-            <Badge variant={belowReorder ? 'warning' : 'outline'} className="text-xs">
+            <Badge color={belowReorder ? 'warning' : 'outline'} className="text-xs">
               ≤ {row.reorderPoint}
             </Badge>
           ) : (

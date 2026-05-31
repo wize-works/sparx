@@ -44,9 +44,9 @@ export default async function SitebuilderOverview() {
           <Text variant="muted">Design and publish your storefront.</Text>
         </div>
         {config.publishedVersionId ? (
-          <Badge variant="success">Published</Badge>
+          <Badge color="success">Published</Badge>
         ) : (
-          <Badge variant="secondary">Not published</Badge>
+          <Badge variant="outline">Not published</Badge>
         )}
       </div>
 

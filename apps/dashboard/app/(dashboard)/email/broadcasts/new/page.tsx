@@ -26,7 +26,7 @@ export default async function NewBroadcastPage() {
   return (
     <Container size="lg">
       <Stack gap={6} className="py-10">
-        <Button variant="link" size="sm" asChild>
+        <Button color="primary" variant="link" size="sm" asChild>
           <Link href="/email/broadcasts">
             <ArrowLeft className="h-3.5 w-3.5" />
             Broadcasts

@@ -93,9 +93,9 @@ export async function WarehouseDetailContent({ id }: Props) {
             </Badge>
             <Badge variant="outline">{warehouse.type}</Badge>
             {warehouse.isActive ? (
-              <Badge variant="success">active</Badge>
+              <Badge color="success">active</Badge>
             ) : (
-              <Badge variant="warning">inactive</Badge>
+              <Badge color="warning">inactive</Badge>
             )}
           </Stack>
           <Text size="sm" variant="muted">
@@ -134,7 +134,7 @@ export async function WarehouseDetailContent({ id }: Props) {
           </Stack>
         </CardHeader>
         <CardContent>
-          <Button asChild variant="secondary">
+          <Button asChild variant="outline">
             <Link href={`/commerce/inventory?warehouse=${warehouse.id}`}>Manage stock</Link>
           </Button>
         </CardContent>

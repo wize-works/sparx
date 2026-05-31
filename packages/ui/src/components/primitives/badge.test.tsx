@@ -8,22 +8,21 @@ describe('Badge', () => {
     expect(screen.getByText('Active')).toBeInTheDocument();
   });
 
-  it('applies the default variant by default', () => {
+  it('applies the neutral color by default', () => {
     render(<Badge>Default</Badge>);
     const badge = screen.getByText('Default');
-    expect(badge.className).toMatch(/bg-\[var\(--color-bg-subtle\)\]/);
+    expect(badge.className).toMatch(/sx-c-neutral/);
   });
 
-  it('uses --module-active-tint background for the module variant', () => {
-    render(<Badge variant="module">Module</Badge>);
+  it('carries the module color class for color="module"', () => {
+    render(<Badge color="module">Module</Badge>);
     const badge = screen.getByText('Module');
-    expect(badge.className).toMatch(/bg-\[var\(--module-active-tint\)\]/);
-    expect(badge.className).toMatch(/text-\[var\(--module-active-text\)\]/);
+    expect(badge.className).toMatch(/sx-c-module/);
   });
 
-  it('uses success tokens for the success variant', () => {
-    render(<Badge variant="success">Published</Badge>);
+  it('carries the success color class for color="success"', () => {
+    render(<Badge color="success">Published</Badge>);
     const badge = screen.getByText('Published');
-    expect(badge.className).toMatch(/bg-\[var\(--color-success-tint\)\]/);
+    expect(badge.className).toMatch(/sx-c-success/);
   });
 });

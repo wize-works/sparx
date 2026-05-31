@@ -20,13 +20,13 @@ import {
 import { removeSuppressionAction } from '../actions';
 import type { SuppressionRow } from '../../_lib/types';
 
-const SCOPE_BADGE: Record<SuppressionRow['scope'], BadgeProps['variant']> = {
+const SCOPE_BADGE: Record<SuppressionRow['scope'], BadgeProps['color']> = {
   all: 'default',
   marketing: 'soft',
   transactional: 'outline',
 };
 
-const REASON_BADGE: Record<SuppressionRow['reason'], BadgeProps['variant']> = {
+const REASON_BADGE: Record<SuppressionRow['reason'], BadgeProps['color']> = {
   bounce: 'danger',
   complaint: 'danger',
   unsubscribe: 'warning',
@@ -84,10 +84,10 @@ export function SuppressionsTable({ items }: { items: SuppressionRow[] }) {
               <Code>{row.email}</Code>
             </TableCell>
             <TableCell>
-              <Badge variant={SCOPE_BADGE[row.scope]}>{row.scope}</Badge>
+              <Badge color={SCOPE_BADGE[row.scope]}>{row.scope}</Badge>
             </TableCell>
             <TableCell>
-              <Badge variant={REASON_BADGE[row.reason]}>{row.reason}</Badge>
+              <Badge color={REASON_BADGE[row.reason]}>{row.reason}</Badge>
             </TableCell>
             <TableCell>{row.source ?? '—'}</TableCell>
             <TableCell>{new Date(row.createdAt).toLocaleDateString()}</TableCell>

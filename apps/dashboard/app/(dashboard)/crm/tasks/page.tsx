@@ -60,9 +60,9 @@ export default async function TasksPage({ searchParams }: PageProps) {
             <Stack direction="row" align="center" gap={2}>
               <CheckSquare className="h-5 w-5" />
               <Heading level={1}>Tasks</Heading>
-              <Badge variant="module">{openTasks.length} open</Badge>
+              <Badge color="module">{openTasks.length} open</Badge>
               {overdueTasks.length > 0 && (
-                <Badge variant="danger">{overdueTasks.length} overdue</Badge>
+                <Badge color="danger">{overdueTasks.length} overdue</Badge>
               )}
             </Stack>
             <Text variant="muted">
@@ -71,13 +71,21 @@ export default async function TasksPage({ searchParams }: PageProps) {
             </Text>
           </Stack>
           <Stack direction="row" gap={2}>
-            <Button asChild variant={scope === 'me' ? 'module' : 'ghost'}>
+            <Button
+              asChild
+              color={scope === 'me' ? 'module' : 'neutral'}
+              variant={scope === 'me' ? 'solid' : 'ghost'}
+            >
               <Link href="/crm/tasks?scope=me">My tasks</Link>
             </Button>
-            <Button asChild variant={scope === 'all' ? 'module' : 'ghost'}>
+            <Button
+              asChild
+              color={scope === 'all' ? 'module' : 'neutral'}
+              variant={scope === 'all' ? 'solid' : 'ghost'}
+            >
               <Link href="/crm/tasks?scope=all">Team tasks</Link>
             </Button>
-            <Button asChild variant="module" leftIcon={<Plus className="h-4 w-4" />}>
+            <Button asChild color="module" leftIcon={<Plus className="h-4 w-4" />}>
               <Link href="/crm/tasks/new">New task</Link>
             </Button>
           </Stack>
@@ -89,7 +97,7 @@ export default async function TasksPage({ searchParams }: PageProps) {
               <CardTitle>
                 <Stack direction="row" align="center" gap={2}>
                   <AlertCircle className="h-4 w-4" /> Overdue
-                  <Badge variant="danger">{overdueTasks.length}</Badge>
+                  <Badge color="danger">{overdueTasks.length}</Badge>
                 </Stack>
               </CardTitle>
             </CardHeader>

@@ -212,12 +212,12 @@ export async function ProductDetailContent({ id }: Props) {
         <Stack gap={2}>
           <Stack direction="row" align="center" gap={3} wrap>
             <Heading level={1}>{product.title}</Heading>
-            <Badge variant={STATUS_VARIANT[product.status] ?? 'outline'}>{product.status}</Badge>
+            <Badge color={STATUS_VARIANT[product.status] ?? 'outline'}>{product.status}</Badge>
             {product.fulfillmentType !== 'physical' && (
               <Badge variant="outline">{product.fulfillmentType}</Badge>
             )}
             {product.hazmatClass !== 'none' && (
-              <Badge variant="warning">hazmat: {product.hazmatClass}</Badge>
+              <Badge color="warning">hazmat: {product.hazmatClass}</Badge>
             )}
           </Stack>
           <Stack direction="row" align="center" gap={2}>

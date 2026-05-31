@@ -59,7 +59,7 @@ export function Nav() {
               Sign in
             </Button>
           </span>
-          <Button variant="primary" size="sm" style={{ backgroundColor: '#0A0A0A' }}>
+          <Button variant="solid" size="sm" style={{ backgroundColor: '#0A0A0A' }}>
             Start free
           </Button>
           <button

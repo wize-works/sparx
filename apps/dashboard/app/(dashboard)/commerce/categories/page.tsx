@@ -61,7 +61,7 @@ export default async function CategoriesPage() {
             <Stack direction="row" align="center" gap={2}>
               <FolderTree className="h-5 w-5" />
               <Heading level={1}>Categories</Heading>
-              <Badge variant="module">
+              <Badge color="module">
                 {countTree(tree)} categor{countTree(tree) === 1 ? 'y' : 'ies'}
               </Badge>
             </Stack>

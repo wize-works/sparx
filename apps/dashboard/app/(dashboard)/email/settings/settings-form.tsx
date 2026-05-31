@@ -131,7 +131,7 @@ export function SettingsForm({ initial }: SettingsFormProps) {
                 channel. Update your brand once and every transactional and marketing email adopts
                 it automatically.
               </Text>
-              <Button variant="link" size="sm" asChild>
+              <Button color="primary" variant="link" size="sm" asChild>
                 <Link href="/sitebuilder/brand">Manage brand →</Link>
               </Button>
             </Stack>
@@ -139,7 +139,7 @@ export function SettingsForm({ initial }: SettingsFormProps) {
         </Card>
 
         <Stack direction="row" gap={2}>
-          <Button type="submit" variant="module" loading={pending} disabled={pending}>
+          <Button type="submit" color="module" loading={pending} disabled={pending}>
             Save settings
           </Button>
         </Stack>

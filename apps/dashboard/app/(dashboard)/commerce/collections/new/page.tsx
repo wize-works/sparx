@@ -91,7 +91,7 @@ export default function NewCollectionPage() {
     <Container size="lg">
       <Stack gap={6} className="py-10">
         <Stack gap={2}>
-          <Button variant="link" size="sm" asChild>
+          <Button color="primary" variant="link" size="sm" asChild>
             <Link href="/commerce/collections">
               <ArrowLeft className="h-3.5 w-3.5" />
               Back to collections
@@ -230,7 +230,7 @@ export default function NewCollectionPage() {
                 <Button type="button" variant="ghost" asChild>
                   <Link href="/commerce/collections">Cancel</Link>
                 </Button>
-                <Button type="submit" variant="module" disabled={pending} loading={pending}>
+                <Button type="submit" color="module" disabled={pending} loading={pending}>
                   Create collection
                 </Button>
               </CardFooter>

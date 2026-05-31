@@ -60,12 +60,12 @@ export function FinalCta() {
               alignItems: 'flex-start',
             }}
           >
-            <Button size="xl" variant="primary">
+            <Button size="xl" variant="solid">
               Start your store →
             </Button>
             <Button
               size="xl"
-              variant="secondary"
+              variant="outline"
               style={{
                 backgroundColor: 'transparent',
                 borderColor: '#2A2A2A',

@@ -149,7 +149,7 @@ export function NewTaskForm({
           <Button variant="ghost" asChild>
             <Link href="/crm/tasks">Cancel</Link>
           </Button>
-          <Button type="submit" variant="module" disabled={pending} loading={pending}>
+          <Button type="submit" color="module" disabled={pending} loading={pending}>
             Create task
           </Button>
         </CardFooter>

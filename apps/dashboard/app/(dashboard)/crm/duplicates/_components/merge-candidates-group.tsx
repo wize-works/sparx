@@ -112,7 +112,7 @@ export function MergeCandidatesGroup({ customers }: Props) {
                     </Text>
                   )}
                   {c.orderCount > 0 && (
-                    <Badge variant="success">
+                    <Badge color="success">
                       {c.orderCount} order{c.orderCount === 1 ? '' : 's'}
                     </Badge>
                   )}
@@ -125,7 +125,8 @@ export function MergeCandidatesGroup({ customers }: Props) {
               <Stack direction="row" gap={2}>
                 <Button
                   size="sm"
-                  variant={isPrimary ? 'module' : 'secondary'}
+                  color={isPrimary ? 'module' : 'neutral'}
+                  variant={isPrimary ? 'solid' : 'outline'}
                   onClick={() => selectPrimary(c.id)}
                   disabled={pending}
                 >
@@ -133,7 +134,8 @@ export function MergeCandidatesGroup({ customers }: Props) {
                 </Button>
                 <Button
                   size="sm"
-                  variant={isDup ? 'danger' : 'secondary'}
+                  color={isDup ? 'danger' : 'neutral'}
+                  variant={isDup ? 'solid' : 'outline'}
                   onClick={() => toggleDuplicate(c.id)}
                   disabled={pending || isPrimary}
                 >
@@ -152,7 +154,7 @@ export function MergeCandidatesGroup({ customers }: Props) {
       )}
 
       <Stack direction="row" gap={2}>
-        <Button onClick={onMerge} variant="module" disabled={pending}>
+        <Button onClick={onMerge} color="module" disabled={pending}>
           {pending ? 'Merging…' : `Merge ${duplicateIds.size} into primary`}
         </Button>
         <Text size="xs" variant="muted">

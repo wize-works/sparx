@@ -87,10 +87,10 @@ export default async function CommercePage() {
             <Text variant="muted">Last 30 days · tenant {session.user.tenantId.slice(0, 8)}</Text>
           </Stack>
           <Stack direction="row" gap={2}>
-            <Button asChild variant="secondary">
+            <Button asChild variant="outline">
               <Link href="/commerce/orders">View orders</Link>
             </Button>
-            <Button asChild variant="module" leftIcon={<PlusCircle className="h-4 w-4" />}>
+            <Button asChild color="module" leftIcon={<PlusCircle className="h-4 w-4" />}>
               <Link href="/commerce/products/new">New product</Link>
             </Button>
           </Stack>

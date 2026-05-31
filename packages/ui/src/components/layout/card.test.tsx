@@ -23,8 +23,16 @@ describe('Card', () => {
     const card = container.firstElementChild as HTMLElement;
     // The cardVariants module variant adds these specific token classes;
     // pinning them is intentional — the stripe is the brand pattern from doc 23 §1.
+    // The stripe reads the `accent` role var with a module-active fallback, so an
+    // un-accented module card still renders the active module color.
     expect(card.className).toMatch(/border-t-\[3px\]/);
-    expect(card.className).toMatch(/border-t-\[var\(--module-active\)\]/);
+    expect(card.className).toMatch(/border-t-\[var\(--c-bg,var\(--module-active\)\)\]/);
+  });
+
+  it('recolors the module stripe via the accent prop', () => {
+    const { container } = render(<Card variant="module" accent="commerce" />);
+    const card = container.firstElementChild as HTMLElement;
+    expect(card.className).toMatch(/sx-c-commerce/);
   });
 
   it('omits the stripe on the default variant', () => {

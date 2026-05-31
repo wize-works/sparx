@@ -140,7 +140,7 @@ export default async function InventoryPage({ searchParams }: PageProps) {
             <Stack direction="row" align="center" gap={2}>
               <Boxes className="h-5 w-5" />
               <Heading level={1}>Inventory</Heading>
-              {fallbackWarehouse && <Badge variant="module">{fallbackWarehouse.code}</Badge>}
+              {fallbackWarehouse && <Badge color="module">{fallbackWarehouse.code}</Badge>}
             </Stack>
             <Text variant="muted">
               On-hand is the authoritative count; allocated is the active reservation total across
@@ -148,7 +148,7 @@ export default async function InventoryPage({ searchParams }: PageProps) {
             </Text>
           </Stack>
           <Stack direction="row" gap={2}>
-            <Button asChild variant="secondary">
+            <Button asChild variant="outline">
               <Link href="/commerce/warehouses">Manage warehouses</Link>
             </Button>
           </Stack>
@@ -199,7 +199,7 @@ export default async function InventoryPage({ searchParams }: PageProps) {
                       <input type="checkbox" name="low" value="1" defaultChecked={lowStockOnly} />
                       <Text size="sm">Low stock only</Text>
                     </label>
-                    <Button type="submit" variant="secondary">
+                    <Button type="submit" variant="outline">
                       Apply
                     </Button>
                   </Stack>

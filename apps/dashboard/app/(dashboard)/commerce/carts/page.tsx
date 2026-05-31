@@ -75,7 +75,7 @@ export default async function CartsPage({
           <Stack direction="row" align="center" gap={2}>
             <ShoppingCart className="h-5 w-5" />
             <Heading level={1}>Carts</Heading>
-            <Badge variant="module">{carts.length} shown</Badge>
+            <Badge color="module">{carts.length} shown</Badge>
           </Stack>
           <Text variant="muted">
             Read-only diagnostic view. Abandoned carts are flagged by the cart-abandonment worker
@@ -164,9 +164,9 @@ export default async function CartsPage({
                         <TableCell>{new Date(c.updatedAt).toLocaleString()}</TableCell>
                         <TableCell>
                           {c.recoveredAt ? (
-                            <Badge variant="success">recovered</Badge>
+                            <Badge color="success">recovered</Badge>
                           ) : c.abandonedAt ? (
-                            <Badge variant="warning">abandoned</Badge>
+                            <Badge color="warning">abandoned</Badge>
                           ) : (
                             <Badge variant="outline">active</Badge>
                           )}

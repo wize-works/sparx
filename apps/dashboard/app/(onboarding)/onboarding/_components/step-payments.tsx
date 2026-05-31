@@ -48,7 +48,7 @@ export function StepPayments({ nav }: { nav: StepNav }) {
               </Text>
             </Stack>
           </Stack>
-          <Button variant="secondary" disabled>
+          <Button variant="outline" disabled>
             Connect Stripe
           </Button>
         </Stack>
@@ -64,7 +64,7 @@ export function StepPayments({ nav }: { nav: StepNav }) {
         <Button variant="ghost" onClick={nav.onBack} disabled={pending || nav.navPending}>
           Back
         </Button>
-        <Button variant="module" onClick={onFinish} disabled={pending} loading={pending}>
+        <Button color="module" onClick={onFinish} disabled={pending} loading={pending}>
           Finish setup
         </Button>
       </Stack>

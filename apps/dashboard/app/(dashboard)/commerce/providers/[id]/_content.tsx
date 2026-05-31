@@ -67,10 +67,10 @@ export async function ProviderInstallationDetailContent({ id }: Props) {
           <Stack direction="row" align="center" gap={2}>
             <Heading level={1}>{metadata?.displayName ?? installation.providerSlug}</Heading>
             <Badge variant="outline">{installation.kind}</Badge>
-            <Badge variant={installation.environment === 'production' ? 'success' : 'warning'}>
+            <Badge color={installation.environment === 'production' ? 'success' : 'warning'}>
               {installation.environment}
             </Badge>
-            <Badge variant={installation.enabled ? 'success' : 'outline'}>
+            <Badge color={installation.enabled ? 'success' : 'outline'}>
               {installation.enabled ? 'enabled' : 'disabled'}
             </Badge>
           </Stack>

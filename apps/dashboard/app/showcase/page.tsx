@@ -2,25 +2,16 @@
 
 import * as React from 'react';
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+  ALL_COLOR_KEYS,
+  Alert,
   Avatar,
   Badge,
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
   Button,
-  Calendar,
+  ButtonGroup,
   Card,
   CardContent,
   CardDescription,
@@ -29,81 +20,27 @@ import {
   CardTitle,
   Checkbox,
   Code,
-  ColorPicker,
-  CommandEmpty,
-  CommandGroup,
-  CommandItem,
-  CommandList,
-  CommandPalette,
-  CommandShortcut,
+  COLOR_KEYS,
   Container,
-  ContextMenu,
-  ContextMenuContent,
-  ContextMenuItem,
-  ContextMenuSeparator,
-  ContextMenuTrigger,
-  DataTable,
-  DatePicker,
   Divider,
-  Drawer,
-  DrawerBody,
-  DrawerContent,
-  DrawerDescription,
-  DrawerFooter,
-  DrawerHeader,
-  DrawerTitle,
-  DrawerTrigger,
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuShortcut,
-  DropdownMenuTrigger,
-  EmptyState,
-  FileUpload,
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
   Grid,
   Heading,
   Input,
+  Kbd,
   Label,
-  Modal,
-  ModalContent,
-  ModalDescription,
-  ModalFooter,
-  ModalHeader,
-  ModalTitle,
-  ModalTrigger,
+  MODULE_COLOR_KEYS,
   ModuleProvider,
-  Pagination,
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
+  Progress,
   RadioGroup,
   RadioGroupItem,
-  RichTextEditor,
-  ScrollArea,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-  Sidebar,
-  SidebarHeader,
-  SidebarItem,
-  SidebarSection,
-  SidebarSectionLabel,
-  Skeleton,
   Slider,
   Stack,
-  Stat,
-  Stepper,
+  StatusDot,
   Switch,
   Tabs,
   TabsContent,
@@ -112,45 +49,20 @@ import {
   Tag,
   Text,
   Textarea,
-  Timeline,
-  TimelineDescription,
-  TimelineItem,
-  TimelineTime,
-  TimelineTitle,
   Toaster,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
   toast,
+  type ColorKey,
   type SparxModule,
 } from '@sparx/ui';
-import type { ColumnDef } from '@tanstack/react-table';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import {
-  Bell,
-  ChevronDown,
-  Copy,
-  FileText,
-  Inbox,
-  Layers,
-  LogOut,
-  Package,
-  Pencil,
-  Settings,
-  ShoppingCart,
-  Trash2,
-  User,
-  Users,
-} from 'lucide-react';
+import { Check, ChevronDown, Info, Plus, Settings, Trash2, TriangleAlert } from 'lucide-react';
 
-const MODULES: { id: SparxModule; label: string; metric: string }[] = [
-  { id: 'commerce', label: 'Commerce', metric: '$12,408' },
-  { id: 'cms', label: 'CMS', metric: '42 pages' },
-  { id: 'crm', label: 'CRM', metric: '186 contacts' },
-  { id: 'email', label: 'Email', metric: '94.2% open' },
-];
+const TREATMENTS = ['solid', 'soft', 'outline', 'dashed', 'ghost', 'link'] as const;
+const CHIP_TREATMENTS = ['solid', 'soft', 'outline', 'dashed'] as const;
+const SIZES = ['xs', 'sm', 'md', 'lg', 'xl'] as const;
+const SHAPES = ['default', 'wide', 'block', 'square', 'circle'] as const;
 
 export default function Showcase() {
   return (
@@ -159,16 +71,18 @@ export default function Showcase() {
       <Container size="xl">
         <Stack gap={10} className="py-10">
           <Hero />
-          <ModuleStats />
-          <ButtonsSection />
-          <FormPrimitivesSection />
-          <FormCompositionSection />
-          <PickersSection />
-          <OverlaysSection />
+          <PaletteSection />
+          <ButtonMatrixSection />
+          <ButtonSizeShapeSection />
+          <ButtonGroupSection />
+          <ChipMatrixSection />
+          <AlertSection />
+          <FeedbackSection />
+          <ModuleColorSection />
+          <ControlsSection />
+          <InputsSection />
           <TabsSection />
-          <NavigationSection />
-          <DataDisplaySection />
-          <LoadingSection />
+          <AccordionSection />
         </Stack>
       </Container>
     </>
@@ -178,15 +92,15 @@ export default function Showcase() {
 // ── Hero ────────────────────────────────────────────────────────
 function Hero() {
   return (
-    <Stack direction="row" align="center" justify="between">
+    <Stack direction="row" align="center" justify="between" wrap gap={4}>
       <Stack gap={2}>
         <Stack direction="row" align="center" gap={2}>
-          <Heading level={1}>@sparx/ui Showcase</Heading>
-          <Badge variant="primary">50 components</Badge>
+          <Heading level={1}>@sparx/ui Variant System</Heading>
+          <Badge color="primary">v2</Badge>
         </Stack>
         <Text variant="muted">
-          End-to-end smoke test for <Code>@sparx/ui</Code>. Every component from doc 23 §9 is
-          rendered below.
+          The multi-axis API from <Code>docs/35</Code>: <Code>color × variant × size × shape</Code>.
+          Every cell below is a real component — if one is missing it&rsquo;s a gap.
         </Text>
       </Stack>
       <Stack direction="row" align="center" gap={3}>
@@ -196,49 +110,382 @@ function Hero() {
           </TooltipTrigger>
           <TooltipContent>Brandon Korous</TooltipContent>
         </Tooltip>
-        <UserMenu />
       </Stack>
     </Stack>
   );
 }
 
-function UserMenu() {
+// ── Palette ─────────────────────────────────────────────────────
+function Swatch({ color }: { color: ColorKey }) {
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="secondary" size="sm" rightIcon={<ChevronDown className="h-3.5 w-3.5" />}>
-          Account
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        <DropdownMenuLabel>Signed in as bkorous</DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem>
-          <User className="h-4 w-4" />
-          Profile
-          <DropdownMenuShortcut>⌘P</DropdownMenuShortcut>
-        </DropdownMenuItem>
-        <DropdownMenuItem>
-          <Settings className="h-4 w-4" />
-          Settings
-          <DropdownMenuShortcut>⌘,</DropdownMenuShortcut>
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem>
-          <LogOut className="h-4 w-4" />
-          Sign out
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <Stack gap={1} align="center">
+      <span className={`sx-c-${color} h-12 w-full rounded-md bg-[var(--c-bg)]`} />
+      <Text size="xs" variant="muted">
+        {color}
+      </Text>
+    </Stack>
   );
 }
 
-// ── Module stats (existing pattern) ─────────────────────────────
-function ModuleStats() {
+function PaletteSection() {
   return (
     <Section
-      title="Modules"
-      description="Each card adopts its module color through ModuleProvider — zero per-card config."
+      title="Palette"
+      description="Semantic slots + per-module brand colors. Each is a role-var class backing the color axis; custom theme colors override the same vars."
+    >
+      <Stack gap={4}>
+        <Card>
+          <Stack gap={2}>
+            <Text size="sm" weight="medium">
+              Semantic
+            </Text>
+            <Grid cols={3} mdCols={5} lgCols={9} gap={3}>
+              {COLOR_KEYS.map((c) => (
+                <Swatch key={c} color={c} />
+              ))}
+            </Grid>
+          </Stack>
+        </Card>
+        <Card>
+          <Stack gap={2}>
+            <Text size="sm" weight="medium">
+              Module
+            </Text>
+            <Grid cols={2} mdCols={4} lgCols={8} gap={3}>
+              {MODULE_COLOR_KEYS.map((c) => (
+                <Swatch key={c} color={c} />
+              ))}
+            </Grid>
+          </Stack>
+        </Card>
+      </Stack>
+    </Section>
+  );
+}
+
+// ── Button matrix: color × variant ──────────────────────────────
+function ButtonMatrixSection() {
+  return (
+    <Section
+      title="Buttons — color × variant"
+      description="Every semantic + module color across all six treatments. solid · soft · outline · dashed · ghost · link."
+    >
+      <Card padding="none" className="overflow-x-auto">
+        <table className="w-full border-collapse text-sm">
+          <thead>
+            <tr>
+              <th className="p-3 text-left text-xs font-medium text-[var(--color-text-tertiary)]">
+                color
+              </th>
+              {TREATMENTS.map((t) => (
+                <th
+                  key={t}
+                  className="p-3 text-left text-xs font-medium text-[var(--color-text-tertiary)]"
+                >
+                  {t}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {ALL_COLOR_KEYS.map((color) => (
+              <tr key={color} className="border-t border-[var(--color-border-default)]">
+                <td className="p-3 text-xs text-[var(--color-text-secondary)]">{color}</td>
+                {TREATMENTS.map((variant) => (
+                  <td key={variant} className="p-2">
+                    <Button color={color} variant={variant} size="sm">
+                      {color}
+                    </Button>
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </Card>
+    </Section>
+  );
+}
+
+// ── Button sizes / shapes / states ──────────────────────────────
+function ButtonSizeShapeSection() {
+  return (
+    <Section
+      title="Buttons — size, shape & state"
+      description="Sizes xs–xl, geometry shapes (wide/block/square/circle), plus loading and icons."
+    >
+      <Card>
+        <Stack gap={5}>
+          <Stack direction="row" gap={2} align="center" wrap>
+            {SIZES.map((size) => (
+              <Button key={size} size={size}>
+                {size}
+              </Button>
+            ))}
+          </Stack>
+          <Divider />
+          <Stack direction="row" gap={3} align="center" wrap>
+            {SHAPES.filter((s) => s !== 'block').map((shape) => (
+              <Button key={shape} shape={shape} color="primary">
+                {shape === 'square' || shape === 'circle' ? (
+                  <Settings className="h-4 w-4" />
+                ) : (
+                  shape
+                )}
+              </Button>
+            ))}
+            <span className="w-48">
+              <Button shape="block" color="primary">
+                block
+              </Button>
+            </span>
+          </Stack>
+          <Divider />
+          <Stack direction="row" gap={2} align="center" wrap>
+            <Button loading>Saving…</Button>
+            <Button leftIcon={<Plus className="h-4 w-4" />}>New</Button>
+            <Button
+              rightIcon={<ChevronDown className="h-4 w-4" />}
+              variant="outline"
+              color="neutral"
+            >
+              Menu
+            </Button>
+            <Button color="danger" leftIcon={<Trash2 className="h-4 w-4" />} variant="soft">
+              Delete
+            </Button>
+            <Button disabled>Disabled</Button>
+          </Stack>
+        </Stack>
+      </Card>
+    </Section>
+  );
+}
+
+function ButtonGroupSection() {
+  const [active, setActive] = React.useState('day');
+  return (
+    <Section
+      title="ButtonGroup"
+      description="Joined / segmented buttons. Children collapse their shared inner radii and borders."
+    >
+      <Card>
+        <Stack gap={4}>
+          <ButtonGroup>
+            {['day', 'week', 'month'].map((v) => (
+              <Button
+                key={v}
+                color={active === v ? 'primary' : 'neutral'}
+                variant={active === v ? 'solid' : 'outline'}
+                size="sm"
+                onClick={() => setActive(v)}
+              >
+                {v}
+              </Button>
+            ))}
+          </ButtonGroup>
+          <ButtonGroup orientation="vertical" className="w-40">
+            <Button variant="outline" color="neutral" size="sm">
+              Top
+            </Button>
+            <Button variant="outline" color="neutral" size="sm">
+              Middle
+            </Button>
+            <Button variant="outline" color="neutral" size="sm">
+              Bottom
+            </Button>
+          </ButtonGroup>
+        </Stack>
+      </Card>
+    </Section>
+  );
+}
+
+// ── Badge + Tag matrices ────────────────────────────────────────
+function ChipMatrixSection() {
+  const [tags, setTags] = React.useState<ColorKey[]>(['primary', 'success', 'warning', 'danger']);
+  return (
+    <Section
+      title="Badges & Tags — color × variant"
+      description="Chip treatments: solid · soft · outline · dashed. Tags add an inline remove button."
+    >
+      <Stack gap={4}>
+        <Card padding="none" className="overflow-x-auto">
+          <table className="w-full border-collapse text-sm">
+            <thead>
+              <tr>
+                <th className="p-3 text-left text-xs font-medium text-[var(--color-text-tertiary)]">
+                  color
+                </th>
+                {CHIP_TREATMENTS.map((t) => (
+                  <th
+                    key={t}
+                    className="p-3 text-left text-xs font-medium text-[var(--color-text-tertiary)]"
+                  >
+                    {t}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {COLOR_KEYS.map((color) => (
+                <tr key={color} className="border-t border-[var(--color-border-default)]">
+                  <td className="p-3 text-xs text-[var(--color-text-secondary)]">{color}</td>
+                  {CHIP_TREATMENTS.map((variant) => (
+                    <td key={variant} className="p-2">
+                      <Badge color={color} variant={variant}>
+                        {color}
+                      </Badge>
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </Card>
+        <Card>
+          <Stack gap={3}>
+            <Text size="sm" weight="medium">
+              Tags (removable)
+            </Text>
+            <Stack direction="row" gap={2} wrap>
+              {tags.map((t) => (
+                <Tag key={t} color={t} onRemove={() => setTags((xs) => xs.filter((x) => x !== t))}>
+                  {t}
+                </Tag>
+              ))}
+              {tags.length === 0 && (
+                <Text size="xs" variant="muted">
+                  All tags cleared.
+                </Text>
+              )}
+            </Stack>
+          </Stack>
+        </Card>
+      </Stack>
+    </Section>
+  );
+}
+
+// ── Alerts ──────────────────────────────────────────────────────
+const ALERT_ICON: Partial<Record<ColorKey, React.ReactNode>> = {
+  info: <Info className="h-4 w-4" />,
+  success: <Check className="h-4 w-4" />,
+  warning: <TriangleAlert className="h-4 w-4" />,
+  danger: <TriangleAlert className="h-4 w-4" />,
+};
+
+function AlertSection() {
+  return (
+    <Section
+      title="Alerts"
+      description="Inline status banners. soft · solid · outline treatments, color-bearing, dismissible."
+    >
+      <Stack gap={3}>
+        {(['info', 'success', 'warning', 'danger'] as const).map((color) => (
+          <Alert
+            key={color}
+            color={color}
+            icon={ALERT_ICON[color]}
+            title={`${color.charAt(0).toUpperCase()}${color.slice(1)} alert`}
+            onDismiss={() => toast(`Dismissed ${color}`)}
+          >
+            This is a {color} alert backed by the <Code>{`--c-*`}</Code> role vars.
+          </Alert>
+        ))}
+        <Stack direction="row" gap={3} wrap>
+          <Alert color="info" variant="outline" className="flex-1">
+            Outline treatment.
+          </Alert>
+          <Alert color="success" variant="solid" className="flex-1">
+            Solid treatment.
+          </Alert>
+        </Stack>
+      </Stack>
+    </Section>
+  );
+}
+
+// ── Progress + StatusDot + Kbd ──────────────────────────────────
+function FeedbackSection() {
+  const [pct, setPct] = React.useState(42);
+  return (
+    <Section
+      title="Progress, status & keys"
+      description="Determinate + indeterminate progress, status dots, and Kbd hints."
+    >
+      <Card>
+        <Stack gap={5}>
+          <Stack gap={3}>
+            {(['primary', 'success', 'warning', 'danger'] as const).map((c) => (
+              <Progress key={c} color={c} value={pct} label={`${c} progress`} />
+            ))}
+            <Progress color="info" value={null} label="indeterminate" />
+            <Stack direction="row" gap={2} align="center">
+              <Button
+                size="xs"
+                variant="outline"
+                color="neutral"
+                onClick={() => setPct((p) => Math.max(0, p - 10))}
+              >
+                −10
+              </Button>
+              <Button
+                size="xs"
+                variant="outline"
+                color="neutral"
+                onClick={() => setPct((p) => Math.min(100, p + 10))}
+              >
+                +10
+              </Button>
+              <Text size="xs" variant="muted">
+                {pct}%
+              </Text>
+            </Stack>
+          </Stack>
+          <Divider />
+          <Stack direction="row" gap={5} align="center" wrap>
+            <Stack direction="row" gap={2} align="center">
+              <StatusDot color="success" pulse label="online" />
+              <Text size="sm">Online</Text>
+            </Stack>
+            <Stack direction="row" gap={2} align="center">
+              <StatusDot color="warning" label="idle" />
+              <Text size="sm">Idle</Text>
+            </Stack>
+            <Stack direction="row" gap={2} align="center">
+              <StatusDot color="neutral" label="offline" />
+              <Text size="sm">Offline</Text>
+            </Stack>
+            <Stack direction="row" gap={1} align="center">
+              <Kbd>⌘</Kbd>
+              <Kbd>K</Kbd>
+              <Text size="sm" variant="muted">
+                open palette
+              </Text>
+            </Stack>
+          </Stack>
+        </Stack>
+      </Card>
+    </Section>
+  );
+}
+
+// ── Module color context ────────────────────────────────────────
+const MODULES: { id: SparxModule; label: string; metric: string }[] = [
+  { id: 'commerce', label: 'Commerce', metric: '$12,408' },
+  { id: 'cms', label: 'CMS', metric: '42 pages' },
+  { id: 'crm', label: 'CRM', metric: '186 contacts' },
+  { id: 'email', label: 'Email', metric: '94.2% open' },
+];
+
+function ModuleColorSection() {
+  return (
+    <Section
+      title="Module color context"
+      description={
+        'color="module" tracks the wrapping ModuleProvider; the named module colors (color="commerce") are addressable directly.'
+      }
     >
       <Grid cols={1} mdCols={2} lgCols={4} gap={4}>
         {MODULES.map((m) => (
@@ -249,13 +496,13 @@ function ModuleStats() {
                 <CardTitle>{m.metric}</CardTitle>
               </CardHeader>
               <CardContent>
-                <Badge variant="module">Active</Badge>
+                <Badge color="module">Active</Badge>
               </CardContent>
               <CardFooter>
-                <Button variant="module-outline" size="sm">
+                <Button color="module" variant="outline" size="sm">
                   Open
                 </Button>
-                <Button variant="module" size="sm">
+                <Button color="module" size="sm">
                   Configure
                 </Button>
               </CardFooter>
@@ -267,68 +514,102 @@ function ModuleStats() {
   );
 }
 
-// ── Buttons ─────────────────────────────────────────────────────
-function ButtonsSection() {
+// ── Form controls ───────────────────────────────────────────────
+function ControlsSection() {
+  const [checks, setChecks] = React.useState<Record<string, boolean>>({});
+  const [on, setOn] = React.useState(true);
+  const [radio, setRadio] = React.useState('primary');
+  const [val, setVal] = React.useState<number[]>([50]);
+  const colors = ['primary', 'success', 'warning', 'danger', 'commerce'] as const;
+
   return (
-    <Section title="Buttons" description="Variants × sizes, plus loading state and icons.">
+    <Section
+      title="Controls — color on state"
+      description="Checkbox, Switch, Radio and Slider take a color for their active state."
+    >
       <Card>
-        <Stack gap={4}>
-          <Stack direction="row" gap={2} wrap>
-            <Button variant="primary">Primary</Button>
-            <Button variant="secondary">Secondary</Button>
-            <Button variant="outline">Outline</Button>
-            <Button variant="soft">Soft</Button>
-            <Button variant="ghost">Ghost</Button>
-            <Button variant="danger">Danger</Button>
-            <Button variant="link">Link</Button>
+        <Grid cols={1} mdCols={2} gap={6}>
+          <Stack gap={3}>
+            <Text size="sm" weight="medium">
+              Checkbox
+            </Text>
+            <Stack direction="row" gap={4} wrap>
+              {colors.map((c) => (
+                <Stack key={c} direction="row" align="center" gap={2}>
+                  <Checkbox
+                    color={c}
+                    checked={checks[c] ?? true}
+                    onCheckedChange={(v) => setChecks((s) => ({ ...s, [c]: v === true }))}
+                  />
+                  <Label>{c}</Label>
+                </Stack>
+              ))}
+            </Stack>
           </Stack>
-          <Stack direction="row" gap={2} align="center">
-            <Button size="xs">xs</Button>
-            <Button size="sm">sm</Button>
-            <Button size="md">md</Button>
-            <Button size="lg">lg</Button>
-            <Button size="xl">xl</Button>
+          <Stack gap={3}>
+            <Text size="sm" weight="medium">
+              Switch
+            </Text>
+            <Stack direction="row" gap={4} wrap align="center">
+              {colors.map((c) => (
+                <Switch key={c} color={c} checked={on} onCheckedChange={setOn} />
+              ))}
+            </Stack>
           </Stack>
-          <Stack direction="row" gap={2} align="center">
-            <Button loading>Saving…</Button>
-            <Button leftIcon={<Settings className="h-4 w-4" />}>Settings</Button>
-            <Button disabled>Disabled</Button>
+          <Stack gap={3}>
+            <Text size="sm" weight="medium">
+              Radio
+            </Text>
+            <RadioGroup value={radio} onValueChange={setRadio}>
+              {colors.map((c) => (
+                <Stack key={c} direction="row" align="center" gap={2}>
+                  <RadioGroupItem value={c} id={`r-${c}`} color={c} />
+                  <Label htmlFor={`r-${c}`}>{c}</Label>
+                </Stack>
+              ))}
+            </RadioGroup>
           </Stack>
-        </Stack>
+          <Stack gap={3}>
+            <Text size="sm" weight="medium">
+              Slider
+            </Text>
+            <Slider color="commerce" value={val} onValueChange={setVal} max={100} step={1} />
+            <Text size="xs" variant="muted">
+              {val[0]}%
+            </Text>
+          </Stack>
+        </Grid>
       </Card>
     </Section>
   );
 }
 
-// ── Form primitives ─────────────────────────────────────────────
-function FormPrimitivesSection() {
-  const [enabled, setEnabled] = React.useState(true);
-  const [agreed, setAgreed] = React.useState(false);
-  const [color, setColor] = React.useState('marketing');
-  const [opacity, setOpacity] = React.useState<number[]>([42]);
-
+// ── Inputs ──────────────────────────────────────────────────────
+function InputsSection() {
   return (
-    <Section title="Form primitives" description="Inputs, toggles, selects, radios, sliders.">
+    <Section
+      title="Inputs — size & state"
+      description="Sizes sm/md/lg, plus default / error / success validation states."
+    >
       <Card>
         <Grid cols={1} mdCols={2} gap={6}>
           <Stack gap={2}>
-            <Label htmlFor="store-name" required>
-              Store name
-            </Label>
-            <Input id="store-name" placeholder="Gillett Diesel Service" />
+            <Label htmlFor="i-sm">Small</Label>
+            <Input id="i-sm" size="sm" placeholder="sm" />
           </Stack>
-
           <Stack gap={2}>
-            <Label htmlFor="support-email">Support email</Label>
-            <Input id="support-email" variant="error" defaultValue="not-an-email" />
+            <Label htmlFor="i-lg">Large</Label>
+            <Input id="i-lg" size="lg" placeholder="lg" />
           </Stack>
-
+          <Stack gap={2}>
+            <Label htmlFor="i-err">Error</Label>
+            <Input id="i-err" variant="error" defaultValue="not-an-email" />
+          </Stack>
+          <Stack gap={2}>
+            <Label htmlFor="i-ok">Success</Label>
+            <Input id="i-ok" variant="success" defaultValue="looks good" />
+          </Stack>
           <Stack gap={2} className="md:col-span-2">
-            <Label htmlFor="about">About</Label>
-            <Textarea id="about" placeholder="Tell customers about your business…" />
-          </Stack>
-
-          <Stack gap={2}>
             <Label>Theme</Label>
             <Select>
               <SelectTrigger>
@@ -341,37 +622,9 @@ function FormPrimitivesSection() {
               </SelectContent>
             </Select>
           </Stack>
-
-          <Stack gap={2}>
-            <Label>Newsletter list</Label>
-            <RadioGroup value={color} onValueChange={setColor}>
-              {['marketing', 'transactional', 'announcements'].map((v) => (
-                <Stack key={v} direction="row" align="center" gap={2}>
-                  <RadioGroupItem value={v} id={`list-${v}`} />
-                  <Label htmlFor={`list-${v}`}>{v}</Label>
-                </Stack>
-              ))}
-            </RadioGroup>
-          </Stack>
-
           <Stack gap={2} className="md:col-span-2">
-            <Stack direction="row" align="center" justify="between">
-              <Label>Brand fade</Label>
-              <Text size="xs" variant="muted">
-                {opacity[0]}%
-              </Text>
-            </Stack>
-            <Slider value={opacity} onValueChange={setOpacity} max={100} step={1} />
-          </Stack>
-
-          <Stack direction="row" align="center" justify="between" gap={3}>
-            <Label>Send weekly digest</Label>
-            <Switch checked={enabled} onCheckedChange={setEnabled} />
-          </Stack>
-
-          <Stack direction="row" align="center" gap={2}>
-            <Checkbox id="agree" checked={agreed} onCheckedChange={(v) => setAgreed(v === true)} />
-            <Label htmlFor="agree">I agree to the platform terms</Label>
+            <Label htmlFor="ta">Notes</Label>
+            <Textarea id="ta" placeholder="Tell customers about your business…" />
           </Stack>
         </Grid>
       </Card>
@@ -379,336 +632,47 @@ function FormPrimitivesSection() {
   );
 }
 
-// ── Form composition (RHF + Zod) ────────────────────────────────
-const merchantSchema = z.object({
-  name: z.string().min(2, 'At least 2 characters'),
-  email: z.string().email('Enter a valid email'),
-  notes: z.string().max(280, 'Keep it under 280 chars').optional(),
-});
-type MerchantValues = z.infer<typeof merchantSchema>;
-
-function FormCompositionSection() {
-  const form = useForm<MerchantValues>({
-    resolver: zodResolver(merchantSchema),
-    defaultValues: { name: '', email: '', notes: '' },
-  });
-
-  return (
-    <Section
-      title="Form composition"
-      description="React Hook Form + Zod via Form/FormField. Submit empty to see validation."
-    >
-      <Card>
-        <Form {...form}>
-          <form
-            onSubmit={form.handleSubmit((v) => {
-              toast.success(`Saved ${v.name}`);
-            })}
-            noValidate
-            className="space-y-4"
-          >
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel required>Merchant name</FormLabel>
-                  <FormControl>
-                    <Input {...field} />
-                  </FormControl>
-                  <FormDescription>Shown to customers at checkout.</FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel required>Email</FormLabel>
-                  <FormControl>
-                    <Input type="email" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="notes"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Internal notes</FormLabel>
-                  <FormControl>
-                    <Textarea {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <Stack direction="row" justify="end" gap={2}>
-              <Button type="button" variant="ghost" onClick={() => form.reset()}>
-                Reset
-              </Button>
-              <Button type="submit">Save merchant</Button>
-            </Stack>
-          </form>
-        </Form>
-      </Card>
-    </Section>
-  );
-}
-
-// ── Pickers ─────────────────────────────────────────────────────
-function PickersSection() {
-  const [date, setDate] = React.useState<Date | undefined>(new Date(2026, 4, 27));
-  const [color, setColor] = React.useState('#14B8A6');
-  const [body, setBody] = React.useState('<p>Sparx is <strong>live</strong>.</p>');
-
-  return (
-    <Section
-      title="Pickers & editors"
-      description="DatePicker, ColorPicker, FileUpload, Calendar, RichTextEditor."
-    >
-      <Stack gap={4}>
-        <Card>
-          <Grid cols={1} mdCols={2} gap={6}>
-            <Stack gap={2}>
-              <Label>Launch date</Label>
-              <DatePicker value={date} onChange={setDate} />
-            </Stack>
-            <Stack gap={2}>
-              <Label>Accent color</Label>
-              <ColorPicker value={color} onChange={setColor} />
-            </Stack>
-            <Stack gap={2} className="md:col-span-2">
-              <Label>Logo</Label>
-              <FileUpload accept="image/*" maxSize={2 * 1024 * 1024} />
-              <Text size="xs" variant="muted">
-                Max 2 MB, image files only.
-              </Text>
-            </Stack>
-          </Grid>
-        </Card>
-
-        <Card>
-          <Stack gap={3}>
-            <Stack gap={1}>
-              <Heading level={4}>Calendar (standalone)</Heading>
-              <Text size="xs" variant="muted">
-                Inline use — DatePicker wraps this in a Popover.
-              </Text>
-            </Stack>
-            <Calendar mode="single" selected={date} onSelect={setDate} />
-          </Stack>
-        </Card>
-
-        <Card>
-          <Stack gap={2}>
-            <Label>Page body</Label>
-            <RichTextEditor value={body} onChange={setBody} />
-          </Stack>
-        </Card>
-      </Stack>
-    </Section>
-  );
-}
-
-// ── Overlays ────────────────────────────────────────────────────
-function OverlaysSection() {
-  const [paletteOpen, setPaletteOpen] = React.useState(false);
-
-  return (
-    <Section
-      title="Overlays"
-      description="Modal, AlertDialog, Drawer, Popover, Tooltip, ContextMenu, Toast, CommandPalette."
-    >
-      <Card>
-        <Stack direction="row" gap={3} wrap>
-          <Modal>
-            <ModalTrigger asChild>
-              <Button variant="primary">Modal</Button>
-            </ModalTrigger>
-            <ModalContent size="md">
-              <ModalHeader>
-                <ModalTitle>Delete tenant?</ModalTitle>
-                <ModalDescription>
-                  Marks the tenant for deletion. Data retained 30 days.
-                </ModalDescription>
-              </ModalHeader>
-              <ModalFooter>
-                <Button variant="ghost">Cancel</Button>
-                <Button variant="danger">Delete</Button>
-              </ModalFooter>
-            </ModalContent>
-          </Modal>
-
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button variant="danger">AlertDialog</Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Permanently delete all orders?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  This cannot be undone. This is the destructive-confirm flavor.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction>Delete forever</AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-
-          <Drawer>
-            <DrawerTrigger asChild>
-              <Button variant="secondary">Drawer</Button>
-            </DrawerTrigger>
-            <DrawerContent side="right">
-              <DrawerHeader>
-                <DrawerTitle>Order #1042</DrawerTitle>
-                <DrawerDescription>Slide-in panel pattern for detail views.</DrawerDescription>
-              </DrawerHeader>
-              <DrawerBody>
-                <Text variant="muted">
-                  Body content fills the available space and scrolls independently.
-                </Text>
-              </DrawerBody>
-              <DrawerFooter>
-                <Button variant="primary">Mark fulfilled</Button>
-              </DrawerFooter>
-            </DrawerContent>
-          </Drawer>
-
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button variant="secondary">Popover</Button>
-            </PopoverTrigger>
-            <PopoverContent>
-              <Stack gap={2}>
-                <Text weight="medium">Quick action</Text>
-                <Text size="xs" variant="muted">
-                  Popovers anchor to their trigger.
-                </Text>
-              </Stack>
-            </PopoverContent>
-          </Popover>
-
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button variant="ghost">Tooltip</Button>
-            </TooltipTrigger>
-            <TooltipContent>This is a tooltip</TooltipContent>
-          </Tooltip>
-
-          <ContextMenu>
-            <ContextMenuTrigger asChild>
-              <Button variant="ghost">Right-click for ContextMenu</Button>
-            </ContextMenuTrigger>
-            <ContextMenuContent>
-              <ContextMenuItem>
-                <Copy className="h-4 w-4" />
-                Copy
-              </ContextMenuItem>
-              <ContextMenuItem>
-                <Pencil className="h-4 w-4" />
-                Rename
-              </ContextMenuItem>
-              <ContextMenuSeparator />
-              <ContextMenuItem>
-                <Trash2 className="h-4 w-4" />
-                Delete
-              </ContextMenuItem>
-            </ContextMenuContent>
-          </ContextMenu>
-
-          <Button
-            variant="secondary"
-            onClick={() =>
-              toast.success('Saved', { description: 'Sonner-powered toast via @sparx/ui.' })
-            }
-          >
-            Fire Toast
-          </Button>
-
-          <Button variant="primary" onClick={() => setPaletteOpen(true)}>
-            CommandPalette (⌘K)
-          </Button>
-        </Stack>
-      </Card>
-
-      <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen}>
-        <CommandList>
-          <CommandEmpty>No results found.</CommandEmpty>
-          <CommandGroup heading="Pages">
-            <CommandItem>
-              <Package className="h-4 w-4" />
-              Products
-              <CommandShortcut>⌘1</CommandShortcut>
-            </CommandItem>
-            <CommandItem>
-              <ShoppingCart className="h-4 w-4" />
-              Orders
-              <CommandShortcut>⌘2</CommandShortcut>
-            </CommandItem>
-            <CommandItem>
-              <Users className="h-4 w-4" />
-              Customers
-              <CommandShortcut>⌘3</CommandShortcut>
-            </CommandItem>
-          </CommandGroup>
-          <CommandGroup heading="Account">
-            <CommandItem>
-              <Settings className="h-4 w-4" />
-              Settings
-            </CommandItem>
-          </CommandGroup>
-        </CommandList>
-      </CommandPalette>
-    </Section>
-  );
-}
-
-// ── Tabs ────────────────────────────────────────────────────────
+// ── Tabs (sizes) ────────────────────────────────────────────────
 function TabsSection() {
   return (
-    <Section title="Tabs" description="Default underline + pills variants.">
+    <Section
+      title="Tabs — variant × size"
+      description="Underline + pills, now with sm/md/lg sizes."
+    >
       <Stack gap={6}>
         <Card>
-          <Tabs defaultValue="overview">
-            <TabsList>
-              <TabsTrigger value="overview">Overview</TabsTrigger>
-              <TabsTrigger value="orders">Orders</TabsTrigger>
-              <TabsTrigger value="customers">Customers</TabsTrigger>
+          <Tabs defaultValue="a">
+            <TabsList size="lg">
+              <TabsTrigger value="a">Overview</TabsTrigger>
+              <TabsTrigger value="b">Orders</TabsTrigger>
+              <TabsTrigger value="c">Customers</TabsTrigger>
             </TabsList>
-            <TabsContent value="overview">
-              <Text>Overview content.</Text>
+            <TabsContent value="a">
+              <Text>Underline, large.</Text>
             </TabsContent>
-            <TabsContent value="orders">
-              <Text>Orders content.</Text>
+            <TabsContent value="b">
+              <Text>Orders.</Text>
             </TabsContent>
-            <TabsContent value="customers">
-              <Text>Customers content.</Text>
+            <TabsContent value="c">
+              <Text>Customers.</Text>
             </TabsContent>
           </Tabs>
         </Card>
         <Card>
           <Tabs defaultValue="day">
-            <TabsList variant="pills">
+            <TabsList variant="pills" size="sm">
               <TabsTrigger value="day">Day</TabsTrigger>
               <TabsTrigger value="week">Week</TabsTrigger>
               <TabsTrigger value="month">Month</TabsTrigger>
             </TabsList>
             <TabsContent value="day">
-              <Text>Day view.</Text>
+              <Text>Pills, small.</Text>
             </TabsContent>
             <TabsContent value="week">
-              <Text>Week view.</Text>
+              <Text>Week.</Text>
             </TabsContent>
             <TabsContent value="month">
-              <Text>Month view.</Text>
+              <Text>Month.</Text>
             </TabsContent>
           </Tabs>
         </Card>
@@ -717,252 +681,30 @@ function TabsSection() {
   );
 }
 
-// ── Navigation ──────────────────────────────────────────────────
-function NavigationSection() {
-  const [page, setPage] = React.useState(3);
-
+// ── Accordion ───────────────────────────────────────────────────
+function AccordionSection() {
   return (
-    <Section title="Navigation" description="Sidebar shell, Breadcrumb, Pagination, Stepper.">
-      <Stack gap={4}>
-        <Card padding="none" className="overflow-hidden">
-          <Stack direction="row" gap={0} className="h-72">
-            <Sidebar>
-              <SidebarHeader>
-                <Text weight="medium">Acme Industrial</Text>
-                <Text size="xs" variant="muted">
-                  Premium plan
-                </Text>
-              </SidebarHeader>
-              <SidebarSection>
-                <SidebarSectionLabel>Workspace</SidebarSectionLabel>
-                <SidebarItem icon={<Inbox className="h-4 w-4" />} active>
-                  Inbox
-                </SidebarItem>
-                <SidebarItem icon={<Package className="h-4 w-4" />}>Products</SidebarItem>
-                <SidebarItem icon={<ShoppingCart className="h-4 w-4" />}>Orders</SidebarItem>
-                <SidebarItem icon={<Users className="h-4 w-4" />}>Customers</SidebarItem>
-              </SidebarSection>
-            </Sidebar>
-            <div className="flex-1 p-6">
-              <Text size="sm" variant="muted">
-                The active item adopts <Code>--module-active-tint</Code>.
-              </Text>
-            </div>
-          </Stack>
-        </Card>
-
-        <Card>
-          <Breadcrumb>
-            <BreadcrumbList>
-              <BreadcrumbItem>
-                <BreadcrumbLink href="/">Home</BreadcrumbLink>
-              </BreadcrumbItem>
-              <BreadcrumbSeparator />
-              <BreadcrumbItem>
-                <BreadcrumbLink href="/orders">Orders</BreadcrumbLink>
-              </BreadcrumbItem>
-              <BreadcrumbSeparator />
-              <BreadcrumbItem>
-                <BreadcrumbPage>#1042</BreadcrumbPage>
-              </BreadcrumbItem>
-            </BreadcrumbList>
-          </Breadcrumb>
-        </Card>
-
-        <Card>
-          <Stack direction="row" justify="between" align="center">
-            <Text size="sm" variant="muted">
-              Currently on page {page}
-            </Text>
-            <Pagination page={page} pageCount={12} onPageChange={setPage} />
-          </Stack>
-        </Card>
-
-        <Card>
-          <Stepper
-            current={1}
-            steps={[
-              { label: 'Business info' },
-              { label: 'Theme' },
-              { label: 'First product' },
-              { label: 'Domain' },
-              { label: 'Payments' },
-            ]}
-          />
-        </Card>
-      </Stack>
-    </Section>
-  );
-}
-
-// ── Data display ────────────────────────────────────────────────
-interface ProductRow {
-  id: string;
-  name: string;
-  sku: string;
-  stock: number;
-  price: number;
-}
-
-const PRODUCTS: ProductRow[] = [
-  { id: '1', name: 'Fuel filter', sku: 'FF-2003', stock: 124, price: 22.5 },
-  { id: '2', name: 'Gasket set', sku: 'GS-110', stock: 38, price: 47.99 },
-  { id: '3', name: 'Hydraulic hose', sku: 'HH-5C', stock: 7, price: 89.0 },
-  { id: '4', name: 'Air intake', sku: 'AI-22', stock: 0, price: 154.5 },
-];
-
-const COLUMNS: ColumnDef<ProductRow>[] = [
-  { accessorKey: 'name', header: 'Name' },
-  { accessorKey: 'sku', header: 'SKU' },
-  { accessorKey: 'stock', header: 'Stock' },
-  {
-    accessorKey: 'price',
-    header: 'Price',
-    cell: ({ row }) => `$${row.original.price.toFixed(2)}`,
-  },
-];
-
-function DataDisplaySection() {
-  const [tags, setTags] = React.useState(['active', 'wholesale', 'gillett-diesel']);
-
-  return (
-    <Section
-      title="Data display"
-      description="Stat, Tag, Timeline, EmptyState, Table, DataTable, ScrollArea."
-    >
-      <Stack gap={4}>
-        <Grid cols={1} mdCols={4} gap={4}>
-          <Stat
-            label="Revenue"
-            value="$12,408"
-            delta={{ value: '+12.4%', trend: 'up' }}
-            icon={<ShoppingCart className="h-4 w-4" />}
-          />
-          <Stat
-            label="Orders"
-            value="184"
-            delta={{ value: '+8 today', trend: 'up' }}
-            icon={<Package className="h-4 w-4" />}
-          />
-          <Stat
-            label="Refunds"
-            value="3"
-            delta={{ value: '-1', trend: 'down' }}
-            icon={<Bell className="h-4 w-4" />}
-          />
-          <Stat
-            label="Storage"
-            value="48 GB"
-            delta={{ value: 'of 100', trend: 'neutral' }}
-            icon={<Layers className="h-4 w-4" />}
-          />
-        </Grid>
-
-        <Card>
-          <Stack gap={3}>
-            <Heading level={4}>Filters</Heading>
-            <Stack direction="row" gap={2} wrap>
-              {tags.map((t) => (
-                <Tag
-                  key={t}
-                  variant="primary"
-                  onRemove={() => setTags((xs) => xs.filter((x) => x !== t))}
-                >
-                  {t}
-                </Tag>
-              ))}
-              {tags.length === 0 && (
-                <Text size="xs" variant="muted">
-                  All filters cleared.
-                </Text>
-              )}
-            </Stack>
-          </Stack>
-        </Card>
-
-        <Grid cols={1} mdCols={2} gap={4}>
-          <Card>
-            <Stack gap={3}>
-              <Heading level={4}>Recent activity</Heading>
-              <Timeline>
-                <TimelineItem>
-                  <TimelineTitle>Order #1042 placed</TimelineTitle>
-                  <TimelineDescription>3 items, $148.20</TimelineDescription>
-                  <TimelineTime dateTime="2026-05-27T10:00:00Z">just now</TimelineTime>
-                </TimelineItem>
-                <TimelineItem>
-                  <TimelineTitle>Payment received</TimelineTitle>
-                  <TimelineDescription>Stripe payment_intent #pi_3O…</TimelineDescription>
-                  <TimelineTime dateTime="2026-05-27T09:55:00Z">5 minutes ago</TimelineTime>
-                </TimelineItem>
-                <TimelineItem showConnector={false}>
-                  <TimelineTitle>Customer created</TimelineTitle>
-                  <TimelineDescription>acme@example.com</TimelineDescription>
-                  <TimelineTime dateTime="2026-05-27T09:40:00Z">20 minutes ago</TimelineTime>
-                </TimelineItem>
-              </Timeline>
-            </Stack>
-          </Card>
-
-          <Card>
-            <EmptyState
-              icon={<FileText className="h-5 w-5" />}
-              title="No drafts yet"
-              description="Drafts you save will appear here before they're published."
-              action={
-                <Button variant="primary" size="sm" leftIcon={<Pencil className="h-3.5 w-3.5" />}>
-                  Write a draft
-                </Button>
-              }
-            />
-          </Card>
-        </Grid>
-
-        <Card padding="none" className="overflow-hidden">
-          <Stack gap={2} className="p-4">
-            <Heading level={4}>DataTable (sortable, paginated)</Heading>
-            <Text size="xs" variant="muted">
-              Click a header to sort. Uses TanStack Table under the hood.
-            </Text>
-          </Stack>
-          <Divider />
-          <div className="p-4">
-            <DataTable columns={COLUMNS} data={PRODUCTS} pageSize={10} />
-          </div>
-        </Card>
-
-        <Card>
-          <Stack gap={2}>
-            <Heading level={4}>ScrollArea</Heading>
-            <ScrollArea className="h-32 rounded-md border border-[var(--color-border-default)]">
-              <Stack gap={1} className="p-3">
-                {Array.from({ length: 40 }).map((_, i) => (
-                  <Text key={i} size="sm">
-                    Row {i + 1}
-                  </Text>
-                ))}
-              </Stack>
-            </ScrollArea>
-          </Stack>
-        </Card>
-      </Stack>
-    </Section>
-  );
-}
-
-// ── Loading ─────────────────────────────────────────────────────
-function LoadingSection() {
-  return (
-    <Section title="Loading states" description="Skeleton + Spinner placeholders.">
-      <Card>
-        <Stack gap={3}>
-          <Skeleton className="h-6 w-1/3" />
-          <Skeleton className="h-4 w-2/3" />
-          <Skeleton className="h-4 w-1/2" />
-          <Divider />
-          <Skeleton className="h-20 w-full" />
-        </Stack>
-      </Card>
+    <Section title="Accordion" description="Collapsible sections — bordered & separated variants.">
+      <Grid cols={1} mdCols={2} gap={4}>
+        <Accordion type="single" defaultValue={['a']} variant="bordered">
+          {['a', 'b', 'c'].map((v) => (
+            <AccordionItem key={v} value={v}>
+              <AccordionTrigger>Section {v.toUpperCase()}</AccordionTrigger>
+              <AccordionContent>
+                Bordered accordion content for section {v.toUpperCase()}.
+              </AccordionContent>
+            </AccordionItem>
+          ))}
+        </Accordion>
+        <Accordion type="multiple" defaultValue={['x']} variant="separated">
+          {['x', 'y', 'z'].map((v) => (
+            <AccordionItem key={v} value={v}>
+              <AccordionTrigger>Panel {v.toUpperCase()}</AccordionTrigger>
+              <AccordionContent>Separated panel content for {v.toUpperCase()}.</AccordionContent>
+            </AccordionItem>
+          ))}
+        </Accordion>
+      </Grid>
     </Section>
   );
 }

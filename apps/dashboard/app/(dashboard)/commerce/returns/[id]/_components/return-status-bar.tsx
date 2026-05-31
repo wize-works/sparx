@@ -56,7 +56,7 @@ export function ReturnStatusBar({ returnId, status }: { returnId: string; status
     <Stack gap={1} align="end">
       <Stack direction="row" gap={2}>
         {canMarkReceived && (
-          <Button variant="secondary" disabled={pending} onClick={onMarkReceived}>
+          <Button variant="outline" disabled={pending} onClick={onMarkReceived}>
             <Package className="h-4 w-4" />
             Mark received
           </Button>

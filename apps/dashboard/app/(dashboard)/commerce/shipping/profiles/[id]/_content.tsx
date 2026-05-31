@@ -92,7 +92,7 @@ export async function ShippingProfileDetailContent({ id }: Props) {
             </Field>
             <Stack direction="row" gap={4}>
               {profile.requiresSignature && <Badge variant="outline">Signature required</Badge>}
-              {profile.requiresFreight && <Badge variant="warning">Freight only</Badge>}
+              {profile.requiresFreight && <Badge color="warning">Freight only</Badge>}
             </Stack>
           </Stack>
         </CardContent>

@@ -81,7 +81,7 @@ export default function NewSegmentPage() {
     <Container size="lg">
       <Stack gap={6} className="py-10">
         <Stack gap={2}>
-          <Button variant="link" size="sm" asChild>
+          <Button color="primary" variant="link" size="sm" asChild>
             <Link href="/crm/segments">
               <ArrowLeft className="h-3.5 w-3.5" /> Back to segments
             </Link>
@@ -167,7 +167,7 @@ export default function NewSegmentPage() {
                 <Button variant="ghost" asChild>
                   <Link href="/crm/segments">Cancel</Link>
                 </Button>
-                <Button type="submit" variant="module" disabled={pending} loading={pending}>
+                <Button type="submit" color="module" disabled={pending} loading={pending}>
                   Create segment
                 </Button>
               </CardFooter>

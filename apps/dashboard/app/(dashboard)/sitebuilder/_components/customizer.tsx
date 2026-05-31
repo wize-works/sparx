@@ -288,7 +288,8 @@ export function Customizer({
                 <Button
                   key={d.id}
                   size="sm"
-                  variant={device === d.id ? 'primary' : 'ghost'}
+                  color={device === d.id ? 'primary' : 'neutral'}
+                  variant={device === d.id ? 'solid' : 'ghost'}
                   onClick={() => setDevice(d.id)}
                 >
                   {d.label}

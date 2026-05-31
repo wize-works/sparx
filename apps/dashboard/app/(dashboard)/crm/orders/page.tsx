@@ -78,7 +78,7 @@ export default async function OrdersPage({ searchParams }: PageProps) {
             <Stack direction="row" align="center" gap={2}>
               <ShoppingCart className="h-5 w-5" />
               <Heading level={1}>Orders</Heading>
-              <Badge variant="module">
+              <Badge color="module">
                 {total} order{total === 1 ? '' : 's'}
               </Badge>
             </Stack>
@@ -87,7 +87,7 @@ export default async function OrdersPage({ searchParams }: PageProps) {
               customer records and (optionally) to a sales deal via the deal_orders join.
             </Text>
           </Stack>
-          <Button asChild variant="module" leftIcon={<Plus className="h-4 w-4" />}>
+          <Button asChild color="module" leftIcon={<Plus className="h-4 w-4" />}>
             <Link href="/crm/orders/new">New order</Link>
           </Button>
         </Stack>
@@ -129,7 +129,7 @@ export default async function OrdersPage({ searchParams }: PageProps) {
                         </EntityRowLink>
                       </TableCell>
                       <TableCell>
-                        <Badge variant={STATUS_VARIANT[o.status] ?? 'outline'} className="text-xs">
+                        <Badge color={STATUS_VARIANT[o.status] ?? 'outline'} className="text-xs">
                           {o.status}
                         </Badge>
                       </TableCell>

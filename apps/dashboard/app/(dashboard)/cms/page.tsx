@@ -102,7 +102,7 @@ export default async function CmsPage({ searchParams }: { searchParams: Promise<
               Pages, landing pages, and policy content for your storefront.
             </Text>
           </Stack>
-          <Button asChild variant="module" leftIcon={<Plus className="h-4 w-4" />}>
+          <Button asChild color="module" leftIcon={<Plus className="h-4 w-4" />}>
             <Link href="/cms/new">New page</Link>
           </Button>
         </Stack>
@@ -125,7 +125,7 @@ export default async function CmsPage({ searchParams }: { searchParams: Promise<
                     <Link href="/cms">Clear filters</Link>
                   </Button>
                 ) : (
-                  <Button asChild variant="module">
+                  <Button asChild color="module">
                     <Link href="/cms/new">Create a page</Link>
                   </Button>
                 )
@@ -142,7 +142,7 @@ export default async function CmsPage({ searchParams }: { searchParams: Promise<
                 </CardHeader>
                 <CardContent>
                   <Stack direction="row" align="center" gap={2}>
-                    <Badge variant={e.status === 'published' ? 'success' : 'outline'}>
+                    <Badge color={e.status === 'published' ? 'success' : 'outline'}>
                       {e.status}
                     </Badge>
                     <Text size="xs" variant="muted">
@@ -153,7 +153,7 @@ export default async function CmsPage({ searchParams }: { searchParams: Promise<
                   </Stack>
                 </CardContent>
                 <CardFooter>
-                  <Button variant="module-outline" size="sm" asChild>
+                  <Button color="module" variant="outline" size="sm" asChild>
                     <EntityRowLink href={`/cms/${e.id}`} entityType="page" entityId={e.id}>
                       Edit
                     </EntityRowLink>
@@ -174,7 +174,7 @@ export default async function CmsPage({ searchParams }: { searchParams: Promise<
               <span />
             )}
             {nextHref ? (
-              <Button asChild variant="module-outline" size="sm">
+              <Button asChild color="module" variant="outline" size="sm">
                 <Link href={nextHref}>Load more →</Link>
               </Button>
             ) : (

@@ -104,7 +104,7 @@ export default async function ProvidersPage() {
           <Stack direction="row" align="center" gap={2}>
             <Plug className="h-5 w-5" />
             <Heading level={1}>Providers</Heading>
-            <Badge variant="module">
+            <Badge color="module">
               {installed.length} installed · {available.length} available
             </Badge>
           </Stack>
@@ -189,7 +189,7 @@ function KindSection({
                         )}
                       </TableCell>
                       <TableCell>
-                        <Badge variant={inst.environment === 'production' ? 'success' : 'warning'}>
+                        <Badge color={inst.environment === 'production' ? 'success' : 'warning'}>
                           {inst.environment}
                         </Badge>
                       </TableCell>
@@ -201,7 +201,7 @@ function KindSection({
                           ? new Date(inst.lastHealthCheckAt).toLocaleString()
                           : 'never'}
                         {inst.errorCount > 0 && (
-                          <Badge variant="warning" className="ml-2">
+                          <Badge color="warning" className="ml-2">
                             {inst.errorCount} errors
                           </Badge>
                         )}
@@ -300,7 +300,7 @@ function StatusBadge({ status }: { status: ProviderInstallStatus }) {
   const entry = map[status];
   const Icon = entry.icon;
   return (
-    <Badge variant={entry.variant}>
+    <Badge color={entry.variant}>
       <Icon className="mr-1 inline h-3 w-3" />
       {status}
     </Badge>

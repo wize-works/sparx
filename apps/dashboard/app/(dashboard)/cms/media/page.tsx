@@ -122,7 +122,7 @@ function MediaCard({ asset }: { asset: MediaAsset }) {
           )}
           {asset.status !== 'ready' && (
             <Badge
-              variant={asset.status === 'failed' ? 'danger' : 'outline'}
+              color={asset.status === 'failed' ? 'danger' : 'outline'}
               className="absolute top-2 right-2"
             >
               {asset.status}
@@ -140,7 +140,7 @@ function MediaCard({ asset }: { asset: MediaAsset }) {
       </CardHeader>
       <CardFooter>
         <Stack direction="row" align="center" gap={2} className="w-full">
-          <Badge variant={asset.usage_count > 0 ? 'success' : 'outline'}>
+          <Badge color={asset.usage_count > 0 ? 'success' : 'outline'}>
             {asset.usage_count > 0 ? `Used ${asset.usage_count}×` : 'Unused'}
           </Badge>
           <Text size="xs" variant="muted" className="ml-auto">

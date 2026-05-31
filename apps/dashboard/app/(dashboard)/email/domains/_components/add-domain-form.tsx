@@ -65,12 +65,7 @@ export function AddDomainForm() {
             </SelectContent>
           </Select>
         </Stack>
-        <Button
-          type="submit"
-          variant="module"
-          loading={pending}
-          disabled={pending || !domain.trim()}
-        >
+        <Button type="submit" color="module" loading={pending} disabled={pending || !domain.trim()}>
           <Plus className="h-4 w-4" />
           Add domain
         </Button>

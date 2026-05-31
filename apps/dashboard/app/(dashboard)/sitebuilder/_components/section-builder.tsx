@@ -297,7 +297,7 @@ function SectionEditor({
           ))}
         </div>
         <ModalFooter>
-          <Button variant="secondary" onClick={onClose} disabled={pending}>
+          <Button variant="outline" onClick={onClose} disabled={pending}>
             Cancel
           </Button>
           <Button onClick={save} disabled={pending}>

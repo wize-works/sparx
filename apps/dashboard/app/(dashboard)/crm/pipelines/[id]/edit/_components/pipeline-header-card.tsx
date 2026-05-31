@@ -75,7 +75,7 @@ export function PipelineHeaderCard({
           </Stack>
           <Stack direction="row" gap={2}>
             <Button
-              variant="module"
+              color="module"
               size="sm"
               disabled={!dirty || pending}
               onClick={() => onSave({ name, isDefault })}

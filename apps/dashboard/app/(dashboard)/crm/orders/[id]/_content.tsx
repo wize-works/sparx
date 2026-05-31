@@ -115,7 +115,7 @@ export async function OrderDetailContent({ id }: Props) {
       <Stack gap={2}>
         <Stack direction="row" align="center" gap={3} wrap>
           <Heading level={1}>{order.orderNumber}</Heading>
-          <Badge variant={STATUS_VARIANT[order.status] ?? 'outline'}>{order.status}</Badge>
+          <Badge color={STATUS_VARIANT[order.status] ?? 'outline'}>{order.status}</Badge>
           <Badge variant="outline">{order.paymentStatus}</Badge>
           {customer && (
             <Link

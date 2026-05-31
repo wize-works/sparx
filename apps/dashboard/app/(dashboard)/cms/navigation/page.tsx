@@ -64,7 +64,7 @@ export default async function CmsNavigationPage() {
                         : description}
                     </Text>
                   </Stack>
-                  <Button asChild variant="module" size="sm">
+                  <Button asChild color="module" size="sm">
                     <Link href={`/cms/navigation/${location}`}>
                       {existing ? 'Edit' : 'Create'}
                       <ArrowRight className="ml-1 h-3.5 w-3.5" />
@@ -102,7 +102,8 @@ export default async function CmsNavigationPage() {
         <div>
           <Button
             asChild
-            variant="module-outline"
+            color="module"
+            variant="outline"
             size="sm"
             leftIcon={<Plus className="h-4 w-4" />}
           >

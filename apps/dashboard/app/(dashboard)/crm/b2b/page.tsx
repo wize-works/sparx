@@ -71,7 +71,7 @@ export default async function B2bAccountsPage({ searchParams }: PageProps) {
             <Stack direction="row" align="center" gap={2}>
               <Building2 className="h-5 w-5" />
               <Heading level={1}>B2B accounts</Heading>
-              <Badge variant="module">
+              <Badge color="module">
                 {total} account{total === 1 ? '' : 's'}
               </Badge>
             </Stack>
@@ -80,7 +80,7 @@ export default async function B2bAccountsPage({ searchParams }: PageProps) {
               fitment-aware catalog and the B2B portal pricing engine.
             </Text>
           </Stack>
-          <Button asChild variant="module" leftIcon={<Plus className="h-4 w-4" />}>
+          <Button asChild color="module" leftIcon={<Plus className="h-4 w-4" />}>
             <Link href="/crm/b2b/new">New B2B account</Link>
           </Button>
         </Stack>
@@ -92,7 +92,7 @@ export default async function B2bAccountsPage({ searchParams }: PageProps) {
               title="No B2B accounts yet"
               description="Add a wholesale or fleet customer to start tracking pricing tiers, credit, and engine profiles."
               action={
-                <Button asChild variant="module">
+                <Button asChild color="module">
                   <Link href="/crm/b2b/new">Add a B2B account</Link>
                 </Button>
               }
@@ -130,10 +130,7 @@ export default async function B2bAccountsPage({ searchParams }: PageProps) {
                           </EntityRowLink>
                         </TableCell>
                         <TableCell>
-                          <Badge
-                            variant={STATUS_VARIANT[a.status] ?? 'outline'}
-                            className="text-xs"
-                          >
+                          <Badge color={STATUS_VARIANT[a.status] ?? 'outline'} className="text-xs">
                             {a.status}
                           </Badge>
                         </TableCell>

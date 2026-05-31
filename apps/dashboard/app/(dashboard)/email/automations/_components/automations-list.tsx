@@ -141,7 +141,7 @@ function AutomationCard({ automation }: { automation: AutomationRow }) {
               </Select>
             </Stack>
             <Button
-              variant="module"
+              color="module"
               size="sm"
               onClick={saveConfig}
               loading={pending}

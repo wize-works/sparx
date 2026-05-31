@@ -84,7 +84,7 @@ export async function CollectionDetailContent({ id }: Props) {
         <Stack gap={2}>
           <Stack direction="row" align="center" gap={3} wrap>
             <Heading level={1}>{collection.name}</Heading>
-            <Badge variant={collection.type === 'rules' ? 'module' : 'outline'}>
+            <Badge color={collection.type === 'rules' ? 'module' : 'outline'}>
               {collection.type === 'rules' ? (
                 <>
                   <Sparkles className="mr-1 h-3 w-3" />

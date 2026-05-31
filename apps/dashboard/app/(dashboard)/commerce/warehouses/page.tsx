@@ -65,7 +65,7 @@ export default async function WarehousesPage() {
             <Stack direction="row" align="center" gap={2}>
               <WarehouseIcon className="h-5 w-5" />
               <Heading level={1}>Warehouses</Heading>
-              <Badge variant="module">
+              <Badge color="module">
                 {active.length} active{inactive.length ? ` · ${inactive.length} inactive` : ''}
               </Badge>
             </Stack>
@@ -153,9 +153,9 @@ export default async function WarehousesPage() {
                       </TableCell>
                       <TableCell>
                         {w.isActive ? (
-                          <Badge variant="success">active</Badge>
+                          <Badge color="success">active</Badge>
                         ) : (
-                          <Badge variant="warning">inactive</Badge>
+                          <Badge color="warning">inactive</Badge>
                         )}
                       </TableCell>
                     </TableRow>

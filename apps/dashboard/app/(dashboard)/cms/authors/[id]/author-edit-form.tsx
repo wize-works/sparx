@@ -131,7 +131,7 @@ export function AuthorEditForm({ author }: { author: EditableAuthor }) {
             <Stack direction="row" align="center" gap={3}>
               <Button
                 type="submit"
-                variant="module"
+                color="module"
                 leftIcon={<Save className="h-4 w-4" />}
                 disabled={pending}
                 loading={pending}

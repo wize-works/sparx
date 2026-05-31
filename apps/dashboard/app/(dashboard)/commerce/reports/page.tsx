@@ -118,7 +118,7 @@ export default async function ReportsPage({
           <Stack direction="row" align="center" gap={2}>
             <BarChart3 className="h-5 w-5" />
             <Heading level={1}>Reports</Heading>
-            <Badge variant="module">{revenue.rangeLabel}</Badge>
+            <Badge color="module">{revenue.rangeLabel}</Badge>
           </Stack>
           <Text variant="muted">
             Live queries — no nightly rollup yet. Use the range selector to scope the period; the

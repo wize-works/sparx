@@ -52,7 +52,7 @@ export function CmsTabs({ current }: CmsTabsProps) {
             aria-current={active ? 'page' : undefined}
           >
             {tab.label}
-            {active && <Badge variant="module">active</Badge>}
+            {active && <Badge color="module">active</Badge>}
           </Link>
         );
       })}

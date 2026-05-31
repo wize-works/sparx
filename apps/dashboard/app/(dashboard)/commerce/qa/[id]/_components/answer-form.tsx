@@ -48,7 +48,7 @@ export function AnswerForm({ questionId }: { questionId: string }) {
             {error}
           </Text>
         )}
-        <Button variant="primary" disabled={pending} onClick={onSubmit} className="ml-auto">
+        <Button disabled={pending} onClick={onSubmit} className="ml-auto">
           Post staff answer
         </Button>
       </Stack>

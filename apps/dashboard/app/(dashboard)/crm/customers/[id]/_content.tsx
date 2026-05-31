@@ -115,8 +115,8 @@ export async function CustomerDetailContent({ id }: Props) {
       <Stack gap={2}>
         <Stack direction="row" align="center" gap={3} wrap>
           <Heading level={1}>{displayName}</Heading>
-          <Badge variant="module">{customer.type}</Badge>
-          {customer.doNotContact && <Badge variant="warning">Do not contact</Badge>}
+          <Badge color="module">{customer.type}</Badge>
+          {customer.doNotContact && <Badge color="warning">Do not contact</Badge>}
           {customer.mergedIntoCustomerId && (
             <Badge variant="outline">Merged into another record</Badge>
           )}
@@ -172,7 +172,7 @@ export async function CustomerDetailContent({ id }: Props) {
                 {activities.length > 0 && <Badge variant="outline">{activities.length}</Badge>}
               </TabsTrigger>
               <TabsTrigger value="tasks">
-                Tasks {openTasks.length > 0 && <Badge variant="warning">{openTasks.length}</Badge>}
+                Tasks {openTasks.length > 0 && <Badge color="warning">{openTasks.length}</Badge>}
               </TabsTrigger>
               <TabsTrigger value="deals">Deals</TabsTrigger>
               <TabsTrigger value="notes">Notes</TabsTrigger>
@@ -201,7 +201,7 @@ export async function CustomerDetailContent({ id }: Props) {
                 <CardHeader>
                   <Stack direction="row" align="center" justify="between">
                     <CardTitle>Open tasks</CardTitle>
-                    <Button asChild size="sm" variant="module-outline">
+                    <Button asChild size="sm" color="module" variant="outline">
                       <Link href={`/crm/tasks/new?customerId=${customer.id}`}>New task</Link>
                     </Button>
                   </Stack>
@@ -225,7 +225,7 @@ export async function CustomerDetailContent({ id }: Props) {
                             <Stack direction="row" align="center" gap={2}>
                               <CheckSquare className="h-3.5 w-3.5 text-[var(--color-text-tertiary)]" />
                               <Text size="sm">{task.title}</Text>
-                              <Badge variant={taskPriorityVariant(task.priority)}>
+                              <Badge color={taskPriorityVariant(task.priority)}>
                                 {task.priority}
                               </Badge>
                             </Stack>
@@ -378,12 +378,12 @@ function B2BAccountCard({
             <Stack direction="row" gap={2}>
               {account.pricingTier && <Badge variant="outline">{account.pricingTier}</Badge>}
               {account.status === 'credit_hold' && (
-                <Badge variant="warning">
+                <Badge color="warning">
                   <AlertCircle className="h-3 w-3" />
                   Credit hold
                 </Badge>
               )}
-              {account.status === 'suspended' && <Badge variant="warning">Suspended</Badge>}
+              {account.status === 'suspended' && <Badge color="warning">Suspended</Badge>}
             </Stack>
           </Stack>
           {limit > 0 && (
@@ -407,7 +407,7 @@ function B2BAccountCard({
               Terms: {account.paymentTerms}
             </Text>
           )}
-          <Button asChild size="sm" variant="module-outline">
+          <Button asChild size="sm" color="module" variant="outline">
             <Link href={`/crm/b2b/${account.id}`}>Open account</Link>
           </Button>
         </Stack>

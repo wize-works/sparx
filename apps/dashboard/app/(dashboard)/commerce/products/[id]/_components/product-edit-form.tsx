@@ -265,7 +265,7 @@ export function ProductEditForm({ product }: { product: ProductOverview }) {
                 <Text size="sm">Saved</Text>
               </Stack>
             )}
-            <Button type="submit" variant="module" disabled={pending} loading={pending}>
+            <Button type="submit" color="module" disabled={pending} loading={pending}>
               Save changes
             </Button>
           </CardFooter>

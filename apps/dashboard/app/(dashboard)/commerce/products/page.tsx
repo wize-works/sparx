@@ -89,7 +89,7 @@ export default async function ProductsPage({ searchParams }: PageProps) {
             <Stack direction="row" align="center" gap={2}>
               <PackageOpen className="h-5 w-5" />
               <Heading level={1}>Products</Heading>
-              <Badge variant="module">
+              <Badge color="module">
                 {total} product{total === 1 ? '' : 's'}
               </Badge>
             </Stack>
@@ -99,7 +99,7 @@ export default async function ProductsPage({ searchParams }: PageProps) {
               render as 410.
             </Text>
           </Stack>
-          <Button asChild variant="module" leftIcon={<Plus className="h-4 w-4" />}>
+          <Button asChild color="module" leftIcon={<Plus className="h-4 w-4" />}>
             <Link href="/commerce/products/new">New product</Link>
           </Button>
         </Stack>
@@ -138,7 +138,7 @@ export default async function ProductsPage({ searchParams }: PageProps) {
                     Include archived
                   </Text>
                 </Stack>
-                <Button type="submit" variant="secondary">
+                <Button type="submit" variant="outline">
                   Apply
                 </Button>
               </Stack>
@@ -158,7 +158,7 @@ export default async function ProductsPage({ searchParams }: PageProps) {
               }
               action={
                 total === 0 ? (
-                  <Button asChild variant="module" leftIcon={<Plus className="h-4 w-4" />}>
+                  <Button asChild color="module" leftIcon={<Plus className="h-4 w-4" />}>
                     <Link href="/commerce/products/new">New product</Link>
                   </Button>
                 ) : undefined
@@ -199,7 +199,7 @@ export default async function ProductsPage({ searchParams }: PageProps) {
                         </Stack>
                       </TableCell>
                       <TableCell>
-                        <Badge variant={STATUS_VARIANT[p.status] ?? 'outline'} className="text-xs">
+                        <Badge color={STATUS_VARIANT[p.status] ?? 'outline'} className="text-xs">
                           {p.status}
                         </Badge>
                       </TableCell>

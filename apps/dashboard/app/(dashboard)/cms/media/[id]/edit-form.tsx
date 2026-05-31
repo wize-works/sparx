@@ -170,7 +170,7 @@ export function AssetEditForm({
           )}
 
           <Stack direction="row" gap={2}>
-            <Button type="submit" variant="module" disabled={pending} loading={pending}>
+            <Button type="submit" color="module" disabled={pending} loading={pending}>
               Save changes
             </Button>
             <Button

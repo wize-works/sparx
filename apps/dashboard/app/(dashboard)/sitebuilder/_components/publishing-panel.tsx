@@ -57,11 +57,11 @@ export function PublishingPanel({
                       </Text>
                     </div>
                     {isLive ? (
-                      <Badge variant="success">Live</Badge>
+                      <Badge color="success">Live</Badge>
                     ) : (
                       <Button
                         size="sm"
-                        variant="secondary"
+                        variant="outline"
                         disabled={pending}
                         onClick={() => act(() => rollback(v.id))}
                       >
@@ -101,7 +101,7 @@ export function PublishingPanel({
                       </Text>
                     ) : null}
                   </div>
-                  <Badge variant={STATUS_VARIANT[s.status] ?? 'secondary'}>{s.status}</Badge>
+                  <Badge color={STATUS_VARIANT[s.status] ?? 'secondary'}>{s.status}</Badge>
                   {s.status === 'pending' ? (
                     <Button
                       size="sm"

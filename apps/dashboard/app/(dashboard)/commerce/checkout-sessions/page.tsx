@@ -56,7 +56,7 @@ export default async function CheckoutSessionsPage({
           <Stack direction="row" align="center" gap={2}>
             <CreditCard className="h-5 w-5" />
             <Heading level={1}>Checkout sessions</Heading>
-            <Badge variant="module">{sessions.length} in-flight</Badge>
+            <Badge color="module">{sessions.length} in-flight</Badge>
           </Stack>
           <Text variant="muted">
             Read-only diagnostic. The state machine advances cart_review → contact → shipping →
@@ -162,7 +162,7 @@ function FilterLink({
 function StepBadge({ step }: { step: string }) {
   const v: 'success' | 'warning' | 'outline' =
     step === 'completed' ? 'success' : step === 'expired' ? 'warning' : 'outline';
-  return <Badge variant={v}>{step}</Badge>;
+  return <Badge color={v}>{step}</Badge>;
 }
 
 function labelForStep(s: string): string {

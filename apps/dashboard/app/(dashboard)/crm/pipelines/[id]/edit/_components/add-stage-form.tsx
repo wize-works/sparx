@@ -84,7 +84,7 @@ export function AddStageForm({
         </select>
       </Stack>
       <Button
-        variant="module"
+        color="module"
         size="sm"
         disabled={pending || !name.trim()}
         onClick={add}

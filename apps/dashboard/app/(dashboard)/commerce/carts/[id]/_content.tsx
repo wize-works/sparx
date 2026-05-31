@@ -78,7 +78,7 @@ export async function CartDetailContent({ id }: Props) {
             {cart.cartId.slice(0, 8)}
           </Heading>
           <Badge variant="outline">{cart.channel}</Badge>
-          {cart.abandonedAt && <Badge variant="warning">abandoned</Badge>}
+          {cart.abandonedAt && <Badge color="warning">abandoned</Badge>}
         </Stack>
         <Text variant="muted">
           {cart.customerId ? (

@@ -72,7 +72,7 @@ export async function QuestionDetailContent({ id }: Props) {
           <Heading level={1}>Question</Heading>
           <Stack direction="row" gap={2} align="center">
             <Badge
-              variant={
+              color={
                 detail.status === 'published'
                   ? 'success'
                   : detail.status === 'rejected'
@@ -124,7 +124,7 @@ export async function QuestionDetailContent({ id }: Props) {
                 <Stack key={a.id} gap={1}>
                   <Stack direction="row" gap={2} align="center">
                     {a.isOfficial ? (
-                      <Badge variant="success">staff</Badge>
+                      <Badge color="success">staff</Badge>
                     ) : (
                       <Badge variant="outline">customer</Badge>
                     )}

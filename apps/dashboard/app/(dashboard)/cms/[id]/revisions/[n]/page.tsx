@@ -90,7 +90,7 @@ export default async function RevisionDiffPage({ params }: PageParams) {
       <Stack gap={6} className="py-10">
         <CmsTabs current="pages" />
         <Stack gap={2}>
-          <Button variant="link" size="sm" asChild>
+          <Button color="primary" variant="link" size="sm" asChild>
             <Link href={`/cms/${id}/revisions`}>
               <ArrowLeft className="h-3.5 w-3.5" />
               Back to revisions
@@ -98,10 +98,8 @@ export default async function RevisionDiffPage({ params }: PageParams) {
           </Button>
           <Stack direction="row" align="center" gap={2}>
             <Heading level={1}>Revision #{revision.revision_number}</Heading>
-            <Badge variant={revision.kind === 'manual' ? 'module' : 'outline'}>
-              {revision.kind}
-            </Badge>
-            <Badge variant={revision.status === 'published' ? 'success' : 'outline'}>
+            <Badge color={revision.kind === 'manual' ? 'module' : 'outline'}>{revision.kind}</Badge>
+            <Badge color={revision.status === 'published' ? 'success' : 'outline'}>
               {revision.status}
             </Badge>
           </Stack>
@@ -129,7 +127,7 @@ export default async function RevisionDiffPage({ params }: PageParams) {
               {revHtml === curHtml ? (
                 <Badge variant="outline">unchanged</Badge>
               ) : (
-                <Badge variant="module">changed</Badge>
+                <Badge color="module">changed</Badge>
               )}
             </Stack>
           </CardHeader>
@@ -167,7 +165,7 @@ function FieldDiff({
         <Stack direction="row" align="center" gap={2}>
           <Heading level={4}>{label}</Heading>
           {changed ? (
-            <Badge variant="module">changed</Badge>
+            <Badge color="module">changed</Badge>
           ) : (
             <Badge variant="outline">unchanged</Badge>
           )}
@@ -217,7 +215,7 @@ function SeoDiff({
         <Stack direction="row" align="center" gap={2}>
           <Heading level={4}>SEO</Heading>
           {anyChanged ? (
-            <Badge variant="module">{changedRows.length} changed</Badge>
+            <Badge color="module">{changedRows.length} changed</Badge>
           ) : (
             <Badge variant="outline">unchanged</Badge>
           )}

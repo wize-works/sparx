@@ -66,7 +66,7 @@ export default async function PipelinesPage({ searchParams }: PageProps) {
             <Stack direction="row" align="center" gap={2}>
               <KanbanSquare className="h-5 w-5" />
               <Heading level={1}>Pipelines</Heading>
-              <Badge variant="module">
+              <Badge color="module">
                 {pipelines.length} pipeline{pipelines.length === 1 ? '' : 's'}
               </Badge>
             </Stack>
@@ -81,7 +81,7 @@ export default async function PipelinesPage({ searchParams }: PageProps) {
                 {includeArchived ? 'Hide archived' : 'Show archived'}
               </Link>
             </Button>
-            <Button asChild variant="module" leftIcon={<Plus className="h-4 w-4" />}>
+            <Button asChild color="module" leftIcon={<Plus className="h-4 w-4" />}>
               <Link href="/crm/pipelines/new">New pipeline</Link>
             </Button>
           </Stack>
@@ -110,7 +110,7 @@ export default async function PipelinesPage({ searchParams }: PageProps) {
                           </Badge>
                         )}
                         {pipeline.archivedAt && (
-                          <Badge variant="warning" className="text-xs">
+                          <Badge color="warning" className="text-xs">
                             <Archive className="h-3 w-3" /> Archived
                           </Badge>
                         )}
@@ -121,7 +121,13 @@ export default async function PipelinesPage({ searchParams }: PageProps) {
                       </Text>
                     </Stack>
                     <Stack direction="row" gap={2}>
-                      <Button asChild variant="ghost" size="icon-sm" aria-label="Edit pipeline">
+                      <Button
+                        asChild
+                        variant="ghost"
+                        shape="square"
+                        size="sm"
+                        aria-label="Edit pipeline"
+                      >
                         <Link href={`/crm/pipelines/${pipeline.id}/edit`}>
                           <Settings className="h-4 w-4" />
                         </Link>
@@ -132,11 +138,7 @@ export default async function PipelinesPage({ searchParams }: PageProps) {
                       <Button asChild variant="ghost">
                         <Link href={`/crm/pipelines/${pipeline.id}?view=forecast`}>Forecast</Link>
                       </Button>
-                      <Button
-                        asChild
-                        variant="module"
-                        rightIcon={<ArrowRight className="h-4 w-4" />}
-                      >
+                      <Button asChild color="module" rightIcon={<ArrowRight className="h-4 w-4" />}>
                         <Link href={`/crm/pipelines/${pipeline.id}`}>Open Kanban</Link>
                       </Button>
                     </Stack>

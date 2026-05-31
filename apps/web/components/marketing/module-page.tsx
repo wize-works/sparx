@@ -95,7 +95,7 @@ function ModuleHero({ meta, color }: { meta: ModuleMeta; color: ModuleColor }) {
               <Button size="lg" style={{ backgroundColor: '#0A0A0A' }}>
                 Start free
               </Button>
-              <Button size="lg" variant="secondary">
+              <Button size="lg" variant="outline">
                 See pricing
               </Button>
             </div>
@@ -274,7 +274,7 @@ function ModulePricingStrip({ meta, color }: { meta: ModuleMeta; color: ModuleCo
         </div>
         <div className="mkt-cluster" style={{ gap: '12px' }}>
           <a href="/#pricing">
-            <Button size="lg" variant="secondary">
+            <Button size="lg" variant="outline">
               See all plans →
             </Button>
           </a>
@@ -322,12 +322,12 @@ function ModuleCta({ meta, color }: { meta: ModuleMeta; color: ModuleColor }) {
           Turn it back off any time — your data stays.
         </p>
         <div className="mkt-cluster" style={{ gap: '12px' }}>
-          <Button size="xl" variant="primary">
+          <Button size="xl" variant="solid">
             Start your store →
           </Button>
           <Button
             size="xl"
-            variant="secondary"
+            variant="outline"
             style={{
               backgroundColor: 'transparent',
               borderColor: '#2A2A2A',

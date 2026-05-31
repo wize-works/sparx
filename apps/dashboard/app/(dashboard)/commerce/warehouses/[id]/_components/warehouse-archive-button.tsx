@@ -55,12 +55,12 @@ export function WarehouseArchiveButton({
           <Button variant="ghost" size="sm" onClick={() => setArmed(false)} disabled={pending}>
             Cancel
           </Button>
-          <Button variant="danger" size="sm" onClick={onArchive} disabled={pending}>
+          <Button color="danger" size="sm" onClick={onArchive} disabled={pending}>
             {pending ? 'Archiving…' : 'Confirm archive'}
           </Button>
         </>
       ) : (
-        <Button variant="secondary" size="sm" onClick={() => setArmed(true)}>
+        <Button variant="outline" size="sm" onClick={() => setArmed(true)}>
           Archive
         </Button>
       )}

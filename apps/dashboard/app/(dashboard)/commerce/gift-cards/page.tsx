@@ -61,7 +61,7 @@ export default async function GiftCardsPage() {
           <Stack direction="row" align="center" gap={2}>
             <Gift className="h-5 w-5" />
             <Heading level={1}>Gift cards</Heading>
-            <Badge variant="module">{moneyFmt.format(outstandingCents / 100)} outstanding</Badge>
+            <Badge color="module">{moneyFmt.format(outstandingCents / 100)} outstanding</Badge>
           </Stack>
           <Text variant="muted">
             Issue, look up, and adjust gift cards. Cards sold as a product (a future Phase 4
@@ -135,7 +135,7 @@ export default async function GiftCardsPage() {
                         )}
                       </TableCell>
                       <TableCell>
-                        <Badge variant={STATUS_VARIANT[card.status] ?? 'outline'}>
+                        <Badge color={STATUS_VARIANT[card.status] ?? 'outline'}>
                           {card.status}
                         </Badge>
                       </TableCell>

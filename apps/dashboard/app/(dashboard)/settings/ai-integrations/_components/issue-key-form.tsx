@@ -58,7 +58,7 @@ export function IssueKeyForm() {
           <code className="flex-1 rounded bg-[var(--color-surface-default)] p-2 font-mono text-xs break-all select-all">
             {issued.plaintext}
           </code>
-          <Button type="button" variant="secondary" size="sm" onClick={copyKey}>
+          <Button type="button" variant="outline" size="sm" onClick={copyKey}>
             <Copy className="h-3.5 w-3.5" /> Copy
           </Button>
         </Stack>
@@ -115,7 +115,7 @@ export function IssueKeyForm() {
         )}
 
         <Stack direction="row" justify="end">
-          <Button type="submit" variant="module" disabled={pending} loading={pending}>
+          <Button type="submit" color="module" disabled={pending} loading={pending}>
             <Plus className="h-3.5 w-3.5" /> Issue key
           </Button>
         </Stack>

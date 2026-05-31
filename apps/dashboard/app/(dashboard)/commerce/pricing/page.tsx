@@ -79,7 +79,7 @@ export default async function PricingPage() {
             <Stack direction="row" align="center" gap={2}>
               <DollarSign className="h-5 w-5" />
               <Heading level={1}>Pricing</Heading>
-              <Badge variant="module">{priceLists.length} price lists</Badge>
+              <Badge color="module">{priceLists.length} price lists</Badge>
             </Stack>
             <Text variant="muted">
               Resolution order: B2B contract price → price list → bulk tier → variant base.
@@ -156,7 +156,7 @@ export default async function PricingPage() {
                       <TableCell>{list.priority}</TableCell>
                       <TableCell>{list.entryCount}</TableCell>
                       <TableCell>
-                        <Badge variant={STATUS_VARIANT[list.status] ?? 'outline'}>
+                        <Badge color={STATUS_VARIANT[list.status] ?? 'outline'}>
                           {list.status}
                         </Badge>
                       </TableCell>

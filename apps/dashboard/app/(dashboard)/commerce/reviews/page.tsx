@@ -120,7 +120,7 @@ export default async function ReviewsPage({
           <Stack direction="row" align="center" gap={2}>
             <Star className="h-5 w-5" />
             <Heading level={1}>Reviews</Heading>
-            <Badge variant="module">{rows.length} shown</Badge>
+            <Badge color="module">{rows.length} shown</Badge>
           </Stack>
           <Text variant="muted">
             Verified-purchase reviews auto-approve. Anonymous + non-verified land here for
@@ -199,7 +199,7 @@ export default async function ReviewsPage({
                       </TableCell>
                       <TableCell>
                         {r.verifiedPurchase ? (
-                          <Badge variant="success">verified</Badge>
+                          <Badge color="success">verified</Badge>
                         ) : (
                           <Text size="xs" variant="muted">
                             —
@@ -263,7 +263,7 @@ function StatusBadge({ status }: { status: string }) {
         : status === 'rejected'
           ? 'danger'
           : 'outline';
-  return <Badge variant={variant}>{status}</Badge>;
+  return <Badge color={variant}>{status}</Badge>;
 }
 
 function Stars({ value }: { value: number }) {

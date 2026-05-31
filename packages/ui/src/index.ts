@@ -7,6 +7,21 @@
 export { cn } from './utils/cn';
 export { cva, type VariantProps } from './utils/cva';
 
+// ── Variant system (docs/35) ───────────────────────────────
+export {
+  COLOR_KEYS,
+  MODULE_COLOR_KEYS,
+  ALL_COLOR_KEYS,
+  colorVariants,
+  colorClass,
+  treatmentVariants,
+  chipTreatmentVariants,
+  type ColorKey,
+  type SemanticColorKey,
+  type ModuleColorKey,
+  type TreatmentKey,
+} from './components/_recipes/variants';
+
 // ── Providers / context ───────────────────────────────────
 export { ModuleProvider, useModule, type SparxModule } from './providers/module-provider';
 
@@ -20,11 +35,16 @@ export { Wordmark, type WordmarkProps } from './components/brand/wordmark';
 // ── Primitives ────────────────────────────────────────────
 export { Spinner, type SpinnerProps } from './components/primitives/spinner';
 export { Button, buttonVariants, type ButtonProps } from './components/primitives/button';
+export {
+  ButtonGroup,
+  buttonGroupVariants,
+  type ButtonGroupProps,
+} from './components/primitives/button-group';
 export { Badge, badgeVariants, type BadgeProps } from './components/primitives/badge';
 export { Avatar, avatarVariants, type AvatarProps } from './components/primitives/avatar';
 export { Skeleton, type SkeletonProps } from './components/primitives/skeleton';
-export { Switch } from './components/primitives/switch';
-export { Checkbox } from './components/primitives/checkbox';
+export { Switch, type SwitchProps } from './components/primitives/switch';
+export { Checkbox, type CheckboxProps } from './components/primitives/checkbox';
 export { Heading, headingVariants, type HeadingProps } from './components/primitives/heading';
 export { Text, textVariants, type TextProps } from './components/primitives/text';
 export { Label } from './components/primitives/label';
@@ -40,15 +60,25 @@ export {
   cardVariants,
   type CardProps,
 } from './components/layout/card';
+export {
+  Accordion,
+  AccordionItem,
+  AccordionTrigger,
+  AccordionContent,
+  type AccordionProps,
+  type AccordionItemProps,
+} from './components/layout/accordion';
 export { Divider, type DividerProps } from './components/layout/divider';
 export { Stack, type StackProps } from './components/layout/stack';
 export { Grid, type GridProps } from './components/layout/grid';
 export { Container, containerVariants, type ContainerProps } from './components/layout/container';
+export { PageHeader, type PageHeaderProps } from './components/layout/page-header';
 export { ScrollArea, ScrollBar } from './components/layout/scroll-area';
 export { SidebarAppShell, type SidebarAppShellProps } from './components/layout/sidebar-app-shell';
 
 // ── Form ──────────────────────────────────────────────────
 export { Input, inputVariants, type InputProps } from './components/form/input';
+export { FormActionBar, type FormActionBarProps } from './components/form/form-action-bar';
 export { Textarea, textareaVariants, type TextareaProps } from './components/form/textarea';
 export {
   Select,
@@ -62,8 +92,12 @@ export {
   selectTriggerVariants,
   type SelectTriggerProps,
 } from './components/form/select';
-export { RadioGroup, RadioGroupItem } from './components/form/radio-group';
-export { Slider } from './components/form/slider';
+export {
+  RadioGroup,
+  RadioGroupItem,
+  type RadioGroupItemProps,
+} from './components/form/radio-group';
+export { Slider, type SliderProps } from './components/form/slider';
 export {
   Form,
   FormField,
@@ -231,6 +265,10 @@ export { Stepper, type StepperProps, type StepperStep } from './components/navig
 
 // ── Data display ──────────────────────────────────────────
 export { Code, codeVariants, type CodeProps } from './components/data/code';
+export { Kbd, kbdVariants, type KbdProps } from './components/data/kbd';
+export { Alert, alertVariants, type AlertProps } from './components/data/alert';
+export { Progress, progressVariants, type ProgressProps } from './components/data/progress';
+export { StatusDot, dotVariants, type StatusDotProps } from './components/data/status-dot';
 export {
   Table,
   TableHeader,
@@ -244,6 +282,7 @@ export {
 export { DataTable, type DataTableProps } from './components/data/data-table';
 export { Stat, type StatProps, type StatDelta } from './components/data/stat';
 export { EmptyState, type EmptyStateProps } from './components/data/empty-state';
+export { FilterBar, type FilterBarProps } from './components/data/filter-bar';
 export { Tag, tagVariants, type TagProps } from './components/data/tag';
 export {
   Timeline,

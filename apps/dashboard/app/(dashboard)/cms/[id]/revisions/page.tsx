@@ -54,7 +54,7 @@ export default async function RevisionsPage({ params }: { params: Promise<{ id: 
       <Stack gap={6} className="py-10">
         <CmsTabs current="pages" />
         <Stack gap={2}>
-          <Button variant="link" size="sm" asChild>
+          <Button color="primary" variant="link" size="sm" asChild>
             <Link href={`/cms/${id}`}>
               <ArrowLeft className="h-3.5 w-3.5" />
               Back to editor
@@ -95,8 +95,8 @@ export default async function RevisionsPage({ params }: { params: Promise<{ id: 
                   <Stack direction="row" align="center" justify="between">
                     <Stack direction="row" align="center" gap={3}>
                       <Heading level={4}>#{r.revision_number}</Heading>
-                      <Badge variant={r.kind === 'manual' ? 'module' : 'outline'}>{r.kind}</Badge>
-                      <Badge variant={r.status === 'published' ? 'success' : 'outline'}>
+                      <Badge color={r.kind === 'manual' ? 'module' : 'outline'}>{r.kind}</Badge>
+                      <Badge color={r.status === 'published' ? 'success' : 'outline'}>
                         {r.status}
                       </Badge>
                     </Stack>

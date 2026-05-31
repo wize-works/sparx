@@ -61,7 +61,7 @@ export default async function ConfiguratorPage() {
           <Stack direction="row" align="center" gap={2}>
             <Settings2 className="h-5 w-5" />
             <Heading level={1}>Configurator</Heading>
-            <Badge variant="module">{templates.length}</Badge>
+            <Badge color="module">{templates.length}</Badge>
           </Stack>
           <Text variant="muted">
             Templates drive any configurable product — play structures, beauty gift sets, custom
@@ -124,7 +124,7 @@ export default async function ConfiguratorPage() {
                       <TableCell>{t.ruleCount}</TableCell>
                       <TableCell>{t.addOnCount}</TableCell>
                       <TableCell>
-                        <Badge variant={STATUS_VARIANT[t.status] ?? 'outline'}>{t.status}</Badge>
+                        <Badge color={STATUS_VARIANT[t.status] ?? 'outline'}>{t.status}</Badge>
                       </TableCell>
                     </TableRow>
                   ))}

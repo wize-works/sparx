@@ -49,7 +49,8 @@ export function CreditHoldToggle({ accountId, currentStatus }: CreditHoldToggleP
 
   return (
     <Button
-      variant={onHold ? 'module' : 'secondary'}
+      color={onHold ? 'module' : 'neutral'}
+      variant={onHold ? 'solid' : 'outline'}
       size="sm"
       onClick={() => void toggle()}
       disabled={pending}

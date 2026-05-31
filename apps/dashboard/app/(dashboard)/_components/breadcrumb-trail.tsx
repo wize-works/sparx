@@ -262,7 +262,8 @@ function ModuleSplitControl({
           <DropdownMenuTrigger asChild>
             <Button
               variant="ghost"
-              size="icon-sm"
+              shape="square"
+              size="sm"
               className="ml-0.5"
               aria-label={`Switch module — current: ${manifest.label}`}
               style={{ color: 'var(--module-active-text)' }}

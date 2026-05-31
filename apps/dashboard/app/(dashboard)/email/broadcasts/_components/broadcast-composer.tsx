@@ -141,7 +141,7 @@ export function BroadcastComposer({ segments, templates }: ComposerProps) {
         </Stack>
 
         <Stack direction="row" gap={2}>
-          <Button type="submit" variant="module" loading={pending} disabled={pending}>
+          <Button type="submit" color="module" loading={pending} disabled={pending}>
             Create draft
           </Button>
         </Stack>

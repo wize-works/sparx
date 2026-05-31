@@ -223,14 +223,14 @@ export default async function DashboardHome() {
                   </CardHeader>
                   <CardContent>
                     <Stack direction="row" align="center" gap={2}>
-                      <Badge variant="module">Active</Badge>
+                      <Badge color="module">Active</Badge>
                       <Text size="xs" variant="muted">
                         {m.metric}
                       </Text>
                     </Stack>
                   </CardContent>
                   <CardFooter>
-                    <Button variant="module" size="sm" asChild>
+                    <Button color="module" size="sm" asChild>
                       <Link href={m.href}>Open</Link>
                     </Button>
                   </CardFooter>
@@ -272,7 +272,7 @@ export default async function DashboardHome() {
               title="No tasks for today"
               description="When you have things to do, they'll show up here."
               action={
-                <Button variant="secondary" size="sm" asChild>
+                <Button variant="outline" size="sm" asChild>
                   <Link href="/cms">Set up your first page</Link>
                 </Button>
               }
@@ -284,7 +284,7 @@ export default async function DashboardHome() {
           <Text size="xs" variant="muted">
             Want to see every <Code>@sparx/ui</Code> component?
           </Text>
-          <Button variant="link" size="xs" asChild>
+          <Button color="primary" variant="link" size="xs" asChild>
             <Link href="/showcase">Visit /showcase</Link>
           </Button>
         </Stack>

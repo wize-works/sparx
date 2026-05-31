@@ -60,7 +60,7 @@ export function WelcomeChecklist({ progress }: WelcomeChecklistProps) {
                 <Stack direction="row" align="center" gap={2}>
                   <Text weight="medium">{step.title}</Text>
                   {step.comingSoon && <Badge variant="outline">Coming soon</Badge>}
-                  {step.done && !step.comingSoon && <Badge variant="success">Done</Badge>}
+                  {step.done && !step.comingSoon && <Badge color="success">Done</Badge>}
                 </Stack>
                 <Text size="sm" variant="muted">
                   {step.description}

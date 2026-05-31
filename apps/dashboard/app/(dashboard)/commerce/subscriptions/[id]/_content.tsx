@@ -77,7 +77,7 @@ export async function SubscriptionDetailContent({ id }: Props) {
             <Heading level={1} className="font-mono text-2xl">
               {sub.id.slice(0, 8)}
             </Heading>
-            <Badge variant={statusVariant(sub.status)}>{sub.status}</Badge>
+            <Badge color={statusVariant(sub.status)}>{sub.status}</Badge>
           </Stack>
           <Text variant="muted">
             Every {sub.intervalCount} {sub.intervalUnit}

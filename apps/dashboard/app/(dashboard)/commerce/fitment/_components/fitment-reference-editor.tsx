@@ -126,7 +126,7 @@ function DomainRowComponent({ domain }: { domain: DomainRow }) {
             {domain.rangeUnit ? ` · narrow by ${domain.labels.range ?? domain.rangeUnit}` : ''}
           </Text>
         </Stack>
-        <Badge variant={domain.isGlobal ? 'outline' : 'module'} className="text-xs">
+        <Badge color={domain.isGlobal ? 'outline' : 'module'} className="text-xs">
           {domain.isGlobal ? 'global' : 'tenant'}
         </Badge>
         <Badge variant="outline" className="text-xs">
@@ -214,7 +214,7 @@ function CategoryRowComponent({
         <Text size="xs" variant="muted">
           /{category.slug}
         </Text>
-        <Badge variant={category.isGlobal ? 'outline' : 'module'} className="text-xs">
+        <Badge color={category.isGlobal ? 'outline' : 'module'} className="text-xs">
           {category.isGlobal ? 'global' : 'tenant'}
         </Badge>
         {hasL2 && (
@@ -305,7 +305,7 @@ function ItemRowComponent({
         <Text size="xs" variant="muted">
           /{item.slug}
         </Text>
-        <Badge variant={item.isGlobal ? 'outline' : 'module'} className="text-xs">
+        <Badge color={item.isGlobal ? 'outline' : 'module'} className="text-xs">
           {item.isGlobal ? 'global' : 'tenant'}
         </Badge>
         {hasL3 && (
@@ -336,7 +336,7 @@ function ItemRowComponent({
                   {tag}
                 </Badge>
               ))}
-              <Badge variant={v.isGlobal ? 'outline' : 'module'} className="text-xs">
+              <Badge color={v.isGlobal ? 'outline' : 'module'} className="text-xs">
                 {v.isGlobal ? 'global' : 'tenant'}
               </Badge>
             </Stack>
@@ -398,7 +398,8 @@ function NewCategoryForm({
         </Text>
         <Button
           type="button"
-          variant={open ? 'ghost' : 'secondary'}
+          color="neutral"
+          variant={open ? 'ghost' : 'outline'}
           size="sm"
           onClick={() => setOpen((v) => !v)}
           leftIcon={<Plus className="h-3.5 w-3.5" />}
@@ -417,7 +418,7 @@ function NewCategoryForm({
               <Label htmlFor={`cat-slug-${domainId}`}>Slug</Label>
               <Input id={`cat-slug-${domainId}`} name="slug" required />
             </Stack>
-            <Button type="submit" variant="module" disabled={pending} loading={pending}>
+            <Button type="submit" color="module" disabled={pending} loading={pending}>
               Add
             </Button>
           </Stack>
@@ -482,7 +483,7 @@ function NewItemForm({
           <Label htmlFor={`item-slug-${categoryId}`}>Slug</Label>
           <Input id={`item-slug-${categoryId}`} name="slug" required size="sm" />
         </Stack>
-        <Button type="submit" variant="secondary" size="sm" disabled={pending} loading={pending}>
+        <Button type="submit" variant="outline" size="sm" disabled={pending} loading={pending}>
           Add {label.toLowerCase()}
         </Button>
       </Stack>
@@ -545,7 +546,7 @@ function NewVariantForm({
           <Label htmlFor={`var-slug-${itemId}`}>Slug</Label>
           <Input id={`var-slug-${itemId}`} name="slug" required size="sm" />
         </Stack>
-        <Button type="submit" variant="secondary" size="sm" disabled={pending} loading={pending}>
+        <Button type="submit" variant="outline" size="sm" disabled={pending} loading={pending}>
           Add {label.toLowerCase()}
         </Button>
       </Stack>

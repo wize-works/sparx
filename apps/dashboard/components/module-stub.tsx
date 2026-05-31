@@ -35,7 +35,7 @@ export function ModuleStub({ icon, title, tagline, description, features }: Modu
               {icon}
             </span>
             <Heading level={1}>{title}</Heading>
-            <Badge variant="module">Module preview</Badge>
+            <Badge color="module">Module preview</Badge>
           </Stack>
           <Text variant="muted">{tagline}</Text>
         </Stack>

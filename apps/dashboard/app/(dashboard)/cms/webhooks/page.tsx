@@ -53,7 +53,7 @@ export default function WebhooksPage() {
               title="Webhook editor is on the roadmap"
               description="Until the UI ships, configure subscriptions via the API: POST /v1/webhooks/subscriptions with a target URL, the events you care about, and an HMAC signing secret. Deliveries are logged with retry state."
               action={
-                <Button asChild variant="module-outline">
+                <Button asChild color="module" variant="outline">
                   <a href="https://docs.sparx.works/api/webhooks" target="_blank" rel="noreferrer">
                     Read the webhook API docs
                   </a>

@@ -30,7 +30,7 @@ import type { SendingDomainRow } from '../../_lib/types';
 
 const STATE_BADGE: Record<
   SendingDomainRow['state'],
-  { variant: BadgeProps['variant']; label: string }
+  { variant: BadgeProps['color']; label: string }
 > = {
   verified: { variant: 'success', label: 'Verified' },
   pending: { variant: 'outline', label: 'Pending DNS' },
@@ -87,14 +87,14 @@ export function DomainCard({ domain }: { domain: SendingDomainRow }) {
         <Stack direction="row" align="center" justify="between" gap={3} className="flex-wrap">
           <Stack direction="row" align="center" gap={2}>
             <Code>{domain.domain}</Code>
-            <Badge variant={badge.variant}>{badge.label}</Badge>
-            {domain.isDefault ? <Badge variant="module">Default</Badge> : null}
+            <Badge color={badge.variant}>{badge.label}</Badge>
+            {domain.isDefault ? <Badge color="module">Default</Badge> : null}
             <Badge variant="outline">{domain.region.toUpperCase()}</Badge>
           </Stack>
           <Stack direction="row" align="center" gap={2}>
             {domain.state !== 'verified' ? (
               <Button
-                variant="module"
+                color="module"
                 size="sm"
                 onClick={verify}
                 loading={pending}
@@ -105,7 +105,13 @@ export function DomainCard({ domain }: { domain: SendingDomainRow }) {
               </Button>
             ) : null}
             {domain.state === 'verified' && !domain.isDefault ? (
-              <Button variant="module-outline" size="sm" onClick={makeDefault} disabled={pending}>
+              <Button
+                color="module"
+                variant="outline"
+                size="sm"
+                onClick={makeDefault}
+                disabled={pending}
+              >
                 <Star className="h-3.5 w-3.5" />
                 Make default
               </Button>

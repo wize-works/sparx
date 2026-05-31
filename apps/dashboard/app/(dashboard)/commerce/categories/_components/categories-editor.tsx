@@ -155,7 +155,7 @@ export function NewCategoryForm({ tree }: NewFormProps) {
           </Text>
         )}
         <Stack direction="row" justify="end">
-          <Button type="submit" variant="module" disabled={pending} loading={pending}>
+          <Button type="submit" color="module" disabled={pending} loading={pending}>
             Create category
           </Button>
         </Stack>
@@ -385,7 +385,7 @@ function TreeNode({ node, all }: NodeProps) {
               <Button type="button" variant="ghost" size="sm" onClick={() => setEditing(false)}>
                 Cancel
               </Button>
-              <Button type="submit" variant="module" size="sm" disabled={pending} loading={pending}>
+              <Button type="submit" color="module" size="sm" disabled={pending} loading={pending}>
                 Save
               </Button>
             </Stack>

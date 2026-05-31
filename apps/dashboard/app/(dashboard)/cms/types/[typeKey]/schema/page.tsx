@@ -60,7 +60,7 @@ export default async function EditTypeSchemaPage({ params }: PageParams) {
       <Stack gap={6} className="py-10">
         <CmsTabs current="types" />
         <Stack gap={2}>
-          <Button variant="link" size="sm" asChild>
+          <Button color="primary" variant="link" size="sm" asChild>
             <Link href="/cms/types">
               <ArrowLeft className="h-3.5 w-3.5" />
               Back to content types

@@ -50,7 +50,7 @@ export default function NewPage() {
       <Stack gap={6} className="py-10">
         <CmsTabs current="pages" />
         <Stack gap={2}>
-          <Button variant="link" size="sm" asChild>
+          <Button color="primary" variant="link" size="sm" asChild>
             <Link href="/cms">
               <ArrowLeft className="h-3.5 w-3.5" />
               Back to pages
@@ -106,7 +106,7 @@ export default function NewPage() {
               <Button type="button" variant="ghost" asChild>
                 <Link href="/cms">Cancel</Link>
               </Button>
-              <Button type="submit" variant="module" disabled={pending} loading={pending}>
+              <Button type="submit" color="module" disabled={pending} loading={pending}>
                 Create draft
               </Button>
             </CardFooter>

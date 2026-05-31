@@ -64,10 +64,10 @@ export default async function LotsPage() {
               <CircleAlert className="h-5 w-5" />
               <Heading level={1}>Lot batches</Heading>
               {expiringSoon.length > 0 && (
-                <Badge variant="warning">{expiringSoon.length} expiring within a year</Badge>
+                <Badge color="warning">{expiringSoon.length} expiring within a year</Badge>
               )}
               {activeRecalls.length > 0 && (
-                <Badge variant="danger">{activeRecalls.length} active recall</Badge>
+                <Badge color="danger">{activeRecalls.length} active recall</Badge>
               )}
             </Stack>
             <Text variant="muted">
@@ -183,7 +183,7 @@ export default async function LotsPage() {
                               none
                             </Text>
                           ) : (
-                            <Badge variant="warning">{l.hazmatClass}</Badge>
+                            <Badge color="warning">{l.hazmatClass}</Badge>
                           )}
                         </TableCell>
                         <TableCell>

@@ -80,7 +80,8 @@ export function PreviewButton({
     <Stack gap={1}>
       <Button
         type="button"
-        variant={recentlyCopied ? 'module-outline' : 'ghost'}
+        color={recentlyCopied ? 'module' : 'neutral'}
+        variant={recentlyCopied ? 'outline' : 'ghost'}
         size="sm"
         leftIcon={
           recentlyCopied ? <Check className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />

@@ -71,7 +71,7 @@ export default async function DiscountsPage() {
             <Stack direction="row" align="center" gap={2}>
               <Tag className="h-5 w-5" />
               <Heading level={1}>Discounts</Heading>
-              <Badge variant="module">
+              <Badge color="module">
                 {active.length} active · {draft.length} draft
               </Badge>
             </Stack>
@@ -155,7 +155,7 @@ export default async function DiscountsPage() {
                         {d.totalUsageLimit !== null ? ` / ${d.totalUsageLimit}` : ''}
                       </TableCell>
                       <TableCell>
-                        <Badge variant={STATUS_VARIANT[d.status] ?? 'outline'}>{d.status}</Badge>
+                        <Badge color={STATUS_VARIANT[d.status] ?? 'outline'}>{d.status}</Badge>
                       </TableCell>
                       <TableCell>
                         <DiscountStatusToggle discountId={d.id} status={d.status} />

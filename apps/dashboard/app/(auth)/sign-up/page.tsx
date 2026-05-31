@@ -100,7 +100,7 @@ export default function SignUpPage() {
           <Text size="sm" variant="muted">
             Already have an account?
           </Text>
-          <Button variant="link" size="sm" asChild>
+          <Button color="primary" variant="link" size="sm" asChild>
             <Link href="/sign-in">Sign in</Link>
           </Button>
         </Stack>

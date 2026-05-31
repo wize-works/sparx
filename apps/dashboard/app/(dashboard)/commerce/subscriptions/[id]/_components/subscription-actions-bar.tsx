@@ -99,7 +99,7 @@ export function SubscriptionActionsBar({
           Pause
         </Button>
       ) : status === 'paused' ? (
-        <Button variant="secondary" disabled={pending} onClick={onResume}>
+        <Button variant="outline" disabled={pending} onClick={onResume}>
           <Play className="h-4 w-4" />
           Resume
         </Button>

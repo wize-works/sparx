@@ -57,12 +57,7 @@ export function PriceListStatusBar({
         </Button>
       )}
       {status === 'active' && (
-        <Button
-          variant="secondary"
-          size="sm"
-          disabled={pending}
-          onClick={() => transition('draft')}
-        >
+        <Button variant="outline" size="sm" disabled={pending} onClick={() => transition('draft')}>
           Move to draft
         </Button>
       )}
@@ -72,7 +67,7 @@ export function PriceListStatusBar({
             <Button variant="ghost" size="sm" onClick={() => setArmed(false)} disabled={pending}>
               Cancel
             </Button>
-            <Button variant="danger" size="sm" onClick={archive} disabled={pending}>
+            <Button color="danger" size="sm" onClick={archive} disabled={pending}>
               {pending ? 'Archiving…' : 'Confirm archive'}
             </Button>
           </>

@@ -51,7 +51,7 @@ export function BroadcastActions({ broadcast }: { broadcast: BroadcastRow }) {
     return (
       <Stack gap={4}>
         <Stack direction="row" align="center" gap={2}>
-          <Button variant="module" onClick={send} loading={pending} disabled={pending}>
+          <Button color="module" onClick={send} loading={pending} disabled={pending}>
             <Send className="h-4 w-4" />
             Send now
           </Button>

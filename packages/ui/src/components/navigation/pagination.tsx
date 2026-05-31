@@ -54,8 +54,10 @@ export const Pagination = React.forwardRef<HTMLElement, PaginationProps>(
         {...props}
       >
         <Button
+          color="neutral"
           variant="ghost"
-          size="icon-sm"
+          size="sm"
+          shape="square"
           aria-label="Previous page"
           disabled={page <= 1}
           onClick={() => go(page - 1)}
@@ -75,8 +77,10 @@ export const Pagination = React.forwardRef<HTMLElement, PaginationProps>(
           ) : (
             <Button
               key={it}
-              variant={it === page ? 'module' : 'ghost'}
-              size="icon-sm"
+              color={it === page ? 'module' : 'neutral'}
+              variant={it === page ? 'solid' : 'ghost'}
+              size="sm"
+              shape="square"
               aria-current={it === page ? 'page' : undefined}
               aria-label={`Page ${it}`}
               onClick={() => go(it)}
@@ -87,8 +91,10 @@ export const Pagination = React.forwardRef<HTMLElement, PaginationProps>(
         )}
 
         <Button
+          color="neutral"
           variant="ghost"
-          size="icon-sm"
+          size="sm"
+          shape="square"
           aria-label="Next page"
           disabled={page >= pageCount}
           onClick={() => go(page + 1)}

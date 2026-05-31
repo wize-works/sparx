@@ -177,7 +177,7 @@ export function NewOrderForm({ customers, preselectedCustomerId }: NewOrderFormP
             <Button variant="ghost" asChild>
               <Link href="/crm/orders">Cancel</Link>
             </Button>
-            <Button type="submit" variant="module" disabled={pending} loading={pending}>
+            <Button type="submit" color="module" disabled={pending} loading={pending}>
               Create order
             </Button>
           </CardFooter>

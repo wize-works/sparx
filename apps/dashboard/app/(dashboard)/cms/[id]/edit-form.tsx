@@ -287,7 +287,7 @@ export function EditPageForm({
             <Stack direction="row" align="center" justify="between">
               <Stack direction="row" align="center" gap={2}>
                 <Heading level={3}>Status</Heading>
-                <Badge variant={page.status === 'published' ? 'success' : 'outline'}>
+                <Badge color={page.status === 'published' ? 'success' : 'outline'}>
                   {page.status}
                 </Badge>
                 <AutosaveIndicator
@@ -338,7 +338,8 @@ export function EditPageForm({
                 )}
                 <Button
                   type="button"
-                  variant={page.status === 'published' ? 'secondary' : 'module'}
+                  color={page.status === 'published' ? 'neutral' : 'module'}
+                  variant={page.status === 'published' ? 'outline' : 'solid'}
                   size="sm"
                   onClick={onTogglePublish}
                   disabled={pending}
@@ -445,7 +446,7 @@ export function EditPageForm({
             >
               Delete
             </Button>
-            <Button type="submit" variant="module" disabled={pending} loading={pending}>
+            <Button type="submit" color="module" disabled={pending} loading={pending}>
               Save changes
             </Button>
           </CardFooter>
@@ -487,7 +488,7 @@ export function EditPageForm({
             </Button>
             <Button
               type="button"
-              variant="module"
+              color="module"
               onClick={confirmSchedule}
               disabled={pending || !scheduleAt}
               loading={pending}
@@ -567,7 +568,7 @@ function AutosaveIndicator({
         <Button type="button" variant="ghost" size="xs" onClick={onDiscardMine}>
           Discard mine
         </Button>
-        <Button type="button" variant="module-outline" size="xs" onClick={onKeepMine}>
+        <Button type="button" color="module" variant="outline" size="xs" onClick={onKeepMine}>
           Keep mine (force save)
         </Button>
       </Stack>

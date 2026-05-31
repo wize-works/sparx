@@ -67,7 +67,8 @@ export function RecordActivityForm({ customerId, dealId }: Props) {
               key={k}
               type="button"
               size="sm"
-              variant={k === kind ? 'module' : 'secondary'}
+              color={k === kind ? 'module' : 'neutral'}
+              variant={k === kind ? 'solid' : 'outline'}
               onClick={() => setKind(k)}
             >
               {KIND_LABELS[k]}
@@ -100,7 +101,7 @@ export function RecordActivityForm({ customerId, dealId }: Props) {
           </Text>
         )}
 
-        <Button type="submit" variant="module" disabled={pending}>
+        <Button type="submit" color="module" disabled={pending}>
           {pending ? 'Saving…' : 'Add activity'}
         </Button>
       </Stack>

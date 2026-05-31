@@ -81,7 +81,7 @@ export function ModuleToggleRow({
         <Stack direction="row" align="center" gap={2}>
           <Text weight="medium">{label}</Text>
           {enabled ? (
-            <Badge variant="success">Active</Badge>
+            <Badge color="success">Active</Badge>
           ) : (
             <Badge variant="outline">Inactive</Badge>
           )}
@@ -97,7 +97,8 @@ export function ModuleToggleRow({
       </Stack>
       <Button
         type="button"
-        variant={enabled ? 'secondary' : 'module'}
+        color={enabled ? 'neutral' : 'module'}
+        variant={enabled ? 'outline' : 'solid'}
         size="sm"
         onClick={onToggle}
         disabled={disabled === true || pending}

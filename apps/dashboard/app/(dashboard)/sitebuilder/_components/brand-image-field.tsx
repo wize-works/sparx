@@ -96,7 +96,7 @@ export function BrandImageField({
             <Button
               type="button"
               size="sm"
-              variant="secondary"
+              variant="outline"
               leftIcon={<Upload className="h-3.5 w-3.5" />}
               onClick={() => fileRef.current?.click()}
               disabled={busy}

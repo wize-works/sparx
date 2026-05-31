@@ -54,7 +54,8 @@ export function CustomerFiltersBar({ currentType, currentTag, currentQuery, curr
               key={opt.value || 'all'}
               type="button"
               size="sm"
-              variant={active ? 'module' : 'secondary'}
+              color={active ? 'module' : 'neutral'}
+              variant={active ? 'solid' : 'outline'}
               onClick={() => setParam('type', opt.value || null)}
               disabled={pending}
             >
@@ -80,7 +81,7 @@ export function CustomerFiltersBar({ currentType, currentTag, currentQuery, curr
             defaultValue={currentQuery ?? ''}
             className="w-72"
           />
-          <Button type="submit" size="sm" variant="secondary" disabled={pending}>
+          <Button type="submit" size="sm" variant="outline" disabled={pending}>
             Search
           </Button>
         </form>
@@ -100,7 +101,7 @@ export function CustomerFiltersBar({ currentType, currentTag, currentQuery, curr
             defaultValue={currentTag ?? ''}
             className="w-32"
           />
-          <Button type="submit" size="sm" variant="secondary" disabled={pending}>
+          <Button type="submit" size="sm" variant="outline" disabled={pending}>
             Filter
           </Button>
         </form>

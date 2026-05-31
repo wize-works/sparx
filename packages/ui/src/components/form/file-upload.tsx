@@ -154,7 +154,8 @@ export const FileUpload = React.forwardRef<HTMLDivElement, FileUploadProps>(
                 <Button
                   type="button"
                   variant="ghost"
-                  size="icon-sm"
+                  size="sm"
+                  shape="square"
                   aria-label={`Remove ${file.name}`}
                   onClick={() => removeFile(idx)}
                 >

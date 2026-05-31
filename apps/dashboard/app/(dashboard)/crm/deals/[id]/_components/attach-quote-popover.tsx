@@ -62,7 +62,7 @@ export function AttachQuotePopover({ dealId, candidates, attachedIds }: AttachQu
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button variant="secondary" size="sm" leftIcon={<Plus className="h-3.5 w-3.5" />}>
+        <Button variant="outline" size="sm" leftIcon={<Plus className="h-3.5 w-3.5" />}>
           Attach quote
         </Button>
       </PopoverTrigger>
@@ -131,7 +131,8 @@ export function DetachQuoteButton({ dealId, quoteId }: { dealId: string; quoteId
     <Button
       type="button"
       variant="ghost"
-      size="icon-sm"
+      shape="square"
+      size="sm"
       onClick={detach}
       disabled={pending}
       aria-label="Detach quote"

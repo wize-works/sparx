@@ -51,7 +51,7 @@ export function TemplateStatusBar({ templateId, status }: { templateId: string; 
     <Stack direction="row" gap={2} align="center">
       {error && <span className="text-xs text-[var(--color-danger)]">{error}</span>}
       {status !== 'active' && (
-        <Button variant="secondary" disabled={pending} onClick={() => updateStatus('active')}>
+        <Button variant="outline" disabled={pending} onClick={() => updateStatus('active')}>
           Activate
         </Button>
       )}

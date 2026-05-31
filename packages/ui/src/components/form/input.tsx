@@ -19,6 +19,7 @@ const inputVariants = cva(
       variant: {
         default: 'border-[var(--color-border-default)] hover:border-[var(--color-border-strong)]',
         error: 'border-[var(--color-danger)] focus-visible:ring-[var(--color-danger)]',
+        success: 'border-[var(--color-success)] focus-visible:ring-[var(--color-success)]',
       },
       size: {
         sm: 'h-8 px-2.5 py-1.5 text-xs',

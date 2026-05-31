@@ -82,14 +82,14 @@ export default async function TypeListPage({ params }: PageProps) {
             <Stack direction="row" align="center" gap={2}>
               <FileText className="h-5 w-5" />
               <Heading level={1}>{type.plural_name}</Heading>
-              <Badge variant={type.is_built_in ? 'outline' : 'default'}>
+              <Badge color={type.is_built_in ? 'outline' : 'default'}>
                 {type.is_built_in ? 'built-in' : 'custom'}
               </Badge>
             </Stack>
             {type.description && <Text variant="muted">{type.description}</Text>}
           </Stack>
           {(!type.is_singleton || entries.length === 0) && (
-            <Button asChild variant="module" leftIcon={<Plus className="h-4 w-4" />}>
+            <Button asChild color="module" leftIcon={<Plus className="h-4 w-4" />}>
               <Link href={`/cms/types/${typeKey}/new`}>New {type.name.toLowerCase()}</Link>
             </Button>
           )}
@@ -102,7 +102,7 @@ export default async function TypeListPage({ params }: PageProps) {
               title={`No ${type.plural_name.toLowerCase()} yet`}
               description={`Create your first ${type.name.toLowerCase()} to get started.`}
               action={
-                <Button asChild variant="module">
+                <Button asChild color="module">
                   <Link href={`/cms/types/${typeKey}/new`}>Create a {type.name.toLowerCase()}</Link>
                 </Button>
               }
@@ -118,7 +118,7 @@ export default async function TypeListPage({ params }: PageProps) {
                 </CardHeader>
                 <CardContent>
                   <Stack direction="row" align="center" gap={2}>
-                    <Badge variant={e.status === 'published' ? 'success' : 'outline'}>
+                    <Badge color={e.status === 'published' ? 'success' : 'outline'}>
                       {e.status}
                     </Badge>
                     <Text size="xs" variant="muted">
@@ -127,7 +127,7 @@ export default async function TypeListPage({ params }: PageProps) {
                   </Stack>
                 </CardContent>
                 <CardFooter>
-                  <Button variant="module-outline" size="sm" asChild>
+                  <Button color="module" variant="outline" size="sm" asChild>
                     <Link href={`/cms/types/${typeKey}/${e.id}`}>Edit</Link>
                   </Button>
                 </CardFooter>

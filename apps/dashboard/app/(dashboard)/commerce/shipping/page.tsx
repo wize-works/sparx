@@ -69,7 +69,7 @@ export default async function ShippingPage() {
           <Stack direction="row" align="center" gap={2}>
             <Truck className="h-5 w-5" />
             <Heading level={1}>Shipping</Heading>
-            <Badge variant="module">
+            <Badge color="module">
               {zones.length} zone{zones.length === 1 ? '' : 's'} · {profiles.length} profile
               {profiles.length === 1 ? '' : 's'}
             </Badge>
@@ -235,7 +235,7 @@ export default async function ShippingPage() {
                         </Stack>
                       </TableCell>
                       <TableCell>
-                        {p.requiresFreight ? <Badge variant="warning">freight</Badge> : '—'}
+                        {p.requiresFreight ? <Badge color="warning">freight</Badge> : '—'}
                       </TableCell>
                       <TableCell>
                         {p.requiresSignature ? <Badge variant="outline">required</Badge> : '—'}

@@ -126,7 +126,7 @@ export function StepBusiness({
 
       <Stack direction="row" justify="end">
         <Button
-          variant="module"
+          color="module"
           onClick={onContinue}
           disabled={pending || !name.trim()}
           loading={pending}

@@ -4,6 +4,7 @@ import * as React from 'react';
 import * as AlertDialogPrimitive from '@radix-ui/react-alert-dialog';
 import { cn } from '../../utils/cn';
 import { buttonVariants } from '../primitives/button';
+import { colorClass } from '../_recipes/variants';
 
 // AlertDialog is for destructive confirms — no close button, no outside-click dismiss.
 // Always pair an explicit Cancel + Action via AlertDialogCancel / AlertDialogAction.
@@ -102,7 +103,11 @@ export const AlertDialogAction = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <AlertDialogPrimitive.Action
     ref={ref}
-    className={cn(buttonVariants({ variant: 'danger', size: 'md' }), className)}
+    className={cn(
+      colorClass('danger'),
+      buttonVariants({ variant: 'solid', size: 'md' }),
+      className
+    )}
     {...props}
   />
 ));
@@ -114,7 +119,11 @@ export const AlertDialogCancel = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <AlertDialogPrimitive.Cancel
     ref={ref}
-    className={cn(buttonVariants({ variant: 'secondary', size: 'md' }), className)}
+    className={cn(
+      colorClass('neutral'),
+      buttonVariants({ variant: 'outline', size: 'md' }),
+      className
+    )}
     {...props}
   />
 ));

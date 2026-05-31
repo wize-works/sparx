@@ -88,7 +88,7 @@ export default function ForgotPasswordPage() {
         )}
       </CardContent>
       <CardFooter>
-        <Button variant="link" size="sm" asChild>
+        <Button color="primary" variant="link" size="sm" asChild>
           <Link href="/sign-in">Back to sign in</Link>
         </Button>
       </CardFooter>

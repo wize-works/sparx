@@ -120,7 +120,7 @@ export default async function QaPage({
           <Stack direction="row" align="center" gap={2}>
             <HelpCircle className="h-5 w-5" />
             <Heading level={1}>Questions &amp; answers</Heading>
-            <Badge variant="module">{rows.length} shown</Badge>
+            <Badge color="module">{rows.length} shown</Badge>
           </Stack>
           <Text variant="muted">
             Customer questions are moderated before they reach the storefront. Answering with the
@@ -239,5 +239,5 @@ function FilterLink({
 function StatusBadge({ status }: { status: string }) {
   const variant: 'success' | 'outline' | 'danger' =
     status === 'published' ? 'success' : status === 'rejected' ? 'danger' : 'outline';
-  return <Badge variant={variant}>{status}</Badge>;
+  return <Badge color={variant}>{status}</Badge>;
 }

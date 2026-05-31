@@ -91,7 +91,7 @@ export function StepTheme({ nav }: { nav: StepNav }) {
                 <div className="flex items-center justify-between gap-2">
                   <span className="font-semibold text-[var(--color-text-primary)]">{t.name}</span>
                   {t.key === RECOMMENDED ? (
-                    <Badge variant="secondary">Recommended</Badge>
+                    <Badge variant="outline">Recommended</Badge>
                   ) : isSelected ? (
                     <Check className="h-4 w-4 text-[var(--module-active)]" />
                   ) : null}
@@ -116,7 +116,7 @@ export function StepTheme({ nav }: { nav: StepNav }) {
           Back
         </Button>
         <Button
-          variant="module"
+          color="module"
           onClick={onContinue}
           disabled={pending || !selected || themes === null}
           loading={pending}

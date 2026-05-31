@@ -76,7 +76,7 @@ export async function MediaAssetDetailContent({ id }: Props) {
       <Stack gap={2}>
         <Heading level={1}>{asset.original_filename}</Heading>
         <Stack direction="row" gap={2} align="center">
-          <Badge variant={asset.status === 'ready' ? 'success' : 'outline'}>{asset.status}</Badge>
+          <Badge color={asset.status === 'ready' ? 'success' : 'outline'}>{asset.status}</Badge>
           <Text size="sm" variant="muted">
             {asset.width && asset.height && `${asset.width}×${asset.height} · `}
             {asset.mime_type}

@@ -75,8 +75,8 @@ export async function CmsPageDetailContent({ id }: CmsPageDetailContentProps) {
       <Stack gap={2}>
         <Stack direction="row" align="center" gap={2}>
           <Heading level={1}>{editable.title || 'Untitled page'}</Heading>
-          <Badge variant="module">page</Badge>
-          <Badge variant={editable.status === 'published' ? 'success' : 'outline'}>
+          <Badge color="module">page</Badge>
+          <Badge color={editable.status === 'published' ? 'success' : 'outline'}>
             {editable.status}
           </Badge>
         </Stack>

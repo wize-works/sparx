@@ -63,7 +63,7 @@ export default async function SegmentsPage({ searchParams }: PageProps) {
             <Stack direction="row" align="center" gap={2}>
               <Layers className="h-5 w-5" />
               <Heading level={1}>Segments</Heading>
-              <Badge variant="module">
+              <Badge color="module">
                 {segments.length} segment{segments.length === 1 ? '' : 's'}
               </Badge>
             </Stack>
@@ -79,7 +79,7 @@ export default async function SegmentsPage({ searchParams }: PageProps) {
               </Link>
             </Button>
             <RecomputeButton />
-            <Button asChild variant="module" leftIcon={<Plus className="h-4 w-4" />}>
+            <Button asChild color="module" leftIcon={<Plus className="h-4 w-4" />}>
               <Link href="/crm/segments/new">New segment</Link>
             </Button>
           </Stack>
@@ -92,7 +92,7 @@ export default async function SegmentsPage({ searchParams }: PageProps) {
               title="No segments yet"
               description="Built-in segments like High Value and At Risk are seeded automatically — if you see this, the seed didn't run. Create one to get started."
               action={
-                <Button asChild variant="module">
+                <Button asChild color="module">
                   <Link href="/crm/segments/new">Create a segment</Link>
                 </Button>
               }
@@ -120,7 +120,7 @@ export default async function SegmentsPage({ searchParams }: PageProps) {
                           </Badge>
                         )}
                         {s.archivedAt && (
-                          <Badge variant="warning" className="text-xs">
+                          <Badge color="warning" className="text-xs">
                             <Archive className="h-3 w-3" /> Archived
                           </Badge>
                         )}

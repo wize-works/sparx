@@ -76,13 +76,13 @@ export function ModerateActions({ reviewId, status }: { reviewId: string; status
     <Stack gap={1} align="end">
       <Stack direction="row" gap={2}>
         {status !== 'approved' && (
-          <Button variant="primary" disabled={pending} onClick={() => moderate('approved')}>
+          <Button disabled={pending} onClick={() => moderate('approved')}>
             <Check className="h-4 w-4" />
             Approve
           </Button>
         )}
         {status !== 'flagged' && (
-          <Button variant="secondary" disabled={pending} onClick={() => moderate('flagged')}>
+          <Button variant="outline" disabled={pending} onClick={() => moderate('flagged')}>
             <Flag className="h-4 w-4" />
             Flag
           </Button>

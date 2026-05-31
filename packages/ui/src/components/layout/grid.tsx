@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { cn } from '../../utils/cn';
 
-type Cols = 1 | 2 | 3 | 4 | 5 | 6 | 8 | 12;
+type Cols = 1 | 2 | 3 | 4 | 5 | 6 | 8 | 9 | 12;
 type Gap = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 8 | 10 | 12;
 
 export interface GridProps extends React.HTMLAttributes<HTMLDivElement> {
@@ -21,6 +21,7 @@ const COLS: Record<Cols, string> = {
   5: 'grid-cols-5',
   6: 'grid-cols-6',
   8: 'grid-cols-8',
+  9: 'grid-cols-9',
   12: 'grid-cols-12',
 };
 
@@ -32,6 +33,7 @@ const MD_COLS: Record<Cols, string> = {
   5: 'md:grid-cols-5',
   6: 'md:grid-cols-6',
   8: 'md:grid-cols-8',
+  9: 'md:grid-cols-9',
   12: 'md:grid-cols-12',
 };
 
@@ -43,6 +45,7 @@ const LG_COLS: Record<Cols, string> = {
   5: 'lg:grid-cols-5',
   6: 'lg:grid-cols-6',
   8: 'lg:grid-cols-8',
+  9: 'lg:grid-cols-9',
   12: 'lg:grid-cols-12',
 };
 

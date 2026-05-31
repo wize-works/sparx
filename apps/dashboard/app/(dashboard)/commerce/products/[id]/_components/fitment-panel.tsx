@@ -508,7 +508,7 @@ function NewFitmentForm({ productId, fitments, domains }: NewFormProps) {
         <Stack direction="row" justify="end">
           <Button
             type="submit"
-            variant="module"
+            color="module"
             disabled={pending}
             loading={pending}
             leftIcon={<Plus className="h-4 w-4" />}

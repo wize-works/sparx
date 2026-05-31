@@ -27,7 +27,7 @@ function pct(n: number, d: number): string {
   return `${Math.round((n / d) * 100)}%`;
 }
 
-const EVENT_BADGE: Record<string, BadgeProps['variant']> = {
+const EVENT_BADGE: Record<string, BadgeProps['color']> = {
   accepted: 'outline',
   delivered: 'success',
   opened: 'soft',
@@ -87,7 +87,7 @@ export function OverviewStats({ overview }: { overview: OverviewResult }) {
                 {recent.map((e, i) => (
                   <TableRow key={`${e.recipient}-${e.occurredAt}-${i}`}>
                     <TableCell>
-                      <Badge variant={EVENT_BADGE[e.type] ?? 'outline'}>{e.type}</Badge>
+                      <Badge color={EVENT_BADGE[e.type] ?? 'outline'}>{e.type}</Badge>
                     </TableCell>
                     <TableCell>{e.recipient}</TableCell>
                     <TableCell>{new Date(e.occurredAt).toLocaleString()}</TableCell>

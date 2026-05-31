@@ -17,8 +17,8 @@ import { CopyButton } from './copy-button';
 import type { DnsRecord } from '../../_lib/types';
 
 function validBadge(valid: string) {
-  if (valid === 'valid') return <Badge variant="success">valid</Badge>;
-  if (valid === 'invalid') return <Badge variant="danger">invalid</Badge>;
+  if (valid === 'valid') return <Badge color="success">valid</Badge>;
+  if (valid === 'invalid') return <Badge color="danger">invalid</Badge>;
   return <Badge variant="outline">unknown</Badge>;
 }
 

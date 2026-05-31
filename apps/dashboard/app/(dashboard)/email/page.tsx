@@ -87,7 +87,7 @@ export default async function EmailOverviewPage() {
           <Code>{provider}</Code>.
         </>
       }
-      actions={<Badge variant="module">Active</Badge>}
+      actions={<Badge color="module">Active</Badge>}
     >
       {overview ? <OverviewStats overview={overview} /> : null}
 
@@ -104,7 +104,7 @@ export default async function EmailOverviewPage() {
                 <CardDescription>{description}</CardDescription>
               </CardHeader>
               <CardContent>
-                <Button variant="module-outline" size="sm" asChild>
+                <Button color="module" variant="outline" size="sm" asChild>
                   <Link href={href}>Open {title.toLowerCase()}</Link>
                 </Button>
               </CardContent>

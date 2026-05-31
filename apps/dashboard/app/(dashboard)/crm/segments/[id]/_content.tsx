@@ -82,7 +82,7 @@ export async function SegmentDetailContent({ id }: Props) {
               </Badge>
             )}
             {segment.archivedAt && (
-              <Badge variant="warning">
+              <Badge color="warning">
                 <Archive className="h-3 w-3" /> Archived
               </Badge>
             )}

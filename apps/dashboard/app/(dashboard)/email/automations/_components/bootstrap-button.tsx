@@ -10,7 +10,7 @@ export function BootstrapButton() {
   const [pending, startTransition] = useTransition();
   return (
     <Button
-      variant="module"
+      color="module"
       loading={pending}
       disabled={pending}
       onClick={() =>

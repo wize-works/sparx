@@ -55,7 +55,7 @@ export function ProductStatusBar({ productId, status, hasVariants }: Props) {
         {status === 'draft' && (
           <Button
             type="button"
-            variant="module"
+            color="module"
             disabled={pending}
             loading={pending}
             leftIcon={<Send className="h-4 w-4" />}
@@ -72,7 +72,7 @@ export function ProductStatusBar({ productId, status, hasVariants }: Props) {
         {status === 'active' && (
           <Button
             type="button"
-            variant="secondary"
+            variant="outline"
             disabled={pending}
             loading={pending}
             leftIcon={<Undo className="h-4 w-4" />}
@@ -84,7 +84,7 @@ export function ProductStatusBar({ productId, status, hasVariants }: Props) {
         {status === 'archived' ? (
           <Button
             type="button"
-            variant="secondary"
+            variant="outline"
             disabled={pending}
             loading={pending}
             leftIcon={<RotateCcw className="h-4 w-4" />}

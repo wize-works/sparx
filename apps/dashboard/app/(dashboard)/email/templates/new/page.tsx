@@ -17,7 +17,7 @@ export default function NewTemplatePage() {
   return (
     <Container size="lg">
       <Stack gap={6} className="py-10">
-        <Button variant="link" size="sm" asChild>
+        <Button color="primary" variant="link" size="sm" asChild>
           <Link href="/email/templates">
             <ArrowLeft className="h-3.5 w-3.5" />
             Templates

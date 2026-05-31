@@ -14,7 +14,7 @@ export default async function CustomerDetailPage({ params }: PageProps) {
   return (
     <Container size="xl">
       <Stack gap={6} className="py-10">
-        <Button variant="link" size="sm" asChild>
+        <Button color="primary" variant="link" size="sm" asChild>
           <Link href="/crm">
             <ArrowLeft className="h-3.5 w-3.5" />
             Back to CRM

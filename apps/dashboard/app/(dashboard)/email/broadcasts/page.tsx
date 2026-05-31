@@ -21,7 +21,7 @@ import type { BroadcastRow } from '../_lib/types';
 
 export const dynamic = 'force-dynamic';
 
-const STATUS_BADGE: Record<BroadcastRow['status'], BadgeProps['variant']> = {
+const STATUS_BADGE: Record<BroadcastRow['status'], BadgeProps['color']> = {
   draft: 'outline',
   scheduled: 'warning',
   sending: 'soft',
@@ -40,7 +40,7 @@ export default async function BroadcastsPage() {
       title="Broadcasts"
       description="Segment-targeted marketing campaigns."
       actions={
-        <Button variant="module" size="sm" asChild>
+        <Button color="module" size="sm" asChild>
           <Link href="/email/broadcasts/new">
             <Plus className="h-4 w-4" />
             New broadcast
@@ -61,7 +61,7 @@ export default async function BroadcastsPage() {
               <CardHeader>
                 <Stack direction="row" align="center" justify="between" gap={2}>
                   <CardTitle>{b.name}</CardTitle>
-                  <Badge variant={STATUS_BADGE[b.status]}>{b.status}</Badge>
+                  <Badge color={STATUS_BADGE[b.status]}>{b.status}</Badge>
                 </Stack>
                 <CardDescription>{b.subject}</CardDescription>
               </CardHeader>

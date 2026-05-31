@@ -454,7 +454,8 @@ function ReferenceFieldR({
           ))}
           <Button
             type="button"
-            variant="module-outline"
+            color="module"
+            variant="outline"
             size="sm"
             onClick={() => setOpen(true)}
             disabled={disabled}
@@ -569,7 +570,8 @@ function AssetFieldR({
         ))}
         <Button
           type="button"
-          variant="module-outline"
+          color="module"
+          variant="outline"
           size="sm"
           onClick={() => setOpen(true)}
           disabled={disabled}
@@ -709,7 +711,8 @@ function RepeaterFieldR({
         {canAdd && (
           <Button
             type="button"
-            variant="module-outline"
+            color="module"
+            variant="outline"
             size="sm"
             onClick={addItem}
             disabled={disabled}

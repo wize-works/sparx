@@ -154,7 +154,7 @@ export async function DealDetailContent({ id }: Props) {
             />
           )}
           {deal.closedAt && (
-            <Badge variant={stage?.stageType === 'won' ? 'success' : 'warning'}>
+            <Badge color={stage?.stageType === 'won' ? 'success' : 'warning'}>
               Closed {new Date(deal.closedAt).toLocaleDateString()}
             </Badge>
           )}

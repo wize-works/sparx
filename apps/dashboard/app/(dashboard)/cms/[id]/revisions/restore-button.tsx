@@ -52,7 +52,8 @@ export function RestoreButton({
     <>
       <Button
         size="sm"
-        variant="module-outline"
+        color="module"
+        variant="outline"
         leftIcon={<RotateCcw className="h-3.5 w-3.5" />}
         onClick={() => setOpen(true)}
         disabled={pending}

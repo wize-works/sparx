@@ -33,7 +33,7 @@ export default async function NewOrderPage({ searchParams }: PageProps) {
     <Container size="lg">
       <Stack gap={6} className="py-10">
         <Stack gap={2}>
-          <Button variant="link" size="sm" asChild>
+          <Button color="primary" variant="link" size="sm" asChild>
             <Link href="/crm/orders">
               <ArrowLeft className="h-3.5 w-3.5" /> Back to orders
             </Link>

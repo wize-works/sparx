@@ -92,7 +92,7 @@ export default async function PipelineDetailPage({ params, searchParams }: PageP
             <Stack direction="row" align="center" gap={2}>
               <Heading level={1}>{pipeline.name}</Heading>
               {pipeline.isDefault && <Badge variant="outline">Default</Badge>}
-              <Badge variant="module">
+              <Badge color="module">
                 {deals.length} open deal{deals.length === 1 ? '' : 's'}
               </Badge>
             </Stack>
@@ -121,7 +121,7 @@ export default async function PipelineDetailPage({ params, searchParams }: PageP
                 </TabsTrigger>
               </TabsList>
             </Tabs>
-            <Button asChild variant="module" leftIcon={<Plus className="h-4 w-4" />}>
+            <Button asChild color="module" leftIcon={<Plus className="h-4 w-4" />}>
               <Link href={`/crm/deals/new?pipelineId=${pipeline.id}`}>New deal</Link>
             </Button>
           </Stack>

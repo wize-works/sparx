@@ -22,10 +22,10 @@ describe('Tag', () => {
     expect(screen.queryByRole('button')).not.toBeInTheDocument();
   });
 
-  it('uses module-aware tokens for variant="module"', () => {
-    render(<Tag variant="module">cms</Tag>);
-    // The span itself carries the variant class
+  it('carries the module color class for color="module"', () => {
+    render(<Tag color="module">cms</Tag>);
+    // The span itself carries the color class
     const tag = screen.getByText('cms').parentElement!;
-    expect(tag.className).toMatch(/bg-\[var\(--module-active-tint\)\]/);
+    expect(tag.className).toMatch(/sx-c-module/);
   });
 });

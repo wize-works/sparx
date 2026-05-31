@@ -139,7 +139,7 @@ export function ContentEntryForm({
         <Stack direction="row" align="center" justify="end" gap={2}>
           <Button
             type="submit"
-            variant="module"
+            color="module"
             disabled={Boolean(disabled) || submitting}
             leftIcon={<Save className="h-4 w-4" />}
           >

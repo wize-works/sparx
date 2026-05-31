@@ -260,7 +260,7 @@ export function OptionsEditor({
         <Stack direction="row" gap={2}>
           <Button
             type="button"
-            variant="secondary"
+            variant="outline"
             onClick={addOption}
             leftIcon={<Plus className="h-4 w-4" />}
           >
@@ -278,7 +278,7 @@ export function OptionsEditor({
           <Button type="button" variant="ghost" onClick={onCancel}>
             Cancel
           </Button>
-          <Button type="submit" variant="module" disabled={pending} loading={pending}>
+          <Button type="submit" color="module" disabled={pending} loading={pending}>
             Save options
           </Button>
         </Stack>

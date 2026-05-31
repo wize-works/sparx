@@ -174,7 +174,7 @@ export function CustomTypeForm({ initialSchema }: { initialSchema: string }) {
             <Stack direction="row" align="center" gap={3}>
               <Button
                 type="submit"
-                variant="module"
+                color="module"
                 leftIcon={<Plus className="h-4 w-4" />}
                 disabled={pending}
                 loading={pending}

@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { cva, type VariantProps } from '../../utils/cva';
 import { cn } from '../../utils/cn';
+import { colorClass, type ColorKey } from '../_recipes/variants';
 
 const cardVariants = cva(
   'rounded-lg border border-[var(--color-border-default)] bg-[var(--color-bg-surface)]',
@@ -8,7 +9,9 @@ const cardVariants = cva(
     variants: {
       variant: {
         default: '',
-        module: 'rounded-t-none border-t-[3px] border-t-[var(--module-active)]',
+        // The top stripe reads --c-bg from the `accent` color (falls back to
+        // the active module color when no accent is set).
+        module: 'rounded-t-none border-t-[3px] border-t-[var(--c-bg,var(--module-active))]',
         elevated: 'shadow-md',
         ghost: 'border-transparent bg-transparent',
         subtle: 'border-transparent bg-[var(--color-bg-subtle)]',
@@ -25,11 +28,19 @@ const cardVariants = cva(
 );
 
 export interface CardProps
-  extends React.HTMLAttributes<HTMLDivElement>, VariantProps<typeof cardVariants> {}
+  extends Omit<React.HTMLAttributes<HTMLDivElement>, 'color'>, VariantProps<typeof cardVariants> {
+  /** Recolors the `module` variant's top stripe to any palette/custom color.
+   *  Defaults to the active module color. */
+  accent?: ColorKey | (string & {});
+}
 
 export const Card = React.forwardRef<HTMLDivElement, CardProps>(
-  ({ className, variant, padding, ...props }, ref) => (
-    <div ref={ref} className={cn(cardVariants({ variant, padding }), className)} {...props} />
+  ({ className, variant, padding, accent, ...props }, ref) => (
+    <div
+      ref={ref}
+      className={cn(accent && colorClass(accent), cardVariants({ variant, padding }), className)}
+      {...props}
+    />
   )
 );
 Card.displayName = 'Card';

@@ -228,7 +228,7 @@ export function StorefrontSettingsForm({
             </Text>
           )}
         </Stack>
-        <Button variant="primary" disabled={pending} onClick={onSave}>
+        <Button disabled={pending} onClick={onSave}>
           Save settings
         </Button>
       </Stack>

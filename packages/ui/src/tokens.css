@@ -277,3 +277,78 @@
   --c-hover: color-mix(in oklch, var(--module-active) 86%, var(--color-text-primary));
   --c-tint: var(--module-active-tint);
 }
+
+/* Named module colors — each per-module brand color is addressable directly as
+   a `color` slot (e.g. <Badge color="commerce">), independent of the active
+   ModuleProvider. Same derivation shape as the semantic palette. */
+.sx-c-storefront {
+  --c-bg: var(--module-storefront);
+  --c-fg: #ffffff;
+  --c-ink: color-mix(in oklch, var(--module-storefront) 60%, var(--color-text-primary));
+  --c-hover: color-mix(in oklch, var(--module-storefront) 86%, var(--color-text-primary));
+  --c-tint: color-mix(in oklch, var(--module-storefront) 14%, transparent);
+}
+.sx-c-commerce {
+  --c-bg: var(--module-commerce);
+  --c-fg: #ffffff;
+  --c-ink: color-mix(in oklch, var(--module-commerce) 56%, var(--color-text-primary));
+  --c-hover: color-mix(in oklch, var(--module-commerce) 86%, var(--color-text-primary));
+  --c-tint: color-mix(in oklch, var(--module-commerce) 14%, transparent);
+}
+.sx-c-cms {
+  --c-bg: var(--module-cms);
+  --c-fg: #ffffff;
+  --c-ink: color-mix(in oklch, var(--module-cms) 56%, var(--color-text-primary));
+  --c-hover: color-mix(in oklch, var(--module-cms) 86%, var(--color-text-primary));
+  --c-tint: color-mix(in oklch, var(--module-cms) 14%, transparent);
+}
+.sx-c-crm {
+  --c-bg: var(--module-crm);
+  --c-fg: #ffffff;
+  --c-ink: color-mix(in oklch, var(--module-crm) 56%, var(--color-text-primary));
+  --c-hover: color-mix(in oklch, var(--module-crm) 86%, var(--color-text-primary));
+  --c-tint: color-mix(in oklch, var(--module-crm) 14%, transparent);
+}
+.sx-c-email {
+  --c-bg: var(--module-email);
+  --c-fg: #ffffff;
+  --c-ink: color-mix(in oklch, var(--module-email) 58%, var(--color-text-primary));
+  --c-hover: color-mix(in oklch, var(--module-email) 86%, var(--color-text-primary));
+  --c-tint: color-mix(in oklch, var(--module-email) 14%, transparent);
+}
+.sx-c-b2b {
+  --c-bg: var(--module-b2b);
+  --c-fg: #ffffff;
+  --c-ink: color-mix(in oklch, var(--module-b2b) 60%, var(--color-text-primary));
+  --c-hover: color-mix(in oklch, var(--module-b2b) 86%, var(--color-text-primary));
+  --c-tint: color-mix(in oklch, var(--module-b2b) 14%, transparent);
+}
+.sx-c-ai {
+  --c-bg: var(--module-ai);
+  --c-fg: #ffffff;
+  --c-ink: color-mix(in oklch, var(--module-ai) 58%, var(--color-text-primary));
+  --c-hover: color-mix(in oklch, var(--module-ai) 86%, var(--color-text-primary));
+  --c-tint: color-mix(in oklch, var(--module-ai) 14%, transparent);
+}
+.sx-c-dropship {
+  --c-bg: var(--module-dropship);
+  --c-fg: #ffffff;
+  --c-ink: color-mix(in oklch, var(--module-dropship) 58%, var(--color-text-primary));
+  --c-hover: color-mix(in oklch, var(--module-dropship) 86%, var(--color-text-primary));
+  --c-tint: color-mix(in oklch, var(--module-dropship) 14%, transparent);
+}
+
+/* Indeterminate <Progress> — a sliding pill that loops when no value is set. */
+@keyframes sx-progress-indeterminate {
+  0% {
+    left: -40%;
+    width: 40%;
+  }
+  50% {
+    width: 55%;
+  }
+  100% {
+    left: 100%;
+    width: 40%;
+  }
+}

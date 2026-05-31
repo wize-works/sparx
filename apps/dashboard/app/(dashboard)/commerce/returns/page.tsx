@@ -88,7 +88,7 @@ export default async function ReturnsPage({
           <Stack direction="row" align="center" gap={2}>
             <Inbox className="h-5 w-5" />
             <Heading level={1}>Returns</Heading>
-            <Badge variant="module">{total} total</Badge>
+            <Badge color="module">{total} total</Badge>
           </Stack>
           <Text variant="muted">
             Customer- or staff-initiated returns. Approve, generate a label, receive, inspect each
@@ -220,7 +220,7 @@ function StatusBadge({ status }: { status: ReturnStatus }) {
     refunded: 'success',
     cancelled: 'outline',
   };
-  return <Badge variant={variant[status]}>{status}</Badge>;
+  return <Badge color={variant[status]}>{status}</Badge>;
 }
 
 function labelForStatus(s: ReturnStatus): string {

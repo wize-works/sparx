@@ -49,7 +49,7 @@ export default async function TaxPage() {
           <Stack direction="row" align="center" gap={2}>
             <Receipt className="h-5 w-5" />
             <Heading level={1}>Tax</Heading>
-            <Badge variant="module">
+            <Badge color="module">
               {activeZones.length} active zone{activeZones.length === 1 ? '' : 's'}
             </Badge>
           </Stack>
@@ -136,9 +136,9 @@ export default async function TaxPage() {
                       <TableCell>{z.rateCount}</TableCell>
                       <TableCell>
                         {z.isActive ? (
-                          <Badge variant="success">active</Badge>
+                          <Badge color="success">active</Badge>
                         ) : (
-                          <Badge variant="warning">inactive</Badge>
+                          <Badge color="warning">inactive</Badge>
                         )}
                       </TableCell>
                     </TableRow>

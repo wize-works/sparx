@@ -45,11 +45,11 @@ export function PublishBar({ isPublished, hasUnpublishedChanges }: PublishBarPro
     <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-[var(--color-border-default)] bg-[var(--color-bg-subtle)] px-4 py-3">
       <div className="flex items-center gap-2">
         {isPublished ? (
-          <Badge variant={hasUnpublishedChanges ? 'warning' : 'success'}>
+          <Badge color={hasUnpublishedChanges ? 'warning' : 'success'}>
             {hasUnpublishedChanges ? 'Unpublished changes' : 'Published'}
           </Badge>
         ) : (
-          <Badge variant="secondary">Draft — not published</Badge>
+          <Badge variant="outline">Draft — not published</Badge>
         )}
         {error ? <span className="text-sm text-[var(--color-text-danger)]">{error}</span> : null}
       </div>
@@ -63,7 +63,7 @@ export function PublishBar({ isPublished, hasUnpublishedChanges }: PublishBarPro
               onChange={(e) => setScheduleAt(e.target.value)}
               className="w-56"
             />
-            <Button variant="secondary" onClick={() => setScheduling(false)} disabled={pending}>
+            <Button variant="outline" onClick={() => setScheduling(false)} disabled={pending}>
               Cancel
             </Button>
             <Button onClick={doSchedule} disabled={pending || !scheduleAt}>
@@ -72,7 +72,7 @@ export function PublishBar({ isPublished, hasUnpublishedChanges }: PublishBarPro
           </>
         ) : (
           <>
-            <Button variant="secondary" onClick={() => setScheduling(true)} disabled={pending}>
+            <Button variant="outline" onClick={() => setScheduling(true)} disabled={pending}>
               Schedule…
             </Button>
             <Button onClick={doPublish} disabled={pending}>

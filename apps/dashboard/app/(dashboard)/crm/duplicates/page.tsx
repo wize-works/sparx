@@ -49,7 +49,7 @@ export default async function DuplicatesPage() {
         <Stack gap={2}>
           <Stack direction="row" align="center" gap={3}>
             <Heading level={1}>Find duplicates</Heading>
-            <Badge variant="module">
+            <Badge color="module">
               {groups.length} group{groups.length === 1 ? '' : 's'}
             </Badge>
           </Stack>

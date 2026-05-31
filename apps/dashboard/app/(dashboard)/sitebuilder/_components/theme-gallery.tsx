@@ -41,11 +41,12 @@ export function ThemeGallery({ themes, current }: { themes: ThemeDto[]; current:
             </div>
             <div className="flex items-center justify-between">
               <span className="font-semibold text-[var(--color-text-primary)]">{t.name}</span>
-              <Badge variant="secondary">{t.category}</Badge>
+              <Badge variant="outline">{t.category}</Badge>
             </div>
             <p className="min-h-[2.5rem] text-sm text-[var(--color-text-muted)]">{t.description}</p>
             <Button
-              variant={isCurrent ? 'secondary' : 'primary'}
+              color={isCurrent ? 'neutral' : 'primary'}
+              variant={isCurrent ? 'outline' : 'solid'}
               disabled={pending || isCurrent}
               onClick={() => apply(t.key)}
             >

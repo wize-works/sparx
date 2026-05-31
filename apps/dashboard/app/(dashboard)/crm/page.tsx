@@ -93,7 +93,7 @@ export default async function CrmPage({ searchParams }: PageProps) {
             <Stack direction="row" align="center" gap={2}>
               <Users className="h-5 w-5" />
               <Heading level={1}>CRM</Heading>
-              <Badge variant="module">
+              <Badge color="module">
                 {total} customer{total === 1 ? '' : 's'}
               </Badge>
             </Stack>
@@ -102,10 +102,10 @@ export default async function CrmPage({ searchParams }: PageProps) {
             </Text>
           </Stack>
           <Stack direction="row" gap={2}>
-            <Button asChild variant="secondary">
+            <Button asChild variant="outline">
               <Link href="/crm/duplicates">Find duplicates</Link>
             </Button>
-            <Button asChild variant="module" leftIcon={<Plus className="h-4 w-4" />}>
+            <Button asChild color="module" leftIcon={<Plus className="h-4 w-4" />}>
               <Link href="/crm/customers/new">New customer</Link>
             </Button>
           </Stack>
@@ -125,7 +125,7 @@ export default async function CrmPage({ searchParams }: PageProps) {
               title="No customers match"
               description="Adjust the filters above, or add a new customer manually."
               action={
-                <Button asChild variant="module">
+                <Button asChild color="module">
                   <Link href="/crm/customers/new">Add a customer</Link>
                 </Button>
               }
@@ -159,7 +159,7 @@ export default async function CrmPage({ searchParams }: PageProps) {
                           {customerDisplayName(c)}
                         </EntityRowLink>
                         {c.doNotContact && (
-                          <Badge variant="warning" className="ml-2">
+                          <Badge color="warning" className="ml-2">
                             DNC
                           </Badge>
                         )}

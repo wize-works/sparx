@@ -43,7 +43,7 @@ export function QuoteLifecycleActions({ quoteId, status }: QuoteLifecycleActions
     <Stack direction="row" gap={2} wrap>
       {status === 'draft' && (
         <Button
-          variant="module"
+          color="module"
           leftIcon={<Send className="h-4 w-4" />}
           disabled={isPending}
           onClick={() => run('submitted', () => submitQuoteAction({ quoteId }))}
@@ -54,7 +54,7 @@ export function QuoteLifecycleActions({ quoteId, status }: QuoteLifecycleActions
       {status === 'submitted' && (
         <>
           <Button
-            variant="module"
+            color="module"
             leftIcon={<Check className="h-4 w-4" />}
             disabled={isPending}
             onClick={() => run('accepted', () => acceptQuoteAction({ quoteId }))}
@@ -62,7 +62,7 @@ export function QuoteLifecycleActions({ quoteId, status }: QuoteLifecycleActions
             Accept
           </Button>
           <Button
-            variant="secondary"
+            variant="outline"
             leftIcon={<X className="h-4 w-4" />}
             disabled={isPending}
             onClick={() => run('declined', () => declineQuoteAction({ quoteId }))}
@@ -83,7 +83,7 @@ export function QuoteLifecycleActions({ quoteId, status }: QuoteLifecycleActions
       )}
       {status === 'accepted' && (
         <Button
-          variant="module"
+          color="module"
           rightIcon={<ArrowRight className="h-4 w-4" />}
           disabled={isPending}
           onClick={() =>

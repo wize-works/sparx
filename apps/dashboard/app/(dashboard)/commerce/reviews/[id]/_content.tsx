@@ -63,8 +63,8 @@ export async function ReviewDetailContent({ id }: Props) {
             <Heading level={1}>{review.title}</Heading>
           </Stack>
           <Stack direction="row" gap={2} align="center">
-            <Badge variant={statusVariant(review.status)}>{review.status}</Badge>
-            {review.verifiedPurchase && <Badge variant="success">verified purchase</Badge>}
+            <Badge color={statusVariant(review.status)}>{review.status}</Badge>
+            {review.verifiedPurchase && <Badge color="success">verified purchase</Badge>}
             <Text size="sm" variant="muted">
               {review.displayName ?? (review.customerId ? 'Customer' : 'Anonymous')} ·{' '}
               {new Date(review.createdAt).toLocaleString()}

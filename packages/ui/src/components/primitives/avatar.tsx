@@ -5,7 +5,7 @@ import { cva, type VariantProps } from '../../utils/cva';
 import { cn } from '../../utils/cn';
 
 const avatarVariants = cva(
-  'relative inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-[var(--color-bg-subtle)] text-[var(--color-text-secondary)] select-none',
+  'relative inline-flex shrink-0 items-center justify-center overflow-hidden bg-[var(--color-bg-subtle)] text-[var(--color-text-secondary)] select-none',
   {
     variants: {
       size: {
@@ -14,8 +14,13 @@ const avatarVariants = cva(
         lg: 'h-10 w-10 text-base',
         xl: 'h-12 w-12 text-lg',
       },
+      // `shape` aligned with Button's geometry vocabulary.
+      shape: {
+        circle: 'rounded-full',
+        square: 'rounded-md',
+      },
     },
-    defaultVariants: { size: 'md' },
+    defaultVariants: { size: 'md', shape: 'circle' },
   }
 );
 
@@ -34,13 +39,13 @@ function deriveInitials(name?: string): string {
 }
 
 export const Avatar = React.forwardRef<HTMLSpanElement, AvatarProps>(
-  ({ className, size, src, alt, initials, children, ...props }, ref) => {
+  ({ className, size, shape, src, alt, initials, children, ...props }, ref) => {
     const [errored, setErrored] = React.useState(false);
     const showImage = src && !errored;
     const fallback = initials ?? deriveInitials(alt);
 
     return (
-      <span ref={ref} className={cn(avatarVariants({ size }), className)} {...props}>
+      <span ref={ref} className={cn(avatarVariants({ size, shape }), className)} {...props}>
         {showImage ? (
           <img
             src={src}

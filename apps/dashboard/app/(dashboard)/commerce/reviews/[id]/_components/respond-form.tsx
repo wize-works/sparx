@@ -66,7 +66,7 @@ export function RespondForm({
             </Text>
           )}
         </Stack>
-        <Button variant="primary" disabled={pending} onClick={onSave}>
+        <Button disabled={pending} onClick={onSave}>
           {initial ? 'Update response' : 'Post response'}
         </Button>
       </Stack>

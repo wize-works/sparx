@@ -93,7 +93,7 @@ export async function QuoteDetailContent({ id }: Props) {
         <Stack direction="row" align="center" justify="between" wrap gap={3}>
           <Stack direction="row" align="center" gap={3} wrap>
             <Heading level={1}>{quote.quoteNumber}</Heading>
-            <Badge variant={STATUS_VARIANT[quote.status] ?? 'outline'}>{quote.status}</Badge>
+            <Badge color={STATUS_VARIANT[quote.status] ?? 'outline'}>{quote.status}</Badge>
             {customer && (
               <Link
                 href={`/crm/customers/${customer.id}`}

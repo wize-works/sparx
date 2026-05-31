@@ -68,7 +68,7 @@ export default async function SubscriptionsPage({
           <Stack direction="row" align="center" gap={2}>
             <Repeat2 className="h-5 w-5" />
             <Heading level={1}>Subscriptions</Heading>
-            <Badge variant="module">
+            <Badge color="module">
               {total} total · ${(mrrCents / 100).toFixed(2)} MRR
             </Badge>
           </Stack>
@@ -198,7 +198,7 @@ function StatusBadge({ status }: { status: SubscriptionStatus }) {
     past_due: 'warning',
     cancelled: 'outline',
   };
-  return <Badge variant={variant[status]}>{status}</Badge>;
+  return <Badge color={variant[status]}>{status}</Badge>;
 }
 
 function labelForStatus(s: SubscriptionStatus): string {

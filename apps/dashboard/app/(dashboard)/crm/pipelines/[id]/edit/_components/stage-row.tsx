@@ -95,7 +95,7 @@ export function SortableStageRow({ stage, pipelineId }: { stage: StageRow; pipel
         <option value="won">Won</option>
         <option value="lost">Lost</option>
       </select>
-      <Button variant="module" size="sm" disabled={!dirty || pending} onClick={save}>
+      <Button color="module" size="sm" disabled={!dirty || pending} onClick={save}>
         Save
       </Button>
     </Stack>

@@ -24,7 +24,7 @@ export function StepDone({ slug }: { slug: string }) {
           Your store is set up and your storefront is published. Here&apos;s where to go next.
         </Text>
         {storeUrl && (
-          <Button variant="link" asChild>
+          <Button color="primary" variant="link" asChild>
             <a href={storeUrl} target="_blank" rel="noreferrer">
               {slug}.{STORE_ZONE}
               <ExternalLink className="ml-1.5 h-3.5 w-3.5" />
@@ -52,7 +52,7 @@ export function StepDone({ slug }: { slug: string }) {
       </Stack>
 
       <Stack direction="row" justify="center">
-        <Button variant="module" asChild rightIcon={<ArrowRight className="h-4 w-4" />}>
+        <Button color="module" asChild rightIcon={<ArrowRight className="h-4 w-4" />}>
           <Link href="/">Go to dashboard</Link>
         </Button>
       </Stack>

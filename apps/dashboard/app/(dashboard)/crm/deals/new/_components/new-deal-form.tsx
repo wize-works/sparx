@@ -223,7 +223,7 @@ export function NewDealForm({ pipelines, customers, initialPipelineId }: NewDeal
           <Button variant="ghost" asChild>
             <Link href="/crm/pipelines">Cancel</Link>
           </Button>
-          <Button type="submit" variant="module" disabled={pending} loading={pending}>
+          <Button type="submit" color="module" disabled={pending} loading={pending}>
             Create deal
           </Button>
         </CardFooter>

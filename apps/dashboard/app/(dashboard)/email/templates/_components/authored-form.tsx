@@ -116,7 +116,7 @@ export function AuthoredForm({ initial }: AuthoredFormProps) {
         </Stack>
 
         <Stack direction="row" gap={2}>
-          <Button type="submit" variant="module" loading={pending} disabled={pending}>
+          <Button type="submit" color="module" loading={pending} disabled={pending}>
             {initial ? 'Save template' : 'Create template'}
           </Button>
           {initial ? (

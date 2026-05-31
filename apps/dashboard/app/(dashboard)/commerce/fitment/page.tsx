@@ -55,7 +55,7 @@ export default async function FitmentReferencePage() {
             <Stack direction="row" align="center" gap={2}>
               <Boxes className="h-5 w-5" />
               <Heading level={1}>Fitment reference</Heading>
-              <Badge variant="module">
+              <Badge color="module">
                 {domains.length} domain{domains.length === 1 ? '' : 's'}
               </Badge>
             </Stack>

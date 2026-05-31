@@ -200,7 +200,7 @@ export function NewQuoteForm({ customers, b2bAccounts, preselectedCustomerId }: 
             <Button variant="ghost" asChild>
               <Link href="/crm/quotes">Cancel</Link>
             </Button>
-            <Button type="submit" variant="module" disabled={pending} loading={pending}>
+            <Button type="submit" color="module" disabled={pending} loading={pending}>
               Create quote
             </Button>
           </CardFooter>

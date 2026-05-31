@@ -31,7 +31,7 @@ export default async function TemplatesPage() {
       title="Templates"
       description="Built-in transactional templates and your own marketing templates."
       actions={
-        <Button variant="module" size="sm" asChild>
+        <Button color="module" size="sm" asChild>
           <Link href="/email/templates/new">
             <Plus className="h-4 w-4" />
             New template
@@ -47,7 +47,7 @@ export default async function TemplatesPage() {
               <CardHeader>
                 <Stack direction="row" align="center" justify="between" gap={2}>
                   <CardTitle>{t.name}</CardTitle>
-                  {t.customized ? <Badge variant="soft">Customized</Badge> : null}
+                  {t.customized ? <Badge color="primary">Customized</Badge> : null}
                 </Stack>
                 <CardDescription>{t.description}</CardDescription>
               </CardHeader>
@@ -81,9 +81,7 @@ export default async function TemplatesPage() {
                 <CardHeader>
                   <Stack direction="row" align="center" justify="between" gap={2}>
                     <CardTitle>{t.name}</CardTitle>
-                    <Badge variant={t.status === 'active' ? 'success' : 'outline'}>
-                      {t.status}
-                    </Badge>
+                    <Badge color={t.status === 'active' ? 'success' : 'outline'}>{t.status}</Badge>
                   </Stack>
                   <CardDescription>Subject: {t.subject}</CardDescription>
                 </CardHeader>

@@ -122,7 +122,7 @@ export function VariantsPanel({ productId, productTitle, options, variants }: Pr
               </CardDescription>
             </Stack>
             <Button
-              variant="secondary"
+              variant="outline"
               onClick={() => setOptionsOpen((v) => !v)}
               leftIcon={optionsOpen ? <X className="h-4 w-4" /> : <Sliders className="h-4 w-4" />}
             >
@@ -173,7 +173,7 @@ export function VariantsPanel({ productId, productTitle, options, variants }: Pr
               </CardDescription>
             </Stack>
             <Button
-              variant="module"
+              color="module"
               onClick={() => setNewVariantOpen((v) => !v)}
               leftIcon={newVariantOpen ? <X className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
             >
@@ -363,12 +363,12 @@ function VariantRowEditor({ variant, productId, valuesById, onChanged }: Variant
               {variant.sku}
             </Text>
             {variant.isDefault && (
-              <Badge variant="module" className="text-xs">
+              <Badge color="module" className="text-xs">
                 default
               </Badge>
             )}
             {variant.deletedAt && (
-              <Badge variant="warning" className="text-xs">
+              <Badge color="warning" className="text-xs">
                 archived
               </Badge>
             )}

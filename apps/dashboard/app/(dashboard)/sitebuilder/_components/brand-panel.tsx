@@ -125,7 +125,7 @@ export function BrandPanel({ initial, initialMedia }: BrandPanelProps) {
             {dirty ? 'Unsaved changes' : savedAt ? 'Saved' : ''}
           </span>
         )}
-        <Button variant="primary" onClick={onSave} disabled={!dirty || pending} loading={pending}>
+        <Button onClick={onSave} disabled={!dirty || pending} loading={pending}>
           Save changes
         </Button>
       </div>
@@ -295,7 +295,13 @@ function ColorField({
       <div className="flex items-center justify-between">
         <Label>{label}</Label>
         {value ? (
-          <Button type="button" variant="link" size="xs" onClick={() => onChange(null)}>
+          <Button
+            type="button"
+            color="primary"
+            variant="link"
+            size="xs"
+            onClick={() => onChange(null)}
+          >
             Clear
           </Button>
         ) : null}

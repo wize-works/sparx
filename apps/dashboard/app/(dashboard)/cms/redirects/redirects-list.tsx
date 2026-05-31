@@ -140,7 +140,7 @@ export function RedirectsList({ rows }: { rows: RedirectRow[] }) {
           <CardFooter>
             <Button
               type="submit"
-              variant="module"
+              color="module"
               leftIcon={<Plus className="h-4 w-4" />}
               disabled={pending}
             >
@@ -186,7 +186,8 @@ export function RedirectsList({ rows }: { rows: RedirectRow[] }) {
               action={
                 <Button
                   type="button"
-                  variant="module-outline"
+                  color="module"
+                  variant="outline"
                   size="sm"
                   onClick={() => fromInputRef.current?.focus()}
                 >

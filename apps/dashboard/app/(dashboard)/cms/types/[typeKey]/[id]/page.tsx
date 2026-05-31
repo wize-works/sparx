@@ -57,7 +57,7 @@ export default async function EditEntryPage({ params }: PageProps) {
             </Button>
             <Heading level={1}>Edit {type.name.toLowerCase()}</Heading>
             <Stack direction="row" align="center" gap={2}>
-              <Badge variant={entry.status === 'published' ? 'success' : 'outline'}>
+              <Badge color={entry.status === 'published' ? 'success' : 'outline'}>
                 {entry.status}
               </Badge>
               {entry.slug && (
