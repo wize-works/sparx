@@ -1,25 +1,37 @@
 # Sparx Platform — Frontend Component Architecture
 
-**Version:** 1.3
+**Version:** 1.4
 **Author:** Brandon Korous
-**Last Updated:** 2026-05-27
+**Last Updated:** 2026-05-31
 
 ---
 
 ## 1. The Core Rule
 
-**Tailwind is an implementation detail. It never appears in feature code.**
+**A component's _appearance_ is owned by `packages/ui/`. Feature code never re-skins a
+control — but it may compose layout with utilities.**
 
-Feature developers write semantic component APIs. The styling system — Tailwind classes, CSS variables, CVA variant configs — lives exclusively inside `packages/ui/`. This is how drift is prevented. There is no exception to this rule.
+The themed styling system — color/surface fills, borders, radii, shadows, interactive
+states, and the CVA variant configs that bundle them — lives exclusively inside
+`packages/ui/`. Feature code consumes it through semantic component APIs. That is how
+drift is prevented.
+
+Tailwind utilities are **not** banned from feature code, though. Layout, positioning,
+spacing, sizing, and one-off chrome (an absolutely-positioned indicator, a flex row, a
+responsive grid) are composition — they belong in `apps/*`. The line is **re-skinning a
+control**: the moment you pair a background fill with a foreground text color (or rebuild
+hover/focus/disabled states), you are recreating a `<Button>` / `<Input>` / `<Badge>` and
+must use the component instead. See §15 for the exact rule the linter enforces.
 
 ```tsx
-// ✅ Correct — feature code
-<Button variant="primary" size="md">Save changes</Button>
+// ✅ Correct — feature code: semantic components + layout utilities
+<Button color="primary" size="md">Save changes</Button>
 <Card variant="module">CMS content here</Card>
-<Badge variant="success">Active</Badge>
+<Badge color="success">Active</Badge>
+<span className="absolute top-0 right-0 h-2 w-2 rounded-full bg-[var(--c-bg)]" /> {/* layout/indicator — fine */}
 
-// ❌ Wrong — never in feature code
-<button className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md">
+// ❌ Wrong — re-skinning a control in feature code (fill + foreground = use <Button>)
+<button className="rounded-md bg-[var(--color-primary)] px-4 py-2 text-[var(--color-primary-content)] hover:bg-[var(--color-primary-hover)]">
   Save changes
 </button>
 ```
@@ -886,37 +898,68 @@ function ThemeProvider({ children }: { children: React.ReactNode }) {
 
 ## 15. Usage Rules for Feature Developers
 
-These are enforced by ESLint (`no-restricted-syntax` rule on Tailwind classes outside `packages/ui`):
+**Tailwind is not banned from feature code — _reimplementing a component_ is.** There is
+purpose in utilities throughout the apps: layout, positioning, spacing, sizing, and
+one-off chrome (an absolutely-positioned indicator dot, a flex row, a responsive grid)
+are composition, not design decisions, and belong in feature code. What does **not**
+belong in feature code is rebuilding a styled, themed control out of utilities when an
+`@sparx/ui` component already exists.
+
+The dividing line the linter enforces: **a background fill paired with a foreground text
+color.** That pairing is the fingerprint of a re-skinned control (Button / Input / Badge /
+Alert) — a colored surface carrying contrasting text. A lone background (the indicator dot)
+or lone text-coloring is fine; the _pair_ is the tell.
 
 ```
-✅ Use named component variants
-✅ Use layout props (gap, padding, cols)
-✅ Use className only for layout overrides (margin, width) when absolutely necessary
-✅ Reference CSS variables via style prop for truly one-off values
+✅ Layout / positioning / spacing / sizing utilities — flex, grid, gap-*, absolute,
+   top-*, inset-*, w-*, h-*, p-*, m-*, col-span-*, z-*, overflow-*, truncate
+✅ A single-purpose visual utility — one bg- on an indicator, one text-[var(--…)] to
+   color a label, a lone rounded-full
+✅ Named component variants — <Button color="danger" variant="soft" />, <Badge … />
+✅ style={{ … }} referencing CSS vars from tokens.css for a truly one-off value
 
-❌ Never write Tailwind utility classes in feature code
-❌ Never write inline styles with hardcoded hex colors
-❌ Never import CSS variables directly into components outside @sparx/ui
-❌ Never create a one-off styled div instead of an existing component
+❌ A background FILL + a foreground TEXT COLOR together → you are re-skinning a control;
+   use the @sparx/ui component/variant instead (this is what the lint rule flags)
+❌ Interactive control states (hover:/focus:/disabled: on bg/border) rebuilt by hand
+❌ Inline styles with hardcoded hex colors
+❌ Importing CSS variables / raw Tailwind color classes to recreate an existing primitive
 ```
+
+If no `@sparx/ui` component fits, that is a signal to **add a variant or a new component to
+`packages/ui`**, not to hand-style it in the app.
 
 ### ESLint Enforcement
 
+The `no-restricted-syntax` rule lives in each app's `eslint.config.js` (applied to
+`apps/**`, never `packages/ui/**`). It deliberately targets the re-skinning fingerprint —
+fill + foreground color — and lets layout/positioning/lone-color utilities pass, so the
+warnings that surface are the ~few that genuinely should be components, not hundreds of
+layout false-positives.
+
 ```javascript
-// .eslintrc.js — applied to apps/** but not packages/ui/**
+// apps/*/eslint.config.js — applied to apps/** but not packages/ui/**
 {
   rules: {
     'no-restricted-syntax': [
       'warn',
       {
-        // Warn on className with multiple Tailwind utilities in feature code
-        selector: 'JSXAttribute[name.name="className"][value.type="Literal"][value.value=/\\b(bg-|text-|border-|p-|m-|flex|grid|rounded).*(bg-|text-|border-|p-|m-|flex|grid|rounded)/]',
-        message: 'Use @sparx/ui components instead of composing Tailwind classes in feature code.'
-      }
-    ]
-  }
+        // Flag a background FILL co-occurring with a foreground TEXT COLOR — the
+        // fingerprint of reimplementing a styled control. Layout/positioning/
+        // spacing, a lone bg, or lone text-color all pass through.
+        selector:
+          'JSXAttribute[name.name="className"][value.type="Literal"][value.value=/(?=.*(?:bg-\\[(?:var\\(|#|rgb|hsl|oklch)|bg-white|bg-black))(?=.*(?:text-\\[(?:var\\(|#|rgb|hsl|oklch)|text-white|text-black))/]',
+        message:
+          'This className pairs a background fill with a foreground text color — that reimplements a styled control (Button/Input/Badge/Alert). Use the @sparx/ui component or variant. Layout, spacing, and positioning utilities are fine.',
+      },
+    ],
+  },
 }
 ```
+
+> Note: the rule is a **heuristic, not a judge.** It catches the common re-skinning shape;
+> code review remains the backstop for subtler cases (e.g. a heavy selectable-card built
+> from utilities that should become a component). When in doubt, prefer extracting a
+> component/variant.
 
 ---
 

@@ -1,10 +1,11 @@
 // Dashboard ESLint config — extends the root, then layers on the
 // "no raw Tailwind in feature code" rule from docs/23-frontend-component-architecture.md §14.
 //
-// The selector matches className string literals containing two or more
-// Tailwind-shaped utility prefixes (bg-, text-, border-, p-, m-, flex, grid, rounded).
-// Layout overrides ("py-10", "h-4 w-4") and single-class usage pass through
-// because they're the explicit escape hatch in the spec.
+// The selector flags className literals that pair a background FILL with a
+// foreground TEXT COLOR — the fingerprint of reimplementing a styled control
+// (Button/Input/Badge/Alert) by hand. Pure layout/positioning/spacing/sizing,
+// a lone background (an indicator dot), or lone text-coloring all pass through;
+// those are purposeful Tailwind, not design-system bypasses. See docs/23 §14.
 
 import rootConfig from '../../eslint.config.js';
 
@@ -67,10 +68,15 @@ export default [
       'no-restricted-syntax': [
         'warn',
         {
+          // Flags a background FILL paired with a foreground TEXT COLOR — the
+          // fingerprint of reimplementing a styled control (Button/Input/Badge/
+          // Alert) in feature code. Layout, positioning, spacing, sizing, and a
+          // single bg OR a single text-color (e.g. an indicator dot, or just
+          // coloring text) all pass through — those are purposeful (docs/23 §14).
           selector:
-            'JSXAttribute[name.name="className"][value.type="Literal"][value.value=/\\b(bg-|text-|border-|p-|m-|flex|grid|rounded).*(bg-|text-|border-|p-|m-|flex|grid|rounded)/]',
+            'JSXAttribute[name.name="className"][value.type="Literal"][value.value=/(?=.*(?:bg-\\[(?:var\\(|#|rgb|hsl|oklch)|bg-white|bg-black))(?=.*(?:text-\\[(?:var\\(|#|rgb|hsl|oklch)|text-white|text-black))/]',
           message:
-            'Use @sparx/ui components/variants instead of composing Tailwind classes in feature code (docs/23 §14).',
+            'This className pairs a background fill with a foreground text color — that reimplements a styled control (Button/Input/Badge/Alert). Use the @sparx/ui component or variant. Layout, spacing, positioning, and single-purpose utilities are fine (docs/23 §14).',
         },
       ],
     },
@@ -90,10 +96,15 @@ export default [
           // From-the-config bag of constraints stays: keep the raw-Tailwind
           // rule above, plus the CMS-only Card variant guard. ESLint merges
           // by overwrite, so list both selectors in this stanza.
+          // Flags a background FILL paired with a foreground TEXT COLOR — the
+          // fingerprint of reimplementing a styled control (Button/Input/Badge/
+          // Alert) in feature code. Layout, positioning, spacing, sizing, and a
+          // single bg OR a single text-color (e.g. an indicator dot, or just
+          // coloring text) all pass through — those are purposeful (docs/23 §14).
           selector:
-            'JSXAttribute[name.name="className"][value.type="Literal"][value.value=/\\b(bg-|text-|border-|p-|m-|flex|grid|rounded).*(bg-|text-|border-|p-|m-|flex|grid|rounded)/]',
+            'JSXAttribute[name.name="className"][value.type="Literal"][value.value=/(?=.*(?:bg-\\[(?:var\\(|#|rgb|hsl|oklch)|bg-white|bg-black))(?=.*(?:text-\\[(?:var\\(|#|rgb|hsl|oklch)|text-white|text-black))/]',
           message:
-            'Use @sparx/ui components/variants instead of composing Tailwind classes in feature code (docs/23 §14).',
+            'This className pairs a background fill with a foreground text color — that reimplements a styled control (Button/Input/Badge/Alert). Use the @sparx/ui component or variant. Layout, spacing, positioning, and single-purpose utilities are fine (docs/23 §14).',
         },
         {
           // Match opening <Card …> elements that do NOT carry a `variant`
