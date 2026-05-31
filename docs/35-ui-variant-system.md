@@ -23,19 +23,19 @@ color   ×   variant   ×   size   ×   shape
 so `<Button color="danger" variant="soft" size="lg" shape="wide" />` is expressible
 without enumerating the cartesian product by hand. It also brings the **Token Model v2**
 semantic palette (accent / info / neutral + `-content` pairs + `color-mix` derivation)
-*into* `@sparx/ui`'s `tokens.css` to back the new `color` axis.
+_into_ `@sparx/ui`'s `tokens.css` to back the new `color` axis.
 
 ### Decisions locked (2026-05-31)
 
-| #   | Decision           | Choice                                                                                                                                 |
-| --- | ------------------ | -------------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | **API shape**      | **Orthogonal axes.** `color × variant × size × shape`. Breaking — call sites are migrated in the same pass (codemod, §7).               |
-| 2   | **Token layer**    | **Bring v2 palette into @sparx/ui.** Add `accent/info/neutral` + `-content` pairs + `color-mix` hover/tint to `tokens.css`. Deviates from doc 33 §6 — see §3.4. |
-| 3   | **Scope**          | **Comprehensive.** A pass over the whole inventory: full `color × variant` on Tier-A action/status components, state-color + size on Tier-B controls, structural variants on Tier-C, plus net-new staples (Alert, Progress, Kbd, StatusDot, ButtonGroup, Collapse/Accordion). See §5. |
+| #   | Decision            | Choice                                                                                                                                                                                                                                                                                                                          |
+| --- | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | **API shape**       | **Orthogonal axes.** `color × variant × size × shape`. Breaking — call sites are migrated in the same pass (codemod, §7).                                                                                                                                                                                                       |
+| 2   | **Token layer**     | **Bring v2 palette into @sparx/ui.** Add `accent/info/neutral` + `-content` pairs + `color-mix` hover/tint to `tokens.css`. Deviates from doc 33 §6 — see §3.4.                                                                                                                                                                 |
+| 3   | **Scope**           | **Comprehensive.** A pass over the whole inventory: full `color × variant` on Tier-A action/status components, state-color + size on Tier-B controls, structural variants on Tier-C, plus net-new staples (Alert, Progress, Kbd, StatusDot, ButtonGroup, Collapse/Accordion). See §5.                                           |
 | 4   | **Color mechanism** | **Role-variable indirection (no codegen).** Variants are written once against generic role vars (`--c-bg`/`--c-content`/`--c-hover`/`--c-tint`); the `color` axis remaps them, so `color × variant` composes automatically and **runtime/custom theme colors work with no rebuild** (§4). Call-site migration via codemod (§7). |
 
 > **Relationship to Token Model v2 (doc 33).** Doc 33 §6 deliberately scoped `@sparx/ui`
-> *out* of the v2 token refactor ("the dashboard depends on them and that's out of scope").
+> _out_ of the v2 token refactor ("the dashboard depends on them and that's out of scope").
 > Decision #2 here **reverses that for the palette only**: we adopt v2's _color vocabulary_
 > (semantic slots + `-content` pairs + OKLCH derivation) in the dashboard token layer so the
 > `color` axis has something coherent to bind to. We do **not** adopt v2's storage model,
@@ -49,30 +49,30 @@ semantic palette (accent / info / neutral + `-content` pairs + `color-mix` deriv
 
 ### 2.1 `color` — semantic palette
 
-| Token       | Meaning                                  | Notes                                       |
-| ----------- | ---------------------------------------- | ------------------------------------------- |
-| `primary`   | Brand action                             | = `--sparx-primary` (`#6366F1`)             |
-| `secondary` | Brand-adjacent secondary identity        | new; defaults to a slate/indigo-muted       |
-| `accent`    | Pop / highlight                          | new                                         |
-| `neutral`   | Default, low-chroma UI                   | new; the "no color specified" default       |
-| `info`      | Informational status                     | new themeable                               |
-| `success`   | Positive status                          | normalizes existing `--color-success*`      |
-| `warning`   | Caution status                           | normalizes existing `--color-warning*`      |
-| `danger`    | Destructive / error status               | normalizes existing `--color-danger*`       |
-| `module`    | The active module's color                | reads `--module-active*` (ModuleProvider)   |
+| Token       | Meaning                           | Notes                                     |
+| ----------- | --------------------------------- | ----------------------------------------- |
+| `primary`   | Brand action                      | = `--sparx-primary` (`#6366F1`)           |
+| `secondary` | Brand-adjacent secondary identity | new; defaults to a slate/indigo-muted     |
+| `accent`    | Pop / highlight                   | new                                       |
+| `neutral`   | Default, low-chroma UI            | new; the "no color specified" default     |
+| `info`      | Informational status              | new themeable                             |
+| `success`   | Positive status                   | normalizes existing `--color-success*`    |
+| `warning`   | Caution status                    | normalizes existing `--color-warning*`    |
+| `danger`    | Destructive / error status        | normalizes existing `--color-danger*`     |
+| `module`    | The active module's color         | reads `--module-active*` (ModuleProvider) |
 
 `module` is special: it tracks `--module-active` so a `<Button color="module">` inside a
 `<ModuleProvider module="cms">` is teal automatically (existing behaviour, kept).
 
 ### 2.2 `variant` — style / treatment
 
-| Token     | Treatment                                                              |
+| Token     | Treatment                                                             |
 | --------- | --------------------------------------------------------------------- |
-| `solid`   | Filled: `bg-{color}`, `text-{color}-content`, hover → `{color}-hover`  |
-| `soft`    | Tinted: `bg-{color}-tint`, `text-{color}` (low-emphasis fill)          |
-| `outline` | Bordered transparent: `border-{color}`, `text-{color}`, hover → tint   |
-| `dashed`  | `outline` + `border-dashed` (DaisyUI `dash`)                           |
-| `ghost`   | No border/bg, `text-{color}`, hover → tint                             |
+| `solid`   | Filled: `bg-{color}`, `text-{color}-content`, hover → `{color}-hover` |
+| `soft`    | Tinted: `bg-{color}-tint`, `text-{color}` (low-emphasis fill)         |
+| `outline` | Bordered transparent: `border-{color}`, `text-{color}`, hover → tint  |
+| `dashed`  | `outline` + `border-dashed` (DaisyUI `dash`)                          |
+| `ghost`   | No border/bg, `text-{color}`, hover → tint                            |
 | `link`    | Inline text link, underline-on-hover, no padding/height               |
 
 `solid` is the default treatment for Button; `soft` for Badge/Tag; `soft` for Alert.
@@ -84,13 +84,13 @@ semantic palette (accent / info / neutral + `-content` pairs + `color-mix` deriv
 
 ### 2.4 `shape` — geometry modifier (Button-centric)
 
-| Token     | Effect                                                              |
-| --------- | ------------------------------------------------------------------- |
-| (default) | Auto width, normal horizontal padding                               |
-| `wide`    | Extra horizontal padding / `min-width` for emphasis                 |
-| `block`   | `w-full` — fills its container                                      |
-| `square`  | 1:1, icon-only, field radius                                        |
-| `circle`  | 1:1, icon-only, fully rounded                                       |
+| Token     | Effect                                              |
+| --------- | --------------------------------------------------- |
+| (default) | Auto width, normal horizontal padding               |
+| `wide`    | Extra horizontal padding / `min-width` for emphasis |
+| `block`   | `w-full` — fills its container                      |
+| `square`  | 1:1, icon-only, field radius                        |
+| `circle`  | 1:1, icon-only, fully rounded                       |
 
 `square`/`circle` **replace** Button's current `icon-sm/icon-md/icon-lg` sizes —
 icon buttons become `shape="square" size="md"` (geometry × size, orthogonal).
@@ -117,10 +117,10 @@ Hover and tint are **derived in CSS** from the stored base (same strategy as v2 
 so a single base hex yields a coherent set and dark mode adapts for free:
 
 ```css
---color-primary:         #6366f1;
---color-primary-content:  #ffffff;
---color-primary-hover:    color-mix(in oklch, var(--color-primary) 88%, black);
---color-primary-tint:     color-mix(in oklch, var(--color-primary) 12%, transparent);
+--color-primary: #6366f1;
+--color-primary-content: #ffffff;
+--color-primary-hover: color-mix(in oklch, var(--color-primary) 88%, black);
+--color-primary-tint: color-mix(in oklch, var(--color-primary) 12%, transparent);
 ```
 
 `-tint` mixes toward **`transparent`** (not white) so the soft fill reads correctly over
@@ -131,7 +131,7 @@ any surface in both light and dark mode without a second dark-mode declaration.
 Existing tokens that other components read are **kept as aliases**, not deleted:
 
 ```css
---color-success-tint: var(--color-success-tint);   /* already this name */
+--color-success-tint: var(--color-success-tint); /* already this name */
 --color-success-text: var(--color-success-content); /* alias old → new   */
 ```
 
@@ -167,12 +167,12 @@ static class strings, fully visible to Tailwind:
 
 ```ts
 const variant = {
-  solid:   'bg-[var(--c-bg)] text-[var(--c-content)] hover:bg-[var(--c-hover)]',
-  soft:    'bg-[var(--c-tint)] text-[var(--c-bg)] hover:brightness-95',
+  solid: 'bg-[var(--c-bg)] text-[var(--c-content)] hover:bg-[var(--c-hover)]',
+  soft: 'bg-[var(--c-tint)] text-[var(--c-bg)] hover:brightness-95',
   outline: 'border border-[var(--c-bg)] text-[var(--c-bg)] hover:bg-[var(--c-tint)]',
-  dashed:  'border border-dashed border-[var(--c-bg)] text-[var(--c-bg)] hover:bg-[var(--c-tint)]',
-  ghost:   'text-[var(--c-bg)] hover:bg-[var(--c-tint)]',
-  link:    'h-auto p-0 text-[var(--c-bg)] underline-offset-4 hover:underline',
+  dashed: 'border border-dashed border-[var(--c-bg)] text-[var(--c-bg)] hover:bg-[var(--c-tint)]',
+  ghost: 'text-[var(--c-bg)] hover:bg-[var(--c-tint)]',
+  link: 'h-auto p-0 text-[var(--c-bg)] underline-offset-4 hover:underline',
 };
 ```
 
@@ -180,13 +180,25 @@ The **`color` axis** is a thin mapping that just **reassigns the role vars** to 
 slot. These are plain CSS classes in `tokens.css` (not Tailwind utilities):
 
 ```css
-.sx-c-primary { --c-bg: var(--color-primary);  --c-content: var(--color-primary-content);
-                --c-hover: var(--color-primary-hover); --c-tint: var(--color-primary-tint); }
-.sx-c-success { --c-bg: var(--color-success);  --c-content: var(--color-success-content);
-                --c-hover: var(--color-success-hover); --c-tint: var(--color-success-tint); }
+.sx-c-primary {
+  --c-bg: var(--color-primary);
+  --c-content: var(--color-primary-content);
+  --c-hover: var(--color-primary-hover);
+  --c-tint: var(--color-primary-tint);
+}
+.sx-c-success {
+  --c-bg: var(--color-success);
+  --c-content: var(--color-success-content);
+  --c-hover: var(--color-success-hover);
+  --c-tint: var(--color-success-tint);
+}
 /* … one rule per slot … */
-.sx-c-module  { --c-bg: var(--module-active);   --c-content: var(--module-active-content);
-                --c-hover: var(--module-active-hover); --c-tint: var(--module-active-tint); }
+.sx-c-module {
+  --c-bg: var(--module-active);
+  --c-content: var(--module-active-content);
+  --c-hover: var(--module-active-hover);
+  --c-tint: var(--module-active-tint);
+}
 ```
 
 Each role-var read carries a `neutral` fallback — e.g. `bg-[var(--c-bg,var(--color-neutral))]`
@@ -205,7 +217,7 @@ require regenerating or rebuilding the component package, because the component 
 ever references role vars and the `color` mapping is open-ended:
 
 - **Re-skinning an existing slot** (the common case, matches Token Model v2's fixed
-  semantic slots): the theme overrides the *value* — `--color-primary: <their hex>` — and
+  semantic slots): the theme overrides the _value_ — `--color-primary: <their hex>` — and
   the derived `-hover`/`-tint` recompute via `color-mix`. Every `.sx-c-primary` element
   updates live. Zero component change.
 - **A brand-new named color** created at runtime: the theme layer emits one extra rule
@@ -257,14 +269,14 @@ re-derivation.
 
 ### 5.1 Tier A — full color axis (`color × variant` via role vars)
 
-| Component  | variant set                          | size  | shape / extra                     | default                |
-| ---------- | ------------------------------------ | ----- | --------------------------------- | ---------------------- |
-| Button     | solid soft outline dashed ghost link | xs–xl | wide / block / square / circle    | `primary / solid / md` |
-| Badge      | solid soft outline dashed            | sm–lg | —                                 | `neutral / soft / md`  |
-| Tag        | solid soft outline                   | sm–lg | removable                         | `neutral / soft / md`  |
-| **Alert** *(new)*    | soft solid outline         | sm–lg | title/desc/icon/dismiss           | `info / soft / md`     |
-| **Progress** *(new)* | solid soft                 | sm–lg | determinate + indeterminate       | `primary / solid / md` |
-| **StatusDot** *(new)*| solid soft                 | sm–lg | optional pulse                    | `neutral / solid / md` |
+| Component             | variant set                          | size  | shape / extra                  | default                |
+| --------------------- | ------------------------------------ | ----- | ------------------------------ | ---------------------- |
+| Button                | solid soft outline dashed ghost link | xs–xl | wide / block / square / circle | `primary / solid / md` |
+| Badge                 | solid soft outline dashed            | sm–lg | —                              | `neutral / soft / md`  |
+| Tag                   | solid soft outline                   | sm–lg | removable                      | `neutral / soft / md`  |
+| **Alert** _(new)_     | soft solid outline                   | sm–lg | title/desc/icon/dismiss        | `info / soft / md`     |
+| **Progress** _(new)_  | solid soft                           | sm–lg | determinate + indeterminate    | `primary / solid / md` |
+| **StatusDot** _(new)_ | solid soft                           | sm–lg | optional pulse                 | `neutral / solid / md` |
 
 Default Button color stays **`primary`** (keeps today's bare-`<Button>` behaviour;
 decision 2026-05-31).
@@ -274,26 +286,26 @@ decision 2026-05-31).
 Color applies to the **active/checked/validation** part only; sensible default color so
 existing call sites are unaffected.
 
-| Component                | color usage                          | other axes                         |
-| ------------------------ | ------------------------------------ | ---------------------------------- |
-| Checkbox                 | checked fill (`primary` default)     | size sm/md/lg                      |
-| Switch                   | on-state track (`primary` default)   | size sm/md/lg                      |
-| RadioGroup / RadioItem   | selected dot (`primary` default)     | size sm/md/lg                      |
-| Slider                   | range/thumb (`primary` default)      | size sm/md/lg                      |
-| Input / Textarea         | keep `variant` **state** (default/error/**success**); state maps to a color (`danger`/`success`) | size sm/md/lg |
-| Select (trigger)         | same state model as Input            | size sm/md/lg                      |
-| Spinner                  | optional `color` (default `neutral` → `currentColor`) | size (existing) |
+| Component              | color usage                                                                                      | other axes      |
+| ---------------------- | ------------------------------------------------------------------------------------------------ | --------------- |
+| Checkbox               | checked fill (`primary` default)                                                                 | size sm/md/lg   |
+| Switch                 | on-state track (`primary` default)                                                               | size sm/md/lg   |
+| RadioGroup / RadioItem | selected dot (`primary` default)                                                                 | size sm/md/lg   |
+| Slider                 | range/thumb (`primary` default)                                                                  | size sm/md/lg   |
+| Input / Textarea       | keep `variant` **state** (default/error/**success**); state maps to a color (`danger`/`success`) | size sm/md/lg   |
+| Select (trigger)       | same state model as Input                                                                        | size sm/md/lg   |
+| Spinner                | optional `color` (default `neutral` → `currentColor`)                                            | size (existing) |
 
 ### 5.3 Tier C — structural variants (token-driven, no color palette)
 
-| Component   | change                                                                          |
-| ----------- | ------------------------------------------------------------------------------- |
-| Card        | keep `variant` (default/elevated/module/outline); add optional `accent` color for the module top-stripe; `padding` size | 
-| Tabs        | keep `variant` (underline/pills); add `size`                                    |
-| Avatar      | already size × shape — align `shape` naming (circle/square) with Button         |
-| **ButtonGroup** *(new)* | segmented/joined buttons (DaisyUI `join`); orientation + shared size/color passthrough |
-| **Collapse / Accordion** *(new)* | Radix Accordion shell; `variant` (bordered/ghost/separated) |
-| **Kbd** *(new)*         | keyboard-key chip; `size` only                                      |
+| Component                        | change                                                                                                                  |
+| -------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| Card                             | keep `variant` (default/elevated/module/outline); add optional `accent` color for the module top-stripe; `padding` size |
+| Tabs                             | keep `variant` (underline/pills); add `size`                                                                            |
+| Avatar                           | already size × shape — align `shape` naming (circle/square) with Button                                                 |
+| **ButtonGroup** _(new)_          | segmented/joined buttons (DaisyUI `join`); orientation + shared size/color passthrough                                  |
+| **Collapse / Accordion** _(new)_ | Radix Accordion shell; `variant` (bordered/ghost/separated)                                                             |
+| **Kbd** _(new)_                  | keyboard-key chip; `size` only                                                                                          |
 
 ### 5.4 Unchanged (single-axis where `variant` is genuinely not a color)
 
@@ -309,22 +321,22 @@ overlays (`Modal`/`Drawer`/`Popover`/`Tooltip`/menus) keep their current APIs. T
 
 ### 6.1 Button
 
-| Old `variant`     | New props                          |
-| ----------------- | ---------------------------------- |
-| _(none / bare)_   | _(unchanged — default stays `primary`)_ |
-| `primary`         | _(drop — it's the default)_        |
-| `secondary`       | `variant="outline"` (neutral)      |
-| `outline`         | `variant="outline"` (neutral)      |
-| `soft`            | `color="primary" variant="soft"`   |
-| `ghost`           | `variant="ghost"` (neutral)        |
-| `link`            | `color="primary" variant="link"`   |
-| `danger`          | `color="danger"`                   |
-| `warning`         | `color="warning"`                  |
-| `module`          | `color="module"`                   |
-| `module-outline`  | `color="module" variant="outline"` |
-| `size="icon-sm"`  | `shape="square" size="sm"`         |
-| `size="icon-md"`  | `shape="square" size="md"`         |
-| `size="icon-lg"`  | `shape="square" size="lg"`         |
+| Old `variant`    | New props                               |
+| ---------------- | --------------------------------------- |
+| _(none / bare)_  | _(unchanged — default stays `primary`)_ |
+| `primary`        | _(drop — it's the default)_             |
+| `secondary`      | `variant="outline"` (neutral)           |
+| `outline`        | `variant="outline"` (neutral)           |
+| `soft`           | `color="primary" variant="soft"`        |
+| `ghost`          | `variant="ghost"` (neutral)             |
+| `link`           | `color="primary" variant="link"`        |
+| `danger`         | `color="danger"`                        |
+| `warning`        | `color="warning"`                       |
+| `module`         | `color="module"`                        |
+| `module-outline` | `color="module" variant="outline"`      |
+| `size="icon-sm"` | `shape="square" size="sm"`              |
+| `size="icon-md"` | `shape="square" size="md"`              |
+| `size="icon-lg"` | `shape="square" size="lg"`              |
 
 ### 6.2 Badge / Tag
 
