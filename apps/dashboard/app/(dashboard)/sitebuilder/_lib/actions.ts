@@ -11,6 +11,7 @@ import type {
   SitePublishScheduleDto,
   SiteSectionDto,
   SiteSettingsDto,
+  SiteTemplateDto,
   SiteVersionDto,
 } from './types';
 
@@ -47,12 +48,27 @@ export async function updateSettings(input: {
 }
 
 export async function createSection(input: {
-  pageKey?: string;
+  templateId: string;
   sectionType: string;
   config?: Record<string, unknown>;
   position?: number;
 }): Promise<ActionResult<SiteSectionDto>> {
   return run(() => api.post<SiteSectionDto>('/v1/sitebuilder/sections', input));
+}
+
+// "Customize this layout" (spec §13.1): resolve-or-create the scope's template
+// and, if still empty, copy the code-defined default into real section rows.
+// Idempotent — a customized layout is returned untouched.
+export async function materializeTemplate(input: {
+  scope: string;
+  key?: string;
+}): Promise<ActionResult<{ template: SiteTemplateDto; sections: SiteSectionDto[] }>> {
+  return run(() =>
+    api.post<{ template: SiteTemplateDto; sections: SiteSectionDto[] }>(
+      '/v1/sitebuilder/templates/materialize',
+      input
+    )
+  );
 }
 
 export async function updateSection(
@@ -63,12 +79,12 @@ export async function updateSection(
 }
 
 export async function reorderSections(
-  pageKey: string,
+  templateId: string,
   orderedIds: string[]
 ): Promise<ActionResult<{ sections: SiteSectionDto[] }>> {
   return run(() =>
     api.post<{ sections: SiteSectionDto[] }>('/v1/sitebuilder/sections/reorder', {
-      pageKey,
+      templateId,
       orderedIds,
     })
   );

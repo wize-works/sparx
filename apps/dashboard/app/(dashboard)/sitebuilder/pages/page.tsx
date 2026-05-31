@@ -1,19 +1,21 @@
 import Link from 'next/link';
 import { Card, Heading, Text } from '@sparx/ui';
-import { listSections } from '../_lib/api';
+import { listSectionsByTemplate, resolveTemplate } from '../_lib/api';
 import { SectionBuilder } from '../_components/section-builder';
 import { PageSlugForm } from './page-slug-form';
 
 // Section-based landing pages. Renders in the editor shell's inspector column;
 // once a page slug is chosen, the shared persistent canvas previews that path
-// and the section editor drives it.
+// and the section editor drives it. Phase 3: a slug page is a `custom`-scope
+// template keyed by the slug; we resolve it (idempotent) once a slug is entered.
 export default async function PagesPage({
   searchParams,
 }: {
   searchParams: Promise<{ page?: string }>;
 }) {
   const pageKey = (await searchParams).page?.trim() ?? '';
-  const sections = pageKey ? await listSections(pageKey) : [];
+  const template = pageKey ? await resolveTemplate('custom', pageKey) : null;
+  const sections = template ? await listSectionsByTemplate(template.id) : [];
 
   return (
     <div className="flex flex-col gap-5">
@@ -32,12 +34,17 @@ export default async function PagesPage({
         <PageSlugForm initial={pageKey} />
       </Card>
 
-      {pageKey ? (
+      {template ? (
         <div className="flex flex-col gap-3">
           <Text size="sm" variant="muted">
             Editing sections for <span className="font-mono">/{pageKey}</span>
           </Text>
-          <SectionBuilder pageKey={pageKey} sections={sections} previewPath={`/${pageKey}`} />
+          <SectionBuilder
+            templateId={template.id}
+            scope="custom"
+            sections={sections}
+            previewPath={`/${pageKey}`}
+          />
         </div>
       ) : null}
     </div>

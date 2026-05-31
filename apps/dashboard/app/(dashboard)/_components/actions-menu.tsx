@@ -141,8 +141,8 @@ export function ActionsMenu({ favorites, preferences }: ActionsMenuProps) {
         const label =
           DETAIL_VIEW_OPTIONS.find((o) => o.value === next)?.label.toLowerCase() ?? next;
         toast.success(`Default detail view set to ${label}`);
-      } catch {
-        toast.error('Could not update preference');
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : 'Could not update preference');
       }
     });
   }
@@ -161,8 +161,8 @@ export function ActionsMenu({ favorites, preferences }: ActionsMenuProps) {
         router.refresh();
         const label = LIST_VIEW_OPTIONS.find((o) => o.value === next)?.label.toLowerCase() ?? next;
         toast.success(`Default list view set to ${label}`);
-      } catch {
-        toast.error('Could not update preference');
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : 'Could not update preference');
       }
     });
   }

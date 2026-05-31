@@ -494,10 +494,17 @@ layer — sequenced deploy-small so the e2e store never breaks mid-rollout.
   un-migrated dashboard + MCP keep working. `getOrCreate`/`materializeDefault` parse raw input so the
   Zod schemas stay the service boundary (api-rest keeps zero `@sparx/sitebuilder-schemas` dep). 9 new
   integration tests (13 total pass); typecheck/lint/format clean. _Not deployed by me — user-triggered._
-- **3.3b — Dashboard, Layouts UI.** Manifest "Layouts" group + Products/Collections routes; editor
-  resolves `templateId`; scope-restricted gallery; read-only bindings inspector; sample-item preview
-  picker; explicit "Customize". Migrate Home/Pages calls to `templateId` too. Ship — dashboard is now
-  fully `templateId`-native.
+- **3.3b — Dashboard, Layouts UI. ✅ Shipped 2026-05-31 (green).** Manifest gained flat **Product
+  pages** / **Collection pages** sections adjacent to Homepage/Pages (the shared shell nav is a flat
+  `ModuleSection[]`; a true "Layouts" _group_ is deferred to a separate shell enhancement rather than
+  folded in). `SectionBuilder` re-keyed `pageKey`→`templateId` + `scope`: scope-restricted gallery via
+  `sectionsForScope` with a Static/**Bound** legend, and a bound section's inspector shows its
+  read-only **Data bindings** (`def.bindings`) above the editable fields. New `LayoutScopeEditor`
+  (client) adds the **sample-item picker** (commerce-gated, best-effort, graceful empty-state) that
+  points the canvas at a real PDP/PLP, and the explicit **"Customize this layout"** gate
+  (`materializeTemplate`) that shows `DEFAULT_TEMPLATES[scope]` read-only until clicked. Home + Pages
+  migrated to resolve-or-create their template on load and address sections by `templateId`.
+  typecheck + lint (0 errors) + format clean. _Not deployed by me — user-triggered._
 - **3.3c — Cleanup.** Remove the `page_key` alias from routes/service/input schemas/`SectionView`; cut
   MCP tools to `templateId`/`scope+key`; relocate the legacy-`pageKey` mapping to the snapshot read path
   only. Update tests. Ship — zero `pageKey` in the live API.

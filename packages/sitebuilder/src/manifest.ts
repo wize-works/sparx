@@ -10,7 +10,9 @@ import {
   Fingerprint,
   Home,
   Image,
+  Layers,
   LayoutTemplate,
+  Package,
   PanelTop,
   Palette,
   Plus,
@@ -30,7 +32,17 @@ export const sitebuilderManifest: ModuleManifest = {
     // here — theme selection lives in the Design/Theme scope). Route stays
     // /sitebuilder/design until the v2-native theme pane lands (Phase 2 §2.3).
     { id: 'design', label: 'Theme', icon: Palette, href: '/sitebuilder/design' },
+    // Layouts — the scoped page layouts (Phase 3). Home is the storefront
+    // homepage; Products/Collections are the bound layouts every product/
+    // collection page renders through; Pages are standalone section-based slugs.
     { id: 'homepage', label: 'Homepage', icon: Home, href: '/sitebuilder/homepage' },
+    { id: 'products', label: 'Product pages', icon: Package, href: '/sitebuilder/products' },
+    {
+      id: 'collections',
+      label: 'Collection pages',
+      icon: Layers,
+      href: '/sitebuilder/collections',
+    },
     { id: 'pages', label: 'Pages', icon: FileText, href: '/sitebuilder/pages' },
     {
       id: 'navigation',

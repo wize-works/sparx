@@ -6,10 +6,12 @@ import { api } from '@/lib/api-rest-client';
 import type {
   BrandDto,
   NavMenuDto,
+  SampleItem,
   SiteConfigDto,
   SiteLayoutBlockDto,
   SitePublishScheduleDto,
   SiteSectionDto,
+  SiteTemplateDto,
   SiteVersionDto,
   TenantDto,
   ThemeDto,
@@ -28,11 +30,65 @@ export async function listThemes(): Promise<ThemeDto[]> {
   return themes;
 }
 
-export async function listSections(pageKey = 'home'): Promise<SiteSectionDto[]> {
+// Templates the tenant has for a scope (Phase 3). A scope with no row has never
+// been customized — the editor shows the seeded default read-only until then.
+export async function listTemplates(scope?: string): Promise<SiteTemplateDto[]> {
+  const qs = scope ? `?scope=${encodeURIComponent(scope)}` : '';
+  const { templates } = await api.get<{ templates: SiteTemplateDto[] }>(
+    `/v1/sitebuilder/templates${qs}`
+  );
+  return templates;
+}
+
+// Resolve-or-create the template for a (scope, key) — idempotent, like the
+// lazily-materialized SiteConfig. Used on load by the always-editable scopes
+// (home, custom slug pages) so the editor has a templateId to address before
+// the first section exists. Products/Collections deliberately DON'T call this on
+// load — they gate creation behind the explicit "Customize" action (spec §13.1).
+export function resolveTemplate(scope: string, key?: string): Promise<SiteTemplateDto> {
+  return api.post<SiteTemplateDto>('/v1/sitebuilder/templates', { scope, key });
+}
+
+// A template's ordered sections (Phase 3 templateId-native list).
+export async function listSectionsByTemplate(templateId: string): Promise<SiteSectionDto[]> {
   const { sections } = await api.get<{ sections: SiteSectionDto[] }>(
-    `/v1/sitebuilder/sections?page_key=${encodeURIComponent(pageKey)}`
+    `/v1/sitebuilder/sections?template_id=${encodeURIComponent(templateId)}`
   );
   return sections;
+}
+
+interface CommerceProductRow {
+  title: string;
+  handle: string;
+}
+interface CommerceCollectionRow {
+  name: string;
+  handle: string;
+}
+
+// A handful of real, published storefront items the Layouts preview can bind to
+// (spec §7). Commerce-gated and best-effort: if the module is off or the read
+// fails, return [] and the editor shows its graceful empty-state.
+export async function listSampleProducts(): Promise<SampleItem[]> {
+  try {
+    const { data } = await api.getPaged<CommerceProductRow[]>(
+      '/v1/commerce/products?take=25&status=active&sort_by=updatedAt'
+    );
+    return data.map((p) => ({ handle: p.handle, label: p.title }));
+  } catch {
+    return [];
+  }
+}
+
+export async function listSampleCollections(): Promise<SampleItem[]> {
+  try {
+    const { items } = await api.get<{ items: CommerceCollectionRow[] }>(
+      '/v1/commerce/collections?take=25'
+    );
+    return items.map((c) => ({ handle: c.handle, label: c.name }));
+  } catch {
+    return [];
+  }
 }
 
 export async function listLayout(): Promise<SiteLayoutBlockDto[]> {

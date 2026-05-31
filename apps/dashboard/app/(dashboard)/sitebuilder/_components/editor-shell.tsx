@@ -69,6 +69,8 @@ const CANVAS_SCOPES: readonly string[] = [
   '/sitebuilder/design',
   '/sitebuilder/navigation',
   '/sitebuilder/homepage',
+  '/sitebuilder/products',
+  '/sitebuilder/collections',
   '/sitebuilder/pages',
 ];
 

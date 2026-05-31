@@ -27,11 +27,35 @@ export interface SiteConfigDto {
 
 export interface SiteSectionDto {
   id: string;
+  // Phase 3: sections hang off a scoped SiteTemplate. `pageKey` is the
+  // transitional alias still emitted by the API (removed in 3.3c); the editor
+  // addresses sections by `templateId`.
+  templateId: string;
+  scope: string;
+  templateKey: string;
   pageKey: string;
   sectionType: string;
   position: number;
   visible: boolean;
   config: Record<string, unknown>;
+}
+
+// A scoped page layout (docs/handoffs/sitebuilder-phase3-spec.md §3). The editor
+// resolves one per scope (home | product | collection | cms-page | custom),
+// then does section CRUD by `id`.
+export interface SiteTemplateDto {
+  id: string;
+  scope: string;
+  key: string;
+  name: string;
+}
+
+// A storefront item the Layouts editor can bind its live preview to — a real
+// product/collection so a `product`/`collection` template renders against actual
+// data (spec §7, "Preview against [sample ▾]"). Editor-local; not site data.
+export interface SampleItem {
+  handle: string;
+  label: string;
 }
 
 export interface SiteLayoutBlockDto {

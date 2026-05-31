@@ -21,7 +21,6 @@
 
 import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
-import { prisma } from '@sparx/db';
 import { withRequestTenant } from '@sparx/api-core/db';
 import { ok } from '@sparx/api-core/envelope';
 import { requireAuth } from '@sparx/api-core/auth';
@@ -81,27 +80,38 @@ function parsePreferences(raw: unknown): {
 
 // eslint-disable-next-line @typescript-eslint/require-await -- FastifyPluginAsync type demands async; no top-level await needed because route registration is sync.
 const meRoutes: FastifyPluginAsync = async (app) => {
+  // Preferences live on the `users` row. `users` is ENABLE + NO FORCE RLS with
+  // a `tenant_id = current_tenant_id()` policy: Better Auth (sparx_owner) owns
+  // the table and bypasses it, but api-rest runs as sparx_app and is subject to
+  // the policy — so these MUST go through `withRequestTenant` to set the
+  // `app.tenant_id` GUC. A bare `prisma.user.*` here sees zero rows (GET) and
+  // throws P2025 on update.
   app.get('/v1/me/preferences', async (request) => {
     const auth = requireAuth(request);
-    const row = await prisma.user.findUnique({
-      where: { id: auth.actorId },
-      select: { preferences: true },
-    });
+    const row = await withRequestTenant(request, (tx) =>
+      tx.user.findUnique({
+        where: { id: auth.actorId },
+        select: { preferences: true },
+      })
+    );
     return ok(parsePreferences(row?.preferences ?? null));
   });
 
   app.patch('/v1/me/preferences', async (request) => {
     const auth = requireAuth(request);
     const input = PreferencesPatch.parse(request.body);
-    const before = await prisma.user.findUnique({
-      where: { id: auth.actorId },
-      select: { preferences: true },
-    });
-    const current = parsePreferences(before?.preferences ?? null);
-    const next = { ...current, ...input };
-    await prisma.user.update({
-      where: { id: auth.actorId },
-      data: { preferences: next },
+    const next = await withRequestTenant(request, async (tx) => {
+      const before = await tx.user.findUnique({
+        where: { id: auth.actorId },
+        select: { preferences: true },
+      });
+      const current = parsePreferences(before?.preferences ?? null);
+      const merged = { ...current, ...input };
+      await tx.user.update({
+        where: { id: auth.actorId },
+        data: { preferences: merged },
+      });
+      return merged;
     });
     return ok(next);
   });

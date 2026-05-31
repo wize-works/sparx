@@ -1,17 +1,20 @@
 import { Heading, Text } from '@sparx/ui';
-import { getConfig, listSections, listVersions } from '../_lib/api';
+import { getConfig, listSectionsByTemplate, listVersions, resolveTemplate } from '../_lib/api';
 import { SectionBuilder } from '../_components/section-builder';
 import { PublishBar } from '../_components/publish-bar';
 
 // Homepage composition. Renders in the editor shell's inspector column; the
 // shared persistent canvas (in the /sitebuilder layout) shows the live home page
-// and the section editor drives it (select / reorder / edit → reload).
+// and the section editor drives it (select / reorder / edit → reload). Phase 3:
+// the homepage is the `home`-scope template; we resolve it (idempotent) so the
+// editor addresses sections by templateId.
 export default async function HomepagePage() {
-  const [config, sections, versions] = await Promise.all([
+  const [template, config, versions] = await Promise.all([
+    resolveTemplate('home'),
     getConfig(),
-    listSections('home'),
     listVersions(),
   ]);
+  const sections = await listSectionsByTemplate(template.id);
   const published = versions.find((v) => v.id === config.publishedVersionId);
   const hasUnpublishedChanges = published
     ? new Date(config.updatedAt) > new Date(published.createdAt)
@@ -27,7 +30,7 @@ export default async function HomepagePage() {
         isPublished={config.publishedVersionId !== null}
         hasUnpublishedChanges={hasUnpublishedChanges}
       />
-      <SectionBuilder pageKey="home" sections={sections} previewPath="/" />
+      <SectionBuilder templateId={template.id} scope="home" sections={sections} previewPath="/" />
     </div>
   );
 }
