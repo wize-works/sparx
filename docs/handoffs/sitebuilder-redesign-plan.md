@@ -176,7 +176,7 @@ acceptance pending deploy. (Live token streaming deferred to §2.1's v2 inspecto
 
 Goal: the storefront becomes fully composable. Needs its own implementation spec before build.
 
-- [ ] Write the Phase 3 implementation spec (honors doc 30 §4).
+- [x] Write the Phase 3 implementation spec (honors doc 30 §4) → **[docs/handoffs/sitebuilder-phase3-spec.md](sitebuilder-phase3-spec.md)** (2026-05-31). Locks: code-defined seeded defaults (no-rows-until-used), `SiteSection.pageKey`→`templateId` re-key with a read-time back-compat shim for old snapshots, enriched `SectionSnapshot` (no new column), bound family re-houses existing storefront components. Build order = spec §9 (3.0 schema → 3.1 registry → 3.2 storefront parity → 3.3 editor). **3 open decisions need sign-off first (spec §12).**
 - [ ] `SiteTemplate` model + `scope` enum; migration generalizing `SiteSection.pageKey` → `templateId` + scope (RLS, hand-edited).
 - [ ] Bound section schemas in `@sparx/sitebuilder-schemas` — product (gallery, title/price/availability, add-to-cart + variants, meta, fitment, reviews, related) and collection (header, product grid, filters/sort, pagination); scope-restricted registry.
 - [ ] Storefront `section-renderer.tsx` resolves bound sections from the assigned item's data.
