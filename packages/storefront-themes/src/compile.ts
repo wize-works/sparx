@@ -71,3 +71,56 @@ export function toStorefrontThemeColumns(lightTokens: ThemeTokens): Record<strin
   }
   return out;
 }
+
+// ─────────────────────────────────────────────────────────────────────────
+// Brand identity (docs/30 §6) — the subset of theme tokens the tenant-level
+// brand OWNS. These come from TenantBrand and WIN over theme presets and
+// merchant presentation overrides everywhere (brand colour = brand colour). The
+// rest of the tokens (background, foreground, muted, border, radius, container)
+// are presentation, owned by the theme/merchant. Logo/favicon/business name are
+// brand identity too but are not theme tokens — callers apply those separately.
+// ─────────────────────────────────────────────────────────────────────────
+
+export const BRAND_IDENTITY_TOKEN_KEYS = [
+  'colorPrimary',
+  'colorPrimaryForeground',
+  'colorAccent',
+  'fontHeading',
+  'fontBody',
+] as const satisfies readonly (keyof ThemeTokens)[];
+
+export interface BrandIdentitySource {
+  colorPrimary?: string | null;
+  colorPrimaryForeground?: string | null;
+  colorAccent?: string | null;
+  fontHeading?: string | null;
+  fontBody?: string | null;
+}
+
+/** Brand identity → a ThemeTokens overlay containing only the fields the brand
+ *  has actually set. */
+export function brandIdentityOverlay(
+  brand: BrandIdentitySource | null | undefined
+): Partial<ThemeTokens> {
+  const out: Partial<ThemeTokens> = {};
+  if (!brand) return out;
+  for (const key of BRAND_IDENTITY_TOKEN_KEYS) {
+    const v = brand[key];
+    if (typeof v === 'string' && v !== '') out[key] = v;
+  }
+  return out;
+}
+
+/** Apply brand identity ON TOP of an already-compiled token pair so brand wins
+ *  for the identity keys, in both light and dark. Operates on the loose record
+ *  shape so it accepts both freshly compiled tokens and a stored snapshot. */
+export function applyBrandIdentityTokens(
+  compiled: { light: Record<string, string>; dark: Record<string, string> },
+  brand: BrandIdentitySource | null | undefined
+): { light: Record<string, string>; dark: Record<string, string> } {
+  const overlay = brandIdentityOverlay(brand);
+  return {
+    light: { ...compiled.light, ...overlay },
+    dark: { ...compiled.dark, ...overlay },
+  };
+}

@@ -8,8 +8,8 @@
 
 import { PublishInput, RollbackInput } from '@sparx/sitebuilder-schemas';
 import type { SiteVersion } from '@sparx/db';
-import { withTenant } from '@sparx/db';
-import { compileTokens } from '@sparx/storefront-themes';
+import { withTenant, type TxClient } from '@sparx/db';
+import { applyBrandIdentityTokens, compileTokens } from '@sparx/storefront-themes';
 
 import { publishSitebuilderEvent } from '../events';
 import type { ServiceContext } from '../errors';
@@ -98,13 +98,37 @@ export async function rollback(ctx: ServiceContext, rawInput: unknown): Promise<
   return version;
 }
 
+// Brand identity (docs/30 §6) is the tenant-level source of truth and is read
+// LIVE here, overlaid on top of the (published or draft) compiled tokens so a
+// brand edit reflects on the storefront without a full re-publish, and so brand
+// always WINS over theme/merchant identity values. Read-only — never written back.
+async function overlayBrand(
+  tx: TxClient,
+  tenantId: string,
+  snapshot: PublishedSnapshot
+): Promise<PublishedSnapshot> {
+  const brand = await tx.tenantBrand.findUnique({
+    where: { tenantId },
+    select: {
+      colorPrimary: true,
+      colorPrimaryForeground: true,
+      colorAccent: true,
+      fontHeading: true,
+      fontBody: true,
+    },
+  });
+  if (!brand) return snapshot;
+  return { ...snapshot, compiledTokens: applyBrandIdentityTokens(snapshot.compiledTokens, brand) };
+}
+
 /** The published snapshot for the storefront. Null when nothing is published. */
 export async function getPublishedSnapshot(ctx: ServiceContext): Promise<PublishedSnapshot | null> {
   return withTenant(ctx, async (tx) => {
     const config = await tx.siteConfig.findUnique({ where: { tenantId: ctx.tenantId } });
     if (!config?.publishedVersionId) return null;
     const version = await tx.siteVersion.findUnique({ where: { id: config.publishedVersionId } });
-    return version ? toPublishedSnapshot(version) : null;
+    if (!version) return null;
+    return overlayBrand(tx, ctx.tenantId, toPublishedSnapshot(version));
   });
 }
 
@@ -123,7 +147,7 @@ export async function getDraftSnapshot(ctx: ServiceContext): Promise<PublishedSn
       tokens?: { light?: Record<string, string>; dark?: Record<string, string> };
     };
     const compiled = compileTokens(config.themeKey, settings.tokens ?? {});
-    return {
+    const snapshot: PublishedSnapshot = {
       versionNumber: 0,
       themeKey: config.themeKey,
       appearancePolicy: config.appearancePolicy,
@@ -143,5 +167,6 @@ export async function getDraftSnapshot(ctx: ServiceContext): Promise<PublishedSn
         visible: b.visible,
       })),
     };
+    return overlayBrand(tx, ctx.tenantId, snapshot);
   });
 }

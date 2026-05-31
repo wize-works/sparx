@@ -218,7 +218,7 @@ const publicContentRoutes: FastifyPluginAsync = (app) => {
     // Both rows are one-per-tenant (tenantId PK); a missing row means the
     // merchant hasn't customized, so we fall back to nulls/defaults that the
     // storefront's token layer interprets as "use the default theme".
-    const [theme, storefront] = await withTenant({ tenantId: tenant.id }, (tx) =>
+    const [theme, storefront, brand] = await withTenant({ tenantId: tenant.id }, (tx) =>
       Promise.all([
         tx.storefrontTheme.findUnique({
           where: { tenantId: tenant.id },
@@ -246,15 +246,55 @@ const publicContentRoutes: FastifyPluginAsync = (app) => {
             requireAuthForCheckout: true,
           },
         }),
+        // Tenant-level brand is the source of truth for IDENTITY (docs/30 §6):
+        // logo/favicon + brand colours + brand type. It WINS over StorefrontTheme
+        // here; the theme keeps only presentation tokens (background/muted/radius).
+        tx.tenantBrand.findUnique({
+          where: { tenantId: tenant.id },
+          select: {
+            businessName: true,
+            colorPrimary: true,
+            colorPrimaryForeground: true,
+            colorAccent: true,
+            fontHeading: true,
+            fontBody: true,
+            logoLightMediaId: true,
+            logoDarkMediaId: true,
+            faviconMediaId: true,
+          },
+        }),
       ])
     );
+
+    // Brand identity overrides theme identity; theme supplies presentation +
+    // fallback. All-null fields are interpreted by the storefront token layer as
+    // "use the default theme". `businessName` (when set) is the display name the
+    // storefront shows in the header/title/footer.
+    const mergedTheme =
+      theme || brand
+        ? {
+            colorPrimary: brand?.colorPrimary ?? theme?.colorPrimary ?? null,
+            colorPrimaryForeground:
+              brand?.colorPrimaryForeground ?? theme?.colorPrimaryForeground ?? null,
+            colorAccent: brand?.colorAccent ?? theme?.colorAccent ?? null,
+            colorBackground: theme?.colorBackground ?? null,
+            colorMuted: theme?.colorMuted ?? null,
+            fontHeading: brand?.fontHeading ?? theme?.fontHeading ?? null,
+            fontBody: brand?.fontBody ?? theme?.fontBody ?? null,
+            radiusBase: theme?.radiusBase ?? null,
+            logoMediaId: brand?.logoLightMediaId ?? theme?.logoMediaId ?? null,
+            logoDarkMediaId: brand?.logoDarkMediaId ?? theme?.logoDarkMediaId ?? null,
+            faviconMediaId: brand?.faviconMediaId ?? theme?.faviconMediaId ?? null,
+          }
+        : null;
 
     return ok({
       id: tenant.id,
       slug: tenant.slug,
       name: tenant.name,
+      businessName: brand?.businessName ?? null,
       settings: tenant.settings,
-      theme: theme ?? null,
+      theme: mergedTheme,
       storefront: storefront ?? {
         defaultCurrency: 'USD',
         defaultLocale: 'en-US',

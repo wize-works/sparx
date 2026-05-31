@@ -15,6 +15,7 @@ import * as React from 'react';
 import { Button, ColorPicker, Input, Label } from '@sparx/ui';
 import { updateBrand, type BrandPatch } from '../_lib/actions';
 import type { BrandDto, BrandMediaUrls } from '../_lib/types';
+import { BRAND_PREVIEW_FALLBACK, contrastRatio, rateContrast } from '../_lib/brand-preview';
 import { BrandImageField } from './brand-image-field';
 import { BrandBoard } from './brand-board';
 import { FieldControl } from './field-control';
@@ -113,13 +114,17 @@ export function BrandPanel({ initial, initialMedia }: BrandPanelProps) {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-end gap-3">
+        {/* Save feedback is the whole loop on an explicit-save form — keep it in
+            a live region so it's announced, not just shown. */}
         {error ? (
-          <span className="text-xs text-[var(--color-danger-text)]">{error}</span>
-        ) : dirty ? (
-          <span className="text-xs text-[var(--color-text-muted)]">Unsaved changes</span>
-        ) : savedAt ? (
-          <span className="text-xs text-[var(--color-text-muted)]">Saved</span>
-        ) : null}
+          <span role="alert" className="text-xs text-[var(--color-danger-text)]">
+            {error}
+          </span>
+        ) : (
+          <span role="status" aria-live="polite" className="text-xs text-[var(--color-text-muted)]">
+            {dirty ? 'Unsaved changes' : savedAt ? 'Saved' : ''}
+          </span>
+        )}
         <Button variant="primary" onClick={onSave} disabled={!dirty || pending} loading={pending}>
           Save changes
         </Button>
@@ -186,6 +191,7 @@ export function BrandPanel({ initial, initialMedia }: BrandPanelProps) {
               value={colorPrimaryForeground}
               onChange={setColorPrimaryForeground}
               help="Text/icons shown on the primary color."
+              contrastAgainst={colorPrimary ?? BRAND_PREVIEW_FALLBACK.primary}
             />
             <ColorField label="Accent" value={colorAccent} onChange={setColorAccent} />
           </Section>
@@ -211,6 +217,9 @@ export function BrandPanel({ initial, initialMedia }: BrandPanelProps) {
                 </Label>
                 <Input
                   id={`brand-social-${p}`}
+                  type="url"
+                  inputMode="url"
+                  autoComplete="off"
                   value={socials[p] ?? ''}
                   onChange={(e) => setSocial(p, e.target.value)}
                   placeholder={`https://${p === 'x' ? 'x.com' : `${p}.com`}/yourbrand`}
@@ -241,42 +250,65 @@ export function BrandPanel({ initial, initialMedia }: BrandPanelProps) {
 }
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  // <h2> under the page's <h1> — no skipped level (the board's labels are
+  // <span>, so these are the only sub-headings).
   return (
     <section className="flex flex-col gap-3">
-      <h3 className="text-sm font-semibold text-[var(--color-text-primary)]">{title}</h3>
+      <h2 className="text-sm font-semibold text-[var(--color-text-primary)]">{title}</h2>
       {children}
     </section>
   );
 }
 
+// Maps a WCAG rating to a token-backed badge tone. Fail → danger, the partial
+// AA-Large pass → warning, AA/AAA → success.
+function contrastTone(rating: string): { text: string; bg: string } {
+  if (rating === 'Fail') return { text: 'var(--color-danger-text)', bg: 'var(--color-danger-tint)' };
+  if (rating === 'AA Large')
+    return { text: 'var(--color-warning-text)', bg: 'var(--color-warning-tint)' };
+  return { text: 'var(--color-success-text)', bg: 'var(--color-success-tint)' };
+}
+
 // A color field with a clear-to-default affordance (brand colors are optional;
-// unset means "inherit the theme default").
+// unset means "inherit the theme default"). When `contrastAgainst` is set it
+// shows a live WCAG rating — a brand tool should never let an unreadable
+// primary/on-primary pair ship silently.
 function ColorField({
   label,
   value,
   onChange,
   help,
+  contrastAgainst,
 }: {
   label: string;
   value: string | null;
   onChange: (next: string | null) => void;
   help?: string;
+  contrastAgainst?: string;
 }) {
+  const ratio = contrastAgainst && value ? contrastRatio(value, contrastAgainst) : null;
+  const rating = ratio === null ? null : rateContrast(ratio);
+
   return (
     <div className="flex flex-col gap-1.5">
       <div className="flex items-center justify-between">
         <Label>{label}</Label>
         {value ? (
-          <button
-            type="button"
-            onClick={() => onChange(null)}
-            className="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"
-          >
+          <Button type="button" variant="link" size="xs" onClick={() => onChange(null)}>
             Clear
-          </button>
+          </Button>
         ) : null}
       </div>
       <ColorPicker value={value ?? ''} onChange={(v) => onChange(v || null)} ariaLabel={label} />
+      {ratio !== null && rating ? (
+        <span
+          className="inline-flex w-fit items-center gap-1 rounded px-1.5 py-0.5 text-[11px] font-medium"
+          style={contrastTone(rating)}
+        >
+          {ratio.toFixed(1)}:1 · {rating}
+          {rating === 'Fail' ? ' — hard to read' : ''}
+        </span>
+      ) : null}
       {help ? <p className="text-xs text-[var(--color-text-muted)]">{help}</p> : null}
     </div>
   );

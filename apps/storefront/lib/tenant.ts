@@ -55,9 +55,13 @@ export interface ResolvedTenant {
   storefront: TenantStorefront;
 }
 
+// The API also returns `businessName` (the tenant-level brand display name,
+// docs/30 §6). We collapse it into `name` at this boundary so every storefront
+// surface (header, footer, title, hero) shows the brand name with zero extra
+// wiring, falling back to the legal tenant name when brand has none set.
 interface TenantApiResponse {
   success: boolean;
-  data?: ResolvedTenant;
+  data?: ResolvedTenant & { businessName?: string | null };
   error?: { code: string; message: string };
 }
 
@@ -108,9 +112,12 @@ export const resolveTenant = cache(async (): Promise<ResolvedTenant | null> => {
     });
     const json = (await res.json()) as TenantApiResponse;
     if (!res.ok || !json.success || !json.data) return null;
+    const { businessName, ...data } = json.data;
+    const display = businessName?.trim();
     return {
-      ...json.data,
-      storefront: json.data.storefront ?? DEFAULT_STOREFRONT,
+      ...data,
+      name: display && display.length > 0 ? display : data.name,
+      storefront: data.storefront ?? DEFAULT_STOREFRONT,
     };
   } catch {
     return null;

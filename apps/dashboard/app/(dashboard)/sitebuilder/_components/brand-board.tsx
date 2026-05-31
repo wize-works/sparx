@@ -11,6 +11,12 @@
 
 import * as React from 'react';
 import { ImageIcon } from 'lucide-react';
+import {
+  BRAND_PREVIEW_FALLBACK,
+  contrastRatio,
+  fontStack,
+  rateContrast,
+} from '../_lib/brand-preview';
 
 export interface BrandBoardValues {
   businessName: string | null;
@@ -25,20 +31,9 @@ export interface BrandBoardValues {
   socials: Record<string, string>;
 }
 
-// Preview-only fallbacks so the board never looks broken before a field is set.
-// These are display defaults for the *preview*, not stored values.
-const FALLBACK = {
-  primary: '#6366f1',
-  primaryForeground: '#ffffff',
-  accent: '#0ea5e9',
-  heading: 'Geist',
-  body: 'Inter',
-};
-
-function fontStack(name: string | null, fallbackName: string): string {
-  const clean = (name ?? fallbackName).replace(/['"]/g, '').trim() || fallbackName;
-  return `"${clean}", ui-sans-serif, system-ui, sans-serif`;
-}
+// Preview-only fallbacks (shared with the form's contrast readout so the two
+// can't drift) so the board never looks broken before a field is set.
+const FALLBACK = BRAND_PREVIEW_FALLBACK;
 
 export function BrandBoard(props: BrandBoardValues) {
   const primary = props.colorPrimary ?? FALLBACK.primary;
@@ -49,6 +44,10 @@ export function BrandBoard(props: BrandBoardValues) {
   const trimmedName = props.businessName?.trim();
   const name = trimmedName && trimmedName.length > 0 ? trimmedName : 'Your business';
   const socials = Object.entries(props.socials).filter(([, v]) => v.trim());
+
+  // Rate the pair the merchant will actually ship on every brand button.
+  const buttonRatio = contrastRatio(onPrimary, primary);
+  const buttonFails = buttonRatio !== null && rateContrast(buttonRatio) === 'Fail';
 
   return (
     <div className="flex flex-col gap-5 rounded-lg border border-[var(--color-border-default)] bg-[var(--color-bg-surface)] p-5">

@@ -16,7 +16,12 @@
 // delegated to @sparx/storefront-themes; we never fork a second registry.
 
 import { withTenant } from '@sparx/db';
-import { compileTokens, DEFAULT_THEME_KEY, type ThemeTokens } from '@sparx/storefront-themes';
+import {
+  brandIdentityOverlay,
+  compileTokens,
+  DEFAULT_THEME_KEY,
+  type ThemeTokens,
+} from '@sparx/storefront-themes';
 import type { BrandTokens } from '@sparx/email';
 
 import type { ServiceContext } from '../errors';
@@ -91,14 +96,9 @@ export async function resolveEmailBrand(ctx: ServiceContext): Promise<BrandToken
     if (!hasIdentity) return null;
 
     // Overlay the brand's identity palette/typography over the default preset;
-    // unset tokens inherit the preset. Email uses the light palette only.
-    const overlay: Partial<ThemeTokens> = {};
-    if (brand.colorPrimary) overlay.colorPrimary = brand.colorPrimary;
-    if (brand.colorPrimaryForeground) overlay.colorPrimaryForeground = brand.colorPrimaryForeground;
-    if (brand.colorAccent) overlay.colorAccent = brand.colorAccent;
-    if (brand.fontHeading) overlay.fontHeading = brand.fontHeading;
-    if (brand.fontBody) overlay.fontBody = brand.fontBody;
-
+    // unset tokens inherit the preset. Email uses the light palette only. Same
+    // brand→token mapping the storefront uses (shared in @sparx/storefront-themes).
+    const overlay = brandIdentityOverlay(brand);
     const compiled = compileTokens(DEFAULT_THEME_KEY, { light: overlay }).light;
     return tokensToBrand(compiled, {
       logoUrl: logoUrlFor(brand.logoLightMediaId, slug),
