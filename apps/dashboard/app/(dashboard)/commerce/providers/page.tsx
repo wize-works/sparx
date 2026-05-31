@@ -270,7 +270,7 @@ function ProviderCard({ provider, kind }: { provider: ProviderMetadata; kind: Pr
         </Stack>
       </Stack>
       <Stack gap={1}>
-        <Button asChild>
+        <Button color="module" asChild>
           <Link href={`/commerce/providers/install?slug=${provider.slug}&kind=${kind}`}>
             Install
           </Link>

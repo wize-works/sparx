@@ -92,7 +92,7 @@ export function GrantStoreCreditForm({ customers }: { customers: CustomerOption[
           <Input id="note" name="note" placeholder="Goodwill credit after shipping delay" />
         </Stack>
         <Stack direction="row" gap={2} align="center" className="pt-2">
-          <Button type="submit" disabled={pending}>
+          <Button color="module" type="submit" disabled={pending}>
             {pending ? 'Granting…' : 'Grant credit'}
           </Button>
           {error && (

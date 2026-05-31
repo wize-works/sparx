@@ -166,7 +166,7 @@ export function WarehouseEditForm({ warehouse }: { warehouse: WarehouseRow }) {
                 Saved {savedAt}
               </Text>
             )}
-            <Button type="submit" disabled={pending} className="ml-auto">
+            <Button color="module" type="submit" disabled={pending} className="ml-auto">
               {pending ? 'Saving…' : 'Save'}
             </Button>
           </Stack>

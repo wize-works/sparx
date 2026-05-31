@@ -78,7 +78,7 @@ export function ReturnRefundForm({
           </Text>
         )}
         <Stack direction="row" gap={2} justify="end">
-          <Button type="submit" disabled={pending}>
+          <Button color="module" type="submit" disabled={pending}>
             {pending ? 'Issuing…' : 'Issue refund'}
           </Button>
         </Stack>

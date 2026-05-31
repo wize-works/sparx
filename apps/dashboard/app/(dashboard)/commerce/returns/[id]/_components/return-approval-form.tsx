@@ -101,7 +101,7 @@ export function ReturnApprovalForm({
           </Text>
         )}
         <Stack direction="row" gap={2} justify="end">
-          <Button type="submit" disabled={pending}>
+          <Button color="module" type="submit" disabled={pending}>
             {pending ? 'Approving…' : 'Approve return'}
           </Button>
         </Stack>

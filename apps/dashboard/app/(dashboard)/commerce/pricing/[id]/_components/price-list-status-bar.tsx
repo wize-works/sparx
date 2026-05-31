@@ -52,7 +52,7 @@ export function PriceListStatusBar({
         </Text>
       )}
       {status === 'draft' && (
-        <Button size="sm" disabled={pending} onClick={() => transition('active')}>
+        <Button color="module" size="sm" disabled={pending} onClick={() => transition('active')}>
           Activate
         </Button>
       )}
