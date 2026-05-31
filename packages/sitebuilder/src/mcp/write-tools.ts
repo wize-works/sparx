@@ -49,7 +49,8 @@ export const writeTools: AnyMcpTool[] = [
   },
   {
     name: 'add_section',
-    description: 'Add a section (hero, featured-products, testimonials, …) to a page draft.',
+    description:
+      'Add a section (hero, featured-products, testimonials, …) to a layout draft. Target the layout by `templateId`, or by `scope` (home | product | collection | cms-page | custom) + optional `key`.',
     scope: 'write:storefront',
     input: CreateSectionInput,
     confirmation: false,
@@ -69,7 +70,7 @@ export const writeTools: AnyMcpTool[] = [
   {
     name: 'reorder_sections',
     description:
-      'Reorder the sections on a page by supplying the section ids in the desired order.',
+      'Reorder a layout’s sections by supplying the section ids in the desired order. Target the layout by `templateId`, or by `scope` (+ optional `key`).',
     scope: 'write:storefront',
     input: ReorderSectionsInput,
     confirmation: false,

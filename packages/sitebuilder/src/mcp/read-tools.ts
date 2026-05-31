@@ -1,11 +1,12 @@
 // Read-only Site Builder MCP tools. No confirmation; scope read:storefront.
 
 import { z } from 'zod';
+import { ScopeEnum, TemplateKey } from '@sparx/sitebuilder-schemas';
 import { themeService, sectionService, publishService } from '../services/index';
 import type { AnyMcpTool } from './registry';
 
 const NoArgs = z.object({});
-const PageArg = z.object({ pageKey: z.string().min(1).max(255).default('home') });
+const ScopeArg = z.object({ scope: ScopeEnum, key: TemplateKey.default('default') });
 const ListVersionsArgs = z.object({
   take: z.number().int().min(1).max(200).optional(),
   skip: z.number().int().min(0).optional(),
@@ -33,11 +34,14 @@ export const readTools: AnyMcpTool[] = [
   {
     name: 'get_sections',
     description:
-      'List the section composition for a page (pageKey "home" or a CMS page slug), in render order.',
+      'List a scoped layout’s sections in render order. `scope` is home | product | collection | cms-page | custom; `key` defaults to "default" (use a slug for a custom/cms page).',
     scope: 'read:storefront',
-    input: PageArg,
+    input: ScopeArg,
     confirmation: false,
-    run: (ctx, input) => sectionService.list(ctx, (input as z.infer<typeof PageArg>).pageKey),
+    run: (ctx, input) => {
+      const { scope, key } = input as z.infer<typeof ScopeArg>;
+      return sectionService.listForScope(ctx, scope, key);
+    },
   },
   {
     name: 'list_site_versions',

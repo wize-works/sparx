@@ -19,7 +19,7 @@ import { FileText, Plus } from 'lucide-react';
 
 import { api } from '@/lib/api-rest-client';
 import { EntityRowLink } from '../../_components/entity-row-link';
-import { EntryListFilters } from '../_components/entry-list-filters';
+import { ListToolbar } from '../../_components/list-toolbar';
 
 // CMS Pages list — reached from the CMS overview (/cms) and the "Pages" panel
 // section. Page detail stays at /cms/[id] (the shell's `page` entityType +
@@ -43,6 +43,13 @@ interface SearchParams {
 }
 
 const PAGE_SIZE = 50;
+
+const STATUS_OPTIONS = [
+  { value: 'draft', label: 'Draft' },
+  { value: 'published', label: 'Published' },
+  { value: 'scheduled', label: 'Scheduled' },
+  { value: 'archived', label: 'Archived' },
+];
 
 function asString(v: string | string[] | undefined): string | undefined {
   if (typeof v === 'string') return v;
@@ -93,7 +100,7 @@ export default async function CmsPagesListPage({
   const isPaged = Boolean(cursor);
 
   return (
-    <Container size="xl">
+    <Container size="full">
       <Stack gap={6} className="py-10">
         <PageHeader
           className="mb-0"
@@ -108,7 +115,10 @@ export default async function CmsPagesListPage({
           }
         />
 
-        <EntryListFilters />
+        <ListToolbar
+          searchPlaceholder="Search by title or slug…"
+          filters={[{ key: 'status', label: 'Statuses', options: STATUS_OPTIONS }]}
+        />
 
         {entries.length === 0 ? (
           <Card variant="module" padding="none">

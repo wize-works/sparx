@@ -65,7 +65,7 @@ export default async function DiscountsPage() {
   const draft = discounts.filter((d) => d.status === 'draft');
 
   return (
-    <Container size="xl">
+    <Container size="full">
       <Stack gap={6} className="py-10">
         <PageHeader
           icon={<Tag className="h-5 w-5" />}

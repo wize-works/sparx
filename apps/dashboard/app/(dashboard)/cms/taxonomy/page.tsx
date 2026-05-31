@@ -31,7 +31,7 @@ export default async function TaxonomyIndexPage() {
   const taxonomies = await api.get<ApiTaxonomy[]>('/v1/taxonomies');
 
   return (
-    <Container size="lg">
+    <Container size="full">
       <Stack gap={6} className="py-10">
         <PageHeader
           icon={<Tag className="h-5 w-5" />}

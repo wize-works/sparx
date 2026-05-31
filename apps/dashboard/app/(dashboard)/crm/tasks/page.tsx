@@ -50,7 +50,7 @@ export default async function TasksPage({ searchParams }: PageProps) {
   ]);
 
   return (
-    <Container size="xl">
+    <Container size="full">
       <Stack gap={6} className="py-10">
         <PageHeader
           icon={<CheckSquare className="h-5 w-5" />}

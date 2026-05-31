@@ -45,7 +45,7 @@ export default async function WishlistsPage() {
   const { wishlistCount, itemCount, topVariants } = analytics;
 
   return (
-    <Container size="xl">
+    <Container size="full">
       <Stack gap={6} className="py-10">
         <PageHeader
           icon={<Heart className="h-5 w-5" />}

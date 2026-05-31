@@ -64,7 +64,7 @@ export default async function ShippingPage() {
   ]);
 
   return (
-    <Container size="xl">
+    <Container size="full">
       <Stack gap={6} className="py-10">
         <PageHeader
           icon={<Truck className="h-5 w-5" />}

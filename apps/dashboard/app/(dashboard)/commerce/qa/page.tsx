@@ -1,4 +1,3 @@
-import Link from 'next/link';
 import { HelpCircle } from 'lucide-react';
 
 import {
@@ -24,11 +23,12 @@ import {
 import { api } from '@/lib/api-rest-client';
 
 import { EntityRowLink } from '../../_components/entity-row-link';
+import { ListToolbar } from '../../_components/list-toolbar';
 
 export const dynamic = 'force-dynamic';
 
-const STATUS_FILTERS: { value: string | undefined; label: string }[] = [
-  { value: undefined, label: 'Pending' },
+// Empty filter value = the pending moderation queue (the default landing).
+const STATUS_OPTIONS = [
   { value: 'published', label: 'Published' },
   { value: 'rejected', label: 'Rejected' },
   { value: 'all', label: 'All' },
@@ -115,7 +115,7 @@ export default async function QaPage({
   }
 
   return (
-    <Container size="xl">
+    <Container size="full">
       <Stack gap={6} className="py-10">
         <PageHeader
           icon={<HelpCircle className="h-5 w-5" />}
@@ -124,11 +124,10 @@ export default async function QaPage({
           description="Customer questions are moderated before they reach the storefront. Answering with the staff badge marks the response as official; community answers can land too once the question is published."
         />
 
-        <Stack direction="row" gap={2} wrap>
-          {STATUS_FILTERS.map((f) => (
-            <FilterLink key={f.label} current={statusParam} value={f.value} label={f.label} />
-          ))}
-        </Stack>
+        <ListToolbar
+          searchable={false}
+          filters={[{ key: 'status', label: 'Statuses', options: STATUS_OPTIONS }]}
+        />
 
         <Card>
           <CardHeader>
@@ -204,31 +203,6 @@ function labelFor(s: string | undefined): string {
 
 function truncate(s: string, n: number): string {
   return s.length > n ? `${s.slice(0, n - 1)}…` : s;
-}
-
-function FilterLink({
-  current,
-  value,
-  label,
-}: {
-  current: string | undefined;
-  value: string | undefined;
-  label: string;
-}) {
-  const isActive = current === value;
-  const href = value ? `/commerce/qa?status=${value}` : '/commerce/qa';
-  return (
-    <Link
-      href={href}
-      className={
-        isActive
-          ? 'rounded bg-[var(--module-active)] px-3 py-1 text-xs text-white'
-          : 'rounded border border-[var(--color-border-default)] px-3 py-1 text-xs hover:bg-[var(--color-bg-subtle)]'
-      }
-    >
-      {label}
-    </Link>
-  );
 }
 
 function StatusBadge({ status }: { status: string }) {

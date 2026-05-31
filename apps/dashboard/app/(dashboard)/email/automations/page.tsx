@@ -14,6 +14,7 @@ export default async function AutomationsPage() {
 
   return (
     <EmailShell
+      width="full"
       icon={<Workflow className="h-5 w-5" />}
       title="Automations"
       description="Event-triggered flows. Default automations fire on commerce and CRM events; toggle and tune each one."

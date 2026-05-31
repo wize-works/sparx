@@ -17,7 +17,7 @@ export default async function RedirectsPage() {
   const redirects = await api.get<ApiRedirect[]>('/v1/redirects');
 
   return (
-    <Container size="xl">
+    <Container size="full">
       <Stack gap={6} className="py-10">
         <PageHeader
           title="Redirects"

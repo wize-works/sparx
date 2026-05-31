@@ -73,7 +73,7 @@ export default async function StoreCreditPage() {
   });
 
   return (
-    <Container size="xl">
+    <Container size="full">
       <Stack gap={6} className="py-10">
         <PageHeader
           icon={<CircleDollarSign className="h-5 w-5" />}

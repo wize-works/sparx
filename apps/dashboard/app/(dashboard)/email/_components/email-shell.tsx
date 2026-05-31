@@ -13,12 +13,25 @@ interface EmailShellProps {
   icon?: ReactNode;
   /** Right-aligned header actions (e.g. a "New broadcast" button). */
   actions?: ReactNode;
+  /**
+   * Content width. Overview/settings/detail surfaces keep the default reading
+   * column (`'wide'` → `Container size="xl"`); record-list surfaces opt into
+   * `'full'` so dense tables/grids use the full viewport (docs/34 list pages).
+   */
+  width?: 'wide' | 'full';
   children: ReactNode;
 }
 
-export function EmailShell({ title, description, icon, actions, children }: EmailShellProps) {
+export function EmailShell({
+  title,
+  description,
+  icon,
+  actions,
+  width = 'wide',
+  children,
+}: EmailShellProps) {
   return (
-    <Container size="xl">
+    <Container size={width === 'full' ? 'full' : 'xl'}>
       <Stack gap={6} className="py-10">
         <PageHeader
           className="mb-0"

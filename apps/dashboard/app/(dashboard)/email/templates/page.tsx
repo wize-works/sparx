@@ -26,6 +26,7 @@ export default async function TemplatesPage() {
 
   return (
     <EmailShell
+      width="full"
       icon={<LayoutTemplate className="h-5 w-5" />}
       title="Templates"
       description="Built-in transactional templates and your own marketing templates."

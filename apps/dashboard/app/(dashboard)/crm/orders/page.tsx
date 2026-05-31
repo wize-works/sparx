@@ -22,6 +22,7 @@ import {
 import { api } from '@/lib/api-rest-client';
 
 import { EntityRowLink } from '../../_components/entity-row-link';
+import { ListToolbar } from '../../_components/list-toolbar';
 
 interface OrderRow {
   id: string;
@@ -52,6 +53,21 @@ const STATUS_VARIANT: Record<string, 'success' | 'warning' | 'outline' | 'danger
   refunded: 'warning',
 };
 
+const STATUS_OPTIONS = [
+  { value: 'placed', label: 'Placed' },
+  { value: 'fulfilled', label: 'Fulfilled' },
+  { value: 'delivered', label: 'Delivered' },
+  { value: 'cancelled', label: 'Cancelled' },
+  { value: 'refunded', label: 'Refunded' },
+];
+
+const PAYMENT_STATUS_OPTIONS = [
+  { value: 'pending', label: 'Pending' },
+  { value: 'paid', label: 'Paid' },
+  { value: 'partially_paid', label: 'Partially paid' },
+  { value: 'refunded', label: 'Refunded' },
+];
+
 export default async function OrdersPage({ searchParams }: PageProps) {
   const params = await searchParams;
   const status = stringParam(params.status);
@@ -69,7 +85,7 @@ export default async function OrdersPage({ searchParams }: PageProps) {
   const total = (meta?.total as number | undefined) ?? orders.length;
 
   return (
-    <Container size="xl">
+    <Container size="full">
       <Stack gap={6} className="py-10">
         <PageHeader
           icon={<ShoppingCart className="h-5 w-5" />}
@@ -85,6 +101,14 @@ export default async function OrdersPage({ searchParams }: PageProps) {
               <Link href="/crm/orders/new">New order</Link>
             </Button>
           }
+        />
+
+        <ListToolbar
+          searchable={false}
+          filters={[
+            { key: 'status', label: 'Statuses', options: STATUS_OPTIONS },
+            { key: 'paymentStatus', label: 'Payment', options: PAYMENT_STATUS_OPTIONS },
+          ]}
         />
 
         {orders.length === 0 ? (

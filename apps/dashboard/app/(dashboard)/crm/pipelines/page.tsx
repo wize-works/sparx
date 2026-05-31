@@ -56,7 +56,7 @@ export default async function PipelinesPage({ searchParams }: PageProps) {
   );
 
   return (
-    <Container size="xl">
+    <Container size="full">
       <Stack gap={6} className="py-10">
         <PageHeader
           icon={<KanbanSquare className="h-5 w-5" />}

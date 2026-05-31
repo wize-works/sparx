@@ -1,9 +1,11 @@
 # Sparx Platform — Dashboard Working-Area Standard
 
-**Version:** 1.3
+**Version:** 1.4
 **Author:** Brandon Korous
 **Last Updated:** 2026-05-31
 
+> **1.4 (2026-05-31):** Review feedback after the toolbar pilot. **Collection/List pages move to Full width** (§3) — a data table is a work surface that should use the viewport, not a reading column; **overviews and detail pages stay bound** (their KPI/section/panel grids would sprawl). Shipped the `ListToolbar` (`@sparx/ui`) + dashboard URL-sync wrapper — live quick-filters/search/sort, no Apply, rolled across all module list pages (§7.1). Card/grid views use the new `Grid minItemWidth` auto-fill so cards stay a tidy width on full-bleed pages instead of stretching. Search is shown only where the list's endpoint supports text search (`q`); filter-only lists hide it.
+>
 > **1.3 (2026-05-31):** Post-rollout review feedback. Content width gains a third tier — **Full** (§3) for canvas/builder workspaces (Site Builder editor, the pipeline Kanban board) where the work surface itself wants the whole viewport. The drawer/modal detail view now adopts the record's **module color** (the `@detail` slot wraps content in the owning `ModuleProvider` — previously it inherited the `:root` indigo). Commerce primary CTAs corrected to `color="module"`. Next: the list **filter/search toolbar** redesign (§7) and a `defaultListView` (table/cards) preference mirroring `defaultDetailView`.
 >
 > **1.2 (2026-05-31):** Rollout landed (§17). `PageHeader` / `FilterBar` / `FormActionBar` built; in-content section tabs (cms/crm/email) and the in-content "← Back to X" links removed platform-wide (the breadcrumb owns up-nav). **Trend charts** added to @sparx/ui (`LineChart`/`BarChart`/`AreaChart`/`Sparkline`, token + `--module-active` themed, `--chart-1..6` palette) and onto the overviews (sample-labeled until reporting timeseries exists). **Landings converted to overview dashboards** — CRM list → `/crm/customers`, CMS Pages list → `/cms/pages`, each with a new `/{module}` overview; Email/Commerce already overview-shaped.
@@ -42,26 +44,26 @@ The shell applies no max-width; each page wraps its content in the shared `Conta
 
 | Width       | `Container size` | Max    | Used by                                                                         |
 | ----------- | ---------------- | ------ | ------------------------------------------------------------------------------- |
-| **Full**    | `full`           | none   | Canvas/builder tools: the Site Builder editor, the pipeline Kanban board        |
-| **Wide**    | `xl`             | 1280px | Module Overview, Collection/List, Record Detail, Settings Index, Module Preview |
+| **Full**    | `full`           | none   | Collection/List pages; canvas/builder tools (Site Builder editor, Kanban board) |
+| **Wide**    | `xl`             | 1280px | Module Overview, Record Detail, Settings Index, Module Preview                  |
 | **Focused** | `md`             | 768px  | Create/Edit Form, single-section settings forms                                 |
 
 `md` (768px) comfortably fits the two-column field rows seen on the deal/product forms. A form that genuinely needs three+ columns or an embedded sub-editor (a line-items grid, a segment rule-builder) may opt up to `lg` (1024px), but that is the documented exception, not a free choice. The four ad-hoc widths in the audit (820 / 960 / 1040 / 1200) collapse to these.
 
-> **Full vs. Wide vs. Form.** **Full** is reserved for tools whose _work surface itself_ wants the whole viewport — a drag-and-drop builder, a Kanban board — and still carries the `Container`'s own horizontal padding. It is not a license for ordinary pages to go edge-to-edge. A _detail_ page (tabs, multiple panels, the rich edit surface for an entity like a product) is a workspace → **Wide**. A _form_ page (`/new`, a simple single-card edit) is a focused task → **Focused**. The tell: a detail page has in-content tabs and inline/auto save; a form page has one card and an explicit Save/Cancel bar.
+> **Why lists are Full but overviews are Wide.** A **list** is a _work surface_: a data table is scanned across columns, not read top-to-bottom, so capping it at a reading width cramps columns and wastes the screen the shell already narrowed (rail + contextual panel). Lists go **Full** (the `Container`'s own padding still applies). An **overview** is the opposite — KPI grids, charts, and section-card grids _sprawl_ and look sparse stretched edge-to-edge, so they stay **Wide**. A **detail** page (tabs, multiple panels) is also a workspace but stays **Wide** for now. A **form** (`/new`, a simple single-card edit) is a focused task → **Focused**. Card/grid list views use `Grid minItemWidth` (auto-fill) so cards keep a tidy width and pack more per row as the page widens, rather than stretching.
 
 ---
 
 ## 4. The Six Archetypes
 
-| #   | Archetype              | Route shape                               | Width   | Header actions                                  | Body                                                             |
-| --- | ---------------------- | ----------------------------------------- | ------- | ----------------------------------------------- | ---------------------------------------------------------------- |
-| 1   | **Module Overview**    | `/{module}`                               | Wide    | Primary create + optional secondary             | Stat grid → SectionCard grid (links to surfaces)                 |
-| 2   | **Collection / List**  | `/{module}/{things}`                      | Wide    | Primary create                                  | FilterBar → DataTable (desktop) / card list (mobile) → pager     |
-| 3   | **Record Detail**      | `/{module}/{things}/{id}`                 | Wide    | Status-changing secondaries (Publish, Archive…) | Tabs → section Cards                                             |
-| 4   | **Create / Edit Form** | `/{module}/{things}/new`, simple edits    | Focused | — (actions in the form bar)                     | Card(s) → Form fields → action bar                               |
-| 5   | **Settings Index**     | `/settings`, `/{module}/settings` (index) | Wide    | —                                               | SectionCard grid                                                 |
-| 6   | **Module Preview**     | not-yet-built modules                     | Wide    | —                                               | `ModuleStub`: header + "coming online" panel + "What ships" grid |
+| #   | Archetype              | Route shape                               | Width   | Header actions                                  | Body                                                                |
+| --- | ---------------------- | ----------------------------------------- | ------- | ----------------------------------------------- | ------------------------------------------------------------------- |
+| 1   | **Module Overview**    | `/{module}`                               | Wide    | Primary create + optional secondary             | Stat grid → SectionCard grid (links to surfaces)                    |
+| 2   | **Collection / List**  | `/{module}/{things}`                      | Full    | Primary create                                  | ListToolbar → DataTable / auto-fill card grid (view toggle) → pager |
+| 3   | **Record Detail**      | `/{module}/{things}/{id}`                 | Wide    | Status-changing secondaries (Publish, Archive…) | Tabs → section Cards                                                |
+| 4   | **Create / Edit Form** | `/{module}/{things}/new`, simple edits    | Focused | — (actions in the form bar)                     | Card(s) → Form fields → action bar                                  |
+| 5   | **Settings Index**     | `/settings`, `/{module}/settings` (index) | Wide    | —                                               | SectionCard grid                                                    |
+| 6   | **Module Preview**     | not-yet-built modules                     | Wide    | —                                               | `ModuleStub`: header + "coming online" panel + "What ships" grid    |
 
 Everything below specifies the shared pieces these archetypes are built from.
 
@@ -124,7 +126,7 @@ Anatomy (left → right), wrapping responsively:
 
 - **Quick filters, live — no "Apply" button.** Each list surfaces its existing facets (status / type / vendor / …) as inline `Select`s or segmented pills. Changing one updates results immediately (search debounced ~250ms). This is **not** a Notion-style condition-builder (field→operator→value, AND/OR groups) — that is a deferred later phase, not v1.
 - **URL-driven, server-fetch preserved.** `ListToolbar` is a client component whose only job is to sync state into the URL (`router.replace(pathname?…)`, debounced). The page stays a server component that reads `searchParams` and refetches — so "live" filtering needs no client data layer. Active filters render as removable chips below the bar.
-- **Search is the Typesense seam.** The search box binds to `?q=`. The _page_ owns the fetch, so when search moves to Typesense (docs/22) only the page's data source changes for `q` — `ListToolbar` never changes. Build the search input now against the current REST endpoint; keep that swap point isolated.
+- **Search is the Typesense seam.** The search box binds to `?q=`. The _page_ owns the fetch, so when search moves to Typesense (docs/22) only the page's data source changes for `q` — `ListToolbar` never changes. Build the search input now against the current REST endpoint; keep that swap point isolated. **Show search only where the endpoint supports it** — pass `searchable={false}` on filter-only lists so there's no dead control. (Today only `products`, content `entries`, `media`, `customers`, and `b2b-accounts` accept `q`.)
 - **View toggle (Table / Cards).** A segmented control on the right flips the list rendering. It reads `?view=` (a transient per-view override) falling back to the user's `defaultListView` preference (§7.2). The list still renders the §7 responsive `DataTable` (desktop) / card list (mobile); the toggle lets a user force cards on desktop. Lists where only one rendering makes sense (e.g. Media's thumbnail grid) omit the toggle.
 
 ### 7.2 `defaultListView` preference

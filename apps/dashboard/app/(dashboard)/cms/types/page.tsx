@@ -50,7 +50,7 @@ export default async function ContentTypesPage() {
   for (const e of entries) counts.set(e.type_key, (counts.get(e.type_key) ?? 0) + 1);
 
   return (
-    <Container size="xl">
+    <Container size="full">
       <Stack gap={6} className="py-10">
         <PageHeader
           icon={<Database className="h-5 w-5" />}

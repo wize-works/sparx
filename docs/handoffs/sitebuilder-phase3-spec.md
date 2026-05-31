@@ -505,9 +505,14 @@ layer — sequenced deploy-small so the e2e store never breaks mid-rollout.
   (`materializeTemplate`) that shows `DEFAULT_TEMPLATES[scope]` read-only until clicked. Home + Pages
   migrated to resolve-or-create their template on load and address sections by `templateId`.
   typecheck + lint (0 errors) + format clean. _Not deployed by me — user-triggered._
-- **3.3c — Cleanup.** Remove the `page_key` alias from routes/service/input schemas/`SectionView`; cut
-  MCP tools to `templateId`/`scope+key`; relocate the legacy-`pageKey` mapping to the snapshot read path
-  only. Update tests. Ship — zero `pageKey` in the live API.
+- **3.3c — Cleanup. ✅ Shipped 2026-05-31 (green).** Zero `pageKey` in the live section API.
+  `CreateSectionInput`/`ReorderSectionsInput` drop `pageKey`, gain `scope`+`key` (service requires
+  `templateId` **or** `scope`); `SectionView` drops `pageKey`; `sectionService` resolves writes by
+  `templateId | (scope,key)`, `list(pageKey)`→`listForScope`. The legacy `pageKey`↔`(scope,key)` mapping
+  now lives ONLY in the snapshot path: `publish-internals.ts` (writes `SectionSnapshot.pageKey` for
+  back-compat + maps it on rollback of pre-P3 versions) and the storefront `lib/site.ts` read shim. MCP
+  `get_sections` → `scope`+`key`; `add_section`/`reorder_sections` → `templateId | scope+key`. Dashboard
+  `SiteSectionDto` drops `pageKey`. typecheck + lint + format clean; 14 integration tests pass.
 
 ### 13.4 Acceptance (adds to §10)
 

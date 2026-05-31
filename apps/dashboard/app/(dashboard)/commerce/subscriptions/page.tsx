@@ -1,4 +1,3 @@
-import Link from 'next/link';
 import { Repeat2 } from 'lucide-react';
 
 import {
@@ -24,10 +23,19 @@ import {
 import { api } from '@/lib/api-rest-client';
 
 import { EntityRowLink } from '../../_components/entity-row-link';
+import { ListToolbar } from '../../_components/list-toolbar';
 
 export const dynamic = 'force-dynamic';
 
 type SubscriptionStatus = 'active' | 'trialing' | 'paused' | 'past_due' | 'cancelled';
+
+const STATUS_OPTIONS = [
+  { value: 'active', label: 'Active' },
+  { value: 'trialing', label: 'Trialing' },
+  { value: 'paused', label: 'Paused' },
+  { value: 'past_due', label: 'Past due' },
+  { value: 'cancelled', label: 'Cancelled' },
+];
 
 interface SubscriptionSummary {
   id: string;
@@ -63,7 +71,7 @@ export default async function SubscriptionsPage({
   const mrrCents = items.reduce((sum, s) => sum + s.monthlyRecurringRevenueCents, 0);
 
   return (
-    <Container size="xl">
+    <Container size="full">
       <Stack gap={6} className="py-10">
         <PageHeader
           icon={<Repeat2 className="h-5 w-5" />}
@@ -83,14 +91,10 @@ export default async function SubscriptionsPage({
           }
         />
 
-        <Stack direction="row" gap={2}>
-          <FilterLink current={status} value={undefined} label={`All (${total})`} />
-          <FilterLink current={status} value="active" label="Active" />
-          <FilterLink current={status} value="trialing" label="Trialing" />
-          <FilterLink current={status} value="paused" label="Paused" />
-          <FilterLink current={status} value="past_due" label="Past due" />
-          <FilterLink current={status} value="cancelled" label="Cancelled" />
-        </Stack>
+        <ListToolbar
+          searchable={false}
+          filters={[{ key: 'status', label: 'Statuses', options: STATUS_OPTIONS }]}
+        />
 
         <Card>
           <CardHeader>
@@ -165,31 +169,6 @@ export default async function SubscriptionsPage({
         </Card>
       </Stack>
     </Container>
-  );
-}
-
-function FilterLink({
-  current,
-  value,
-  label,
-}: {
-  current: SubscriptionStatus | undefined;
-  value: SubscriptionStatus | undefined;
-  label: string;
-}) {
-  const isActive = current === value || (current === undefined && value === undefined);
-  const href = value ? `/commerce/subscriptions?status=${value}` : '/commerce/subscriptions';
-  return (
-    <Link
-      href={href}
-      className={
-        isActive
-          ? 'rounded bg-[var(--module-active)] px-3 py-1 text-xs text-white'
-          : 'rounded border border-[var(--color-border-default)] px-3 py-1 text-xs hover:bg-[var(--color-bg-subtle)]'
-      }
-    >
-      {label}
-    </Link>
   );
 }
 

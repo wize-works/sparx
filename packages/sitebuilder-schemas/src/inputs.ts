@@ -17,12 +17,6 @@ export const UpdateSettingsInput = z.object({
 });
 export type UpdateSettingsInput = z.infer<typeof UpdateSettingsInput>;
 
-// pageKey: "home" or a CMS page slug. Bounded to the column width.
-// Legacy alias — sections are addressed by `templateId` in the live API
-// (Phase 3.3); `pageKey` survives only as a transitional alias the service
-// maps onto (scope, key), removed in 3.3c.
-export const PageKey = z.string().min(1).max(255);
-
 // key: stable within (tenant, scope) — "default" for a scope's single layout,
 // a slug for cms-page / custom standalone pages.
 export const TemplateKey = z.string().min(1).max(255);
@@ -51,10 +45,12 @@ export const ListTemplatesQuery = z.object({
 export type ListTemplatesQuery = z.infer<typeof ListTemplatesQuery>;
 
 export const CreateSectionInput = z.object({
-  // Target layout. Prefer `templateId`; `pageKey` is the legacy alias the
-  // service resolves onto a template when `templateId` is absent (default home).
+  // Target layout. Address by `templateId` (preferred) or by `scope` (+ `key`,
+  // default 'default') — e.g. scope 'home' / 'product' / 'collection'. The
+  // service requires one of the two.
   templateId: Uuid.optional(),
-  pageKey: PageKey.optional(),
+  scope: ScopeEnum.optional(),
+  key: TemplateKey.optional(),
   sectionType: SectionTypeEnum,
   // Optional initial config; defaults are filled from the section schema.
   config: z.record(z.string(), z.unknown()).optional(),
@@ -70,9 +66,11 @@ export const UpdateSectionInput = z.object({
 export type UpdateSectionInput = z.infer<typeof UpdateSectionInput>;
 
 export const ReorderSectionsInput = z.object({
-  // Target layout — `templateId` preferred, `pageKey` the legacy alias.
+  // Target layout — `templateId` (preferred) or `scope` (+ `key`, default
+  // 'default'). The service requires one of the two.
   templateId: Uuid.optional(),
-  pageKey: PageKey.optional(),
+  scope: ScopeEnum.optional(),
+  key: TemplateKey.optional(),
   orderedIds: z.array(Uuid).min(1),
 });
 export type ReorderSectionsInput = z.infer<typeof ReorderSectionsInput>;

@@ -26,6 +26,9 @@ export interface ListToolbarFilterConfig {
 }
 
 export interface ListToolbarProps {
+  /** Show the search box. Set false on lists whose endpoint has no text search
+   *  (avoids a dead control). Default true. */
+  searchable?: boolean;
   /** Query key for the search box. Default `q`. */
   searchKey?: string;
   searchPlaceholder?: string;
@@ -42,6 +45,7 @@ export interface ListToolbarProps {
 }
 
 export function ListToolbar({
+  searchable = true,
   searchKey = 'q',
   searchPlaceholder = 'Search…',
   filters = [],
@@ -94,8 +98,8 @@ export function ListToolbar({
 
   return (
     <UiListToolbar
-      searchValue={search}
-      onSearchChange={onSearchChange}
+      searchValue={searchable ? search : undefined}
+      onSearchChange={searchable ? onSearchChange : undefined}
       searchPlaceholder={searchPlaceholder}
       filters={filters.map((f) => ({ ...f, value: searchParams?.get(f.key) ?? '' }))}
       onFilterChange={(key, value) => commit({ [key]: value })}

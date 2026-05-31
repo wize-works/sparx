@@ -1,4 +1,3 @@
-import Link from 'next/link';
 import { MessageSquare, Star } from 'lucide-react';
 
 import {
@@ -24,14 +23,15 @@ import {
 import { api } from '@/lib/api-rest-client';
 
 import { EntityRowLink } from '../../_components/entity-row-link';
+import { ListToolbar } from '../../_components/list-toolbar';
 
 export const dynamic = 'force-dynamic';
 
 type ReviewStatus = 'pending' | 'approved' | 'rejected' | 'flagged';
 
-const STATUS_FILTERS: { value: ReviewStatus | 'queue' | undefined; label: string }[] = [
-  { value: 'queue', label: 'Moderation queue' },
-  { value: undefined, label: 'All' },
+// Empty filter value = the moderation queue (the default landing).
+const STATUS_OPTIONS = [
+  { value: 'all', label: 'All' },
   { value: 'pending', label: 'Pending' },
   { value: 'approved', label: 'Approved' },
   { value: 'rejected', label: 'Rejected' },
@@ -115,7 +115,7 @@ export default async function ReviewsPage({
   }
 
   return (
-    <Container size="xl">
+    <Container size="full">
       <Stack gap={6} className="py-10">
         <PageHeader
           icon={<Star className="h-5 w-5" />}
@@ -130,17 +130,10 @@ export default async function ReviewsPage({
           }
         />
 
-        <Stack direction="row" gap={2} wrap>
-          {STATUS_FILTERS.map((f) => (
-            <FilterLink
-              key={f.label}
-              current={statusParam}
-              value={f.value}
-              label={f.label}
-              productId={productId}
-            />
-          ))}
-        </Stack>
+        <ListToolbar
+          searchable={false}
+          filters={[{ key: 'status', label: 'Statuses', options: STATUS_OPTIONS }]}
+        />
 
         <Card>
           <CardHeader>
@@ -217,41 +210,6 @@ export default async function ReviewsPage({
         </Card>
       </Stack>
     </Container>
-  );
-}
-
-function FilterLink({
-  current,
-  value,
-  label,
-  productId,
-}: {
-  current: string | undefined;
-  value: ReviewStatus | 'queue' | undefined;
-  label: string;
-  productId: string | undefined;
-}) {
-  const isActive =
-    current === value ||
-    (current === undefined && value === 'queue') ||
-    (current === 'queue' && value === 'queue');
-  const params = new URLSearchParams();
-  if (value && value !== 'queue') params.set('status', value);
-  if (value === undefined) params.set('status', 'all');
-  if (productId) params.set('productId', productId);
-  const qs = params.toString();
-  const href = `/commerce/reviews${qs ? `?${qs}` : ''}`;
-  return (
-    <Link
-      href={href}
-      className={
-        isActive
-          ? 'rounded bg-[var(--module-active)] px-3 py-1 text-xs text-white'
-          : 'rounded border border-[var(--color-border-default)] px-3 py-1 text-xs hover:bg-[var(--color-bg-subtle)]'
-      }
-    >
-      {label}
-    </Link>
   );
 }
 

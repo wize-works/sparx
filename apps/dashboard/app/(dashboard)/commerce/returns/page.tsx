@@ -1,4 +1,3 @@
-import Link from 'next/link';
 import { Inbox } from 'lucide-react';
 
 import {
@@ -24,6 +23,7 @@ import {
 import { api } from '@/lib/api-rest-client';
 
 import { EntityRowLink } from '../../_components/entity-row-link';
+import { ListToolbar } from '../../_components/list-toolbar';
 
 export const dynamic = 'force-dynamic';
 
@@ -54,8 +54,7 @@ interface ReturnsListResponse {
   total: number;
 }
 
-const STATUS_FILTERS: { value: ReturnStatus | undefined; label: string }[] = [
-  { value: undefined, label: 'All' },
+const STATUS_OPTIONS = [
   { value: 'requested', label: 'New' },
   { value: 'approved', label: 'Approved' },
   { value: 'awaiting_shipment', label: 'Awaiting shipment' },
@@ -83,7 +82,7 @@ export default async function ReturnsPage({
   );
 
   return (
-    <Container size="xl">
+    <Container size="full">
       <Stack gap={6} className="py-10">
         <PageHeader
           icon={<Inbox className="h-5 w-5" />}
@@ -92,11 +91,10 @@ export default async function ReturnsPage({
           description="Customer- or staff-initiated returns. Approve, generate a label, receive, inspect each line, then settle as refund or store credit. Provider-driven refund settlement (Stripe, etc.) happens via the order-payments path once a TaxProvider/PaymentProvider is wired into the marketplace."
         />
 
-        <Stack direction="row" gap={2} wrap>
-          {STATUS_FILTERS.map((f) => (
-            <FilterLink key={f.label} current={status} value={f.value} label={f.label} />
-          ))}
-        </Stack>
+        <ListToolbar
+          searchable={false}
+          filters={[{ key: 'status', label: 'Statuses', options: STATUS_OPTIONS }]}
+        />
 
         <Card>
           <CardHeader>
@@ -173,31 +171,6 @@ export default async function ReturnsPage({
         </Card>
       </Stack>
     </Container>
-  );
-}
-
-function FilterLink({
-  current,
-  value,
-  label,
-}: {
-  current: ReturnStatus | undefined;
-  value: ReturnStatus | undefined;
-  label: string;
-}) {
-  const isActive = current === value || (current === undefined && value === undefined);
-  const href = value ? `/commerce/returns?status=${value}` : '/commerce/returns';
-  return (
-    <Link
-      href={href}
-      className={
-        isActive
-          ? 'rounded bg-[var(--module-active)] px-3 py-1 text-xs text-white'
-          : 'rounded border border-[var(--color-border-default)] px-3 py-1 text-xs hover:bg-[var(--color-bg-subtle)]'
-      }
-    >
-      {label}
-    </Link>
   );
 }
 

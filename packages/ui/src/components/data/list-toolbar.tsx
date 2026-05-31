@@ -40,9 +40,10 @@ export interface ListToolbarSort {
 export type ListToolbarView = 'table' | 'card';
 
 export interface ListToolbarProps {
-  /** Current search text. */
-  searchValue: string;
-  onSearchChange: (value: string) => void;
+  /** Current search text. Omit (with `onSearchChange`) to hide the search box —
+   *  e.g. on lists whose endpoint has no text search. */
+  searchValue?: string;
+  onSearchChange?: (value: string) => void;
   searchPlaceholder?: string;
 
   /** Quick-filter selects, rendered inline after the search box. */
@@ -81,20 +82,22 @@ export function ListToolbar({
   return (
     <div className={cn('mb-4 flex flex-col gap-2', className)}>
       <div role="search" className="flex flex-wrap items-center gap-2">
-        <div className="relative min-w-48 flex-1">
-          <Search
-            aria-hidden
-            className="pointer-events-none absolute top-1/2 left-2.5 h-4 w-4 -translate-y-1/2 text-[var(--color-text-tertiary)]"
-          />
-          <Input
-            type="search"
-            className="pl-8"
-            placeholder={searchPlaceholder}
-            value={searchValue}
-            onChange={(e) => onSearchChange(e.target.value)}
-            aria-label="Search"
-          />
-        </div>
+        {onSearchChange && (
+          <div className="relative min-w-48 flex-1">
+            <Search
+              aria-hidden
+              className="pointer-events-none absolute top-1/2 left-2.5 h-4 w-4 -translate-y-1/2 text-[var(--color-text-tertiary)]"
+            />
+            <Input
+              type="search"
+              className="pl-8"
+              placeholder={searchPlaceholder}
+              value={searchValue ?? ''}
+              onChange={(e) => onSearchChange(e.target.value)}
+              aria-label="Search"
+            />
+          </div>
+        )}
 
         {filters.map((f) => (
           <NativeSelect

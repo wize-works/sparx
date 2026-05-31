@@ -99,7 +99,7 @@ export default async function ProvidersPage() {
   }
 
   return (
-    <Container size="xl">
+    <Container size="full">
       <Stack gap={6} className="py-10">
         <PageHeader
           icon={<Plug className="h-5 w-5" />}

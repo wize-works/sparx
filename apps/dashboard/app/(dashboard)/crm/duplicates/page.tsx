@@ -41,7 +41,7 @@ export default async function DuplicatesPage() {
   const groups = await api.get<DuplicateGroup[]>('/v1/crm/customers/duplicates');
 
   return (
-    <Container size="xl">
+    <Container size="full">
       <Stack gap={6} className="py-10">
         <PageHeader
           title="Find duplicates"

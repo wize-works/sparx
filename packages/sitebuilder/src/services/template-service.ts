@@ -1,12 +1,11 @@
 // templateService — scoped page layouts (SiteTemplate), the Phase 3 generalization
 // of the old bare `pageKey` string (docs/30 §4, docs/handoffs/sitebuilder-phase3-spec.md §3, §13).
 //
-// The native surface is (scope, key) / templateId: callers resolve-or-create a
-// template, then do section CRUD by templateId. The pageKey helpers below remain
-// only as a transitional alias the section service maps onto a template when a
-// caller still speaks pageKey (removed in 3.3c):
-//   "home"      ↔ (scope: 'home',   key: 'default')   — the storefront homepage
-//   "<slug>"    ↔ (scope: 'custom', key: '<slug>')    — a standalone slug page (doc 30 §4.1)
+// The surface is (scope, key) / templateId: callers resolve-or-create a template,
+// then do section CRUD by templateId. The legacy `pageKey` mapping ("home" ↔
+// home/default, "<slug>" ↔ custom/<slug>) no longer lives here — it survives only
+// in the snapshot read path (publish-internals + the storefront), which still
+// reads pre-Phase-3 published SiteVersions.
 
 import {
   CreateTemplateInput,
@@ -52,21 +51,9 @@ const SCOPE_NAMES: Record<string, string> = {
   'cms-page': 'Page',
   custom: 'Page',
 };
-function defaultTemplateName(scope: string, key: string): string {
+export function defaultTemplateName(scope: string, key: string): string {
   if (scope === 'custom' || scope === 'cms-page') return key;
   return SCOPE_NAMES[scope] ?? key;
-}
-
-/** Map a legacy pageKey onto its (scope, key, name). */
-export function scopeKeyForPageKey(pageKey: string): { scope: string; key: string; name: string } {
-  return pageKey === 'home'
-    ? { scope: 'home', key: 'default', name: 'Home' }
-    : { scope: 'custom', key: pageKey, name: pageKey };
-}
-
-/** The inverse — the pageKey a template resolves to (back-compat for snapshots). */
-export function pageKeyForTemplate(t: { scope: string; key: string }): string {
-  return t.scope === 'home' ? 'home' : t.key;
 }
 
 /** Find-or-create the template for a (scope, key); lazily materialized like SiteConfig. */
@@ -84,23 +71,13 @@ export async function getOrCreateTemplate(
   return tx.siteTemplate.create({ data: { tenantId, scope, key, name } });
 }
 
-/** Find-or-create the template a legacy pageKey maps to. */
-export function getOrCreateForPageKey(
+/** Find (without creating) the template for a (scope, key). */
+export function findTemplate(
   tx: TxClient,
   tenantId: string,
-  pageKey: string
-): Promise<SiteTemplate> {
-  const { scope, key, name } = scopeKeyForPageKey(pageKey);
-  return getOrCreateTemplate(tx, tenantId, scope, key, name);
-}
-
-/** Find (without creating) the template a legacy pageKey maps to. */
-export function findForPageKey(
-  tx: TxClient,
-  tenantId: string,
-  pageKey: string
+  scope: string,
+  key: string
 ): Promise<SiteTemplate | null> {
-  const { scope, key } = scopeKeyForPageKey(pageKey);
   return tx.siteTemplate.findUnique({
     where: { tenantId_scope_key: { tenantId, scope, key } },
   });

@@ -54,7 +54,7 @@ export default async function SegmentsPage({ searchParams }: PageProps) {
   const countById = new Map(counts.map((c) => [c.id, c.count]));
 
   return (
-    <Container size="xl">
+    <Container size="full">
       <Stack gap={6} className="py-10">
         <PageHeader
           icon={<Layers className="h-5 w-5" />}

@@ -34,7 +34,7 @@ export default async function CmsNavigationPage() {
   const customMenus = menus.filter((m) => !PRESET_LOCATIONS.some((p) => p.location === m.location));
 
   return (
-    <Container size="xl">
+    <Container size="full">
       <Stack gap={6} className="py-10">
         <PageHeader
           title="Navigation"

@@ -22,6 +22,7 @@ import {
 import { api } from '@/lib/api-rest-client';
 
 import { EntityRowLink } from '../../_components/entity-row-link';
+import { ListToolbar } from '../../_components/list-toolbar';
 
 interface B2bAccountRow {
   id: string;
@@ -47,6 +48,13 @@ const STATUS_VARIANT: Record<string, 'success' | 'warning' | 'outline' | 'danger
 };
 const STATUS_VALUES = ['active', 'credit_hold', 'suspended', 'inactive'] as const;
 
+const STATUS_OPTIONS = [
+  { value: 'active', label: 'Active' },
+  { value: 'credit_hold', label: 'Credit hold' },
+  { value: 'suspended', label: 'Suspended' },
+  { value: 'inactive', label: 'Inactive' },
+];
+
 export default async function B2bAccountsPage({ searchParams }: PageProps) {
   const params = await searchParams;
   const status = stringParam(params.status);
@@ -62,7 +70,7 @@ export default async function B2bAccountsPage({ searchParams }: PageProps) {
   const total = (meta?.total as number | undefined) ?? accounts.length;
 
   return (
-    <Container size="xl">
+    <Container size="full">
       <Stack gap={6} className="py-10">
         <PageHeader
           icon={<Building2 className="h-5 w-5" />}
@@ -78,6 +86,11 @@ export default async function B2bAccountsPage({ searchParams }: PageProps) {
               <Link href="/crm/b2b/new">New B2B account</Link>
             </Button>
           }
+        />
+
+        <ListToolbar
+          searchPlaceholder="Search company…"
+          filters={[{ key: 'status', label: 'Statuses', options: STATUS_OPTIONS }]}
         />
 
         {accounts.length === 0 ? (

@@ -54,7 +54,7 @@ export default async function CategoriesPage() {
   const tree = await api.get<CategoryTreeNode[]>('/v1/commerce/categories');
 
   return (
-    <Container size="xl">
+    <Container size="full">
       <Stack gap={6} className="py-10">
         <PageHeader
           icon={<FolderTree className="h-5 w-5" />}

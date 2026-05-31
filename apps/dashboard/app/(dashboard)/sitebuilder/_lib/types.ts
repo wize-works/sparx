@@ -27,13 +27,11 @@ export interface SiteConfigDto {
 
 export interface SiteSectionDto {
   id: string;
-  // Phase 3: sections hang off a scoped SiteTemplate. `pageKey` is the
-  // transitional alias still emitted by the API (removed in 3.3c); the editor
-  // addresses sections by `templateId`.
+  // Phase 3: sections hang off a scoped SiteTemplate; the editor addresses them
+  // by `templateId` (+ the owning template's scope/key).
   templateId: string;
   scope: string;
   templateKey: string;
-  pageKey: string;
   sectionType: string;
   position: number;
   visible: boolean;

@@ -22,6 +22,7 @@ import {
 import { api } from '@/lib/api-rest-client';
 
 import { EntityRowLink } from '../../_components/entity-row-link';
+import { ListToolbar } from '../../_components/list-toolbar';
 
 interface QuoteRow {
   id: string;
@@ -48,6 +49,15 @@ const STATUS_VARIANT: Record<string, 'success' | 'warning' | 'outline' | 'danger
   converted: 'success',
 };
 
+const STATUS_OPTIONS = [
+  { value: 'draft', label: 'Draft' },
+  { value: 'submitted', label: 'Submitted' },
+  { value: 'accepted', label: 'Accepted' },
+  { value: 'declined', label: 'Declined' },
+  { value: 'expired', label: 'Expired' },
+  { value: 'converted', label: 'Converted' },
+];
+
 export default async function QuotesPage({ searchParams }: PageProps) {
   const params = await searchParams;
   const status = stringParam(params.status);
@@ -63,7 +73,7 @@ export default async function QuotesPage({ searchParams }: PageProps) {
   const total = (meta?.total as number | undefined) ?? quotes.length;
 
   return (
-    <Container size="xl">
+    <Container size="full">
       <Stack gap={6} className="py-10">
         <PageHeader
           icon={<FileText className="h-5 w-5" />}
@@ -79,6 +89,11 @@ export default async function QuotesPage({ searchParams }: PageProps) {
               <Link href="/crm/quotes/new">New quote</Link>
             </Button>
           }
+        />
+
+        <ListToolbar
+          searchable={false}
+          filters={[{ key: 'status', label: 'Statuses', options: STATUS_OPTIONS }]}
         />
 
         {quotes.length === 0 ? (

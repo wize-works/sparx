@@ -8,6 +8,7 @@ import {
   CardContent,
   Container,
   EmptyState,
+  Grid,
   PageHeader,
   Stack,
   Table,
@@ -22,7 +23,8 @@ import {
 import { api } from '@/lib/api-rest-client';
 
 import { EntityRowLink } from '../../_components/entity-row-link';
-import { CustomerFiltersBar } from '../_components/customer-filters-bar';
+import { ListToolbar } from '../../_components/list-toolbar';
+import { getUserPreferences } from '../../_shell/preferences';
 
 interface CustomerListRow {
   id: string;
@@ -57,6 +59,19 @@ const TYPE_LABELS = {
 const VALID_SORTS = ['updatedAt', 'createdAt', 'totalSpent', 'lastOrderAt'] as const;
 type SortKey = (typeof VALID_SORTS)[number];
 
+const TYPE_OPTIONS = [
+  { value: 'prospect', label: 'Prospects' },
+  { value: 'retail', label: 'Customers' },
+  { value: 'b2b', label: 'B2B' },
+];
+
+const SORT_OPTIONS = [
+  { value: 'updatedAt', label: 'Recently updated' },
+  { value: 'createdAt', label: 'Recently created' },
+  { value: 'lastOrderAt', label: 'Last order' },
+  { value: 'totalSpent', label: 'Lifetime value' },
+];
+
 interface PageProps {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }
@@ -77,13 +92,16 @@ export default async function CrmCustomersPage({ searchParams }: PageProps) {
   if (tag) query.set('tag', tag);
   if (q) query.set('q', q);
 
-  const { data: customers, meta } = await api.getPaged<CustomerListRow[]>(
-    `/v1/crm/customers?${query.toString()}`
-  );
+  const [{ data: customers, meta }, prefs] = await Promise.all([
+    api.getPaged<CustomerListRow[]>(`/v1/crm/customers?${query.toString()}`),
+    getUserPreferences(),
+  ]);
   const total = (meta?.total as number | undefined) ?? customers.length;
+  // `?view=` overrides; absent → the user's saved default.
+  const view = (stringParam(params.view) ?? prefs.defaultListView) === 'card' ? 'card' : 'table';
 
   return (
-    <Container size="xl">
+    <Container size="full">
       <Stack gap={6} className="py-10">
         <PageHeader
           className="mb-0"
@@ -107,11 +125,12 @@ export default async function CrmCustomersPage({ searchParams }: PageProps) {
           }
         />
 
-        <CustomerFiltersBar
-          currentType={type}
-          currentTag={tag}
-          currentQuery={q}
-          currentSort={sort}
+        <ListToolbar
+          searchPlaceholder="Search name, email, company…"
+          filters={[{ key: 'type', label: 'Types', options: TYPE_OPTIONS }]}
+          sortKey="sort"
+          sortOptions={SORT_OPTIONS}
+          enableViewToggle
         />
 
         {customers.length === 0 ? (
@@ -127,6 +146,57 @@ export default async function CrmCustomersPage({ searchParams }: PageProps) {
               }
             />
           </Card>
+        ) : view === 'card' ? (
+          <Grid minItemWidth="18rem" gap={4}>
+            {customers.map((c) => (
+              <Card key={c.id} variant="module" padding="md">
+                <Stack gap={3}>
+                  <Stack direction="row" align="start" justify="between" gap={2}>
+                    <Stack gap={1} className="min-w-0">
+                      <EntityRowLink
+                        href={`/crm/customers/${c.id}`}
+                        entityType="customer"
+                        entityId={c.id}
+                        className="truncate text-sm font-medium hover:text-[var(--module-active)] hover:underline"
+                      >
+                        {customerDisplayName(c)}
+                      </EntityRowLink>
+                      {c.company ? (
+                        <Stack direction="row" align="center" gap={1} className="min-w-0">
+                          <Building2 className="h-3.5 w-3.5 shrink-0 text-[var(--color-text-tertiary)]" />
+                          <Text size="xs" variant="muted" className="truncate">
+                            {c.company}
+                          </Text>
+                        </Stack>
+                      ) : (
+                        c.email && (
+                          <Text size="xs" variant="muted" className="truncate">
+                            {c.email}
+                          </Text>
+                        )
+                      )}
+                    </Stack>
+                    <Badge variant="outline" className="text-xs">
+                      {TYPE_LABELS[c.type as keyof typeof TYPE_LABELS] ?? c.type}
+                    </Badge>
+                  </Stack>
+                  <Stack direction="row" align="center" justify="between" gap={2}>
+                    <Text size="sm" variant="muted">
+                      {c.orderCount} order{c.orderCount === 1 ? '' : 's'}
+                    </Text>
+                    <Text size="sm" className="tabular-nums">
+                      ${Number(c.totalSpent).toLocaleString()}
+                    </Text>
+                  </Stack>
+                  {c.doNotContact && (
+                    <Badge color="warning" className="self-start text-xs">
+                      DNC
+                    </Badge>
+                  )}
+                </Stack>
+              </Card>
+            ))}
+          </Grid>
         ) : (
           <Card padding="none">
             <CardContent className="p-0">

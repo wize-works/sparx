@@ -56,7 +56,7 @@ export default async function GiftCardsPage() {
     .reduce((acc, c) => acc + c.balanceCents, 0);
 
   return (
-    <Container size="xl">
+    <Container size="full">
       <Stack gap={6} className="py-10">
         <PageHeader
           icon={<Gift className="h-5 w-5" />}

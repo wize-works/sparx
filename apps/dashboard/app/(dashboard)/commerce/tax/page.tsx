@@ -44,7 +44,7 @@ export default async function TaxPage() {
   const activeZones = zones.filter((z) => z.isActive);
 
   return (
-    <Container size="xl">
+    <Container size="full">
       <Stack gap={6} className="py-10">
         <PageHeader
           icon={<Receipt className="h-5 w-5" />}

@@ -57,7 +57,7 @@ export default async function LotsPage() {
   ]);
 
   return (
-    <Container size="xl">
+    <Container size="full">
       <Stack gap={6} className="py-10">
         <PageHeader
           icon={<CircleAlert className="h-5 w-5" />}

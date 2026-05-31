@@ -1,8 +1,8 @@
-// templateService + the templateId-native sectionService surface (Phase 3.3a,
-// docs/handoffs/sitebuilder-phase3-spec.md §13). Covers resolve-or-create
+// templateService + the templateId-native sectionService surface
+// (docs/handoffs/sitebuilder-phase3-spec.md §13). Covers resolve-or-create
 // idempotency, "Customize" materialization (code default → real rows, no
 // duplication on re-run), templateId-addressed section CRUD, scope safety, and
-// the transitional pageKey alias still resolving.
+// (scope, key) addressing.
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
@@ -122,15 +122,20 @@ describe('sitebuilder templates (3.3a)', () => {
     expect(result.map((s) => s.id)).toEqual(reversed);
   });
 
-  it('pageKey alias — create with no templateId still resolves home', async () => {
+  it('create by scope — resolves/creates the (scope, key) layout', async () => {
     const created = await sectionService.create(test.ctx, {
-      pageKey: 'home',
+      scope: 'home',
       sectionType: 'hero',
       config: { heading: 'Welcome' },
     });
     expect(created.scope).toBe('home');
     expect(created.templateKey).toBe('default');
-    expect(created.pageKey).toBe('home');
     expect(created.templateId).toBeTruthy();
+  });
+
+  it('create with neither templateId nor scope — rejected', async () => {
+    await expect(sectionService.create(test.ctx, { sectionType: 'hero' })).rejects.toBeInstanceOf(
+      SitebuilderValidationError
+    );
   });
 });

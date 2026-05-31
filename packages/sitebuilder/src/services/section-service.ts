@@ -4,11 +4,11 @@
 // Config is validated/defaulted against the section's Zod schema in
 // @sparx/sitebuilder-schemas so every transport stores the same shape.
 //
-// Phase 3 re-key: sections hang off a SiteTemplate, not a bare `pageKey`
-// (docs/handoffs/sitebuilder-phase3-spec.md §3, §13). The native parent is
-// `templateId`; a caller may still pass a `pageKey`, which the service resolves
-// onto a template (transitional alias, removed in 3.3c). The returned view
-// carries both the templateId/scope and the derived pageKey during the window.
+// Phase 3: sections hang off a SiteTemplate, not a bare `pageKey`
+// (docs/handoffs/sitebuilder-phase3-spec.md §3, §13). A write targets a layout by
+// `templateId` (preferred) or by `scope` (+ `key`, default 'default'); the
+// returned view carries the templateId + scope/templateKey (no pageKey — that
+// retired with 3.3c; it lives on only in the snapshot read path).
 
 import {
   CreateSectionInput,
@@ -24,18 +24,16 @@ import { writeAuditLog } from '../audit';
 import type { ServiceContext } from '../errors';
 import { SitebuilderNotFoundError, SitebuilderValidationError } from '../errors';
 import { getOrCreateConfig } from './_config';
-import { findForPageKey, getOrCreateForPageKey, pageKeyForTemplate } from './template-service';
+import { defaultTemplateName, findTemplate, getOrCreateTemplate } from './template-service';
 
-// The view the public surface returns. Carries the native templateId/scope plus
-// the derived `pageKey` alias (dropped in 3.3c once no caller speaks pageKey).
+// The view the public surface returns — the section plus its owning template's
+// scope/key (templateId-native).
 export interface SectionView {
   id: string;
   tenantId: string;
   templateId: string;
   scope: string;
   templateKey: string;
-  // Legacy alias — `home` for a home/default layout, the key otherwise.
-  pageKey: string;
   sectionType: string;
   position: number;
   visible: boolean;
@@ -51,7 +49,6 @@ function toView(section: SiteSection, template: { scope: string; key: string }):
     templateId: section.templateId,
     scope: template.scope,
     templateKey: template.key,
-    pageKey: pageKeyForTemplate(template),
     sectionType: section.sectionType,
     position: section.position,
     visible: section.visible,
@@ -61,25 +58,42 @@ function toView(section: SiteSection, template: { scope: string; key: string }):
   };
 }
 
-// Resolve the target layout for a write. `templateId` wins; otherwise the
-// pageKey alias is get-or-created (default 'home'). Cross-tenant ids return
-// null under RLS → NotFound, so this also enforces tenant ownership.
+// Resolve the target layout for a write. `templateId` wins (NotFound if unknown —
+// a cross-tenant id returns null under RLS, so this enforces tenant ownership);
+// otherwise resolve-or-create by (scope, key). One of the two must be given.
 async function resolveTemplateForWrite(
   tx: TxClient,
   tenantId: string,
-  input: { templateId?: string; pageKey?: string }
+  input: { templateId?: string; scope?: string; key?: string }
 ): Promise<SiteTemplate> {
   if (input.templateId) {
     const t = await tx.siteTemplate.findUnique({ where: { id: input.templateId } });
     if (!t) throw new SitebuilderNotFoundError('SiteTemplate', input.templateId);
     return t;
   }
-  return getOrCreateForPageKey(tx, tenantId, input.pageKey ?? 'home');
+  if (input.scope) {
+    const key = input.key ?? 'default';
+    return getOrCreateTemplate(
+      tx,
+      tenantId,
+      input.scope,
+      key,
+      defaultTemplateName(input.scope, key)
+    );
+  }
+  throw new SitebuilderValidationError('A section write must target a templateId or scope.', [
+    { field: 'templateId', message: 'provide a templateId or scope' },
+  ]);
 }
 
-export function list(ctx: ServiceContext, pageKey: string): Promise<SectionView[]> {
+/** List a layout's sections by (scope, key). Empty array if the layout is unknown. */
+export function listForScope(
+  ctx: ServiceContext,
+  scope: string,
+  key = 'default'
+): Promise<SectionView[]> {
   return withTenant(ctx, async (tx) => {
-    const template = await findForPageKey(tx, ctx.tenantId, pageKey);
+    const template = await findTemplate(tx, ctx.tenantId, scope, key);
     if (!template) return [];
     const rows = await tx.siteSection.findMany({
       where: { templateId: template.id },
@@ -210,11 +224,14 @@ export async function reorder(ctx: ServiceContext, rawInput: unknown): Promise<S
   return withTenant(ctx, async (tx) => {
     const template = input.templateId
       ? await tx.siteTemplate.findUnique({ where: { id: input.templateId } })
-      : await findForPageKey(tx, ctx.tenantId, input.pageKey ?? 'home');
+      : input.scope
+        ? await findTemplate(tx, ctx.tenantId, input.scope, input.key ?? 'default')
+        : null;
     if (!template) {
       throw new SitebuilderNotFoundError(
         'SiteTemplate',
-        input.templateId ?? input.pageKey ?? 'home'
+        input.templateId ??
+          (input.scope ? `${input.scope}/${input.key ?? 'default'}` : 'unspecified')
       );
     }
     const owned = await tx.siteSection.findMany({

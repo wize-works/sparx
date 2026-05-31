@@ -13,7 +13,21 @@ import {
 
 import { writeAuditLog } from '../audit';
 import { SitebuilderNotFoundError } from '../errors';
-import { getOrCreateTemplate, pageKeyForTemplate, scopeKeyForPageKey } from './template-service';
+import { getOrCreateTemplate } from './template-service';
+
+// Legacy pageKey ↔ (scope, key) mapping. This is the ONLY place it survives
+// (3.3c retired `pageKey` from the live section API): the snapshot path still
+// writes `pageKey` onto each SectionSnapshot for back-compat, and rollback of a
+// pre-Phase-3 SiteVersion (sections carrying only `pageKey`) maps it back to a
+// (scope, key) template. "home" ↔ home/default; any other slug ↔ custom/<slug>.
+function pageKeyForTemplate(t: { scope: string; key: string }): string {
+  return t.scope === 'home' ? 'home' : t.key;
+}
+function scopeKeyForPageKey(pageKey: string): { scope: string; key: string; name: string } {
+  return pageKey === 'home'
+    ? { scope: 'home', key: 'default', name: 'Home' }
+    : { scope: 'custom', key: pageKey, name: pageKey };
+}
 
 export interface SectionSnapshot {
   id: string;

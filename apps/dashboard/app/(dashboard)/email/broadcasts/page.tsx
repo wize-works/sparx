@@ -35,6 +35,7 @@ export default async function BroadcastsPage() {
 
   return (
     <EmailShell
+      width="full"
       icon={<Send className="h-5 w-5" />}
       title="Broadcasts"
       description="Segment-targeted marketing campaigns."

@@ -59,7 +59,7 @@ export default async function WarehousesPage() {
   const inactive = warehouses.filter((w) => !w.isActive);
 
   return (
-    <Container size="xl">
+    <Container size="full">
       <Stack gap={6} className="py-10">
         <PageHeader
           icon={<WarehouseIcon className="h-5 w-5" />}

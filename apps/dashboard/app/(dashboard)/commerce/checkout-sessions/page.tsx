@@ -1,4 +1,3 @@
-import Link from 'next/link';
 import { CreditCard } from 'lucide-react';
 
 import {
@@ -22,10 +21,17 @@ import {
 } from '@sparx/ui';
 
 import { api } from '@/lib/api-rest-client';
+import { ListToolbar } from '../../_components/list-toolbar';
 
 export const dynamic = 'force-dynamic';
 
 const STEP_ORDER = ['cart_review', 'contact', 'shipping', 'payment', 'review'] as const;
+
+const STEP_OPTIONS = [
+  ...STEP_ORDER.map((s) => ({ value: s, label: labelForStep(s) })),
+  { value: 'completed', label: 'Completed' },
+  { value: 'expired', label: 'Expired' },
+];
 
 interface CheckoutSessionRow {
   id: string;
@@ -51,7 +57,7 @@ export default async function CheckoutSessionsPage({
   const sessions = await api.get<CheckoutSessionRow[]>(`/v1/commerce/checkout-sessions${qs}`);
 
   return (
-    <Container size="xl">
+    <Container size="full">
       <Stack gap={6} className="py-10">
         <PageHeader
           icon={<CreditCard className="h-5 w-5" />}
@@ -60,14 +66,10 @@ export default async function CheckoutSessionsPage({
           description="Read-only diagnostic. The state machine advances cart_review → contact → shipping → payment → review → completed. Sessions stuck in a non-terminal step are auto-expired on TTL by the worker; staff can manually expire a session from the API if needed."
         />
 
-        <Stack direction="row" gap={2} wrap>
-          <FilterLink current={step} value={undefined} label="All in-flight" />
-          {STEP_ORDER.map((s) => (
-            <FilterLink key={s} current={step} value={s} label={s} />
-          ))}
-          <FilterLink current={step} value="completed" label="Completed" />
-          <FilterLink current={step} value="expired" label="Expired" />
-        </Stack>
+        <ListToolbar
+          searchable={false}
+          filters={[{ key: 'step', label: 'Steps', options: STEP_OPTIONS }]}
+        />
 
         <Card>
           <CardHeader>
@@ -126,31 +128,6 @@ export default async function CheckoutSessionsPage({
         </Card>
       </Stack>
     </Container>
-  );
-}
-
-function FilterLink({
-  current,
-  value,
-  label,
-}: {
-  current: string | undefined;
-  value: string | undefined;
-  label: string;
-}) {
-  const isActive = current === value || (current === undefined && value === undefined);
-  const href = value ? `/commerce/checkout-sessions?step=${value}` : '/commerce/checkout-sessions';
-  return (
-    <Link
-      href={href}
-      className={
-        isActive
-          ? 'rounded bg-[var(--module-active)] px-3 py-1 text-xs text-white'
-          : 'rounded border border-[var(--color-border-default)] px-3 py-1 text-xs hover:bg-[var(--color-bg-subtle)]'
-      }
-    >
-      {label}
-    </Link>
   );
 }
 

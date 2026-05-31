@@ -49,7 +49,7 @@ export default async function BundlesPage() {
   const bundles = await api.get<BundleRow[]>('/v1/commerce/bundles');
 
   return (
-    <Container size="xl">
+    <Container size="full">
       <Stack gap={6} className="py-10">
         <PageHeader
           icon={<Package2 className="h-5 w-5" />}

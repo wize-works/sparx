@@ -1,11 +1,11 @@
 // Site Builder — draft page section composition.
 //
-//   GET    /v1/sitebuilder/sections?template_id=  → list a layout's sections
-//                                  (?page_key= legacy alias, removed in 3.3c)
-//   POST   /v1/sitebuilder/sections               → add a section ({ templateId | pageKey })
-//   POST   /v1/sitebuilder/sections/reorder        → reorder a layout's sections
-//   PATCH  /v1/sitebuilder/sections/:id            → update config/visibility
-//   DELETE /v1/sitebuilder/sections/:id            → remove a section
+//   GET    /v1/sitebuilder/sections?template_id=   → list a layout's sections
+//                                  (or ?scope=&key= to address by scope)
+//   POST   /v1/sitebuilder/sections                → add a section ({ templateId | scope[,key] })
+//   POST   /v1/sitebuilder/sections/reorder         → reorder a layout's sections
+//   PATCH  /v1/sitebuilder/sections/:id             → update config/visibility
+//   DELETE /v1/sitebuilder/sections/:id             → remove a section
 
 import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
@@ -18,10 +18,11 @@ import {
 } from '../../../lib/sitebuilder-context.js';
 
 const PathId = z.object({ id: z.string().uuid() });
-// Address a layout by `template_id` (preferred) or the legacy `page_key` alias.
+// Address a layout by `template_id` (preferred) or by `scope` (+ optional `key`).
 const ListQuery = z.object({
   template_id: z.string().uuid().optional(),
-  page_key: z.string().min(1).max(255).optional(),
+  scope: z.string().min(1).max(31).optional(),
+  key: z.string().min(1).max(255).optional(),
 });
 
 const sectionRoutes: FastifyPluginAsync = (app) => {
@@ -32,7 +33,9 @@ const sectionRoutes: FastifyPluginAsync = (app) => {
     const ctx = toSitebuilderContext(request);
     const items = q.template_id
       ? await sectionService.listForTemplate(ctx, q.template_id)
-      : await sectionService.list(ctx, q.page_key ?? 'home');
+      : q.scope
+        ? await sectionService.listForScope(ctx, q.scope, q.key ?? 'default')
+        : [];
     return ok({ sections: items });
   });
 

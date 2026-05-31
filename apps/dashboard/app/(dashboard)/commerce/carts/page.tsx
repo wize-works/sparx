@@ -1,4 +1,3 @@
-import Link from 'next/link';
 import { ShoppingCart } from 'lucide-react';
 
 import {
@@ -24,8 +23,15 @@ import {
 import { api } from '@/lib/api-rest-client';
 
 import { EntityRowLink } from '../../_components/entity-row-link';
+import { ListToolbar } from '../../_components/list-toolbar';
 
 export const dynamic = 'force-dynamic';
+
+const FILTER_OPTIONS = [
+  { value: 'abandoned', label: 'Abandoned' },
+  { value: 'active', label: 'Active' },
+  { value: 'recovered', label: 'Recovered' },
+];
 
 interface CartCustomer {
   id: string;
@@ -70,7 +76,7 @@ export default async function CartsPage({
   const carts = await api.get<CartRow[]>(`/v1/commerce/carts?filter=${filterParam}&take=250`);
 
   return (
-    <Container size="xl">
+    <Container size="full">
       <Stack gap={6} className="py-10">
         <PageHeader
           icon={<ShoppingCart className="h-5 w-5" />}
@@ -79,11 +85,10 @@ export default async function CartsPage({
           description="Read-only diagnostic view. Abandoned carts are flagged by the cart-abandonment worker after 2 hours of inactivity; recovered carts converted into orders. Click an ID to inspect the line items and pricing trace."
         />
 
-        <Stack direction="row" gap={2}>
-          <FilterLink current={filter} value={undefined} label="Abandoned" />
-          <FilterLink current={filter} value="active" label="Active" />
-          <FilterLink current={filter} value="recovered" label="Recovered" />
-        </Stack>
+        <ListToolbar
+          searchable={false}
+          filters={[{ key: 'filter', label: 'Lifecycle', options: FILTER_OPTIONS }]}
+        />
 
         <Card>
           <CardHeader>
@@ -176,30 +181,5 @@ export default async function CartsPage({
         </Card>
       </Stack>
     </Container>
-  );
-}
-
-function FilterLink({
-  current,
-  value,
-  label,
-}: {
-  current: string | undefined;
-  value: string | undefined;
-  label: string;
-}) {
-  const isActive = current === value || (current === undefined && value === undefined);
-  const href = value ? `/commerce/carts?filter=${value}` : '/commerce/carts';
-  return (
-    <Link
-      href={href}
-      className={
-        isActive
-          ? 'rounded bg-[var(--module-active)] px-3 py-1 text-xs text-white'
-          : 'rounded border border-[var(--color-border-default)] px-3 py-1 text-xs hover:bg-[var(--color-bg-subtle)]'
-      }
-    >
-      {label}
-    </Link>
   );
 }

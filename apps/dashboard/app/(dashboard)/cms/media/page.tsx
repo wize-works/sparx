@@ -41,7 +41,7 @@ export default async function MediaPage() {
   const assets = await api.get<MediaAsset[]>('/v1/media/assets?limit=100');
 
   return (
-    <Container size="xl">
+    <Container size="full">
       <Stack gap={6} className="py-10">
         <PageHeader
           icon={<ImageIcon className="h-5 w-5" />}
@@ -69,7 +69,7 @@ export default async function MediaPage() {
             />
           </Card>
         ) : (
-          <Grid cols={2} mdCols={3} lgCols={4} gap={4}>
+          <Grid minItemWidth="14rem" gap={4}>
             {assets.map((a) => (
               <MediaCard key={a.id} asset={a} />
             ))}

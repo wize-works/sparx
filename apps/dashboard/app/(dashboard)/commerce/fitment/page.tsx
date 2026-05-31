@@ -48,7 +48,7 @@ export default async function FitmentReferencePage() {
   const tenantCount = domains.length - globalCount;
 
   return (
-    <Container size="xl">
+    <Container size="full">
       <Stack gap={6} className="py-10">
         <PageHeader
           icon={<Boxes className="h-5 w-5" />}

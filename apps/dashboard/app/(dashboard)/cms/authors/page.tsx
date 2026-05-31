@@ -32,7 +32,7 @@ export default async function AuthorsPage() {
   const authors = await api.get<ApiAuthor[]>('/v1/authors');
 
   return (
-    <Container size="lg">
+    <Container size="full">
       <Stack gap={6} className="py-10">
         <PageHeader
           title="Authors"

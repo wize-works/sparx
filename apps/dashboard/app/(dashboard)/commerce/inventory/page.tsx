@@ -24,6 +24,7 @@ import {
 
 import { api } from '@/lib/api-rest-client';
 
+import { ListToolbar } from '../../_components/list-toolbar';
 import { InventoryRowEditor } from './_components/inventory-row-editor';
 
 // Inventory — by-warehouse stock view. Lets staff:
@@ -133,8 +134,13 @@ export default async function InventoryPage({ searchParams }: PageProps) {
   }));
   const grid = { items: gridRows, total: gridRows.length };
 
+  const warehouseOptions = warehouses.map((w) => ({
+    value: w.id,
+    label: `${w.code} — ${w.name}`,
+  }));
+
   return (
-    <Container size="xl">
+    <Container size="full">
       <Stack gap={6} className="py-10">
         <PageHeader
           icon={<Boxes className="h-5 w-5" />}
@@ -161,45 +167,10 @@ export default async function InventoryPage({ searchParams }: PageProps) {
           />
         ) : (
           <>
-            <Card>
-              <CardHeader>
-                <Stack gap={1}>
-                  <Heading level={3}>Filters</Heading>
-                  <CardDescription>
-                    Per-tenant. URL parameters are linkable for triage handoffs.
-                  </CardDescription>
-                </Stack>
-              </CardHeader>
-              <CardContent>
-                <form method="GET" action="/commerce/inventory">
-                  <Stack direction="row" gap={3} wrap align="end">
-                    <Stack gap={1}>
-                      <Text size="xs" variant="muted">
-                        Warehouse
-                      </Text>
-                      <select
-                        name="warehouse"
-                        defaultValue={fallbackWarehouse?.id ?? ''}
-                        className="h-9 rounded border border-[var(--color-border-default)] bg-[var(--color-bg-surface)] px-3 text-sm"
-                      >
-                        {warehouses.map((w) => (
-                          <option key={w.id} value={w.id}>
-                            {w.code} — {w.name}
-                          </option>
-                        ))}
-                      </select>
-                    </Stack>
-                    <label className="flex items-center gap-2 pb-1.5">
-                      <input type="checkbox" name="low" value="1" defaultChecked={lowStockOnly} />
-                      <Text size="sm">Low stock only</Text>
-                    </label>
-                    <Button type="submit" variant="outline">
-                      Apply
-                    </Button>
-                  </Stack>
-                </form>
-              </CardContent>
-            </Card>
+            <ListToolbar
+              searchable={false}
+              filters={[{ key: 'warehouse', label: 'Warehouses', options: warehouseOptions }]}
+            />
 
             {lowStock.length > 0 && (
               <Card>

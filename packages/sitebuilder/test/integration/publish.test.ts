@@ -40,7 +40,7 @@ describe('sitebuilder publish lifecycle', () => {
   it('publishNow — snapshots draft, write-throughs light tokens, emits event', async () => {
     await themeService.selectTheme(test.ctx, { themeKey: 'industrial' });
     await sectionService.create(test.ctx, {
-      pageKey: 'home',
+      scope: 'home',
       sectionType: 'hero',
       config: { heading: 'Built tough' },
     });

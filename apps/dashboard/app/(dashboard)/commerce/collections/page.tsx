@@ -8,7 +8,7 @@ import {
   CardContent,
   Container,
   EmptyState,
-  Input,
+  Grid,
   PageHeader,
   Stack,
   Table,
@@ -18,11 +18,12 @@ import {
   TableHeader,
   TableRow,
   Text,
-  NativeSelect,
 } from '@sparx/ui';
 
 import { api } from '@/lib/api-rest-client';
 import { EntityRowLink } from '../../_components/entity-row-link';
+import { ListToolbar } from '../../_components/list-toolbar';
+import { getUserPreferences } from '../../_shell/preferences';
 
 interface CollectionSummary {
   id: string;
@@ -50,25 +51,28 @@ interface PageProps {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }
 
+const TYPE_OPTIONS = [
+  { value: 'manual', label: 'Manual' },
+  { value: 'rules', label: 'Rules-driven' },
+];
+
 export default async function CollectionsPage({ searchParams }: PageProps) {
   const params = await searchParams;
   const typeFilter = stringParam(params.type);
   const q = stringParam(params.q);
-  const featuredOnly = stringParam(params.featured) === '1';
 
   const query = new URLSearchParams({ take: '100' });
   if (typeFilter === 'manual' || typeFilter === 'rules') query.set('type', typeFilter);
-  if (featuredOnly) query.set('featured', 'true');
   if (q) query.set('q', q);
 
-  const { items: rawItems, total: rawTotal } = await api.get<CollectionListResponse>(
-    `/v1/commerce/collections?${query.toString()}`
-  );
-  const items = featuredOnly ? rawItems.filter((c) => c.featured) : rawItems;
-  const total = featuredOnly ? items.length : rawTotal;
+  const [{ items, total }, prefs] = await Promise.all([
+    api.get<CollectionListResponse>(`/v1/commerce/collections?${query.toString()}`),
+    getUserPreferences(),
+  ]);
+  const view = (stringParam(params.view) ?? prefs.defaultListView) === 'card' ? 'card' : 'table';
 
   return (
-    <Container size="xl">
+    <Container size="full">
       <Stack gap={6} className="py-10">
         <PageHeader
           icon={<Layers className="h-5 w-5" />}
@@ -86,46 +90,11 @@ export default async function CollectionsPage({ searchParams }: PageProps) {
           }
         />
 
-        <form>
-          <Card padding="sm">
-            <CardContent>
-              <Stack direction="row" align="center" gap={3} wrap>
-                <Input
-                  name="q"
-                  placeholder="Name or handle"
-                  defaultValue={q ?? ''}
-                  className="min-w-[260px] flex-1"
-                />
-                <NativeSelect
-                  name="type"
-                  defaultValue={typeFilter ?? ''}
-                  aria-label="Type"
-                  className="w-auto"
-                >
-                  <option value="">All types</option>
-                  <option value="manual">Manual</option>
-                  <option value="rules">Rules-driven</option>
-                </NativeSelect>
-                <Stack direction="row" align="center" gap={2}>
-                  <input
-                    type="checkbox"
-                    id="featured"
-                    name="featured"
-                    value="1"
-                    defaultChecked={featuredOnly}
-                    className="h-4 w-4"
-                  />
-                  <Text size="sm" as="label" htmlFor="featured">
-                    Featured only
-                  </Text>
-                </Stack>
-                <Button type="submit" variant="outline">
-                  Apply
-                </Button>
-              </Stack>
-            </CardContent>
-          </Card>
-        </form>
+        <ListToolbar
+          searchable={false}
+          filters={[{ key: 'type', label: 'Types', options: TYPE_OPTIONS }]}
+          enableViewToggle
+        />
 
         {items.length === 0 ? (
           <Card padding="none">
@@ -146,6 +115,56 @@ export default async function CollectionsPage({ searchParams }: PageProps) {
               }
             />
           </Card>
+        ) : view === 'card' ? (
+          <Grid minItemWidth="18rem" gap={4}>
+            {items.map((c) => (
+              <Card key={c.id} variant="module" padding="md">
+                <Stack gap={3}>
+                  <Stack direction="row" align="start" justify="between" gap={2}>
+                    <Stack gap={1} className="min-w-0">
+                      <EntityRowLink
+                        href={`/commerce/collections/${c.id}`}
+                        entityType="collection"
+                        entityId={c.id}
+                        className="truncate text-sm font-medium hover:text-[var(--module-active)] hover:underline"
+                      >
+                        {c.name}
+                      </EntityRowLink>
+                      <Text size="xs" variant="muted">
+                        /{c.handle}
+                      </Text>
+                    </Stack>
+                    <Badge color={c.type === 'rules' ? 'module' : 'outline'} className="text-xs">
+                      {c.type === 'rules' ? (
+                        <>
+                          <Sparkles className="mr-1 h-3 w-3" />
+                          rules
+                        </>
+                      ) : (
+                        'manual'
+                      )}
+                    </Badge>
+                  </Stack>
+                  <Stack direction="row" align="center" justify="between" gap={2}>
+                    {c.featured ? (
+                      <Badge variant="outline" className="text-xs">
+                        <Star className="mr-1 h-3 w-3" />
+                        featured
+                      </Badge>
+                    ) : (
+                      <span />
+                    )}
+                    <Text size="sm" className="tabular-nums">
+                      {c.productCount} product{c.productCount === 1 ? '' : 's'}
+                    </Text>
+                  </Stack>
+                  <Text size="xs" variant="muted">
+                    updated {new Date(c.updatedAt).toLocaleDateString()}
+                  </Text>
+                </Stack>
+              </Card>
+            ))}
+          </Grid>
         ) : (
           <Card padding="none">
             <CardContent className="p-0">
