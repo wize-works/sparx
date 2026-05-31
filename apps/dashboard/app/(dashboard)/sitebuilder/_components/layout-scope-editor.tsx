@@ -45,7 +45,9 @@ export function LayoutScopeEditor({
   const [handle, setHandle] = React.useState(samples[0]?.handle ?? '');
 
   const base = scope === 'product' ? '/products' : '/collections';
-  const previewPath = handle ? `${base}/${handle}` : '/';
+  // With a sample, preview the real PDP/PLP; without one, fall back to the
+  // catalog listing (product/collection context) rather than the marketing home.
+  const previewPath = handle ? `${base}/${handle}` : base;
 
   // This component owns the canvas path for bound scopes (the sample drives it).
   React.useEffect(() => {
@@ -86,8 +88,8 @@ function SamplePicker({
     return (
       <div className="rounded-lg border border-dashed border-[var(--color-border-default)] px-3 py-2.5">
         <Text size="sm" variant="muted">
-          Add a published {noun} to preview this layout against real data. You can still edit the
-          section list — the preview will bind once a {noun} exists.
+          No published {noun} yet, so the preview shows your {noun} catalog. Publish a {noun} to
+          preview this layout against real {noun} data — you can edit the section list either way.
         </Text>
       </div>
     );
