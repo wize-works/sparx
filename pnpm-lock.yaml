@@ -682,6 +682,9 @@ importers:
       '@sparx/email':
         specifier: workspace:*
         version: link:../email
+      '@sparx/email-sections':
+        specifier: workspace:*
+        version: link:../email-sections
       '@sparx/events':
         specifier: workspace:*
         version: link:../events
@@ -1292,6 +1295,9 @@ importers:
       '@sparx/email-platform':
         specifier: workspace:*
         version: link:../../packages/email-platform
+      '@sparx/email-sections':
+        specifier: workspace:*
+        version: link:../../packages/email-sections
       '@sparx/events':
         specifier: workspace:*
         version: link:../../packages/events

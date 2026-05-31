@@ -70,14 +70,16 @@ const emailBroadcastRoutes: FastifyPluginAsync = (app) => {
     requireRole(request, 'editor');
     await requireEmailModule(request);
     const { id } = IdParam.parse(request.params);
-    return ok(await broadcastService.sendNow(toEmailContext(request), id));
+    const ctx = toEmailContext(request);
+    return ok(await broadcastService.sendNow(ctx, id, sectionResolver(ctx)));
   });
 
   app.post('/v1/email/broadcasts/:id/schedule', async (request) => {
     requireRole(request, 'editor');
     await requireEmailModule(request);
     const { id } = IdParam.parse(request.params);
-    return ok(await broadcastService.schedule(toEmailContext(request), id, request.body));
+    const ctx = toEmailContext(request);
+    return ok(await broadcastService.schedule(ctx, id, request.body, sectionResolver(ctx)));
   });
 
   app.post('/v1/email/broadcasts/:id/cancel', async (request) => {

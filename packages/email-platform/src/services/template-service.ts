@@ -22,11 +22,15 @@ import {
   type TemplateSend,
 } from '@sparx/email';
 import {
+  ImageConfig,
+  RichTextConfig,
   normalizeBody,
   parseBody,
   type EmailSectionInstance,
   type SectionDataMap,
 } from '@sparx/email-sections';
+import { renderDocToHtml } from '@sparx/cms-editor/serialize';
+import type { CmsDoc } from '@sparx/cms-editor';
 
 import { writeAuditLog } from '../audit';
 import { publishEmailEvent } from '../events';
@@ -52,6 +56,43 @@ function buildFrom(fromName: string | null, fromAddress: string | null): string 
 // caller (api-rest) so this package stays free of @sparx/commerce — keeping the
 // email-worker image, which imports this barrel, lean (docs/31 §8).
 export type ResolveSectionData = (sections: EmailSectionInstance[]) => Promise<SectionDataMap>;
+
+const MEDIA_API_BASE =
+  process.env.SPARX_PUBLIC_API_URL ?? process.env.SPARX_API_REST_URL ?? 'http://localhost:3100';
+
+// Static-only fallback resolver. Resolves rich-text (serialize) + image (media
+// URL) without @sparx/commerce; dynamic/personalized sections render empty.
+// Used when a caller supplies no resolver (e.g. the MCP send_broadcast tool,
+// which runs without commerce). The dashboard/api-rest pass a full resolver so
+// dynamic sections resolve there.
+export function makeStaticResolver(ctx: ServiceContext): ResolveSectionData {
+  return async (sections) => {
+    const tenant = await withTenant(ctx, (tx) =>
+      tx.tenant.findUnique({ where: { id: ctx.tenantId }, select: { slug: true } })
+    );
+    const slug = tenant?.slug ?? '';
+    const out: SectionDataMap = {};
+    for (const s of sections) {
+      if (s.type === 'rich-text') {
+        const parsed = RichTextConfig.safeParse(s.config);
+        const doc = (parsed.success ? parsed.data.doc : { type: 'doc', content: [] }) as CmsDoc;
+        out[s.id] = { kind: 'rich-text', html: renderDocToHtml(doc) };
+      } else if (s.type === 'image') {
+        const parsed = ImageConfig.safeParse(s.config);
+        const mediaId = parsed.success ? parsed.data.mediaId : null;
+        out[s.id] = {
+          kind: 'image',
+          src: mediaId
+            ? `${MEDIA_API_BASE}/v1/public/media/${encodeURIComponent(mediaId)}?tenant=${encodeURIComponent(slug)}`
+            : undefined,
+        };
+      } else {
+        out[s.id] = { kind: 'none' };
+      }
+    }
+    return out;
+  };
+}
 
 // ── Views ──────────────────────────────────────────────────────────────────
 
@@ -345,7 +386,7 @@ async function renderTarget(
 export async function renderPreview(
   ctx: ServiceContext,
   target: PreviewTarget,
-  resolveData: ResolveSectionData
+  resolveData: ResolveSectionData = makeStaticResolver(ctx)
 ): Promise<RenderedPreview> {
   const { subject, html, text } = await renderTarget(
     ctx,
@@ -360,7 +401,7 @@ export async function testSend(
   ctx: ServiceContext,
   target: PreviewTarget,
   rawInput: unknown,
-  resolveData: ResolveSectionData
+  resolveData: ResolveSectionData = makeStaticResolver(ctx)
 ): Promise<DeliveryResult> {
   const { to } = TestSendInput.parse(rawInput);
   const [rendered, settings] = await Promise.all([

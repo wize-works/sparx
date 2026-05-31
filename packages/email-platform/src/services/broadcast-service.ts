@@ -16,7 +16,7 @@ import { normalizeBody } from '@sparx/email-sections';
 import { writeAuditLog } from '../audit';
 import { publishEmailEvent } from '../events';
 import { EmailNotFoundError, EmailValidationError, type ServiceContext } from '../errors';
-import type { ResolveSectionData } from './template-service';
+import { makeStaticResolver, type ResolveSectionData } from './template-service';
 import {
   CreateBroadcastInput,
   ScheduleBroadcastInput,
@@ -253,7 +253,7 @@ async function enqueueAndMark(
 export async function sendNow(
   ctx: ServiceContext,
   id: string,
-  resolveData: ResolveSectionData
+  resolveData: ResolveSectionData = makeStaticResolver(ctx)
 ): Promise<Broadcast> {
   return enqueueAndMark(ctx, id, new Date(), 'sent', resolveData);
 }
@@ -262,7 +262,7 @@ export async function schedule(
   ctx: ServiceContext,
   id: string,
   rawInput: unknown,
-  resolveData: ResolveSectionData
+  resolveData: ResolveSectionData = makeStaticResolver(ctx)
 ): Promise<Broadcast> {
   const { scheduledAt } = ScheduleBroadcastInput.parse(rawInput);
   const dueAt = new Date(scheduledAt);
