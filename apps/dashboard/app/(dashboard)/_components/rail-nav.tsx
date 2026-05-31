@@ -216,7 +216,9 @@ interface RailGroupProps {
 function RailGroup({ label, groupIcon: GroupIcon, items, pathname, expanded }: RailGroupProps) {
   if (items.length === 0) return null;
   return (
-    <div className="mt-1 flex w-full flex-col gap-1">
+    // Collapsed, the fixed-width `w-8` tiles must be centered in the narrow rail
+    // like the module tiles above; expanded, they stretch full-width for labels.
+    <div className={`mt-1 flex w-full flex-col gap-1 ${expanded ? '' : 'items-center'}`}>
       {expanded ? (
         <div className="px-3 pt-2 pb-0.5 text-xs font-medium tracking-wider text-[var(--color-text-tertiary)] uppercase">
           {label}
