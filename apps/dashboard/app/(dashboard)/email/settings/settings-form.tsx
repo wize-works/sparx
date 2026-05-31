@@ -1,7 +1,8 @@
 'use client';
 
+import Link from 'next/link';
 import { useState, useTransition } from 'react';
-import { Button, ColorPicker, Input, Label, Stack, Text, Textarea, toast } from '@sparx/ui';
+import { Button, Card, CardContent, Input, Label, Stack, Text, Textarea, toast } from '@sparx/ui';
 
 import { updateEmailSettingsAction } from './actions';
 import type { EmailSettingsView } from '../_lib/types';
@@ -16,24 +17,20 @@ export function SettingsForm({ initial }: SettingsFormProps) {
   const [fromAddress, setFromAddress] = useState(initial.fromAddress ?? '');
   const [replyTo, setReplyTo] = useState(initial.replyTo ?? '');
   const [physicalAddress, setPhysicalAddress] = useState(initial.physicalAddress ?? '');
-  const [brandColor, setBrandColor] = useState(
-    initial.brandingOverride.colors?.primary ?? '#6366F1'
-  );
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setFieldErrors({});
 
+    // No brand fields here on purpose — email brand (color, fonts, logo) is
+    // inherited from the storefront theme set in Site Builder, never re-entered
+    // per channel. brandingOverride is left untouched (the PATCH is partial).
     const input = {
       fromName: fromName.trim() || null,
       fromAddress: fromAddress.trim() || null,
       replyTo: replyTo.trim() || null,
       physicalAddress: physicalAddress.trim() || null,
-      brandingOverride: {
-        ...initial.brandingOverride,
-        colors: { primary: brandColor },
-      },
     };
 
     startTransition(async () => {
@@ -123,14 +120,23 @@ export function SettingsForm({ initial }: SettingsFormProps) {
           </Text>
         </Stack>
 
-        <Stack gap={2}>
-          <Label htmlFor="brandColor">Brand color</Label>
-          <ColorPicker value={brandColor} onChange={setBrandColor} disabled={pending} />
-          <Text size="sm" variant="muted">
-            Used for buttons and links until your storefront theme is published, after which email
-            adopts your storefront brand automatically.
-          </Text>
-        </Stack>
+        <Card variant="ghost">
+          <CardContent>
+            <Stack gap={2}>
+              <Text size="sm" weight="medium">
+                Brand is inherited from Site Builder
+              </Text>
+              <Text size="sm" variant="muted">
+                Email colors, fonts, and logo come from your storefront theme — there&apos;s nothing
+                to set per channel. Update your brand once and every transactional and marketing
+                email adopts it automatically.
+              </Text>
+              <Button variant="link" size="sm" asChild>
+                <Link href="/sitebuilder/themes">Manage brand in Site Builder →</Link>
+              </Button>
+            </Stack>
+          </CardContent>
+        </Card>
 
         <Stack direction="row" gap={2}>
           <Button type="submit" variant="module" loading={pending} disabled={pending}>

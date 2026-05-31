@@ -16,14 +16,15 @@ export default async function EmailSettingsPage() {
       current="settings"
       icon={<SettingsIcon className="h-5 w-5" />}
       title="Settings"
-      description="Sender identity, reply-to, physical address, and brand defaults."
+      description="Sender identity, reply-to, and physical mailing address."
     >
       <Card>
         <CardHeader>
-          <CardTitle>Sender &amp; branding</CardTitle>
+          <CardTitle>Sender identity</CardTitle>
           <CardDescription>
             These defaults apply to every transactional and marketing email unless a specific
-            template or broadcast overrides them.
+            template or broadcast overrides them. Brand styling is inherited from your storefront
+            theme.
           </CardDescription>
         </CardHeader>
         <CardContent>

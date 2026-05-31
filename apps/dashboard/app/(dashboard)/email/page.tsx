@@ -65,7 +65,7 @@ const SURFACES = [
     href: '/email/settings',
     icon: SettingsIcon,
     title: 'Settings',
-    description: 'Sender identity, reply-to, physical address, and brand defaults.',
+    description: 'Sender identity, reply-to, and physical mailing address.',
   },
 ] as const;
 
