@@ -107,17 +107,29 @@ subtitle paragraph (muted, one or two sentences)
 - **Mobile cards:** title + key metadata + status badge per card; tapping the card navigates. This is the _only_ sanctioned card-list — it is the responsive form of the table, not a separate design choice.
 - **Browse/library views** (e.g. CMS Media) are the documented exception: a thumbnail grid is appropriate where the content _is_ visual. Everything record-shaped uses the table.
 
-### 7.1 FilterBar (built, `@sparx/ui`)
+### 7.1 ListToolbar (to build, `@sparx/ui`)
 
-The audit found three filter styles (labeled inputs + an "Apply" button on products; pill toggles + search + sort on customers; a lone dropdown on pages). Standardize one toolbar above the table:
+The audit found three filter styles (labeled inputs + an "Apply" button on products; pill toggles + search + sort on customers; a lone dropdown on pages), all hand-rolled inside a `Card` + `<form>`. The 2026-05-31 review judged the whole surface "sloppy." Replace it with one toolbar component above the list — a proper `@sparx/ui` primitive (`ListToolbar`), **not** a re-style of the per-page form. `FilterBar` (the earlier layout-only container) is superseded by it.
+
+Anatomy (left → right), wrapping responsively:
 
 ```
-[🔍 search ............]   [Status ▾] [Type ▾] [more filters…]            [Sort ▾]
+[ All ] [ By status ]              ← optional saved-view tabs (future; v1 omits)
+[🔍 search ........................]  [Status ▾] [Type ▾]        [Sort ▾]  [▦ ▤]
+└ grows ┘                            └ quick filters ┘     right ┘ └ view toggle ┘
+[ Status: Draft ✕ ] [ Type: Page ✕ ]   ← active-filter chips, only when set
 ```
 
-- Search input left; filter dropdowns/segment-pills inline after it; sort dropdown right.
-- **Live, debounced filtering — no "Apply" button.** Results update as the user types/selects (250ms debounce). Drop the products-page Apply button.
-- Active filters render as removable chips below the bar when any are set.
+**Behaviour (locked 2026-05-31):**
+
+- **Quick filters, live — no "Apply" button.** Each list surfaces its existing facets (status / type / vendor / …) as inline `Select`s or segmented pills. Changing one updates results immediately (search debounced ~250ms). This is **not** a Notion-style condition-builder (field→operator→value, AND/OR groups) — that is a deferred later phase, not v1.
+- **URL-driven, server-fetch preserved.** `ListToolbar` is a client component whose only job is to sync state into the URL (`router.replace(pathname?…)`, debounced). The page stays a server component that reads `searchParams` and refetches — so "live" filtering needs no client data layer. Active filters render as removable chips below the bar.
+- **Search is the Typesense seam.** The search box binds to `?q=`. The _page_ owns the fetch, so when search moves to Typesense (docs/22) only the page's data source changes for `q` — `ListToolbar` never changes. Build the search input now against the current REST endpoint; keep that swap point isolated.
+- **View toggle (Table / Cards).** A segmented control on the right flips the list rendering. It reads `?view=` (a transient per-view override) falling back to the user's `defaultListView` preference (§7.2). The list still renders the §7 responsive `DataTable` (desktop) / card list (mobile); the toggle lets a user force cards on desktop. Lists where only one rendering makes sense (e.g. Media's thumbnail grid) omit the toggle.
+
+### 7.2 `defaultListView` preference
+
+Mirror `defaultDetailView` exactly ([doc 24](24-dashboard-shell.md) §4.6): a single global per-user preference exposed in the header `…` menu as **"Default list view → Table / Cards"**, persisted on `User.preferences`, applied via `revalidatePath` + `router.refresh`. The toolbar's view toggle is a transient per-view override (URL `?view=`), **never** persisted per-list — the same _kind_ of list behaves consistently from one surface to the next.
 
 ---
 

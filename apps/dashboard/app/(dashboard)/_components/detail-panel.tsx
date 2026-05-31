@@ -90,12 +90,12 @@ interface ModalDetailProps {
 export function ModalDetailContent({ target, onClose, children }: ModalDetailProps) {
   return (
     <Modal open onOpenChange={(open) => !open && onClose()}>
-      <ModalContent className="max-h-[85vh] w-[min(900px,90vw)] overflow-hidden p-0">
+      <ModalContent className="max-h-[88vh] w-[min(1200px,94vw)] max-w-[min(1200px,94vw)] overflow-hidden p-0">
         <ModalTitle className="sr-only">{describeTarget(target)}</ModalTitle>
         <ModalDescription className="sr-only">
           Detail view for {describeTarget(target)}
         </ModalDescription>
-        <Stack gap={0} className="max-h-[85vh]">
+        <Stack gap={0} className="max-h-[88vh]">
           <DetailHeader target={target} />
           <div className="flex-1 overflow-y-auto p-6">{children}</div>
         </Stack>
