@@ -41,6 +41,8 @@ export interface EditorCanvasApi {
   highlightSection: (sectionId: string | null) => void;
   /** Point the canvas at a storefront path (e.g. "/", "/about"). Reloads it. */
   setPreviewPath: (path: string) => void;
+  /** Toggle the token-gated sample-data preview on the canvas URL (doc 36 §9). */
+  setSampleData: (on: boolean) => void;
   /** Force a canvas reload (re-fetches the draft snapshot). */
   reload: () => void;
   /** Subscribe to in-canvas section clicks. Returns an unsubscribe fn. */
@@ -116,6 +118,7 @@ export function EditorShell({
   const [mode, setModeState] = React.useState<Mode>(initialMode);
   const [device, setDevice] = React.useState<(typeof DEVICES)[number]['id']>('desktop');
   const [path, setPath] = React.useState('/');
+  const [sampleData, setSampleDataState] = React.useState(false);
   const [nonce, setNonce] = React.useState(0);
   // Mobile single-column: which pane is showing.
   const [mobilePane, setMobilePane] = React.useState<'edit' | 'preview'>('edit');
@@ -164,6 +167,9 @@ export function EditorShell({
       setPreviewPath: (next) => {
         setPath(next);
       },
+      setSampleData: (on) => {
+        setSampleDataState(on);
+      },
       reload: () => {
         setNonce((n) => n + 1);
       },
@@ -188,7 +194,7 @@ export function EditorShell({
 
   const query = `tenant=${encodeURIComponent(slug)}${
     previewToken ? `&sparxSitePreview=${encodeURIComponent(previewToken)}` : ''
-  }`;
+  }${sampleData ? '&sparxSampleData=1' : ''}`;
   const src = `${storefrontUrl}${path}?${query}&v=${nonce}`;
   const openUrl = `${storefrontUrl}${path}?${query}`;
 

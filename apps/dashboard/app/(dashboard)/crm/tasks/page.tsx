@@ -17,6 +17,7 @@ import {
 
 import { api } from '@/lib/api-rest-client';
 
+import { EntityCreateButton } from '../../_components/entity-create-button';
 import { TaskRow } from './_components/task-row';
 
 interface TaskListItem {
@@ -80,9 +81,14 @@ export default async function TasksPage({ searchParams }: PageProps) {
               >
                 <Link href="/crm/tasks?scope=all">Team tasks</Link>
               </Button>
-              <Button asChild color="module" leftIcon={<Plus className="h-4 w-4" />}>
-                <Link href="/crm/tasks/new">New task</Link>
-              </Button>
+              <EntityCreateButton
+                entityType="task"
+                newHref="/crm/tasks/new"
+                color="module"
+                leftIcon={<Plus className="h-4 w-4" />}
+              >
+                New
+              </EntityCreateButton>
             </>
           }
         />

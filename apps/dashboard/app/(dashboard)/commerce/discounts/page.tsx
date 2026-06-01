@@ -1,9 +1,7 @@
-import Link from 'next/link';
 import { Plus, Tag } from 'lucide-react';
 
 import {
   Badge,
-  Button,
   Card,
   CardContent,
   CardDescription,
@@ -24,6 +22,8 @@ import {
 
 import { api } from '@/lib/api-rest-client';
 
+import { EntityCreateButton } from '../../_components/entity-create-button';
+import { ListToolbar } from '../../_components/list-toolbar';
 import { DiscountStatusToggle } from './_components/discount-status-toggle';
 
 interface DiscountRow {
@@ -58,11 +58,28 @@ const STATUS_VARIANT: Record<string, 'success' | 'warning' | 'outline'> = {
 
 const moneyFmt = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
 
-export default async function DiscountsPage() {
-  const discounts = await api.get<DiscountRow[]>('/v1/commerce/discounts');
+interface PageProps {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}
 
-  const active = discounts.filter((d) => d.status === 'active');
-  const draft = discounts.filter((d) => d.status === 'draft');
+const STATUS_OPTIONS = [
+  { value: 'active', label: 'Active' },
+  { value: 'draft', label: 'Draft' },
+  { value: 'archived', label: 'Archived' },
+];
+
+export default async function DiscountsPage({ searchParams }: PageProps) {
+  const params = await searchParams;
+  const status = stringParam(params.status);
+  const q = stringParam(params.q);
+
+  const query = new URLSearchParams();
+  if (status) query.set('status', status);
+  if (q) query.set('q', q);
+
+  const discounts = await api.get<DiscountRow[]>(
+    `/v1/commerce/discounts${query.toString() ? `?${query.toString()}` : ''}`
+  );
 
   return (
     <Container size="full">
@@ -72,18 +89,25 @@ export default async function DiscountsPage() {
           title="Discounts"
           badge={
             <Badge color="module">
-              {active.length} active · {draft.length} draft
+              {discounts.length} discount{discounts.length === 1 ? '' : 's'}
             </Badge>
           }
           description="Codes activate when a shopper enters them; automatic discounts apply silently when their conditions match. Stacking rules govern combining with subscribe-and-save and loyalty."
           actions={
-            <Button color="module" asChild>
-              <Link href="/commerce/discounts/new">
-                <Plus className="h-4 w-4" />
-                Create discount
-              </Link>
-            </Button>
+            <EntityCreateButton
+              entityType="discount"
+              newHref="/commerce/discounts/new"
+              color="module"
+              leftIcon={<Plus className="h-4 w-4" />}
+            >
+              New
+            </EntityCreateButton>
           }
+        />
+
+        <ListToolbar
+          searchPlaceholder="Search code or name…"
+          filters={[{ key: 'status', label: 'Statuses', options: STATUS_OPTIONS }]}
         />
 
         <Card>
@@ -103,9 +127,14 @@ export default async function DiscountsPage() {
                 title="No discounts yet"
                 description="Create a code (e.g. WELCOME10) for new-customer promos, or an automatic discount that applies when conditions are met."
                 action={
-                  <Button color="module" asChild>
-                    <Link href="/commerce/discounts/new">Create discount</Link>
-                  </Button>
+                  <EntityCreateButton
+                    entityType="discount"
+                    newHref="/commerce/discounts/new"
+                    color="module"
+                    leftIcon={<Plus className="h-4 w-4" />}
+                  >
+                    New
+                  </EntityCreateButton>
                 }
               />
             ) : (
@@ -167,4 +196,10 @@ export default async function DiscountsPage() {
       </Stack>
     </Container>
   );
+}
+
+function stringParam(v: string | string[] | undefined): string | undefined {
+  if (Array.isArray(v)) return v[0];
+  if (typeof v === 'string' && v.length > 0) return v;
+  return undefined;
 }

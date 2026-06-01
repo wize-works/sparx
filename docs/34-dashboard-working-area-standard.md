@@ -1,9 +1,11 @@
 # Sparx Platform — Dashboard Working-Area Standard
 
-**Version:** 1.4
+**Version:** 1.5
 **Author:** Brandon Korous
 **Last Updated:** 2026-05-31
 
+> **1.5 (2026-05-31):** Two consistency gaps closed. **(1) Create surface follows the detail-view preference** (§13.1) — "New X" no longer varies per page (some inline forms, some `/new` routes, some buttons). A new `EntityCreateButton` resolves the user's `defaultDetailView` to the same surface used for _viewing_ a record: drawer/modal open the create form in the `@detail` overlay (token `?drawer=type:new`), `fullPage`/`newTab` route to `/{resource}/new`. Reuses the entire detail substrate — same chrome, same registry — so creating and viewing a record share one experience. **(2) Toolbar visibility no longer depends on data** (§8) — a list either always shows its `ListToolbar` (when it has any control) or never does; the empty/zero-record state never toggles the toolbar off. Piloted on `commerce/collections`.
+>
 > **1.4 (2026-05-31):** Review feedback after the toolbar pilot. **Collection/List pages move to Full width** (§3) — a data table is a work surface that should use the viewport, not a reading column; **overviews and detail pages stay bound** (their KPI/section/panel grids would sprawl). Shipped the `ListToolbar` (`@sparx/ui`) + dashboard URL-sync wrapper — live quick-filters/search/sort, no Apply, rolled across all module list pages (§7.1). Card/grid views use the new `Grid minItemWidth` auto-fill so cards stay a tidy width on full-bleed pages instead of stretching. Search is shown only where the list's endpoint supports text search (`q`); filter-only lists hide it.
 >
 > **1.3 (2026-05-31):** Post-rollout review feedback. Content width gains a third tier — **Full** (§3) for canvas/builder workspaces (Site Builder editor, the pipeline Kanban board) where the work surface itself wants the whole viewport. The drawer/modal detail view now adopts the record's **module color** (the `@detail` slot wraps content in the owning `ModuleProvider` — previously it inherited the `:root` indigo). Commerce primary CTAs corrected to `color="module"`. Next: the list **filter/search toolbar** redesign (§7) and a `defaultListView` (table/cards) preference mirroring `defaultDetailView`.
@@ -144,6 +146,8 @@ The audit found three treatments (an inline icon-left card on Home; a bare gray 
 - The action is `Button variant="module"`. It must **not** duplicate the header's primary action — if the header already has "Create discount", the empty state either has no button or a clearly distinct affordance (e.g. "Import"). A list whose header carries the create action shows a buttonless empty state.
 - The bare-gray-box-with-no-CTA (Orders) gains a CTA; the indigo CTA (Discounts) becomes `variant="module"`.
 
+**Toolbar visibility is data-independent (locked 1.5).** The audit found the same emptiness producing different chrome — some empty lists kept their `ListToolbar`, others dropped it. The rule: a list page renders `ListToolbar` **iff it has at least one control** (search, filters, sort, or view toggle), and when it does, the toolbar renders **unconditionally — above the empty/results branch, visible even at zero records.** Lists with no controls render no toolbar (an empty toolbar is worse than none). The empty state is the _body_ below the toolbar, not a replacement for it. (This supersedes the earlier "hide when filtered to zero" idea — the toolbar stays put; only the body swaps to `EmptyState`.)
+
 ---
 
 ## 9. Stat Cards — `Stat` + `Grid` (exists, `@sparx/ui`)
@@ -223,6 +227,27 @@ Container size="md"
 - **Help text** via `FormDescription` (muted, below the field) — one style; no orange help text on one page and gray on another.
 - **No in-content back link.** Delete the centered "← Back to products / pipelines / pages" links.
 - A form with multiple logical groups uses multiple `Card`s (like product "Basics / Organization / Shipping"); a simple form uses one. Both share the single action bar at the bottom.
+
+### 13.1 Create surface follows the detail-view preference (locked 1.5)
+
+The "New X" affordance diverged badly across the app: 18 lists routed to a dedicated `/new` page, ~5 dropped an inline form onto the list (authors, taxonomy, categories, navigation), and there was no shared rule. Rather than legislate a two-tier "lightweight vs heavyweight" split, **the create surface is driven by the same `defaultDetailView` preference that governs viewing a record** — so creating and viewing the same _kind_ of thing always happen in the same place. This is the §7.2 principle ("the same kind behaves consistently") extended from the list/detail axis to create.
+
+**Mechanism — reuses the detail substrate end to end:**
+
+- **`EntityCreateButton`** (`_components/entity-create-button.tsx`) replaces the bare `Button asChild → Link href=".../new"` in `PageHeader actions` and in the empty-state CTA. It is the create analog of `EntityRowLink`: it resolves `defaultDetailView` →
+  - `drawer` / `modal` → sets the overlay token `?drawer=type:new` / `?modal=type:new` (no navigation);
+  - `fullPage` → lets the `<Link href="/{resource}/new">` navigate;
+  - `newTab` → opens `/{resource}/new` in a new tab.
+  - Same power-shortcuts as the row link (`alt` = force drawer, `shift` = force full page, `⌘/ctrl`/middle-click = new tab). Falls back to `fullPage` when the type has no `hasDetailView`.
+- **Sentinel id `new`.** The token reuses the existing `type:id` shape — `parseDetailToken('collection:new')` → `{typeId:'collection', entityId:'new'}`. Safe because record ids are cuids, never the literal `new`. The `@detail` slot (`detail-slot.tsx`) branches on the sentinel: `renderDetailContent(type, 'new')` renders the registered **create** component (a `createComponents` registry parallel to `detailComponents`), wrapped in the owning `ModuleProvider` exactly like a detail body.
+- **Forms are extracted into a surface-aware component** (`_components/{entity}-create-form.tsx`, `surface: 'page' | 'overlay'`) — the same `_content.tsx` extraction detail views already did. The `/new/page.tsx` route keeps wrapping it in `Container` + `PageHeader` (so `fullPage`/`newTab`, deep links, and the overlay's "maximize" button all still resolve); the overlay renders just the form body inside the drawer/modal chrome's existing `p-6`.
+- **Post-create transition.** On success in an overlay, the form swaps the token to the new record's detail (`?drawer=type:<newId>`) and `router.refresh()`s the list behind it — create flows seamlessly into view. In `page` surface it `router.push`es to the record. Cancel closes the overlay (page surface: links back to the list).
+
+**Why the heavyweight-form worry is self-solving:** a 287-line product form in a drawer would be cramped — but that same product's _detail_ already renders in that drawer, and the modal is `min(1200px, 94vw)`. A merchant who wants room sets `defaultDetailView: fullPage`. The preference is the pressure valve, so we never special-case by entity weight.
+
+**Button label.** On a list page the `PageHeader` title already names the entity, so the create trigger reads just **"New"** with a leading `+` icon (`leftIcon={<Plus/>}`) — not "New collection" / "Create discount" / "Add warehouse". The empty-state CTA matches. This applies to **list pages only**: module-overview roots (title is the _module_, e.g. "Commerce"), multi-sub-resource config pages (Shipping creates zones _and_ profiles), and cross-resource CTAs (Inventory's "Add warehouse" → a different resource) keep a descriptive label since "New" alone would be ambiguous there.
+
+Piloted on `commerce/collections` (1.5); rolls out per the detail-view registry order. Inline tree-contextual creates (category tree, nav menus) may keep their in-place form where the affordance is genuinely part of a tree, not a list row.
 
 ---
 

@@ -17,6 +17,8 @@ import {
 
 import { api } from '@/lib/api-rest-client';
 
+import { EntityCreateButton } from '../../_components/entity-create-button';
+
 interface PipelineStageRow {
   id: string;
   name: string;
@@ -76,9 +78,14 @@ export default async function PipelinesPage({ searchParams }: PageProps) {
                   {includeArchived ? 'Hide archived' : 'Show archived'}
                 </Link>
               </Button>
-              <Button asChild color="module" leftIcon={<Plus className="h-4 w-4" />}>
-                <Link href="/crm/pipelines/new">New pipeline</Link>
-              </Button>
+              <EntityCreateButton
+                entityType="pipeline"
+                newHref="/crm/pipelines/new"
+                color="module"
+                leftIcon={<Plus className="h-4 w-4" />}
+              >
+                New
+              </EntityCreateButton>
             </>
           }
         />

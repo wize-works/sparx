@@ -20,9 +20,25 @@ describe('brandColsToTokenDoc', () => {
     expect(doc.type?.body).toBe('Inter');
   });
 
+  it('maps secondary + the accent/secondary -content override columns', () => {
+    const doc = brandColsToTokenDoc({
+      colorAccent: '#f97316',
+      colorAccentForeground: '#1c1917',
+      colorSecondary: '#0ea5e9',
+      colorSecondaryForeground: '#f8fafc',
+    });
+    expect(doc.color?.accent).toBe('#f97316');
+    expect(doc.color?.accentContent).toBe('#1c1917');
+    expect(doc.color?.secondary).toBe('#0ea5e9');
+    expect(doc.color?.secondaryContent).toBe('#f8fafc');
+  });
+
   it('leaves absent columns null so the compiler falls through to the preset', () => {
     const doc = brandColsToTokenDoc(null);
     expect(doc.color?.primary).toBeNull();
+    expect(doc.color?.secondary).toBeNull();
+    expect(doc.color?.accentContent).toBeNull();
+    expect(doc.color?.secondaryContent).toBeNull();
     expect(doc.type?.heading).toBeNull();
     expect(doc.shape).toBeUndefined();
     expect(doc.effect).toBeUndefined();
@@ -92,6 +108,32 @@ describe('compileThemeForTenant', () => {
     expect(c.light.border).toBe('#fde68a');
     expect(c.dark.base100).toBe(preset.dark.base100); // untouched mode stays on preset
     expect(c.shared.containerWidth).toBe('narrow');
+  });
+
+  it('lets brand secondary + explicit -content overrides win over derivation', () => {
+    const c = compileThemeForTenant({
+      themeKey: 'apex',
+      brand: {
+        colorAccent: '#f97316',
+        colorAccentForeground: '#1c1917',
+        colorSecondary: '#0ea5e9',
+        colorSecondaryForeground: '#f8fafc',
+      },
+    });
+    expect(c.light.secondary).toBe('#0ea5e9');
+    expect(c.light.secondaryContent).toBe('#f8fafc'); // explicit, not derived
+    expect(c.light.accent).toBe('#f97316');
+    expect(c.light.accentContent).toBe('#1c1917'); // explicit, not derived
+    expect(c.dark.secondary).toBe('#0ea5e9'); // identity is mode-independent
+  });
+
+  it('derives -content for accent/secondary when the override columns are unset', () => {
+    const c = compileThemeForTenant({
+      themeKey: 'apex',
+      brand: { colorAccent: '#111111', colorSecondary: '#111111' },
+    });
+    expect(c.light.accentContent).toBe('#ffffff'); // derived for near-black
+    expect(c.light.secondaryContent).toBe('#ffffff'); // derived for near-black
   });
 
   it('keeps brand identity even when presentation overrides surfaces', () => {

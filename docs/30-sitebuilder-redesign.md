@@ -1,8 +1,8 @@
 # Site Builder Redesign
 
-**Version:** 1.1
+**Version:** 1.2
 **Author:** Brandon Korous
-**Last Updated:** 2026-05-30
+**Last Updated:** 2026-05-31
 
 ---
 
@@ -111,6 +111,14 @@ within this one screen.
 ---
 
 ## 4. The layout/template model
+
+> **Refined by [docs/36-sitebuilder-layering-model.md](36-sitebuilder-layering-model.md) (2026-05-31).**
+> Building Phase 3 surfaced a sharper model than §4–§5 sketch here. Doc 36 is the contract for the
+> layering model — three tiers (Brand+Theme / SiteLayout / PageLayout), the **template→layout**
+> (preset→instance) vocabulary, **data-driven layout targets** (replacing the fixed `scope` enum),
+> Site-Builder-owned assignment, the **`SiteTemplate`→`PageLayout` rename**, and home as a content
+> page. Where doc 36 and §4–§5 below disagree, **doc 36 wins**. §4–§5 are kept as the as-shipped
+> Phase-3 record (the `scope`-typed `SiteTemplate` it describes is what's live today).
 
 Today the Site Builder composes a section list bound to a single slug (`pageKey` = `"home"` or
 one CMS slug), and product/collection pages are 100% hardcoded React. The redesign introduces a

@@ -64,6 +64,9 @@ const PatchBrand = z.object({
   colorPrimary: hex.nullable().optional(),
   colorPrimaryForeground: hex.nullable().optional(),
   colorAccent: hex.nullable().optional(),
+  colorAccentForeground: hex.nullable().optional(),
+  colorSecondary: hex.nullable().optional(),
+  colorSecondaryForeground: hex.nullable().optional(),
   fontHeading: z.string().max(127).nullable().optional(),
   fontBody: z.string().max(127).nullable().optional(),
   tokens: BrandTokens.nullable().optional(),
@@ -80,6 +83,9 @@ interface BrandView {
   colorPrimary: string | null;
   colorPrimaryForeground: string | null;
   colorAccent: string | null;
+  colorAccentForeground: string | null;
+  colorSecondary: string | null;
+  colorSecondaryForeground: string | null;
   fontHeading: string | null;
   fontBody: string | null;
   tokens: BrandTokens | null;
@@ -97,6 +103,9 @@ function toView(
     colorPrimary: string | null;
     colorPrimaryForeground: string | null;
     colorAccent: string | null;
+    colorAccentForeground: string | null;
+    colorSecondary: string | null;
+    colorSecondaryForeground: string | null;
     fontHeading: string | null;
     fontBody: string | null;
     tokens: unknown;
@@ -121,6 +130,9 @@ function toView(
     colorPrimary: row?.colorPrimary ?? null,
     colorPrimaryForeground: row?.colorPrimaryForeground ?? null,
     colorAccent: row?.colorAccent ?? null,
+    colorAccentForeground: row?.colorAccentForeground ?? null,
+    colorSecondary: row?.colorSecondary ?? null,
+    colorSecondaryForeground: row?.colorSecondaryForeground ?? null,
     fontHeading: row?.fontHeading ?? null,
     fontBody: row?.fontBody ?? null,
     tokens,
@@ -153,6 +165,11 @@ const brandRoutes: FastifyPluginAsync = async (app) => {
     if (input.colorPrimaryForeground !== undefined)
       data.colorPrimaryForeground = input.colorPrimaryForeground;
     if (input.colorAccent !== undefined) data.colorAccent = input.colorAccent;
+    if (input.colorAccentForeground !== undefined)
+      data.colorAccentForeground = input.colorAccentForeground;
+    if (input.colorSecondary !== undefined) data.colorSecondary = input.colorSecondary;
+    if (input.colorSecondaryForeground !== undefined)
+      data.colorSecondaryForeground = input.colorSecondaryForeground;
     if (input.fontHeading !== undefined) data.fontHeading = input.fontHeading;
     if (input.fontBody !== undefined) data.fontBody = input.fontBody;
     // Json column: a present-null clears it (DB NULL); an object is stored as-is.

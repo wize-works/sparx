@@ -2,12 +2,11 @@ import { describe, it, expect } from 'vitest';
 import {
   SECTION_TYPES,
   SECTION_REGISTRY,
-  SCOPES,
   defaultSectionConfig,
   parseSectionConfig,
   getSectionDefinition,
-  sectionsForScope,
-  isSectionAllowedInScope,
+  sectionsForTarget,
+  isSectionAllowedInTarget,
 } from './section-registry';
 import { DEFAULT_TEMPLATES } from './default-templates';
 
@@ -18,9 +17,6 @@ describe('section registry', () => {
       expect(def.type).toBe(type);
       expect(def.fields.length).toBeGreaterThan(0);
       expect(def.label).toBeTruthy();
-      // Every section declares at least one scope it's allowed in.
-      expect(def.scopes.length).toBeGreaterThan(0);
-      for (const scope of def.scopes) expect(SCOPES).toContain(scope);
     }
   });
 
@@ -51,29 +47,30 @@ describe('section registry', () => {
     expect(() => parseSectionConfig('featured-products', { columns: 9 })).toThrow();
   });
 
-  it('restricts bound sections to their scope, static sections to all scopes', () => {
-    // Static: addable everywhere.
-    expect(isSectionAllowedInScope('hero', 'home')).toBe(true);
-    expect(isSectionAllowedInScope('hero', 'product')).toBe(true);
-    // Bound product section: only in a product layout.
-    expect(isSectionAllowedInScope('product-buy-box', 'product')).toBe(true);
-    expect(isSectionAllowedInScope('product-buy-box', 'home')).toBe(false);
-    expect(isSectionAllowedInScope('product-buy-box', 'collection')).toBe(false);
-    // Bound collection section: only in a collection layout.
-    expect(isSectionAllowedInScope('collection-products', 'collection')).toBe(true);
-    expect(isSectionAllowedInScope('collection-products', 'product')).toBe(false);
-    // Unknown type / unknown scope never allowed.
-    expect(isSectionAllowedInScope('not-real', 'home')).toBe(false);
-    expect(isSectionAllowedInScope('hero', 'not-a-scope')).toBe(false);
+  it('restricts bound sections to matching targets, static sections to all targets', () => {
+    // Static: addable in every target.
+    expect(isSectionAllowedInTarget('hero', 'site:home')).toBe(true);
+    expect(isSectionAllowedInTarget('hero', 'commerce:product')).toBe(true);
+    expect(isSectionAllowedInTarget('hero', 'cms:content-type:abc-123')).toBe(true);
+    // Bound product section: only in a target with a product binding.
+    expect(isSectionAllowedInTarget('product-buy-box', 'commerce:product')).toBe(true);
+    expect(isSectionAllowedInTarget('product-buy-box', 'site:home')).toBe(false);
+    expect(isSectionAllowedInTarget('product-buy-box', 'commerce:collection')).toBe(false);
+    // Bound collection section: only in a target with a collection binding.
+    expect(isSectionAllowedInTarget('collection-products', 'commerce:collection')).toBe(true);
+    expect(isSectionAllowedInTarget('collection-products', 'commerce:product')).toBe(false);
+    // Unknown type / unknown target never allowed.
+    expect(isSectionAllowedInTarget('not-real', 'site:home')).toBe(false);
+    expect(isSectionAllowedInTarget('product-buy-box', 'not:a-target')).toBe(false);
   });
 
-  it('sectionsForScope returns static + that scope’s bound sections only', () => {
-    const product = sectionsForScope('product').map((d) => d.type);
+  it('sectionsForTarget returns static + that target’s bound sections only', () => {
+    const product = sectionsForTarget('commerce:product').map((d) => d.type);
     expect(product).toContain('hero'); // static, allowed everywhere
     expect(product).toContain('product-buy-box'); // bound to product
     expect(product).not.toContain('collection-products'); // bound to collection
 
-    const home = sectionsForScope('home').map((d) => d.type);
+    const home = sectionsForTarget('site:home').map((d) => d.type);
     expect(home).toContain('hero');
     expect(home).not.toContain('product-buy-box');
     expect(home).not.toContain('collection-header');
@@ -87,17 +84,17 @@ describe('section registry', () => {
     expect(getSectionDefinition('hero')?.binding).toBeUndefined();
   });
 
-  it('seeded default templates are valid, scope-correct compositions', () => {
-    for (const [scope, sections] of Object.entries(DEFAULT_TEMPLATES)) {
+  it('seeded default templates are valid, target-correct compositions', () => {
+    for (const [targetId, sections] of Object.entries(DEFAULT_TEMPLATES)) {
       expect(sections.length).toBeGreaterThan(0);
       for (const s of sections) {
-        // Each default section is allowed in its scope and carries a real config.
-        expect(isSectionAllowedInScope(s.sectionType, scope)).toBe(true);
+        // Each default section is allowed in its target and carries a real config.
+        expect(isSectionAllowedInTarget(s.sectionType, targetId)).toBe(true);
         expect(() => parseSectionConfig(s.sectionType, s.config)).not.toThrow();
       }
     }
     // The product default leads with the buy box (parity with today's PDP).
-    expect(DEFAULT_TEMPLATES.product[0]?.sectionType).toBe('product-buy-box');
-    expect(DEFAULT_TEMPLATES.collection[0]?.sectionType).toBe('collection-header');
+    expect(DEFAULT_TEMPLATES['commerce:product'][0]?.sectionType).toBe('product-buy-box');
+    expect(DEFAULT_TEMPLATES['commerce:collection'][0]?.sectionType).toBe('collection-header');
   });
 });

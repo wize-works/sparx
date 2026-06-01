@@ -1,9 +1,7 @@
-import Link from 'next/link';
 import { ShoppingCart, Plus } from 'lucide-react';
 
 import {
   Badge,
-  Button,
   Card,
   CardContent,
   Container,
@@ -21,6 +19,7 @@ import {
 
 import { api } from '@/lib/api-rest-client';
 
+import { EntityCreateButton } from '../../_components/entity-create-button';
 import { EntityRowLink } from '../../_components/entity-row-link';
 import { ListToolbar } from '../../_components/list-toolbar';
 
@@ -97,9 +96,14 @@ export default async function OrdersPage({ searchParams }: PageProps) {
           }
           description="Customer orders — placed, paid, fulfilled, delivered, refunded. Linked back to customer records and (optionally) to a sales deal via the deal_orders join."
           actions={
-            <Button asChild color="module" leftIcon={<Plus className="h-4 w-4" />}>
-              <Link href="/crm/orders/new">New order</Link>
-            </Button>
+            <EntityCreateButton
+              entityType="order"
+              newHref="/crm/orders/new"
+              color="module"
+              leftIcon={<Plus className="h-4 w-4" />}
+            >
+              New
+            </EntityCreateButton>
           }
         />
 

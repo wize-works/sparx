@@ -1,9 +1,7 @@
-import Link from 'next/link';
 import { Warehouse as WarehouseIcon, Plus } from 'lucide-react';
 
 import {
   Badge,
-  Button,
   Card,
   CardContent,
   CardDescription,
@@ -24,6 +22,7 @@ import {
 
 import { api } from '@/lib/api-rest-client';
 
+import { EntityCreateButton } from '../../_components/entity-create-button';
 import { EntityRowLink } from '../../_components/entity-row-link';
 
 // Warehouses — the per-tenant physical/virtual stock locations the
@@ -71,12 +70,14 @@ export default async function WarehousesPage() {
           }
           description="Inventory levels, lot batches, and serial units all sit beneath a warehouse. A tenant needs at least one active warehouse before stock can be reserved or sold. Dropship suppliers register as a virtual warehouse so the inventory model stays uniform."
           actions={
-            <Button color="module" asChild>
-              <Link href="/commerce/warehouses/new">
-                <Plus className="h-4 w-4" />
-                Add warehouse
-              </Link>
-            </Button>
+            <EntityCreateButton
+              entityType="warehouse"
+              newHref="/commerce/warehouses/new"
+              color="module"
+              leftIcon={<Plus className="h-4 w-4" />}
+            >
+              New
+            </EntityCreateButton>
           }
         />
 
@@ -96,9 +97,14 @@ export default async function WarehousesPage() {
                 title="No warehouses yet"
                 description="Add your first warehouse to start tracking stock. A merchant with only digital goods can use a single virtual warehouse."
                 action={
-                  <Button color="module" asChild>
-                    <Link href="/commerce/warehouses/new">Create warehouse</Link>
-                  </Button>
+                  <EntityCreateButton
+                    entityType="warehouse"
+                    newHref="/commerce/warehouses/new"
+                    color="module"
+                    leftIcon={<Plus className="h-4 w-4" />}
+                  >
+                    New
+                  </EntityCreateButton>
                 }
               />
             ) : (

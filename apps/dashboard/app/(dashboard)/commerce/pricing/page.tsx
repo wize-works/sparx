@@ -1,9 +1,7 @@
-import Link from 'next/link';
 import { DollarSign, Plus } from 'lucide-react';
 
 import {
   Badge,
-  Button,
   Card,
   CardContent,
   CardDescription,
@@ -23,6 +21,7 @@ import {
 } from '@sparx/ui';
 
 import { api } from '@/lib/api-rest-client';
+import { EntityCreateButton } from '../../_components/entity-create-button';
 import { EntityRowLink } from '../../_components/entity-row-link';
 
 // Pricing — price lists, contract prices, bulk tiers.
@@ -81,12 +80,14 @@ export default async function PricingPage() {
           badge={<Badge color="module">{priceLists.length} price lists</Badge>}
           description="Resolution order: B2B contract price → price list → bulk tier → variant base. Discounts apply on top via the Discounts page."
           actions={
-            <Button color="module" asChild>
-              <Link href="/commerce/pricing/new">
-                <Plus className="h-4 w-4" />
-                Add price list
-              </Link>
-            </Button>
+            <EntityCreateButton
+              entityType="price-list"
+              newHref="/commerce/pricing/new"
+              color="module"
+              leftIcon={<Plus className="h-4 w-4" />}
+            >
+              New
+            </EntityCreateButton>
           }
         />
 
@@ -107,9 +108,14 @@ export default async function PricingPage() {
                 title="No price lists yet"
                 description="Create one to offer per-channel pricing (e.g. B2B portal at 15% off) or per-segment pricing (e.g. wholesale customers)."
                 action={
-                  <Button color="module" asChild>
-                    <Link href="/commerce/pricing/new">Create price list</Link>
-                  </Button>
+                  <EntityCreateButton
+                    entityType="price-list"
+                    newHref="/commerce/pricing/new"
+                    color="module"
+                    leftIcon={<Plus className="h-4 w-4" />}
+                  >
+                    New
+                  </EntityCreateButton>
                 }
               />
             ) : (

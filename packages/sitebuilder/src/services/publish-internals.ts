@@ -13,28 +13,28 @@ import {
 
 import { writeAuditLog } from '../audit';
 import { SitebuilderNotFoundError } from '../errors';
-import { getOrCreateTemplate } from './template-service';
+import { getOrCreatePageLayout } from './page-layout-service';
 
-// Legacy pageKey ↔ (scope, key) mapping. This is the ONLY place it survives
-// (3.3c retired `pageKey` from the live section API): the snapshot path still
-// writes `pageKey` onto each SectionSnapshot for back-compat, and rollback of a
-// pre-Phase-3 SiteVersion (sections carrying only `pageKey`) maps it back to a
-// (scope, key) template. "home" ↔ home/default; any other slug ↔ custom/<slug>.
-function pageKeyForTemplate(t: { scope: string; key: string }): string {
-  return t.scope === 'home' ? 'home' : t.key;
+// Legacy pageKey ↔ (targetId, key) mapping. This is the ONLY place it survives:
+// the snapshot path still writes `pageKey` onto each SectionSnapshot for the
+// home/CMS-page render path, and rollback of a pre-Phase-3 SiteVersion (sections
+// carrying only `pageKey`) maps it back to a (targetId, key) layout. "home" ↔
+// site:home/default; any other slug ↔ cms:content-page/<slug>.
+function pageKeyForLayout(t: { targetId: string; key: string }): string {
+  return t.targetId === 'site:home' ? 'home' : t.key;
 }
-function scopeKeyForPageKey(pageKey: string): { scope: string; key: string; name: string } {
+function targetKeyForPageKey(pageKey: string): { targetId: string; key: string; name: string } {
   return pageKey === 'home'
-    ? { scope: 'home', key: 'default', name: 'Home' }
-    : { scope: 'custom', key: pageKey, name: pageKey };
+    ? { targetId: 'site:home', key: 'default', name: 'Home' }
+    : { targetId: 'cms:content-page', key: pageKey, name: pageKey };
 }
 
 export interface SectionSnapshot {
   id: string;
-  // Phase 3: the owning template's scope + key (doc 30 §4). Optional because
-  // pre-Phase-3 stored versions carry only `pageKey`; the storefront's read-time
-  // shim maps pageKey → scope/key for those. New publishes always set them.
-  scope?: string;
+  // The owning layout's target id + key (docs/36 §4). Optional because
+  // pre-Phase-3 stored versions carry only `pageKey`; the read path maps pageKey
+  // → targetId/key for those. New publishes always set them.
+  targetId?: string;
   templateKey?: string;
   templateId?: string;
   // Back-compat: "home" or a slug, derived from the template. Pre-Phase-3
@@ -71,19 +71,21 @@ export interface PublishedSnapshot {
 
 function toSectionSnapshot(s: {
   id: string;
-  templateId: string;
+  pageLayoutId: string;
   sectionType: string;
   position: number;
   visible: boolean;
   config: Prisma.JsonValue;
-  template: { scope: string; key: string };
+  pageLayout: { targetId: string; key: string };
 }): SectionSnapshot {
+  // `templateKey`/`templateId`/`pageKey` keep their P-A names (renaming those is
+  // a separate later tidy); `targetId` carries the data-driven target (docs/36 §4).
   return {
     id: s.id,
-    scope: s.template.scope,
-    templateKey: s.template.key,
-    templateId: s.templateId,
-    pageKey: pageKeyForTemplate(s.template),
+    targetId: s.pageLayout.targetId,
+    templateKey: s.pageLayout.key,
+    templateId: s.pageLayoutId,
+    pageKey: pageKeyForLayout(s.pageLayout),
     sectionType: s.sectionType,
     position: s.position,
     visible: s.visible,
@@ -98,8 +100,8 @@ export async function readDraft(
 ): Promise<{ sections: SectionSnapshot[]; layout: LayoutSnapshot[] }> {
   const [sections, layout] = await Promise.all([
     tx.siteSection.findMany({
-      include: { template: { select: { scope: true, key: true } } },
-      orderBy: [{ templateId: 'asc' }, { position: 'asc' }],
+      include: { pageLayout: { select: { targetId: true, key: true } } },
+      orderBy: [{ pageLayoutId: 'asc' }, { position: 'asc' }],
     }),
     tx.siteLayoutBlock.findMany({ orderBy: { slot: 'asc' } }),
   ]);
@@ -197,17 +199,17 @@ export async function publishWithinTx(
   return version;
 }
 
-// Resolve a snapshot section's owning (scope, key, name): explicit on Phase-3
-// snapshots, derived from the legacy pageKey otherwise.
-function resolveScopeKey(s: SectionSnapshot): { scope: string; key: string; name: string } {
-  if (s.scope && s.templateKey) {
+// Resolve a snapshot section's owning (targetId, key, name): explicit on
+// post-P-B snapshots, derived from the legacy pageKey otherwise.
+function resolveTargetKey(s: SectionSnapshot): { targetId: string; key: string; name: string } {
+  if (s.targetId && s.templateKey) {
     return {
-      scope: s.scope,
+      targetId: s.targetId,
       key: s.templateKey,
-      name: s.scope === 'home' ? 'Home' : s.templateKey,
+      name: s.targetId === 'site:home' ? 'Home' : s.templateKey,
     };
   }
-  return scopeKeyForPageKey(s.pageKey);
+  return targetKeyForPageKey(s.pageKey);
 }
 
 /**
@@ -238,20 +240,20 @@ export async function materializeWithinTx(
   // first (ids survive a rollback and stay referenced by future publishes).
   await tx.siteSection.deleteMany({});
   if (sections.length > 0) {
-    const templateIdByKey = new Map<string, string>();
+    const layoutIdByKey = new Map<string, string>();
     const rows: Prisma.SiteSectionCreateManyInput[] = [];
     for (const s of sections) {
-      const { scope, key, name } = resolveScopeKey(s);
-      const mapKey = `${scope} ${key}`;
-      let templateId = templateIdByKey.get(mapKey);
-      if (!templateId) {
-        const template = await getOrCreateTemplate(tx, tenantId, scope, key, name);
-        templateId = template.id;
-        templateIdByKey.set(mapKey, templateId);
+      const { targetId, key, name } = resolveTargetKey(s);
+      const mapKey = `${targetId} ${key}`;
+      let pageLayoutId = layoutIdByKey.get(mapKey);
+      if (!pageLayoutId) {
+        const layout = await getOrCreatePageLayout(tx, tenantId, targetId, key, name);
+        pageLayoutId = layout.id;
+        layoutIdByKey.set(mapKey, pageLayoutId);
       }
       rows.push({
         tenantId,
-        templateId,
+        pageLayoutId,
         sectionType: s.sectionType,
         position: s.position,
         visible: s.visible,

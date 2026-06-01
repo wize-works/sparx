@@ -9,6 +9,11 @@ import { notFound } from 'next/navigation';
 import { Breadcrumbs } from '@/components/breadcrumbs';
 import { SectionRenderer } from '@/components/section-renderer';
 import { getCollection, listCollectionProducts } from '@/lib/commerce';
+import {
+  isSampleRequested,
+  SAMPLE_COLLECTION,
+  SAMPLE_COLLECTION_PRODUCTS,
+} from '@/lib/sample-data';
 import { getPublishedSite, resolveTemplateSections } from '@/lib/site';
 import { resolveTenant } from '@/lib/tenant';
 
@@ -40,25 +45,31 @@ export default async function CollectionDetailPage({ params, searchParams }: Pag
   const sp = (await searchParams) ?? {};
   const page = Math.max(1, Number(one(sp.page) ?? '1') || 1);
 
-  const collection = await getCollection(tenant.slug, handle);
+  // Sample-data preview (doc 36 §9): token-gated `sparxSampleData=1` renders the
+  // collection layout against fixed SAMPLE_* fixtures so it can be designed
+  // before any real collection exists. The layout still resolves from the
+  // (draft) snapshot — only the bound data is swapped.
+  const sample = isSampleRequested(sp);
+  const collection = sample ? SAMPLE_COLLECTION : await getCollection(tenant.slug, handle);
   if (!collection) notFound();
 
-  // The collection-scope layout: the merchant's published one, or the seeded
+  // The commerce:collection layout: the merchant's published one, or the seeded
   // default (parity). A site-preview token resolves the draft instead.
   const snapshot = await getPublishedSite(tenant.slug, one(sp.sparxSitePreview));
-  const sections = resolveTemplateSections(snapshot, 'collection');
+  const sections = resolveTemplateSections(snapshot, 'commerce:collection');
 
   // Page size comes from the product-grid section's config (default 24 = today).
   const gridSection = sections.find((s) => s.sectionType === 'collection-products');
   const requestedPerPage =
     typeof gridSection?.config.perPage === 'number' ? gridSection.config.perPage : 24;
 
-  const { items, total, perPage } = await listCollectionProducts(
-    tenant.slug,
-    handle,
-    page,
-    requestedPerPage
-  );
+  const { items, total, perPage } = sample
+    ? {
+        items: SAMPLE_COLLECTION_PRODUCTS.slice(0, requestedPerPage),
+        total: SAMPLE_COLLECTION_PRODUCTS.length,
+        perPage: requestedPerPage,
+      }
+    : await listCollectionProducts(tenant.slug, handle, page, requestedPerPage);
   const { defaultCurrency: currency, defaultLocale: locale } = tenant.storefront;
 
   return (

@@ -3,8 +3,9 @@
 // etc. — symmetric with the MCP tool registry.
 
 export * as themeService from './theme-service';
+export * as savedThemeService from './saved-theme-service';
 export * as sectionService from './section-service';
-export * as templateService from './template-service';
+export * as pageLayoutService from './page-layout-service';
 export * as layoutService from './layout-service';
 export * as publishService from './publish-service';
 export * as scheduleService from './schedule-service';

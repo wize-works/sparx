@@ -25,9 +25,15 @@ model TenantBrand {
   faviconMediaId   String? @map("favicon_media_id") @db.Uuid
 
   // Core identity palette (hex). Presentation tokens stay in the storefront theme.
-  colorPrimary           String? @map("color_primary") @db.VarChar(7)
-  colorPrimaryForeground String? @map("color_primary_foreground") @db.VarChar(7)
-  colorAccent            String? @map("color_accent") @db.VarChar(7)
+  // The `*Foreground` columns are the optional `-content` overrides for their
+  // base colour (docs/33 §3.1); null = auto-derive for AA legibility. `secondary`
+  // is the brand's second identity colour; it falls back to `primary` if unset.
+  colorPrimary             String? @map("color_primary") @db.VarChar(7)
+  colorPrimaryForeground   String? @map("color_primary_foreground") @db.VarChar(7)
+  colorAccent              String? @map("color_accent") @db.VarChar(7)
+  colorAccentForeground    String? @map("color_accent_foreground") @db.VarChar(7)
+  colorSecondary           String? @map("color_secondary") @db.VarChar(7)
+  colorSecondaryForeground String? @map("color_secondary_foreground") @db.VarChar(7)
 
   // Brand typography (font family names).
   fontHeading String? @map("font_heading") @db.VarChar(127)

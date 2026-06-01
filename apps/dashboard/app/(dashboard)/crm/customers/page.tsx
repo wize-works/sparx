@@ -22,6 +22,7 @@ import {
 
 import { api } from '@/lib/api-rest-client';
 
+import { EntityCreateButton } from '../../_components/entity-create-button';
 import { EntityRowLink } from '../../_components/entity-row-link';
 import { ListToolbar } from '../../_components/list-toolbar';
 import { getUserPreferences } from '../../_shell/preferences';
@@ -118,9 +119,14 @@ export default async function CrmCustomersPage({ searchParams }: PageProps) {
               <Button asChild variant="outline">
                 <Link href="/crm/duplicates">Find duplicates</Link>
               </Button>
-              <Button asChild color="module" leftIcon={<Plus className="h-4 w-4" />}>
-                <Link href="/crm/customers/new">New customer</Link>
-              </Button>
+              <EntityCreateButton
+                entityType="customer"
+                newHref="/crm/customers/new"
+                color="module"
+                leftIcon={<Plus className="h-4 w-4" />}
+              >
+                New
+              </EntityCreateButton>
             </>
           }
         />
@@ -140,9 +146,14 @@ export default async function CrmCustomersPage({ searchParams }: PageProps) {
               title="No customers match"
               description="Adjust the filters above, or add a new customer manually."
               action={
-                <Button asChild color="module">
-                  <Link href="/crm/customers/new">Add a customer</Link>
-                </Button>
+                <EntityCreateButton
+                  entityType="customer"
+                  newHref="/crm/customers/new"
+                  color="module"
+                  leftIcon={<Plus className="h-4 w-4" />}
+                >
+                  New
+                </EntityCreateButton>
               }
             />
           </Card>

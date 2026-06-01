@@ -22,10 +22,10 @@ import { DEFAULT_TEMPLATES } from '@sparx/sitebuilder-schemas';
 
 export interface SectionSnapshot {
   id: string;
-  // Phase 3 (doc 30 §4): the owning template's scope + key. Optional — absent on
-  // pre-Phase-3 published snapshots, where `pageKey` is the only key. The bound
-  // rendering in 3.2 reads these; 3.0 still keys composition off `pageKey`.
-  scope?: string;
+  // The owning layout's target id + key (docs/36 §4). Optional — absent on
+  // pre-Phase-3 published snapshots, where `pageKey` is the only key; the
+  // read-time fallback below maps pageKey → targetId/key for those.
+  targetId?: string;
   templateKey?: string;
   templateId?: string;
   pageKey: string;
@@ -112,48 +112,48 @@ export function sectionsForPage(
     .sort((a, b) => a.position - b.position);
 }
 
-// A snapshot section's (scope, templateKey) — explicit on Phase-3 snapshots,
-// mapped from the legacy `pageKey` on pre-Phase-3 ones (the read-time shim of
-// docs/handoffs/sitebuilder-phase3-spec.md §6.4).
-function scopeKeyOf(s: SectionSnapshot): { scope: string; key: string } {
-  if (s.scope) return { scope: s.scope, key: s.templateKey ?? 'default' };
+// A snapshot section's (targetId, key) — explicit on post-P-B snapshots, mapped
+// from the legacy `pageKey` on pre-Phase-3 ones (the orthogonal read-time
+// fallback; "home" → site:home, any other slug → cms:content-page).
+function targetKeyOf(s: SectionSnapshot): { targetId: string; key: string } {
+  if (s.targetId) return { targetId: s.targetId, key: s.templateKey ?? 'default' };
   return s.pageKey === 'home'
-    ? { scope: 'home', key: 'default' }
-    : { scope: 'custom', key: s.pageKey };
+    ? { targetId: 'site:home', key: 'default' }
+    : { targetId: 'cms:content-page', key: s.pageKey };
 }
 
-/** Ordered, visible sections for a scoped layout (defaults to the `default` key). */
-export function sectionsForScope(
+/** Ordered, visible sections for a target's layout (defaults to the `default` key). */
+export function sectionsForTarget(
   snapshot: PublishedSnapshot | null,
-  scope: string,
+  targetId: string,
   key = 'default'
 ): SectionSnapshot[] {
   if (!snapshot) return [];
   return snapshot.sections
     .filter((s) => {
-      const sk = scopeKeyOf(s);
-      return sk.scope === scope && sk.key === key && s.visible;
+      const tk = targetKeyOf(s);
+      return tk.targetId === targetId && tk.key === key && s.visible;
     })
     .sort((a, b) => a.position - b.position);
 }
 
 /**
- * The sections to render for a `product`/`collection` page: the merchant's
- * published layout for that scope, or — when they have none — the code-defined
- * seeded default (day-one parity, no DB rows; spec §5). Synthesizes renderable
- * SectionSnapshots from the default composition.
+ * The sections to render for a product/collection page: the merchant's published
+ * layout for that target, or — when they have none — the code-defined seeded
+ * default (day-one parity, no DB rows). Synthesizes renderable SectionSnapshots
+ * from the default composition.
  */
 export function resolveTemplateSections(
   snapshot: PublishedSnapshot | null,
-  scope: 'product' | 'collection'
+  targetId: 'commerce:product' | 'commerce:collection'
 ): SectionSnapshot[] {
-  const published = sectionsForScope(snapshot, scope);
+  const published = sectionsForTarget(snapshot, targetId);
   if (published.length > 0) return published;
-  return DEFAULT_TEMPLATES[scope].map((s, i) => ({
-    id: `default-${scope}-${i}`,
-    scope,
+  return DEFAULT_TEMPLATES[targetId].map((s, i) => ({
+    id: `default-${targetId}-${i}`,
+    targetId,
     templateKey: 'default',
-    pageKey: scope,
+    pageKey: targetId,
     sectionType: s.sectionType,
     position: i,
     visible: true,

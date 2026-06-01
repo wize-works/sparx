@@ -16,6 +16,7 @@ import {
 } from '@sparx/ui';
 
 import { api } from '@/lib/api-rest-client';
+import { EntityCreateButton } from '../../_components/entity-create-button';
 import { EmailShell } from '../_components/email-shell';
 import type { BroadcastRow } from '../_lib/types';
 
@@ -40,12 +41,15 @@ export default async function BroadcastsPage() {
       title="Broadcasts"
       description="Segment-targeted marketing campaigns."
       actions={
-        <Button color="module" size="sm" asChild>
-          <Link href="/email/broadcasts/new">
-            <Plus className="h-4 w-4" />
-            New broadcast
-          </Link>
-        </Button>
+        <EntityCreateButton
+          entityType="broadcast"
+          newHref="/email/broadcasts/new"
+          color="module"
+          size="sm"
+          leftIcon={<Plus className="h-4 w-4" />}
+        >
+          New
+        </EntityCreateButton>
       }
     >
       {broadcasts.length === 0 ? (

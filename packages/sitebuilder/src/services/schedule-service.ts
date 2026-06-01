@@ -32,6 +32,7 @@ export async function schedule(
         status: 'pending',
         note: input.note ?? null,
         createdById: ctx.userId ?? null,
+        themeId: input.themeId ?? null,
       },
     });
     await writeAuditLog({
@@ -123,7 +124,28 @@ export async function processDueSchedule(
       const schedule = await tx.sitePublishSchedule.findUnique({ where: { id: scheduleId } });
       if (schedule?.status !== 'pending') return 'skipped';
 
-      await getOrCreateConfig(tx, ctx.tenantId);
+      const config = await getOrCreateConfig(tx, ctx.tenantId);
+
+      // Seasonal/holiday swap (docs/36): if the schedule points at a saved theme,
+      // apply it to the draft (theme_key + presentation) before snapshotting, so
+      // the published version carries it. A deleted theme nulled the FK → skip.
+      if (schedule.themeId) {
+        const theme = await tx.siteTheme.findUnique({ where: { id: schedule.themeId } });
+        if (theme) {
+          const draft = (config.draftSettings ?? {}) as Record<string, unknown>;
+          await tx.siteConfig.update({
+            where: { tenantId: ctx.tenantId },
+            data: {
+              themeKey: theme.basePresetKey,
+              draftSettings: {
+                ...draft,
+                presentation: theme.presentation,
+              },
+            },
+          });
+        }
+      }
+
       const version = await publishWithinTx(tx, {
         tenantId: ctx.tenantId,
         userId: null,

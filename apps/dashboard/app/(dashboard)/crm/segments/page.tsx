@@ -15,6 +15,7 @@ import {
 
 import { api } from '@/lib/api-rest-client';
 
+import { EntityCreateButton } from '../../_components/entity-create-button';
 import { EntityRowLink } from '../../_components/entity-row-link';
 import { RecomputeButton } from './_components/recompute-button';
 
@@ -73,9 +74,14 @@ export default async function SegmentsPage({ searchParams }: PageProps) {
                 </Link>
               </Button>
               <RecomputeButton />
-              <Button asChild color="module" leftIcon={<Plus className="h-4 w-4" />}>
-                <Link href="/crm/segments/new">New segment</Link>
-              </Button>
+              <EntityCreateButton
+                entityType="segment"
+                newHref="/crm/segments/new"
+                color="module"
+                leftIcon={<Plus className="h-4 w-4" />}
+              >
+                New
+              </EntityCreateButton>
             </>
           }
         />
@@ -87,9 +93,14 @@ export default async function SegmentsPage({ searchParams }: PageProps) {
               title="No segments yet"
               description="Built-in segments like High Value and At Risk are seeded automatically — if you see this, the seed didn't run. Create one to get started."
               action={
-                <Button asChild color="module">
-                  <Link href="/crm/segments/new">Create a segment</Link>
-                </Button>
+                <EntityCreateButton
+                  entityType="segment"
+                  newHref="/crm/segments/new"
+                  color="module"
+                  leftIcon={<Plus className="h-4 w-4" />}
+                >
+                  New
+                </EntityCreateButton>
               }
             />
           </Card>

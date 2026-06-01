@@ -1,50 +1,14 @@
-'use client';
+import { Container, PageHeader, Stack } from '@sparx/ui';
 
-import * as React from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import {
-  Button,
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  Container,
-  Heading,
-  Input,
-  Label,
-  PageHeader,
-  Stack,
-  Text,
-} from '@sparx/ui';
-import { ContentBlockEditor, EMPTY_DOC, type CmsDoc } from '@sparx/cms-editor';
+import { PageCreateForm } from '../_components/page-create-form';
 
-import { createPage } from '../actions';
+// Full-page surface for creating a page. The form body lives in the
+// surface-aware `PageCreateForm` (§13.1) so the SAME component renders here
+// (`surface="page"`) and inside the `@detail` drawer/modal overlay
+// (`surface="overlay"`). This route is what `fullPage` / `newTab` detail-view
+// preferences, deep links, and the overlay's "maximize" button resolve to.
 
 export default function NewPage() {
-  const router = useRouter();
-  const [error, setError] = React.useState<string | null>(null);
-  const [pending, startTransition] = React.useTransition();
-  const [doc, setDoc] = React.useState<CmsDoc>(EMPTY_DOC);
-
-  function onSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    setError(null);
-    const formData = new FormData(e.currentTarget);
-    formData.set('content', JSON.stringify(doc));
-
-    startTransition(async () => {
-      const result = await createPage(formData);
-      if (!result.ok || !result.data) {
-        setError(result.error ?? 'Could not create page.');
-        return;
-      }
-      router.push(`/cms/${result.data.id}`);
-      router.refresh();
-    });
-  }
-
   return (
     <Container size="md">
       <Stack gap={6} className="py-10">
@@ -52,56 +16,7 @@ export default function NewPage() {
           title="New page"
           description="Saves as a draft. Publish from the editor once the content is ready — nothing goes live until you say so."
         />
-
-        <form onSubmit={onSubmit} noValidate>
-          <Card variant="module">
-            <CardHeader>
-              <Heading level={3}>Page basics</Heading>
-              <CardDescription>You can edit everything after creation.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Stack gap={4}>
-                <Stack gap={2}>
-                  <Label htmlFor="title" required>
-                    Title
-                  </Label>
-                  <Input id="title" name="title" required aria-required />
-                </Stack>
-                <Stack gap={2}>
-                  <Label htmlFor="slug">Slug (optional)</Label>
-                  <Input id="slug" name="slug" placeholder="auto-derived from title" />
-                  <Text size="xs" variant="muted">
-                    Lowercase letters, numbers, and dashes only.
-                  </Text>
-                </Stack>
-                <Stack gap={2}>
-                  <Label htmlFor="page-body-editor">Content (optional)</Label>
-                  <ContentBlockEditor
-                    id="page-body-editor"
-                    value={doc}
-                    onChange={setDoc}
-                    placeholder="Write the initial body. You can always edit after creation."
-                    ariaLabel="Page body editor"
-                  />
-                </Stack>
-
-                {error && (
-                  <Text size="sm" variant="danger" role="alert" aria-live="polite">
-                    {error}
-                  </Text>
-                )}
-              </Stack>
-            </CardContent>
-            <CardFooter>
-              <Button type="button" variant="ghost" asChild>
-                <Link href="/cms/pages">Cancel</Link>
-              </Button>
-              <Button type="submit" color="module" disabled={pending} loading={pending}>
-                Create draft
-              </Button>
-            </CardFooter>
-          </Card>
-        </form>
+        <PageCreateForm surface="page" />
       </Stack>
     </Container>
   );

@@ -1,12 +1,12 @@
 // Read-only Site Builder MCP tools. No confirmation; scope read:storefront.
 
 import { z } from 'zod';
-import { ScopeEnum, TemplateKey } from '@sparx/sitebuilder-schemas';
+import { TargetId, LayoutKey } from '@sparx/sitebuilder-schemas';
 import { themeService, sectionService, publishService } from '../services/index';
 import type { AnyMcpTool } from './registry';
 
 const NoArgs = z.object({});
-const ScopeArg = z.object({ scope: ScopeEnum, key: TemplateKey.default('default') });
+const TargetArg = z.object({ targetId: TargetId, key: LayoutKey.default('default') });
 const ListVersionsArgs = z.object({
   take: z.number().int().min(1).max(200).optional(),
   skip: z.number().int().min(0).optional(),
@@ -34,13 +34,13 @@ export const readTools: AnyMcpTool[] = [
   {
     name: 'get_sections',
     description:
-      'List a scoped layout’s sections in render order. `scope` is home | product | collection | cms-page | custom; `key` defaults to "default" (use a slug for a custom/cms page).',
+      'List a layout’s sections in render order. `targetId` is the layout target (commerce:product | commerce:collection | cms:content-page | site:home | cms:content-type:<id>); `key` defaults to "default" (use a slug for a standalone content page).',
     scope: 'read:storefront',
-    input: ScopeArg,
+    input: TargetArg,
     confirmation: false,
     run: (ctx, input) => {
-      const { scope, key } = input as z.infer<typeof ScopeArg>;
-      return sectionService.listForScope(ctx, scope, key);
+      const { targetId, key } = input as z.infer<typeof TargetArg>;
+      return sectionService.listForTarget(ctx, targetId, key);
     },
   },
   {

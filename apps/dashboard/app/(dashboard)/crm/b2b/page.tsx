@@ -1,9 +1,7 @@
-import Link from 'next/link';
 import { Building2, Plus, AlertTriangle } from 'lucide-react';
 
 import {
   Badge,
-  Button,
   Card,
   CardContent,
   Container,
@@ -21,6 +19,7 @@ import {
 
 import { api } from '@/lib/api-rest-client';
 
+import { EntityCreateButton } from '../../_components/entity-create-button';
 import { EntityRowLink } from '../../_components/entity-row-link';
 import { ListToolbar } from '../../_components/list-toolbar';
 
@@ -82,9 +81,14 @@ export default async function B2bAccountsPage({ searchParams }: PageProps) {
           }
           description="Wholesale + fleet customers. Pricing tier, credit limit, and engine profiles feed the fitment-aware catalog and the B2B portal pricing engine."
           actions={
-            <Button asChild color="module" leftIcon={<Plus className="h-4 w-4" />}>
-              <Link href="/crm/b2b/new">New B2B account</Link>
-            </Button>
+            <EntityCreateButton
+              entityType="b2b-account"
+              newHref="/crm/b2b/new"
+              color="module"
+              leftIcon={<Plus className="h-4 w-4" />}
+            >
+              New
+            </EntityCreateButton>
           }
         />
 
@@ -100,9 +104,14 @@ export default async function B2bAccountsPage({ searchParams }: PageProps) {
               title="No B2B accounts yet"
               description="Add a wholesale or fleet customer to start tracking pricing tiers, credit, and engine profiles."
               action={
-                <Button asChild color="module">
-                  <Link href="/crm/b2b/new">Add a B2B account</Link>
-                </Button>
+                <EntityCreateButton
+                  entityType="b2b-account"
+                  newHref="/crm/b2b/new"
+                  color="module"
+                  leftIcon={<Plus className="h-4 w-4" />}
+                >
+                  New
+                </EntityCreateButton>
               }
             />
           </Card>

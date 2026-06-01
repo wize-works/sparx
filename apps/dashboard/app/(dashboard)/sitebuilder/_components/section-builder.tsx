@@ -1,6 +1,6 @@
 'use client';
 
-// Section composition for a scoped layout (a SiteTemplate — home, a product /
+// Section composition for a scoped layout (a PageLayout — home, a product /
 // collection layout, or a CMS/custom slug page), wired to the editor shell's
 // persistent canvas (Phase 2 §2.2, Phase 3 §7):
 //   • add sections from the scope-restricted library, drag to reorder, toggle
@@ -46,12 +46,7 @@ import {
   Wrench,
 } from 'lucide-react';
 import { Badge, Button, EmptyState, Modal, ModalContent, ModalHeader, ModalTitle } from '@sparx/ui';
-import {
-  SECTION_REGISTRY,
-  sectionsForScope,
-  type Scope,
-  type SectionType,
-} from '@sparx/sitebuilder-schemas';
+import { SECTION_REGISTRY, sectionsForTarget, type SectionType } from '@sparx/sitebuilder-schemas';
 import { createSection, removeSection, reorderSections, updateSection } from '../_lib/actions';
 import type { SiteSectionDto } from '../_lib/types';
 import { FieldControl } from './field-control';
@@ -81,13 +76,13 @@ const SECTION_ICONS: Record<string, React.ComponentType<{ className?: string }>>
 };
 
 export interface SectionBuilderProps {
-  /** The SiteTemplate these sections compose (Phase 3 — section parent FK). */
-  templateId: string;
-  /** The template's scope — restricts the section library + drives bindings. */
-  scope: Scope;
+  /** The PageLayout these sections compose (Phase 3 — section parent FK). */
+  pageLayoutId: string;
+  /** The layout's target id — restricts the section library + drives bindings. */
+  targetId: string;
   sections: SiteSectionDto[];
   /** Storefront path this layout renders at ("/" for home, "/<slug>" otherwise,
-   *  a sample PDP/PLP for product/collection scopes). Points the shared canvas
+   *  a sample PDP/PLP for product/collection targets). Points the shared canvas
    *  at the right page on mount. */
   previewPath?: string;
   /** When false, the parent owns the canvas path (e.g. the Layouts editor whose
@@ -96,8 +91,8 @@ export interface SectionBuilderProps {
 }
 
 export function SectionBuilder({
-  templateId,
-  scope,
+  pageLayoutId,
+  targetId,
   sections,
   previewPath = '/',
   manageCanvasPath = true,
@@ -108,7 +103,7 @@ export function SectionBuilder({
   const [adding, setAdding] = React.useState(false);
   const [editingId, setEditingId] = React.useState<string | null>(null);
 
-  const library = React.useMemo(() => sectionsForScope(scope), [scope]);
+  const library = React.useMemo(() => sectionsForTarget(targetId), [targetId]);
 
   const sorted = React.useMemo(
     () => [...sections].sort((a, b) => a.position - b.position),
@@ -155,7 +150,7 @@ export function SectionBuilder({
 
   const add = (type: SectionType) => {
     setAdding(false);
-    act(() => createSection({ templateId, sectionType: type }));
+    act(() => createSection({ pageLayoutId, sectionType: type }));
   };
 
   const onDragEnd = (event: DragEndEvent) => {
@@ -168,7 +163,7 @@ export function SectionBuilder({
     setItems(next); // optimistic
     act(() =>
       reorderSections(
-        templateId,
+        pageLayoutId,
         next.map((s) => s.id)
       )
     );

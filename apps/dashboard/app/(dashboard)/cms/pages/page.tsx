@@ -18,6 +18,7 @@ import {
 import { FileText, Plus } from 'lucide-react';
 
 import { api } from '@/lib/api-rest-client';
+import { EntityCreateButton } from '../../_components/entity-create-button';
 import { EntityRowLink } from '../../_components/entity-row-link';
 import { ListToolbar } from '../../_components/list-toolbar';
 
@@ -109,9 +110,14 @@ export default async function CmsPagesListPage({
           badge={<Badge variant="outline">{entries.length}</Badge>}
           description="Pages, landing pages, and policy content for your storefront."
           actions={
-            <Button asChild color="module" leftIcon={<Plus className="h-4 w-4" />}>
-              <Link href="/cms/new">New page</Link>
-            </Button>
+            <EntityCreateButton
+              entityType="page"
+              newHref="/cms/new"
+              color="module"
+              leftIcon={<Plus className="h-4 w-4" />}
+            >
+              New
+            </EntityCreateButton>
           }
         />
 
@@ -136,9 +142,14 @@ export default async function CmsPagesListPage({
                     <Link href="/cms/pages">Clear filters</Link>
                   </Button>
                 ) : (
-                  <Button asChild color="module">
-                    <Link href="/cms/new">Create a page</Link>
-                  </Button>
+                  <EntityCreateButton
+                    entityType="page"
+                    newHref="/cms/new"
+                    color="module"
+                    leftIcon={<Plus className="h-4 w-4" />}
+                  >
+                    New
+                  </EntityCreateButton>
                 )
               }
             />

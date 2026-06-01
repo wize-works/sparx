@@ -15,8 +15,11 @@ import {
   listProductQuestions,
   listRelatedProducts,
   type PublicFitmentDomain,
+  type PublicProductListItem,
+  type PublicQuestion,
 } from '@/lib/commerce';
 import { mediaUrl } from '@/lib/media';
+import { isSampleRequested, SAMPLE_PRODUCT, SAMPLE_PRODUCT_EXTRAS } from '@/lib/sample-data';
 import { getPublishedSite, resolveTemplateSections } from '@/lib/site';
 import { resolveTenant } from '@/lib/tenant';
 
@@ -52,13 +55,19 @@ export default async function ProductDetailPage({ params, searchParams }: PagePr
   if (!tenant) notFound();
   const { handle } = await params;
   const sp = (await searchParams) ?? {};
-  const product = await getProduct(tenant.slug, handle);
+
+  // Sample-data preview (doc 36 §9): a token-gated `sparxSampleData=1` makes the
+  // page render against fixed SAMPLE_* fixtures so a merchant can design the
+  // product layout before any real product exists. The layout still resolves
+  // from the (draft) snapshot — only the bound data is swapped.
+  const sample = isSampleRequested(sp);
+  const product = sample ? SAMPLE_PRODUCT : await getProduct(tenant.slug, handle);
   if (!product) notFound();
 
-  // The product-scope layout: the merchant's published one, or the seeded
+  // The commerce:product layout: the merchant's published one, or the seeded
   // default (parity). A site-preview token resolves the draft instead.
   const snapshot = await getPublishedSite(tenant.slug, one(sp.sparxSitePreview));
-  const sections = resolveTemplateSections(snapshot, 'product');
+  const sections = resolveTemplateSections(snapshot, 'commerce:product');
 
   // Fetch only the supplementary data the resolved layout renders. The related
   // rail's count comes from its section config (default 4 — today's behavior).
@@ -69,18 +78,31 @@ export default async function ProductDetailPage({ params, searchParams }: PagePr
   const needsFitment =
     product.fitments.length > 0 && sections.some((s) => s.sectionType === 'product-fitment');
 
-  const [related, questions] = await Promise.all([
-    relatedSection ? listRelatedProducts(tenant.slug, product, relatedLimit) : Promise.resolve([]),
-    needsQuestions ? listProductQuestions(tenant.slug, product.handle) : Promise.resolve([]),
-  ]);
-
-  // Fitment rows carry a domain slug + label but not the per-level labels
-  // (Make/Model/Engine). Fetch the domains (cached) and map by slug so the
-  // table can render vertical-appropriate column headers.
-  const fitmentDomains = needsFitment
-    ? await listFitmentDomains(tenant.slug).catch<PublicFitmentDomain[]>(() => [])
-    : [];
-  const fitmentDomainsBySlug = Object.fromEntries(fitmentDomains.map((d) => [d.slug, d]));
+  let related: PublicProductListItem[];
+  let questions: PublicQuestion[];
+  let fitmentDomainsBySlug: Record<string, PublicFitmentDomain>;
+  if (sample) {
+    // Fixtures only — no fetch. Still honor which sections the layout includes.
+    related = relatedSection ? SAMPLE_PRODUCT_EXTRAS.related.slice(0, relatedLimit) : [];
+    questions = needsQuestions ? SAMPLE_PRODUCT_EXTRAS.questions : [];
+    fitmentDomainsBySlug = needsFitment ? SAMPLE_PRODUCT_EXTRAS.fitmentDomainsBySlug : {};
+  } else {
+    const [r, q] = await Promise.all([
+      relatedSection
+        ? listRelatedProducts(tenant.slug, product, relatedLimit)
+        : Promise.resolve([]),
+      needsQuestions ? listProductQuestions(tenant.slug, product.handle) : Promise.resolve([]),
+    ]);
+    related = r;
+    questions = q;
+    // Fitment rows carry a domain slug + label but not the per-level labels
+    // (Make/Model/Engine). Fetch the domains (cached) and map by slug so the
+    // table can render vertical-appropriate column headers.
+    const fitmentDomains = needsFitment
+      ? await listFitmentDomains(tenant.slug).catch<PublicFitmentDomain[]>(() => [])
+      : [];
+    fitmentDomainsBySlug = Object.fromEntries(fitmentDomains.map((d) => [d.slug, d]));
+  }
 
   const { defaultCurrency: currency, defaultLocale: locale, showStockBelow } = tenant.storefront;
 

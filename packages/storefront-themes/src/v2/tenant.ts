@@ -22,6 +22,9 @@ export interface TenantBrandColumns {
   colorPrimary?: string | null;
   colorPrimaryForeground?: string | null;
   colorAccent?: string | null;
+  colorAccentForeground?: string | null;
+  colorSecondary?: string | null;
+  colorSecondaryForeground?: string | null;
   fontHeading?: string | null;
   fontBody?: string | null;
   // Partial BrandTokenDoc (shape/rhythm/effect branches). `unknown` because it
@@ -41,6 +44,9 @@ export function brandColsToTokenDoc(cols: TenantBrandColumns | null | undefined)
       primary: cols?.colorPrimary ?? null,
       primaryContent: cols?.colorPrimaryForeground ?? null,
       accent: cols?.colorAccent ?? null,
+      accentContent: cols?.colorAccentForeground ?? null,
+      secondary: cols?.colorSecondary ?? null,
+      secondaryContent: cols?.colorSecondaryForeground ?? null,
     },
     type: {
       heading: cols?.fontHeading ?? null,

@@ -32,16 +32,7 @@ import {
   CollectionProductsConfig,
   collectionProductsFields,
 } from './sections/collection-bound';
-
-// The scopes a layout can be typed by (doc 30 §4.1). A section's `scopes` lists
-// where it may appear; bound sections are restricted to the scope whose data
-// they resolve, static sections are allowed everywhere.
-export const SCOPES = ['home', 'product', 'collection', 'cms-page', 'custom'] as const;
-export type Scope = (typeof SCOPES)[number];
-export const ScopeEnum = z.enum(SCOPES);
-
-// Every scope a static (content-source-authored) section may live in.
-const ALL_SCOPES: Scope[] = ['home', 'product', 'collection', 'cms-page', 'custom'];
+import { getLayoutTarget, type TargetBinding } from './layout-targets';
 
 export const SECTION_TYPES = [
   // Static (authored content; allowed in any scope)
@@ -82,11 +73,10 @@ export interface SectionDefinition {
   description: string;
   // lucide-react icon name; the dashboard maps it to a component.
   icon: string;
-  // Scopes this section may be added to. Static sections allow every scope;
-  // bound sections are restricted to their data scope.
-  scopes: Scope[];
-  // Set on bound sections — the assigned item their data resolves from.
-  binding?: 'product' | 'collection';
+  // Set on bound sections — the assigned item their data resolves from. A
+  // section with NO binding is static (allowed in every target); a bound section
+  // is allowed only in targets that declare the same binding (docs/36 §4.1, §4.3).
+  binding?: TargetBinding;
   // Read-only data bindings surfaced in the inspector (bound sections only).
   bindings?: SectionBinding[];
   schema: z.ZodType;
@@ -99,7 +89,6 @@ export const SECTION_REGISTRY: Record<SectionType, SectionDefinition> = {
     label: 'Hero',
     description: 'Full-width banner with a heading, copy, and a call to action.',
     icon: 'Megaphone',
-    scopes: ALL_SCOPES,
     schema: HeroConfig,
     fields: heroFields,
   },
@@ -108,7 +97,6 @@ export const SECTION_REGISTRY: Record<SectionType, SectionDefinition> = {
     label: 'Featured products',
     description: 'A grid of products from a collection, your newest, or hand-picked.',
     icon: 'ShoppingBag',
-    scopes: ALL_SCOPES,
     schema: FeaturedProductsConfig,
     fields: featuredProductsFields,
   },
@@ -117,7 +105,6 @@ export const SECTION_REGISTRY: Record<SectionType, SectionDefinition> = {
     label: 'Collection grid',
     description: 'Shop-by-collection tiles linking into your catalog.',
     icon: 'LayoutGrid',
-    scopes: ALL_SCOPES,
     schema: CollectionGridConfig,
     fields: collectionGridFields,
   },
@@ -126,7 +113,6 @@ export const SECTION_REGISTRY: Record<SectionType, SectionDefinition> = {
     label: 'Rich text',
     description: 'A formatted text block for storytelling or details.',
     icon: 'Type',
-    scopes: ALL_SCOPES,
     schema: RichTextConfig,
     fields: richTextFields,
   },
@@ -135,7 +121,6 @@ export const SECTION_REGISTRY: Record<SectionType, SectionDefinition> = {
     label: 'Image banner',
     description: 'An image with optional overlay text and a link.',
     icon: 'Image',
-    scopes: ALL_SCOPES,
     schema: ImageBannerConfig,
     fields: imageBannerFields,
   },
@@ -144,7 +129,6 @@ export const SECTION_REGISTRY: Record<SectionType, SectionDefinition> = {
     label: 'Testimonials',
     description: 'Social proof from your customers, with optional ratings.',
     icon: 'Quote',
-    scopes: ALL_SCOPES,
     schema: TestimonialsConfig,
     fields: testimonialsFields,
   },
@@ -153,7 +137,6 @@ export const SECTION_REGISTRY: Record<SectionType, SectionDefinition> = {
     label: 'Email signup',
     description: 'Collect newsletter subscribers with an inline form.',
     icon: 'Mail',
-    scopes: ALL_SCOPES,
     schema: EmailSignupConfig,
     fields: emailSignupFields,
   },
@@ -162,7 +145,6 @@ export const SECTION_REGISTRY: Record<SectionType, SectionDefinition> = {
     label: 'Buy box',
     description: 'Gallery, title, price, variants, and add-to-cart for the product.',
     icon: 'ShoppingCart',
-    scopes: ['product'],
     binding: 'product',
     bindings: [
       { label: 'Gallery', path: 'product.images' },
@@ -179,7 +161,6 @@ export const SECTION_REGISTRY: Record<SectionType, SectionDefinition> = {
     label: 'Description',
     description: "The product's long-form description.",
     icon: 'AlignLeft',
-    scopes: ['product'],
     binding: 'product',
     bindings: [{ label: 'Description', path: 'product.description' }],
     schema: ProductDescriptionConfig,
@@ -190,7 +171,6 @@ export const SECTION_REGISTRY: Record<SectionType, SectionDefinition> = {
     label: 'Compatibility',
     description: 'A domain-aware fitment table (vehicle / pet / device / …).',
     icon: 'Wrench',
-    scopes: ['product'],
     binding: 'product',
     bindings: [{ label: 'Fitments', path: 'product.fitments' }],
     schema: ProductFitmentConfig,
@@ -201,7 +181,6 @@ export const SECTION_REGISTRY: Record<SectionType, SectionDefinition> = {
     label: 'Reviews',
     description: 'Rating summary and a write-a-review form.',
     icon: 'Star',
-    scopes: ['product'],
     binding: 'product',
     bindings: [
       { label: 'Average rating', path: 'product.averageRating' },
@@ -215,7 +194,6 @@ export const SECTION_REGISTRY: Record<SectionType, SectionDefinition> = {
     label: 'Questions & answers',
     description: 'Published customer questions and a form to ask a new one.',
     icon: 'MessageCircleQuestion',
-    scopes: ['product'],
     binding: 'product',
     bindings: [{ label: 'Questions', path: 'product.questions' }],
     schema: ProductQuestionsConfig,
@@ -226,7 +204,6 @@ export const SECTION_REGISTRY: Record<SectionType, SectionDefinition> = {
     label: 'Related products',
     description: 'A "you may also like" rail of related products.',
     icon: 'Boxes',
-    scopes: ['product'],
     binding: 'product',
     bindings: [{ label: 'Related', path: 'product.related' }],
     schema: ProductRelatedConfig,
@@ -237,7 +214,6 @@ export const SECTION_REGISTRY: Record<SectionType, SectionDefinition> = {
     label: 'Collection header',
     description: 'Hero image, name, and description for the collection.',
     icon: 'PanelTop',
-    scopes: ['collection'],
     binding: 'collection',
     bindings: [
       { label: 'Name', path: 'collection.name' },
@@ -252,7 +228,6 @@ export const SECTION_REGISTRY: Record<SectionType, SectionDefinition> = {
     label: 'Product grid',
     description: 'The collection’s products with a count and pagination.',
     icon: 'Grid3x3',
-    scopes: ['collection'],
     binding: 'collection',
     bindings: [
       { label: 'Products', path: 'collection.products' },
@@ -271,23 +246,24 @@ export function isSectionType(value: string): value is SectionType {
   return (SECTION_TYPES as readonly string[]).includes(value);
 }
 
-export function isScope(value: string): value is Scope {
-  return (SCOPES as readonly string[]).includes(value);
-}
-
 export function getSectionDefinition(type: string): SectionDefinition | undefined {
   return isSectionType(type) ? SECTION_REGISTRY[type] : undefined;
 }
 
-/** The section definitions addable within a scope (the editor's section library). */
-export function sectionsForScope(scope: Scope): SectionDefinition[] {
-  return SECTION_DEFINITIONS.filter((d) => d.scopes.includes(scope));
+/** Whether a section type may be added to a layout of the given target (docs/36
+ *  §4.1). A static section (no binding) is allowed in every target; a bound
+ *  section is allowed only in targets that declare the same binding. */
+export function isSectionAllowedInTarget(type: string, targetId: string): boolean {
+  const def = getSectionDefinition(type);
+  if (!def) return false;
+  if (!def.binding) return true;
+  const target = getLayoutTarget(targetId);
+  return !!target && target.binding === def.binding;
 }
 
-/** Whether a section type may be added to a layout of the given scope. */
-export function isSectionAllowedInScope(type: string, scope: string): boolean {
-  const def = getSectionDefinition(type);
-  return !!def && isScope(scope) && def.scopes.includes(scope);
+/** The section definitions addable within a target (the editor's section library). */
+export function sectionsForTarget(targetId: string): SectionDefinition[] {
+  return SECTION_DEFINITIONS.filter((d) => isSectionAllowedInTarget(d.type, targetId));
 }
 
 /**

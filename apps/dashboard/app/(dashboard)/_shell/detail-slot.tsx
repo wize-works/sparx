@@ -1,8 +1,18 @@
 import 'server-only';
 import * as React from 'react';
 import { ModuleProvider, type SparxModule } from '@sparx/ui';
-import { parseDetailToken } from './detail-registry';
+import { CREATE_SENTINEL, parseDetailToken } from './detail-registry';
+import { CollectionCreateForm } from '../commerce/collections/_components/collection-create-form';
+import { ProductCreateForm } from '../commerce/products/_components/product-create-form';
+import { WarehouseCreateForm } from '../commerce/warehouses/_components/warehouse-create-form';
+import { PriceListCreateForm } from '../commerce/pricing/_components/price-list-create-form';
+import { CustomerCreateForm } from '../crm/customers/_components/customer-create-form';
+import { B2bAccountCreateForm } from '../crm/b2b/_components/b2b-account-create-form';
+import { SegmentCreateForm } from '../crm/segments/_components/segment-create-form';
+import { PageCreateForm } from '../cms/_components/page-create-form';
+import { ContentTypeCreateForm } from '../cms/types/_components/content-type-create-form';
 import { AuthorDetailContent } from '../cms/authors/[id]/_content';
+import { ContentTypeDetailContent } from '../cms/types/[typeKey]/_content';
 import { CmsPageDetailContent } from '../cms/[id]/_content';
 import { MediaAssetDetailContent } from '../cms/media/[id]/_content';
 import { MenuDetailContent } from '../cms/navigation/menu-detail';
@@ -47,6 +57,7 @@ const detailComponents: Record<string, DetailComponent> = {
   author: AuthorDetailContent,
   taxonomy: TaxonomyDetailContent,
   menu: MenuDetailContent,
+  'content-type': ContentTypeDetailContent,
   // CRM
   customer: CustomerDetailContent,
   'b2b-account': B2bAccountDetailContent,
@@ -85,6 +96,7 @@ const detailModules: Record<string, SparxModule> = {
   author: 'cms',
   taxonomy: 'cms',
   menu: 'cms',
+  'content-type': 'cms',
   // CRM
   customer: 'crm',
   'b2b-account': 'crm',
@@ -110,15 +122,54 @@ const detailModules: Record<string, SparxModule> = {
   'tax-zone': 'commerce',
 };
 
+// Create-form registry, parallel to `detailComponents`. Keyed by the same
+// manifest entity-type id, rendered when the detail token carries the
+// `CREATE_SENTINEL` id (`?drawer=collection:new`). These are the
+// `surface="overlay"` create forms — the same components the `/new` route
+// renders `surface="page"`. A type opts into overlay-create by registering
+// here AND being listed in `CREATE_VIEW_TYPES` (detail-registry.ts) — the
+// client-safe set `EntityCreateButton` reads to decide drawer/modal-vs-
+// fullPage. Keep the two in sync; types absent from the set fall back to the
+// full-page `/new` route.
+//
+// Forms needing server-fetched data (e.g. select options) would register a
+// thin server wrapper that fetches then renders the client form — these are
+// all self-contained, so they register directly.
+const createComponents: Record<string, React.ComponentType> = {
+  collection: () => <CollectionCreateForm surface="overlay" />,
+  product: () => <ProductCreateForm surface="overlay" />,
+  warehouse: () => <WarehouseCreateForm surface="overlay" />,
+  'price-list': () => <PriceListCreateForm surface="overlay" />,
+  customer: () => <CustomerCreateForm surface="overlay" />,
+  'b2b-account': () => <B2bAccountCreateForm surface="overlay" />,
+  segment: () => <SegmentCreateForm surface="overlay" />,
+  page: () => <PageCreateForm surface="overlay" />,
+  'content-type': () => <ContentTypeCreateForm surface="overlay" />,
+};
+
 // Renders the detail content for a given (typeId, id), or null when the type
-// has no registered server component. Returns a node — callers wrap it in a
-// Suspense boundary so the fetch streams. The content is wrapped in its
-// module's provider so the drawer/modal adopts the correct accent color.
+// has no registered server component. The `CREATE_SENTINEL` id swaps the
+// detail body for the registered create form. Returns a node — callers wrap
+// it in a Suspense boundary so the fetch streams. Either way the content is
+// wrapped in its module's provider so the drawer/modal adopts the correct
+// accent color.
 export function renderDetailContent(typeId: string, id: string): React.ReactNode {
+  const module = detailModules[typeId] ?? 'platform';
+
+  if (id === CREATE_SENTINEL) {
+    const Create = createComponents[typeId];
+    if (!Create) return null;
+    return (
+      <ModuleProvider module={module}>
+        <Create />
+      </ModuleProvider>
+    );
+  }
+
   const Content = detailComponents[typeId];
   if (!Content) return null;
   return (
-    <ModuleProvider module={detailModules[typeId] ?? 'platform'}>
+    <ModuleProvider module={module}>
       <Content id={id} />
     </ModuleProvider>
   );

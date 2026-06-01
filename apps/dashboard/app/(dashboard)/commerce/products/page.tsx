@@ -1,9 +1,7 @@
-import Link from 'next/link';
 import { PackageOpen, Plus } from 'lucide-react';
 
 import {
   Badge,
-  Button,
   Card,
   CardContent,
   Container,
@@ -21,6 +19,7 @@ import {
 } from '@sparx/ui';
 
 import { api } from '@/lib/api-rest-client';
+import { EntityCreateButton } from '../../_components/entity-create-button';
 import { EntityRowLink } from '../../_components/entity-row-link';
 import { ListToolbar } from '../../_components/list-toolbar';
 import { getUserPreferences } from '../../_shell/preferences';
@@ -112,9 +111,14 @@ export default async function ProductsPage({ searchParams }: PageProps) {
           }
           description="Your catalog. Variants, options, fitment, and configurator templates hang off each product. Draft → Active publishes to the storefront; archived rows stay searchable but render as 410."
           actions={
-            <Button asChild color="module" leftIcon={<Plus className="h-4 w-4" />}>
-              <Link href="/commerce/products/new">New product</Link>
-            </Button>
+            <EntityCreateButton
+              entityType="product"
+              newHref="/commerce/products/new"
+              color="module"
+              leftIcon={<Plus className="h-4 w-4" />}
+            >
+              New
+            </EntityCreateButton>
           }
         />
 
@@ -137,9 +141,14 @@ export default async function ProductsPage({ searchParams }: PageProps) {
               }
               action={
                 total === 0 ? (
-                  <Button asChild color="module" leftIcon={<Plus className="h-4 w-4" />}>
-                    <Link href="/commerce/products/new">New product</Link>
-                  </Button>
+                  <EntityCreateButton
+                    entityType="product"
+                    newHref="/commerce/products/new"
+                    color="module"
+                    leftIcon={<Plus className="h-4 w-4" />}
+                  >
+                    New
+                  </EntityCreateButton>
                 ) : undefined
               }
             />

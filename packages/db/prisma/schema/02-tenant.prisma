@@ -182,10 +182,13 @@ model Tenant {
   // Sitebuilder module — theme/layout/page composition + publish history (docs/29)
   siteConfig           SiteConfig?
   siteVersions         SiteVersion[]
-  siteTemplates        SiteTemplate[]
+  pageLayouts          PageLayout[]
   siteSections         SiteSection[]
   siteLayoutBlocks     SiteLayoutBlock[]
   sitePublishSchedules SitePublishSchedule[]
+  siteThemes           SiteTheme[]
+  siteLayoutDefaults   SiteLayoutDefault[]
+  siteLayoutAssign     SiteLayoutAssignment[]
 
   // Email platform — management surface (docs/13)
   emailSettings       EmailSettings?

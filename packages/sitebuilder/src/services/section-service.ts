@@ -4,35 +4,35 @@
 // Config is validated/defaulted against the section's Zod schema in
 // @sparx/sitebuilder-schemas so every transport stores the same shape.
 //
-// Phase 3: sections hang off a SiteTemplate, not a bare `pageKey`
-// (docs/handoffs/sitebuilder-phase3-spec.md §3, §13). A write targets a layout by
-// `templateId` (preferred) or by `scope` (+ `key`, default 'default'); the
-// returned view carries the templateId + scope/templateKey (no pageKey — that
-// retired with 3.3c; it lives on only in the snapshot read path).
+// Sections hang off a PageLayout (docs/36 §5). A write targets a layout by
+// `pageLayoutId` (preferred) or by `targetId` (+ `key`, default 'default'); the
+// returned view carries the pageLayoutId + targetId/templateKey (no pageKey —
+// it lives on only in the snapshot read path).
 
 import {
   CreateSectionInput,
   ReorderSectionsInput,
   UpdateSectionInput,
-  isSectionAllowedInScope,
+  defaultLayoutName,
+  isSectionAllowedInTarget,
   parseSectionConfig,
 } from '@sparx/sitebuilder-schemas';
-import type { Prisma, SiteSection, SiteTemplate, TxClient } from '@sparx/db';
+import type { PageLayout, Prisma, SiteSection, TxClient } from '@sparx/db';
 import { withTenant } from '@sparx/db';
 
 import { writeAuditLog } from '../audit';
 import type { ServiceContext } from '../errors';
 import { SitebuilderNotFoundError, SitebuilderValidationError } from '../errors';
 import { getOrCreateConfig } from './_config';
-import { defaultTemplateName, findTemplate, getOrCreateTemplate } from './template-service';
+import { findPageLayout, getOrCreatePageLayout } from './page-layout-service';
 
-// The view the public surface returns — the section plus its owning template's
-// scope/key (templateId-native).
+// The view the public surface returns — the section plus its owning layout's
+// targetId/key (pageLayoutId-native).
 export interface SectionView {
   id: string;
   tenantId: string;
-  templateId: string;
-  scope: string;
+  pageLayoutId: string;
+  targetId: string;
   templateKey: string;
   sectionType: string;
   position: number;
@@ -42,13 +42,13 @@ export interface SectionView {
   updatedAt: Date;
 }
 
-function toView(section: SiteSection, template: { scope: string; key: string }): SectionView {
+function toView(section: SiteSection, layout: { targetId: string; key: string }): SectionView {
   return {
     id: section.id,
     tenantId: section.tenantId,
-    templateId: section.templateId,
-    scope: template.scope,
-    templateKey: template.key,
+    pageLayoutId: section.pageLayoutId,
+    targetId: layout.targetId,
+    templateKey: layout.key,
     sectionType: section.sectionType,
     position: section.position,
     visible: section.visible,
@@ -58,74 +58,77 @@ function toView(section: SiteSection, template: { scope: string; key: string }):
   };
 }
 
-// Resolve the target layout for a write. `templateId` wins (NotFound if unknown —
-// a cross-tenant id returns null under RLS, so this enforces tenant ownership);
-// otherwise resolve-or-create by (scope, key). One of the two must be given.
-async function resolveTemplateForWrite(
+// Resolve the target layout for a write. `pageLayoutId` wins (NotFound if unknown
+// — a cross-tenant id returns null under RLS, so this enforces tenant ownership);
+// otherwise resolve-or-create by (targetId, key). One of the two must be given.
+async function resolvePageLayoutForWrite(
   tx: TxClient,
   tenantId: string,
-  input: { templateId?: string; scope?: string; key?: string }
-): Promise<SiteTemplate> {
-  if (input.templateId) {
-    const t = await tx.siteTemplate.findUnique({ where: { id: input.templateId } });
-    if (!t) throw new SitebuilderNotFoundError('SiteTemplate', input.templateId);
-    return t;
+  input: { pageLayoutId?: string; targetId?: string; key?: string }
+): Promise<PageLayout> {
+  if (input.pageLayoutId) {
+    const l = await tx.pageLayout.findUnique({ where: { id: input.pageLayoutId } });
+    if (!l) throw new SitebuilderNotFoundError('PageLayout', input.pageLayoutId);
+    return l;
   }
-  if (input.scope) {
+  if (input.targetId) {
     const key = input.key ?? 'default';
-    return getOrCreateTemplate(
+    return getOrCreatePageLayout(
       tx,
       tenantId,
-      input.scope,
+      input.targetId,
       key,
-      defaultTemplateName(input.scope, key)
+      defaultLayoutName(input.targetId, key)
     );
   }
-  throw new SitebuilderValidationError('A section write must target a templateId or scope.', [
-    { field: 'templateId', message: 'provide a templateId or scope' },
+  throw new SitebuilderValidationError('A section write must target a pageLayoutId or targetId.', [
+    { field: 'pageLayoutId', message: 'provide a pageLayoutId or targetId' },
   ]);
 }
 
-/** List a layout's sections by (scope, key). Empty array if the layout is unknown. */
-export function listForScope(
+/** List a layout's sections by (targetId, key). Empty array if the layout is unknown. */
+export function listForTarget(
   ctx: ServiceContext,
-  scope: string,
+  targetId: string,
   key = 'default'
 ): Promise<SectionView[]> {
   return withTenant(ctx, async (tx) => {
-    const template = await findTemplate(tx, ctx.tenantId, scope, key);
-    if (!template) return [];
+    const layout = await findPageLayout(tx, ctx.tenantId, targetId, key);
+    if (!layout) return [];
     const rows = await tx.siteSection.findMany({
-      where: { templateId: template.id },
+      where: { pageLayoutId: layout.id },
       orderBy: { position: 'asc' },
     });
-    return rows.map((r) => toView(r, template));
+    return rows.map((r) => toView(r, layout));
   });
 }
 
 export function listAll(ctx: ServiceContext): Promise<SectionView[]> {
   return withTenant(ctx, async (tx) => {
     const rows = await tx.siteSection.findMany({
-      include: { template: { select: { scope: true, key: true } } },
-      orderBy: [{ templateId: 'asc' }, { position: 'asc' }],
+      include: { pageLayout: { select: { targetId: true, key: true } } },
+      orderBy: [{ pageLayoutId: 'asc' }, { position: 'asc' }],
     });
-    return rows.map((r) => toView(r, r.template));
+    return rows.map((r) => toView(r, r.pageLayout));
   });
 }
 
-/** List a layout's sections by templateId. Empty array if the id is unknown. */
-export function listForTemplate(ctx: ServiceContext, templateId: string): Promise<SectionView[]> {
+/** List a layout's sections by pageLayoutId. Empty array if the id is unknown. */
+export function listForPageLayout(
+  ctx: ServiceContext,
+  pageLayoutId: string
+): Promise<SectionView[]> {
   return withTenant(ctx, async (tx) => {
-    const template = await tx.siteTemplate.findUnique({
-      where: { id: templateId },
-      select: { scope: true, key: true },
+    const layout = await tx.pageLayout.findUnique({
+      where: { id: pageLayoutId },
+      select: { targetId: true, key: true },
     });
-    if (!template) return [];
+    if (!layout) return [];
     const rows = await tx.siteSection.findMany({
-      where: { templateId },
+      where: { pageLayoutId },
       orderBy: { position: 'asc' },
     });
-    return rows.map((r) => toView(r, template));
+    return rows.map((r) => toView(r, layout));
   });
 }
 
@@ -135,17 +138,18 @@ export async function create(ctx: ServiceContext, rawInput: unknown): Promise<Se
 
   return withTenant(ctx, async (tx) => {
     await getOrCreateConfig(tx, ctx.tenantId);
-    const template = await resolveTemplateForWrite(tx, ctx.tenantId, input);
-    // Scope safety: a bound section can only be added to a layout of its scope.
-    if (!isSectionAllowedInScope(input.sectionType, template.scope)) {
+    const layout = await resolvePageLayoutForWrite(tx, ctx.tenantId, input);
+    // Target safety: a bound section can only be added to a layout whose target
+    // supplies its data binding (docs/36 §4.1).
+    if (!isSectionAllowedInTarget(input.sectionType, layout.targetId)) {
       throw new SitebuilderValidationError(
-        `Section "${input.sectionType}" is not allowed in a "${template.scope}" layout.`,
-        [{ field: 'sectionType', message: `not allowed in scope ${template.scope}` }]
+        `Section "${input.sectionType}" is not allowed in a "${layout.targetId}" layout.`,
+        [{ field: 'sectionType', message: `not allowed in target ${layout.targetId}` }]
       );
     }
-    // Append to the end of the template unless an explicit position is given.
+    // Append to the end of the layout unless an explicit position is given.
     const last = await tx.siteSection.findFirst({
-      where: { templateId: template.id },
+      where: { pageLayoutId: layout.id },
       orderBy: { position: 'desc' },
       select: { position: true },
     });
@@ -154,7 +158,7 @@ export async function create(ctx: ServiceContext, rawInput: unknown): Promise<Se
     const created = await tx.siteSection.create({
       data: {
         tenantId: ctx.tenantId,
-        templateId: template.id,
+        pageLayoutId: layout.id,
         sectionType: input.sectionType,
         position,
         config: config as Prisma.InputJsonValue,
@@ -172,13 +176,13 @@ export async function create(ctx: ServiceContext, rawInput: unknown): Promise<Se
         before: null,
         after: {
           sectionType: created.sectionType,
-          templateId: template.id,
-          scope: template.scope,
-          templateKey: template.key,
+          pageLayoutId: layout.id,
+          targetId: layout.targetId,
+          templateKey: layout.key,
         },
       },
     });
-    return toView(created, template);
+    return toView(created, layout);
   });
 }
 
@@ -191,7 +195,7 @@ export async function update(
   return withTenant(ctx, async (tx) => {
     const existing = await tx.siteSection.findUnique({
       where: { id: sectionId },
-      include: { template: { select: { scope: true, key: true } } },
+      include: { pageLayout: { select: { targetId: true, key: true } } },
     });
     if (!existing) throw new SitebuilderNotFoundError('SiteSection', sectionId);
 
@@ -207,7 +211,7 @@ export async function update(
         ...(input.visible !== undefined ? { visible: input.visible } : {}),
       },
     });
-    return toView(updated, existing.template);
+    return toView(updated, existing.pageLayout);
   });
 }
 
@@ -222,20 +226,20 @@ export function setVisibility(
 export async function reorder(ctx: ServiceContext, rawInput: unknown): Promise<SectionView[]> {
   const input = ReorderSectionsInput.parse(rawInput);
   return withTenant(ctx, async (tx) => {
-    const template = input.templateId
-      ? await tx.siteTemplate.findUnique({ where: { id: input.templateId } })
-      : input.scope
-        ? await findTemplate(tx, ctx.tenantId, input.scope, input.key ?? 'default')
+    const layout = input.pageLayoutId
+      ? await tx.pageLayout.findUnique({ where: { id: input.pageLayoutId } })
+      : input.targetId
+        ? await findPageLayout(tx, ctx.tenantId, input.targetId, input.key ?? 'default')
         : null;
-    if (!template) {
+    if (!layout) {
       throw new SitebuilderNotFoundError(
-        'SiteTemplate',
-        input.templateId ??
-          (input.scope ? `${input.scope}/${input.key ?? 'default'}` : 'unspecified')
+        'PageLayout',
+        input.pageLayoutId ??
+          (input.targetId ? `${input.targetId}/${input.key ?? 'default'}` : 'unspecified')
       );
     }
     const owned = await tx.siteSection.findMany({
-      where: { templateId: template.id, id: { in: input.orderedIds } },
+      where: { pageLayoutId: layout.id, id: { in: input.orderedIds } },
       select: { id: true },
     });
     if (owned.length !== input.orderedIds.length) {
@@ -252,15 +256,15 @@ export async function reorder(ctx: ServiceContext, rawInput: unknown): Promise<S
       actorId: ctx.userId ?? null,
       actorType: 'user',
       action: 'sitebuilder.sections.reordered',
-      entityType: 'SiteTemplate',
-      entityId: template.id,
+      entityType: 'PageLayout',
+      entityId: layout.id,
       diff: { after: { order: input.orderedIds } },
     });
     const rows = await tx.siteSection.findMany({
-      where: { templateId: template.id },
+      where: { pageLayoutId: layout.id },
       orderBy: { position: 'asc' },
     });
-    return rows.map((r) => toView(r, template));
+    return rows.map((r) => toView(r, layout));
   });
 }
 

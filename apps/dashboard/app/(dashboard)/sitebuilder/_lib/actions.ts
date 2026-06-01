@@ -3,15 +3,17 @@
 import { revalidatePath } from 'next/cache';
 import { api, type ApiRestError } from '@/lib/api-rest-client';
 import { resolveMediaUrl } from './api';
+import type { PresentationOverlayV2 } from '@sparx/storefront-themes';
 import type {
   AppearancePolicy,
   BrandDto,
+  PageLayoutDto,
   SiteConfigDto,
   SiteLayoutBlockDto,
   SitePublishScheduleDto,
   SiteSectionDto,
   SiteSettingsDto,
-  SiteTemplateDto,
+  SiteThemeDto,
   SiteVersionDto,
 } from './types';
 
@@ -47,8 +49,33 @@ export async function updateSettings(input: {
   return run(() => api.patch<SiteConfigDto>('/v1/sitebuilder/config/settings', input));
 }
 
+// ── Saved themes (docs/33 saved-themes contract) ───────────────────────────
+// The merchant's named theme variants. These hit /v1/sitebuilder/saved-themes,
+// which the Site Builder owner is landing; until then they return ok:false and
+// the UI surfaces the error inline (the prebuilt-preset flow is unaffected).
+// `apply` loads a saved theme's basePreset + presentation into the draft config.
+export async function saveTheme(input: {
+  name: string;
+  basePresetKey: string;
+  presentation: PresentationOverlayV2;
+}): Promise<ActionResult<SiteThemeDto>> {
+  return run(() => api.post<SiteThemeDto>('/v1/sitebuilder/saved-themes', input));
+}
+
+export async function renameTheme(id: string, name: string): Promise<ActionResult<SiteThemeDto>> {
+  return run(() => api.patch<SiteThemeDto>(`/v1/sitebuilder/saved-themes/${id}`, { name }));
+}
+
+export async function deleteSavedTheme(id: string): Promise<ActionResult> {
+  return run(() => api.delete<void>(`/v1/sitebuilder/saved-themes/${id}`));
+}
+
+export async function applySavedTheme(id: string): Promise<ActionResult<SiteConfigDto>> {
+  return run(() => api.post<SiteConfigDto>(`/v1/sitebuilder/saved-themes/${id}/apply`, {}));
+}
+
 export async function createSection(input: {
-  templateId: string;
+  pageLayoutId: string;
   sectionType: string;
   config?: Record<string, unknown>;
   position?: number;
@@ -56,16 +83,16 @@ export async function createSection(input: {
   return run(() => api.post<SiteSectionDto>('/v1/sitebuilder/sections', input));
 }
 
-// "Customize this layout" (spec §13.1): resolve-or-create the scope's template
+// "Customize this layout" (docs/36 §3): resolve-or-create the target's page layout
 // and, if still empty, copy the code-defined default into real section rows.
 // Idempotent — a customized layout is returned untouched.
-export async function materializeTemplate(input: {
-  scope: string;
+export async function materializeLayout(input: {
+  targetId: string;
   key?: string;
-}): Promise<ActionResult<{ template: SiteTemplateDto; sections: SiteSectionDto[] }>> {
+}): Promise<ActionResult<{ pageLayout: PageLayoutDto; sections: SiteSectionDto[] }>> {
   return run(() =>
-    api.post<{ template: SiteTemplateDto; sections: SiteSectionDto[] }>(
-      '/v1/sitebuilder/templates/materialize',
+    api.post<{ pageLayout: PageLayoutDto; sections: SiteSectionDto[] }>(
+      '/v1/sitebuilder/page-layouts/materialize',
       input
     )
   );
@@ -79,12 +106,12 @@ export async function updateSection(
 }
 
 export async function reorderSections(
-  templateId: string,
+  pageLayoutId: string,
   orderedIds: string[]
 ): Promise<ActionResult<{ sections: SiteSectionDto[] }>> {
   return run(() =>
     api.post<{ sections: SiteSectionDto[] }>('/v1/sitebuilder/sections/reorder', {
-      templateId,
+      pageLayoutId,
       orderedIds,
     })
   );

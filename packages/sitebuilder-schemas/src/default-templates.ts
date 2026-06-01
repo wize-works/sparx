@@ -3,10 +3,11 @@
 // The day-one product/collection layout is a constant composition here, NOT
 // seeded DB rows — honoring the platform's no-rows-until-used rule and giving
 // exact parity with no per-tenant data migration. The storefront resolver (3.2)
-// falls back to these when a tenant has published no template for the scope; the
-// editor (3.3) materializes them into real SiteSection rows on first edit
+// falls back to these when a tenant has published no layout for the target; the
+// editor materializes them into real SiteSection rows on first edit
 // ("duplicate to edit"). Each entry mirrors today's hardcoded PDP/PLP order so
-// the seeded default renders identically to the current storefront.
+// the seeded default renders identically to the current storefront. Keyed by the
+// target id (docs/36 §4 / P-B): `commerce:product`, `commerce:collection`.
 
 import { type SectionType, defaultSectionConfig } from './section-registry';
 
@@ -37,7 +38,10 @@ const COLLECTION_DEFAULT: DefaultTemplateSection[] = [
   section('collection-products'),
 ];
 
-export const DEFAULT_TEMPLATES: Record<'product' | 'collection', DefaultTemplateSection[]> = {
-  product: PRODUCT_DEFAULT,
-  collection: COLLECTION_DEFAULT,
+export const DEFAULT_TEMPLATES: Record<
+  'commerce:product' | 'commerce:collection',
+  DefaultTemplateSection[]
+> = {
+  'commerce:product': PRODUCT_DEFAULT,
+  'commerce:collection': COLLECTION_DEFAULT,
 };

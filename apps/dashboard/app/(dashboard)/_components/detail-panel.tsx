@@ -16,7 +16,7 @@ import {
   TooltipTrigger,
 } from '@sparx/ui';
 import { Maximize2, PanelRight, Square, X } from 'lucide-react';
-import { findEntityType, parseDetailToken } from '../_shell/detail-registry';
+import { CREATE_SENTINEL, findEntityType, parseDetailToken } from '../_shell/detail-registry';
 
 // Client chrome for the dashboard detail view. The detail BODY is rendered
 // server-side by the `@detail` parallel slot and passed in as `children`;
@@ -106,7 +106,8 @@ export function ModalDetailContent({ target, onClose, children }: ModalDetailPro
 
 function describeTarget(target: DetailTarget): string {
   const found = findEntityType(target.typeId);
-  return found?.entityType.label ?? target.typeId;
+  const label = found?.entityType.label ?? target.typeId;
+  return target.entityId === CREATE_SENTINEL ? `New ${label.toLowerCase()}` : label;
 }
 
 // ── Shared header chrome ───────────────────────────────────

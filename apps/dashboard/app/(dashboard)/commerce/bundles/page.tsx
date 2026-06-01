@@ -1,9 +1,7 @@
-import Link from 'next/link';
 import { Package2, Plus } from 'lucide-react';
 
 import {
   Badge,
-  Button,
   Card,
   CardContent,
   CardDescription,
@@ -23,6 +21,7 @@ import {
 } from '@sparx/ui';
 
 import { api } from '@/lib/api-rest-client';
+import { EntityCreateButton } from '../../_components/entity-create-button';
 import { EntityRowLink } from '../../_components/entity-row-link';
 
 interface BundleRow {
@@ -57,12 +56,14 @@ export default async function BundlesPage() {
           badge={<Badge color="module">{bundles.length}</Badge>}
           description="A bundle is a wrapper product that resolves to a fixed set of component variants. Use the Configurator instead when components are user-selectable."
           actions={
-            <Button color="module" asChild>
-              <Link href="/commerce/bundles/new">
-                <Plus className="h-4 w-4" />
-                Create bundle
-              </Link>
-            </Button>
+            <EntityCreateButton
+              entityType="bundle"
+              newHref="/commerce/bundles/new"
+              color="module"
+              leftIcon={<Plus className="h-4 w-4" />}
+            >
+              New
+            </EntityCreateButton>
           }
         />
 
@@ -82,9 +83,14 @@ export default async function BundlesPage() {
                 title="No bundles yet"
                 description="Create a wrapper product first (e.g. ‘Starter Beauty Kit’), then bundle its components here."
                 action={
-                  <Button color="module" asChild>
-                    <Link href="/commerce/bundles/new">Create bundle</Link>
-                  </Button>
+                  <EntityCreateButton
+                    entityType="bundle"
+                    newHref="/commerce/bundles/new"
+                    color="module"
+                    leftIcon={<Plus className="h-4 w-4" />}
+                  >
+                    New
+                  </EntityCreateButton>
                 }
               />
             ) : (

@@ -1,6 +1,6 @@
 # Site Builder Redesign — Execution Plan
 
-**Version:** 1.1
+**Version:** 1.2
 **Author:** Brandon Korous
 **Last Updated:** 2026-05-31
 
@@ -166,6 +166,31 @@ layout (keeps live preview + docked inspector + in-canvas selection).
   > (manual fallback: `gh workflow run db-migrate.yml -f resolve_migration=20260611000000_sitebuilder_templates`).
   > §3.0 is the only destructive step (drops `page_key`); the code is already deployed and degrades gracefully
   > (storefront falls back to `DEFAULT_TEMPLATES`) until §3.0 lands.
+- [x] **Saved themes (Brand+Theme tier, 2026-05-31)** — backend built + green (migration LOCAL only; **prod
+      user-triggered**). New `SiteTheme` table (`sitebuilder_themes`, ENABLE+FORCE RLS) = the tenant's NAMED
+      presentation variants ("My themes"), distinct from the read-only code-first presets ("Prebuilt"). New
+      `savedThemeService` (list/create/update/remove/`apply`) + routes `/v1/sitebuilder/saved-themes` (CRUD +
+      `:id/apply` loads a variant into the draft, no publish). Scheduled theme swaps: a nullable `theme_id`
+      on `SitePublishSchedule` + `processDueSchedule` applies it before snapshotting (seasonal/holiday). Owned by
+      Claude (single-owner migrations + the publish/schedule pipeline); the dashboard "My themes / Prebuilt"
+      UI is the brand/theme agent's, consuming this contract. typecheck + lint + format green; 6/6 integration
+      tests. **Local api-rest needs a restart to expose the routes** (running server holds the old client).
+- [x] **Brand content colors (DONE 2026-05-31; gate-green) — accent-content + secondary (+ its content).** Added
+      `colorAccentForeground`, `colorSecondary`, `colorSecondaryForeground` to `TenantBrand` (additive nullable
+      `VarChar(7)`; migration `20260613000000_brand_secondary_accent_content`, no RLS/backfill — table already
+      ENABLE+FORCE RLS; applied to LOCAL docker only). Wired: `PATCH /v1/brand` (PatchBrand/BrandView/toView +
+      forwarding, clear-via-null) + the `@sparx/storefront-themes` **v2** compile branch (`TenantBrandColumns` +
+      `brandColsToTokenDoc` now map the 3 cols onto the brand doc's secondary + accent-content + secondary-content
+      colour slots, which `compileTokensV2` already consumed) + `publish-service` brand `select` +
+      dashboard `BrandDto`. **Deliberately did NOT touch the v1 `BRAND_IDENTITY_TOKEN_KEYS`/`applyBrandIdentityTokens`
+      surface** (the recorded plan listed it): the v1 `ThemeTokenKey` union has no slot for secondary or any
+      accent/secondary `-content`, and the storefront CSS reads no such v1 var — adding them would be inventing
+      dead legacy tokens. The v2 path (always computed at read by `overlayBrand`) is the real surface. GATE:
+      55/55 storefront-themes tests (+3 new in `v2/tenant.test.ts`), typecheck 5 pkgs clean, lint 0 err, format
+      clean. The brand/theme agent now wires the persisting editor fields (it left accent fill-only + secondary
+      derived pending this). **Migration joins the still-pending prod set; one `prisma migrate deploy` covers all
+      pending; user-triggered.** Local api-rest restart needed to expose the new `/v1/brand` fields (running
+      server holds the old client).
 - [ ] **§2.5** — retire the email designer (Phase 1 done → constraint lifted).
 - [ ] **Acceptance:** the full design → compose → publish loop happens on one screen.
 
@@ -200,17 +225,103 @@ Goal: the storefront becomes fully composable. Needs its own implementation spec
 
 ---
 
-## Phase 4 — Assignment (§5)
+## The PageLayout tier (revised Phase 4) — refined by [docs/36](../36-sitebuilder-layering-model.md)
 
-Goal: design once, apply to many. Needs its own implementation spec before build.
+Goal: design once, apply to many. **The layering model (doc 36, 2026-05-31) supersedes doc 30's
+single "Phase 4 — Assignment"** and reshapes it into the slices below. Three tiers compose a page —
+Brand+Theme (built) / SiteLayout-regions (future) / PageLayout (this work). Doc 36 locks: the
+**template→layout** (preset→instance) vocabulary, **data-driven layout targets** (modules register
+kinds; the fixed `scope` enum goes away), **Site-Builder-owned** assignment tables (revises Open Q
+13.1 — owner chose SB-owned tables, not FKs on records), the **`SiteTemplate`→`PageLayout` rename**,
+and **home as a content page** (no `home` scope). Each slice ships independently; each touching the
+DB authors its migration locally + applies via the DB Migrate workflow. Each slice gets its impl spec
+before build.
 
-- [ ] Write the Phase 4 implementation spec (honors doc 30 §5).
-- [ ] Resolve Open Q 13.1 (per-item override: nullable FK vs module-owned assignment table) and Open Q 13.2 (group-level rules scope).
-- [ ] Site-Builder-owned default mapping table `(scope, contentTypeId?) → templateId`.
-- [ ] Per-item override on the Commerce/CMS records that own them.
-- [ ] Storefront site-resolver cascade: item/group override → type default → seeded scope default → safety fallback.
-- [ ] "Layout: [template ▾]" control in the Commerce product editor + CMS entry editor.
-- [ ] **Acceptance:** a per-item override and a per-content-type default both resolve correctly at render.
+**Now (independent, ships first):**
+
+- [x] **S0 · Sample-data preview (doc 36 §9)** — DONE + green + runtime-verified (2026-05-31). Always-on,
+      storefront-only, no schema change. NEW `apps/storefront/lib/sample-data.ts` (`SAMPLE_PRODUCT` +
+      extras, `SAMPLE_COLLECTION` + 8 grid items, `isSampleRequested(sp)` gate = `sparxSampleData=1` AND a
+      `sparxSitePreview` token present — off the public site entirely). PDP + PLP take a `sample` branch:
+      use the fixtures + skip the catalog fetch (and the `notFound`), layout still resolves from the draft
+      snapshot (or `DEFAULT_TEMPLATES`). Dashboard: `EditorShell` gained `setSampleData(on)` (appends
+      `&sparxSampleData=1` to the canvas URL); `LayoutScopeEditor` now **always** previews sample data
+      (dropped the real-product picker per owner "always, for consistency" — removed `listSampleProducts`/
+      `listSampleCollections`/`SampleItem`). Verified via Playwright on the local stack (storefront :3004,
+      tenant `e2e-store`): PDP renders the full bound layout against the sample product on a nonexistent
+      handle; the same handle WITHOUT the flag 404s (gate holds); collection sample renders the header + the
+      8-product grid. Images use empty media ids → clean `◳` placeholder (real sample imagery = a later nicety).
+
+**The PageLayout tier:**
+
+- [x] **P-A · Rename (doc 36 §5) — DONE + green (2026-05-31).** `SiteTemplate`→`PageLayout` end to end as a
+      **code-only rename, NO migration**: the Prisma model + field + all code symbols rename, but the physical
+      table keeps `@@map("sitebuilder_templates")` and the FK keeps `@map("template_id")`, so `prisma validate`
+      is clean with zero `migrate diff` drift (the physical table/column rename folds into P-B's migration, which
+      touches this table anyway). Storefront UNTOUCHED — the published `SectionSnapshot` JSON keeps its wire keys
+      (`templateId`/`templateKey`/`scope`/`pageKey`) and the storefront reads via HTTP, never importing the model.
+      Renamed: schema (`49-sitebuilder.prisma`, `02-tenant.prisma` `siteTemplates`→`pageLayouts`) + `@sparx/db`
+      re-export; `sitebuilder-schemas/inputs.ts` (`TemplateKey`→`LayoutKey`, `Create/Materialize/ListTemplates*`→
+      `*PageLayout*`, section `templateId`→`pageLayoutId`); service `template-service.ts`→`page-layout-service.ts`
+      (`templateService`→`pageLayoutService`, `TemplateView`→`PageLayoutView`, `getOrCreate/find/defaultPageLayout*`,
+      `listForTemplate`→`listForPageLayout`, `resolvePageLayoutForWrite`); `publish-internals.ts` surgically (live
+      side renamed, snapshot wire keys kept); MCP read/write tools; api-rest route `templates.ts`→`page-layouts.ts`
+      (`/v1/sitebuilder/page-layouts`, sections query `page_layout_id`); dashboard `_lib`/components/pages
+      (`listPageLayouts`/`resolvePageLayout`/`listSectionsByPageLayout`/`materializeLayout`, `PageLayoutDto`, prop
+      `pageLayoutId`); test `templates.test.ts`→`page-layouts.test.ts`. The secondary descriptor `templateKey` is
+      intentionally kept (snapshot + DTO). GATE: typecheck (db/schemas/sitebuilder/api-rest/dashboard) + lint
+      (0 err) + format + 20/20 sitebuilder integration tests, all green. Not committed (user manages commits);
+      local api-rest needs a restart to pick up the renamed client/routes.
+- [x] **P-B · Target registry (doc 36 §4) — DONE + green (2026-05-31).** Spec:
+      [docs/handoffs/sitebuilder-pb-spec.md](sitebuilder-pb-spec.md). Fixed `scope` enum → **data-driven target
+      ids** via a **code-level registry** (resolves Open Q 12.4) with the grammar `<module>:<kind>[:<key>]`
+      (resolves Open Q 12.1): `site:home`, `commerce:product`, `commerce:collection`, `cms:content-page`
+      (absorbs old `cms-page`+`custom`), `cms:content-type:<contentTypeId>` (data-driven, keyed by stable id).
+      **P-B1** (no migration): NEW `layout-targets.ts` (`LayoutTarget` descriptors + `STATIC_LAYOUT_TARGETS`
+      catalog + `cmsContentTypeTarget` factory + `getLayoutTarget`/`isLayoutTargetId`/`defaultLayoutName`/`TargetId`
+      zod); `SectionDefinition` dropped `scopes[]` (availability now derives from `binding` + the target's
+      `binding` — static = all targets, bound = matching binding); new `isSectionAllowedInTarget`/`sectionsForTarget`
+      replacing the `scope` helpers; `inputs.ts` `ScopeEnum`→`TargetId`; `DEFAULT_TEMPLATES` re-keyed to
+      `commerce:product`/`commerce:collection`; test re-keyed (9/9). **P-B2** (full re-key incl. snapshots — owner
+      decision): migration `20260614000000_sitebuilder_target_registry` does the P-A-deferred physical rename
+      (`sitebuilder_templates`→`sitebuilder_page_layouts`, `template_id`→`page_layout_id`, all indexes/constraints/
+      policy renamed to Prisma's expected names) + `scope`→`target_id` (widen VarChar(31)→(63)) + an RLS-aware
+      per-tenant DO loop that re-keys draft `PageLayout` values AND rewrites every `SiteVersion.sections_snapshot`
+      element's `scope`→`targetId` (pre-3.0 elements without `scope` left alone). Schema field `scope`→`targetId`;
+      services (`page-layout-service`, `section-service` `listForScope`→`listForTarget`, `publish-internals`
+      snapshot field + `pageKeyForLayout`/`targetKeyForPageKey`/`resolveTargetKey`); api-rest routes (`?target_id=`,
+      bodies forward `targetId`); MCP (`get_sections`/`add_section`/`reorder_sections` descriptions + `TargetArg`);
+      storefront (`lib/site.ts` `sectionsForTarget`/`resolveTemplateSections('commerce:product'|'commerce:collection')`/
+      `targetKeyOf`, product+collection pages); dashboard (`_lib` api/types/actions, `section-builder` prop
+      `scope`→`targetId`, `layout-scope-editor` `BoundTarget`, 4 route pages). GATE: typecheck (6 pkgs:
+      db/schemas/sitebuilder/api-rest/storefront/dashboard) + lint (0 err) + format + 20/20 sitebuilder integration
+      tests, all green. Migration applied to LOCAL docker only (no drift, RLS-audit 142 tables OK, draft rows
+      verified re-keyed `commerce:product`/`site:home`; 0 local SiteVersions so the snapshot-rewrite branch ran
+      clean but untouched — exercises on the prod e2e store). **Snapshot wire keys `templateKey`/`templateId`/
+      `pageKey` kept their P-A names** (renaming those is a separate later tidy). **PROD: migration is
+      USER-TRIGGERED; deploy P-B2 code FIRST, then `db-migrate.yml`** — between the two, product/collection resolve
+      falls back to `DEFAULT_TEMPLATES` (no hard error), home/CMS render off `pageKey` (untouched). Joins the
+      still-pending prod set; one `prisma migrate deploy` covers all. Local api-rest restart needed.
+- [ ] **P-C · Assignment & resolver (doc 36 §6).** SB-owned default table `(targetId)→pageLayoutId` + per-item
+      assignment table `(targetId, itemRef)→pageLayoutId`; storefront resolver cascade (per-item → tenant
+      default → seeded/code default → safety fallback); `Layout: [▾]` picker in the Commerce product editor +
+      CMS entry editor (writes the SB-owned per-item assignment).
+- [ ] **P-D · Unified Layouts surface.** Fold 3.3b's per-scope nav (Product/Collection/Homepage/Pages) into one
+      **Layouts** surface by target: tenant PageLayouts + a "begin from a Page Template" catalog (code-first,
+      doc 36 §10) + the per-target default control.
+- [ ] **Acceptance:** a per-item override and a per-target default both resolve correctly at render; a Page
+      Template instantiates into an editable PageLayout; the seeded default renders identically to today.
+
+**Future tiers (deferred, after the PageLayout tier — doc 36 §11):**
+
+- [ ] **SiteLayout (regions) tier (doc 36 §2)** — define regions (header/footer/logo/announcement/ad-sidebar/
+      content) beyond `SiteLayoutBlock`; add **Site Templates** (region presets).
+- [ ] **Layout-driven authoring (doc 36 §8)** — CMS create/edit (then product descriptive slots) rendered
+      through the layout, content slots editable in place; content-type owns fields / layout owns arrangement;
+      needs the registry + assignment + CMS-editor coordination.
+- [ ] **Home as a CMS entry (doc 36 §7 option b)** — once layout-driven CMS authoring exists.
+- [ ] **§2.5 retire email designer** / **email scope (doc 30 §4.1)** — still deferred until a replacement
+      email-authoring surface exists.
 
 ---
 

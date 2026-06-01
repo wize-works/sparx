@@ -64,39 +64,43 @@ model SiteVersion {
   @@map("sitebuilder_versions")
 }
 
-// A reusable, scoped page layout (docs/30 §4, docs/handoffs/sitebuilder-phase3-spec.md §3).
-// Sections (SiteSection) hang off a template instead of a bare pageKey string.
-// `scope` types the layout (home | product | collection | cms-page | custom) and
-// determines its data context + allowed section types; `key` is stable within
-// (tenant, scope) — "default" for a scope's single Phase-3 layout, a slug for
-// cms-page / custom standalone pages. Tenant-scoped, ENABLE+FORCE RLS.
-model SiteTemplate {
+// PageLayout — a reusable page layout for a layout TARGET (docs/30 §4, docs/36
+// PageLayout tier; docs/handoffs/sitebuilder-pb-spec.md). Sections (SiteSection)
+// hang off a layout. `targetId` is the data-driven layout-target id (docs/36 §4 —
+// `commerce:product`, `cms:content-page`, `cms:content-type:<id>`, …) that
+// determines the layout's data context + allowed section types; it replaced the
+// old fixed `scope` enum (P-B). `key` is stable within (tenant, targetId) —
+// "default" for a target's single layout, a slug for cms:content-page standalone
+// pages. Tenant-scoped, ENABLE+FORCE RLS.
+model PageLayout {
   id       String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   tenantId String @map("tenant_id") @db.Uuid
 
-  scope String @db.VarChar(31)
-  key   String @db.VarChar(255)
-  name  String @db.VarChar(255)
+  targetId String @map("target_id") @db.VarChar(63)
+  key      String @db.VarChar(255)
+  name     String @db.VarChar(255)
 
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
 
-  tenant   Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  sections SiteSection[]
+  tenant      Tenant                 @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  sections    SiteSection[]
+  defaults    SiteLayoutDefault[]
+  assignments SiteLayoutAssignment[]
 
-  @@unique([tenantId, scope, key])
-  @@index([tenantId, scope])
-  @@map("sitebuilder_templates")
+  @@unique([tenantId, targetId, key])
+  @@index([tenantId, targetId])
+  @@map("sitebuilder_page_layouts")
 }
 
 // Draft page composition — one row per section instance, hanging off a
-// SiteTemplate (Phase 3 re-key; was a bare `pageKey` string). Published copies
-// are denormalized into SiteVersion.sectionsSnapshot (which also carries the
-// owning template's scope/key so old + new snapshots both resolve).
+// PageLayout. Published copies are denormalized into SiteVersion.sectionsSnapshot
+// (which also carries the owning layout's targetId/key so old + new snapshots
+// both resolve).
 model SiteSection {
-  id         String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenantId   String @map("tenant_id") @db.Uuid
-  templateId String @map("template_id") @db.Uuid
+  id           String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId     String @map("tenant_id") @db.Uuid
+  pageLayoutId String @map("page_layout_id") @db.Uuid
 
   sectionType String  @map("section_type") @db.VarChar(63)
   position    Int
@@ -106,10 +110,10 @@ model SiteSection {
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
 
-  tenant   Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  template SiteTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  tenant     Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  pageLayout PageLayout @relation(fields: [pageLayoutId], references: [id], onDelete: Cascade)
 
-  @@index([tenantId, templateId, position])
+  @@index([tenantId, pageLayoutId, position])
   @@map("sitebuilder_sections")
 }
 
@@ -151,6 +155,11 @@ model SitePublishSchedule {
   note        String?  @db.VarChar(500)
   createdById String?  @map("created_by_id") @db.Uuid
 
+  // Optional saved theme to apply to the draft before this scheduled publish
+  // snapshots — seasonal/holiday theme swaps (docs/36). SET NULL if the saved
+  // theme is later deleted (the publish then just uses the current draft theme).
+  themeId String? @map("theme_id") @db.Uuid
+
   processedAt     DateTime? @map("processed_at") @db.Timestamptz
   resultVersionId String?   @map("result_version_id") @db.Uuid
   error           String?   @db.Text
@@ -158,9 +167,79 @@ model SitePublishSchedule {
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
 
-  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  theme  SiteTheme? @relation(fields: [themeId], references: [id], onDelete: SetNull)
 
   @@index([status, scheduledAt])
   @@index([tenantId, scheduledAt(sort: Desc)])
   @@map("sitebuilder_publish_schedules")
+}
+
+// A merchant-saved theme variant (docs/36 Brand+Theme tier). The tenant's own
+// NAMED presentation snapshots — distinct from the read-only platform presets
+// (THEME_LIST in @sparx/storefront-themes, which stay code-first). `presentation`
+// is the Token-Model-v2 presentation overlay only (brand identity/feel stay
+// brand-owned); `basePresetKey` is the preset it layers on. Applied to the draft
+// (theme_key + draftSettings presentation) on "Use this theme" or by a scheduled
+// publish that points at it. Tenant-scoped, ENABLE+FORCE RLS.
+model SiteTheme {
+  id       String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId String @map("tenant_id") @db.Uuid
+
+  name          String @db.VarChar(120)
+  basePresetKey String @map("base_preset_key") @db.VarChar(63)
+  presentation  Json   @default("{}") @db.JsonB
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  tenant    Tenant                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  schedules SitePublishSchedule[]
+
+  @@unique([tenantId, name])
+  @@index([tenantId])
+  @@map("sitebuilder_themes")
+}
+
+// Per-target tenant default layout (docs/36 §6, docs/handoffs/sitebuilder-pc-spec.md).
+// Which PageLayout renders by default for a layout target when an item has no
+// per-item override. Absent → the target's `key='default'` layout, then the code
+// default. Tenant-scoped, ENABLE+FORCE RLS.
+model SiteLayoutDefault {
+  id           String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId     String @map("tenant_id") @db.Uuid
+  targetId     String @map("target_id") @db.VarChar(63)
+  pageLayoutId String @map("page_layout_id") @db.Uuid
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  tenant     Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  pageLayout PageLayout @relation(fields: [pageLayoutId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, targetId])
+  @@index([tenantId])
+  @@map("sitebuilder_layout_defaults")
+}
+
+// Per-item layout override (docs/36 §6). Pins one record (a product, collection,
+// or content entry — by its STABLE id) to a specific PageLayout, overriding the
+// per-target default. `itemRef` is the owning module's record id; SB references
+// it without a cross-module FK (the module owns its data). Tenant-scoped, RLS.
+model SiteLayoutAssignment {
+  id           String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId     String @map("tenant_id") @db.Uuid
+  targetId     String @map("target_id") @db.VarChar(63)
+  itemRef      String @map("item_ref") @db.VarChar(255)
+  pageLayoutId String @map("page_layout_id") @db.Uuid
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  tenant     Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  pageLayout PageLayout @relation(fields: [pageLayoutId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, targetId, itemRef])
+  @@index([tenantId, targetId])
+  @@map("sitebuilder_layout_assignments")
 }

@@ -1,27 +1,20 @@
 import { Heading, Text } from '@sparx/ui';
-import {
-  getConfig,
-  listSampleCollections,
-  listSectionsByTemplate,
-  listTemplates,
-  listVersions,
-} from '../_lib/api';
+import { getConfig, listPageLayouts, listSectionsByPageLayout, listVersions } from '../_lib/api';
 import { LayoutScopeEditor } from '../_components/layout-scope-editor';
 import { PublishBar } from '../_components/publish-bar';
 
-// Collection page layout (Phase 3 §7). One `collection`-scope layout shared by
-// every collection page. Mirrors the product layout: seeded default read-only
-// until "Customize", then a normal editable section list; the shared canvas
-// previews a sample collection.
+// Collection page layout (doc 36 §5, Phase 3 §7). One `collection`-scope layout
+// shared by every collection page. Mirrors the product layout: seeded default
+// read-only until "Customize", then a normal editable section list; the shared
+// canvas previews the layout against sample collection data (doc 36 §9).
 export default async function CollectionLayoutPage() {
-  const [templates, samples, config, versions] = await Promise.all([
-    listTemplates('collection'),
-    listSampleCollections(),
+  const [pageLayouts, config, versions] = await Promise.all([
+    listPageLayouts('commerce:collection'),
     getConfig(),
     listVersions(),
   ]);
-  const template = templates.find((t) => t.key === 'default') ?? null;
-  const sections = template ? await listSectionsByTemplate(template.id) : [];
+  const pageLayout = pageLayouts.find((l) => l.key === 'default') ?? null;
+  const sections = pageLayout ? await listSectionsByPageLayout(pageLayout.id) : [];
   const published = versions.find((v) => v.id === config.publishedVersionId);
   const hasUnpublishedChanges = published
     ? new Date(config.updatedAt) > new Date(published.createdAt)
@@ -41,10 +34,9 @@ export default async function CollectionLayoutPage() {
         hasUnpublishedChanges={hasUnpublishedChanges}
       />
       <LayoutScopeEditor
-        scope="collection"
-        templateId={template?.id ?? null}
+        targetId="commerce:collection"
+        pageLayoutId={pageLayout?.id ?? null}
         sections={sections}
-        samples={samples}
       />
     </div>
   );

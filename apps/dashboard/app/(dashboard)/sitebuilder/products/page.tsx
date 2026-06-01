@@ -1,28 +1,21 @@
 import { Heading, Text } from '@sparx/ui';
-import {
-  getConfig,
-  listSampleProducts,
-  listSectionsByTemplate,
-  listTemplates,
-  listVersions,
-} from '../_lib/api';
+import { getConfig, listPageLayouts, listSectionsByPageLayout, listVersions } from '../_lib/api';
 import { LayoutScopeEditor } from '../_components/layout-scope-editor';
 import { PublishBar } from '../_components/publish-bar';
 
-// Product page layout (Phase 3 §7). One `product`-scope layout that every
-// product page renders through. Until a merchant clicks "Customize", no template
-// rows exist and the storefront falls back to the seeded code default — so the
-// editor shows that default read-only with the CTA. The shared canvas previews a
-// sample product so the bound sections render against real data.
+// Product page layout (doc 36 §5, Phase 3 §7). One `product`-scope layout that
+// every product page renders through. Until a merchant clicks "Customize", no
+// layout rows exist and the storefront falls back to the seeded code default — so
+// the editor shows that default read-only with the CTA. The shared canvas previews
+// the layout against sample product data (doc 36 §9).
 export default async function ProductLayoutPage() {
-  const [templates, samples, config, versions] = await Promise.all([
-    listTemplates('product'),
-    listSampleProducts(),
+  const [pageLayouts, config, versions] = await Promise.all([
+    listPageLayouts('commerce:product'),
     getConfig(),
     listVersions(),
   ]);
-  const template = templates.find((t) => t.key === 'default') ?? null;
-  const sections = template ? await listSectionsByTemplate(template.id) : [];
+  const pageLayout = pageLayouts.find((l) => l.key === 'default') ?? null;
+  const sections = pageLayout ? await listSectionsByPageLayout(pageLayout.id) : [];
   const published = versions.find((v) => v.id === config.publishedVersionId);
   const hasUnpublishedChanges = published
     ? new Date(config.updatedAt) > new Date(published.createdAt)
@@ -42,10 +35,9 @@ export default async function ProductLayoutPage() {
         hasUnpublishedChanges={hasUnpublishedChanges}
       />
       <LayoutScopeEditor
-        scope="product"
-        templateId={template?.id ?? null}
+        targetId="commerce:product"
+        pageLayoutId={pageLayout?.id ?? null}
         sections={sections}
-        samples={samples}
       />
     </div>
   );

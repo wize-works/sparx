@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { Slot } from '@radix-ui/react-slot';
+import { Slot, Slottable } from '@radix-ui/react-slot';
 import { cva, type VariantProps } from '../../utils/cva';
 import { cn } from '../../utils/cn';
 import { Spinner } from './spinner';
@@ -80,12 +80,21 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ) => {
     const classes = cn(colorClass(color), buttonVariants({ variant, size, shape }), className);
 
-    // Radix Slot requires exactly one child element — defer all content to it
-    // and skip the icon/spinner slots. The provided child owns its layout.
+    // With asChild, Slot merges the button's styling onto the provided child
+    // (e.g. a `<Link>`). `Slottable` lets us keep the icon/spinner slots as
+    // siblings of that child's own content — without it, `leftIcon`/`rightIcon`
+    // passed to an asChild button would be silently dropped. The merged child
+    // carries the flex+gap classes, so the icon spaces correctly.
     if (asChild) {
       return (
         <Slot ref={ref} className={classes} {...props}>
-          {children}
+          {loading ? (
+            <Spinner size="sm" />
+          ) : (
+            leftIcon && <span className="shrink-0">{leftIcon}</span>
+          )}
+          <Slottable>{children}</Slottable>
+          {rightIcon && !loading && <span className="shrink-0">{rightIcon}</span>}
         </Slot>
       );
     }

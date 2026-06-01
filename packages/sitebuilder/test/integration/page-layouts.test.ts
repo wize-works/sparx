@@ -1,16 +1,16 @@
-// templateService + the templateId-native sectionService surface
-// (docs/handoffs/sitebuilder-phase3-spec.md §13). Covers resolve-or-create
-// idempotency, "Customize" materialization (code default → real rows, no
-// duplication on re-run), templateId-addressed section CRUD, scope safety, and
-// (scope, key) addressing.
+// pageLayoutService + the pageLayoutId-native sectionService surface, now keyed
+// by layout TARGET ids (docs/36 §4, docs/handoffs/sitebuilder-pb-spec.md). Covers
+// resolve-or-create idempotency, "Customize" materialization (code default → real
+// rows, no duplication on re-run), pageLayoutId-addressed section CRUD, target
+// safety, and (targetId, key) addressing.
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import { sectionService, templateService } from '../../src/services/index.js';
+import { sectionService, pageLayoutService } from '../../src/services/index.js';
 import { SitebuilderValidationError } from '../../src/errors.js';
 import { disposeTestContext, makeTestContext, type TestContext } from '../helpers.js';
 
-describe('sitebuilder templates (3.3a)', () => {
+describe('sitebuilder page layouts', () => {
   let test: TestContext;
 
   beforeAll(async () => {
@@ -21,34 +21,39 @@ describe('sitebuilder templates (3.3a)', () => {
     await disposeTestContext(test);
   });
 
-  it('getOrCreate — idempotent per (scope, key); distinct keys are distinct rows', async () => {
-    const a = await templateService.getOrCreate(test.ctx, { scope: 'product' });
-    const again = await templateService.getOrCreate(test.ctx, { scope: 'product' });
+  it('getOrCreate — idempotent per (targetId, key); distinct keys are distinct rows', async () => {
+    const a = await pageLayoutService.getOrCreate(test.ctx, { targetId: 'commerce:product' });
+    const again = await pageLayoutService.getOrCreate(test.ctx, { targetId: 'commerce:product' });
     expect(again.id).toBe(a.id);
-    expect(a.scope).toBe('product');
+    expect(a.targetId).toBe('commerce:product');
     expect(a.key).toBe('default');
     expect(a.name).toBe('Product page');
 
-    const slug = await templateService.getOrCreate(test.ctx, { scope: 'custom', key: 'about' });
+    const slug = await pageLayoutService.getOrCreate(test.ctx, {
+      targetId: 'cms:content-page',
+      key: 'about',
+    });
     expect(slug.id).not.toBe(a.id);
-    expect(slug.scope).toBe('custom');
+    expect(slug.targetId).toBe('cms:content-page');
     expect(slug.key).toBe('about');
-    // custom/cms-page name defaults to the key.
+    // A standalone content page's name defaults to the key.
     expect(slug.name).toBe('about');
   });
 
-  it('list — all templates, and filtered by scope', async () => {
-    const all = await templateService.list(test.ctx);
+  it('list — all layouts, and filtered by target', async () => {
+    const all = await pageLayoutService.list(test.ctx);
     expect(all.length).toBeGreaterThanOrEqual(2);
 
-    const products = await templateService.list(test.ctx, 'product');
-    expect(products.every((t) => t.scope === 'product')).toBe(true);
+    const products = await pageLayoutService.list(test.ctx, 'commerce:product');
+    expect(products.every((t) => t.targetId === 'commerce:product')).toBe(true);
     expect(products).toHaveLength(1);
   });
 
-  it('materializeDefault(product) — seeds the PDP default in order; re-run is a no-op', async () => {
-    const template = await templateService.materializeDefault(test.ctx, { scope: 'product' });
-    const sections = await sectionService.listForTemplate(test.ctx, template.id);
+  it('materializeDefault(commerce:product) — seeds the PDP default in order; re-run is a no-op', async () => {
+    const template = await pageLayoutService.materializeDefault(test.ctx, {
+      targetId: 'commerce:product',
+    });
+    const sections = await sectionService.listForPageLayout(test.ctx, template.id);
     expect(sections.map((s) => s.sectionType)).toEqual([
       'product-buy-box',
       'product-description',
@@ -59,81 +64,93 @@ describe('sitebuilder templates (3.3a)', () => {
     ]);
     // Positions are 0..n in order.
     expect(sections.map((s) => s.position)).toEqual([0, 1, 2, 3, 4, 5]);
-    // Every materialized section carries the native template fields.
-    expect(sections.every((s) => s.templateId === template.id && s.scope === 'product')).toBe(true);
+    // Every materialized section carries the native layout fields.
+    expect(
+      sections.every((s) => s.pageLayoutId === template.id && s.targetId === 'commerce:product')
+    ).toBe(true);
 
     // Idempotent: a layout that already has sections is returned untouched.
-    const again = await templateService.materializeDefault(test.ctx, { scope: 'product' });
+    const again = await pageLayoutService.materializeDefault(test.ctx, {
+      targetId: 'commerce:product',
+    });
     expect(again.id).toBe(template.id);
-    const after = await sectionService.listForTemplate(test.ctx, template.id);
+    const after = await sectionService.listForPageLayout(test.ctx, template.id);
     expect(after).toHaveLength(6);
   });
 
-  it('materializeDefault(collection) — seeds header + product grid', async () => {
-    const template = await templateService.materializeDefault(test.ctx, { scope: 'collection' });
-    const sections = await sectionService.listForTemplate(test.ctx, template.id);
+  it('materializeDefault(commerce:collection) — seeds header + product grid', async () => {
+    const template = await pageLayoutService.materializeDefault(test.ctx, {
+      targetId: 'commerce:collection',
+    });
+    const sections = await sectionService.listForPageLayout(test.ctx, template.id);
     expect(sections.map((s) => s.sectionType)).toEqual([
       'collection-header',
       'collection-products',
     ]);
   });
 
-  it('materializeDefault(home) — no code default → empty layout', async () => {
-    const template = await templateService.materializeDefault(test.ctx, { scope: 'home' });
-    const sections = await sectionService.listForTemplate(test.ctx, template.id);
+  it('materializeDefault(site:home) — no code default → empty layout', async () => {
+    const template = await pageLayoutService.materializeDefault(test.ctx, {
+      targetId: 'site:home',
+    });
+    const sections = await sectionService.listForPageLayout(test.ctx, template.id);
     expect(sections).toHaveLength(0);
   });
 
-  it('create by templateId — appends to the addressed layout', async () => {
-    const collection = await templateService.getOrCreate(test.ctx, { scope: 'collection' });
-    const before = await sectionService.listForTemplate(test.ctx, collection.id);
+  it('create by pageLayoutId — appends to the addressed layout', async () => {
+    const collection = await pageLayoutService.getOrCreate(test.ctx, {
+      targetId: 'commerce:collection',
+    });
+    const before = await sectionService.listForPageLayout(test.ctx, collection.id);
 
     const created = await sectionService.create(test.ctx, {
-      templateId: collection.id,
+      pageLayoutId: collection.id,
       sectionType: 'rich-text',
     });
-    expect(created.templateId).toBe(collection.id);
-    expect(created.scope).toBe('collection');
+    expect(created.pageLayoutId).toBe(collection.id);
+    expect(created.targetId).toBe('commerce:collection');
 
-    const after = await sectionService.listForTemplate(test.ctx, collection.id);
+    const after = await sectionService.listForPageLayout(test.ctx, collection.id);
     expect(after).toHaveLength(before.length + 1);
     expect(after.at(-1)?.id).toBe(created.id);
   });
 
-  it('scope safety — a product-bound section is rejected in a collection layout', async () => {
-    const collection = await templateService.getOrCreate(test.ctx, { scope: 'collection' });
+  it('target safety — a product-bound section is rejected in a collection layout', async () => {
+    const collection = await pageLayoutService.getOrCreate(test.ctx, {
+      targetId: 'commerce:collection',
+    });
     await expect(
       sectionService.create(test.ctx, {
-        templateId: collection.id,
+        pageLayoutId: collection.id,
         sectionType: 'product-buy-box',
       })
     ).rejects.toBeInstanceOf(SitebuilderValidationError);
   });
 
-  it('reorder by templateId — reverses the layout order', async () => {
-    const product = await templateService.getOrCreate(test.ctx, { scope: 'product' });
-    const sections = await sectionService.listForTemplate(test.ctx, product.id);
+  it('reorder by pageLayoutId — reverses the layout order', async () => {
+    const product = await pageLayoutService.getOrCreate(test.ctx, { targetId: 'commerce:product' });
+    const sections = await sectionService.listForPageLayout(test.ctx, product.id);
     const reversed = [...sections].reverse().map((s) => s.id);
 
     const result = await sectionService.reorder(test.ctx, {
-      templateId: product.id,
+      pageLayoutId: product.id,
       orderedIds: reversed,
     });
     expect(result.map((s) => s.id)).toEqual(reversed);
   });
 
-  it('create by scope — resolves/creates the (scope, key) layout', async () => {
+  it('create by target — resolves/creates the (targetId, key) layout', async () => {
     const created = await sectionService.create(test.ctx, {
-      scope: 'home',
+      targetId: 'site:home',
       sectionType: 'hero',
       config: { heading: 'Welcome' },
     });
-    expect(created.scope).toBe('home');
+    expect(created.targetId).toBe('site:home');
     expect(created.templateKey).toBe('default');
-    expect(created.templateId).toBeTruthy();
+    expect(created.pageLayoutId).toBeTruthy();
   });
 
-  it('create with neither templateId nor scope — rejected', async () => {
+  it('create with neither pageLayoutId nor targetId — rejected', async () => {
     await expect(sectionService.create(test.ctx, { sectionType: 'hero' })).rejects.toBeInstanceOf(
       SitebuilderValidationError
     );

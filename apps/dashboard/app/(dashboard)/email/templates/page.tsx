@@ -16,6 +16,7 @@ import {
 } from '@sparx/ui';
 
 import { api } from '@/lib/api-rest-client';
+import { EntityCreateButton } from '../../_components/entity-create-button';
 import { EmailShell } from '../_components/email-shell';
 import type { TemplateListResponse } from '../_lib/types';
 
@@ -31,12 +32,15 @@ export default async function TemplatesPage() {
       title="Templates"
       description="Built-in transactional templates and your own marketing templates."
       actions={
-        <Button color="module" size="sm" asChild>
-          <Link href="/email/templates/new">
-            <Plus className="h-4 w-4" />
-            New template
-          </Link>
-        </Button>
+        <EntityCreateButton
+          entityType="email-template"
+          newHref="/email/templates/new"
+          color="module"
+          size="sm"
+          leftIcon={<Plus className="h-4 w-4" />}
+        >
+          New
+        </EntityCreateButton>
       }
     >
       <Stack gap={3}>

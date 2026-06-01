@@ -8,6 +8,19 @@ export type ThemeDto = ThemePreset;
 
 export type AppearancePolicy = 'light-only' | 'dark-only' | 'auto' | 'toggle';
 
+// A tenant-saved theme variant (docs/33 saved-themes contract). The merchant's
+// own named presentation snapshots — distinct from the read-only prebuilt
+// presets (ThemeDto). `presentation` is the v2 overlay; `basePresetKey` is the
+// preset it layers on. Backed by /v1/sitebuilder/saved-themes (editor-gated).
+export interface SiteThemeDto {
+  id: string;
+  name: string;
+  basePresetKey: string;
+  presentation: PresentationOverlayV2;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface SiteSettingsDto {
   tokens?: { light?: Record<string, string>; dark?: Record<string, string> };
   customCss?: string;
@@ -27,10 +40,10 @@ export interface SiteConfigDto {
 
 export interface SiteSectionDto {
   id: string;
-  // Phase 3: sections hang off a scoped SiteTemplate; the editor addresses them
-  // by `templateId` (+ the owning template's scope/key).
-  templateId: string;
-  scope: string;
+  // Sections hang off a PageLayout (docs/36 §4); the editor addresses them by
+  // `pageLayoutId` (+ the owning layout's targetId/key).
+  pageLayoutId: string;
+  targetId: string;
   templateKey: string;
   sectionType: string;
   position: number;
@@ -38,22 +51,14 @@ export interface SiteSectionDto {
   config: Record<string, unknown>;
 }
 
-// A scoped page layout (docs/handoffs/sitebuilder-phase3-spec.md §3). The editor
-// resolves one per scope (home | product | collection | cms-page | custom),
-// then does section CRUD by `id`.
-export interface SiteTemplateDto {
+// A page layout for a layout target (docs/36 §4). The editor resolves one per
+// target (commerce:product | commerce:collection | cms:content-page | site:home |
+// cms:content-type:<id>), then does section CRUD by `id`.
+export interface PageLayoutDto {
   id: string;
-  scope: string;
+  targetId: string;
   key: string;
   name: string;
-}
-
-// A storefront item the Layouts editor can bind its live preview to — a real
-// product/collection so a `product`/`collection` template renders against actual
-// data (spec §7, "Preview against [sample ▾]"). Editor-local; not site data.
-export interface SampleItem {
-  handle: string;
-  label: string;
 }
 
 export interface SiteLayoutBlockDto {
@@ -107,6 +112,12 @@ export interface BrandDto {
   colorPrimary: string | null;
   colorPrimaryForeground: string | null;
   colorAccent: string | null;
+  // The `*Foreground` fields are the optional `-content` overrides (null =
+  // auto-derive); `colorSecondary` is the brand's second identity colour
+  // (null = falls back to primary). docs/33 §3.1.
+  colorAccentForeground: string | null;
+  colorSecondary: string | null;
+  colorSecondaryForeground: string | null;
   fontHeading: string | null;
   fontBody: string | null;
   // Brand-owned Token Model v2 shape/rhythm/effect (docs/33). Null = inherit the

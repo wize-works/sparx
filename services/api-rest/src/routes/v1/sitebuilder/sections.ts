@@ -1,8 +1,8 @@
 // Site Builder — draft page section composition.
 //
-//   GET    /v1/sitebuilder/sections?template_id=   → list a layout's sections
-//                                  (or ?scope=&key= to address by scope)
-//   POST   /v1/sitebuilder/sections                → add a section ({ templateId | scope[,key] })
+//   GET    /v1/sitebuilder/sections?page_layout_id=  → list a layout's sections
+//                                  (or ?target_id=&key= to address by target)
+//   POST   /v1/sitebuilder/sections                → add a section ({ pageLayoutId | targetId[,key] })
 //   POST   /v1/sitebuilder/sections/reorder         → reorder a layout's sections
 //   PATCH  /v1/sitebuilder/sections/:id             → update config/visibility
 //   DELETE /v1/sitebuilder/sections/:id             → remove a section
@@ -18,10 +18,10 @@ import {
 } from '../../../lib/sitebuilder-context.js';
 
 const PathId = z.object({ id: z.string().uuid() });
-// Address a layout by `template_id` (preferred) or by `scope` (+ optional `key`).
+// Address a layout by `page_layout_id` (preferred) or by `target_id` (+ optional `key`).
 const ListQuery = z.object({
-  template_id: z.string().uuid().optional(),
-  scope: z.string().min(1).max(31).optional(),
+  page_layout_id: z.string().uuid().optional(),
+  target_id: z.string().min(1).max(63).optional(),
   key: z.string().min(1).max(255).optional(),
 });
 
@@ -31,10 +31,10 @@ const sectionRoutes: FastifyPluginAsync = (app) => {
     await requireSitebuilderModule(request);
     const q = ListQuery.parse(request.query);
     const ctx = toSitebuilderContext(request);
-    const items = q.template_id
-      ? await sectionService.listForTemplate(ctx, q.template_id)
-      : q.scope
-        ? await sectionService.listForScope(ctx, q.scope, q.key ?? 'default')
+    const items = q.page_layout_id
+      ? await sectionService.listForPageLayout(ctx, q.page_layout_id)
+      : q.target_id
+        ? await sectionService.listForTarget(ctx, q.target_id, q.key ?? 'default')
         : [];
     return ok({ sections: items });
   });

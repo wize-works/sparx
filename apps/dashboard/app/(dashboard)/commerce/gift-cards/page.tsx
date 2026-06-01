@@ -22,6 +22,7 @@ import {
 
 import { api } from '@/lib/api-rest-client';
 
+import { ListToolbar } from '../../_components/list-toolbar';
 import { IssueGiftCardForm } from './_components/issue-gift-card-form';
 
 interface GiftCardSummary {
@@ -48,8 +49,16 @@ const STATUS_VARIANT: Record<string, 'success' | 'warning' | 'outline'> = {
 
 const moneyFmt = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
 
-export default async function GiftCardsPage() {
-  const cards = await api.get<GiftCardSummary[]>('/v1/commerce/gift-cards?take=100');
+interface PageProps {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}
+
+export default async function GiftCardsPage({ searchParams }: PageProps) {
+  const params = await searchParams;
+  const q = stringParam(params.q);
+  const query = new URLSearchParams({ take: '100' });
+  if (q) query.set('q', q);
+  const cards = await api.get<GiftCardSummary[]>(`/v1/commerce/gift-cards?${query.toString()}`);
 
   const outstandingCents = cards
     .filter((c) => c.status === 'active')
@@ -81,6 +90,8 @@ export default async function GiftCardsPage() {
             <IssueGiftCardForm />
           </CardContent>
         </Card>
+
+        <ListToolbar searchPlaceholder="Search code, recipient name or email…" />
 
         <Card>
           <CardHeader>
@@ -151,4 +162,10 @@ export default async function GiftCardsPage() {
       </Stack>
     </Container>
   );
+}
+
+function stringParam(v: string | string[] | undefined): string | undefined {
+  if (Array.isArray(v)) return v[0];
+  if (typeof v === 'string' && v.length > 0) return v;
+  return undefined;
 }

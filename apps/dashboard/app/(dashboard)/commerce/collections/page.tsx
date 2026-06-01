@@ -1,9 +1,7 @@
-import Link from 'next/link';
 import { Layers, Plus, Sparkles, Star } from 'lucide-react';
 
 import {
   Badge,
-  Button,
   Card,
   CardContent,
   Container,
@@ -21,6 +19,7 @@ import {
 } from '@sparx/ui';
 
 import { api } from '@/lib/api-rest-client';
+import { EntityCreateButton } from '../../_components/entity-create-button';
 import { EntityRowLink } from '../../_components/entity-row-link';
 import { ListToolbar } from '../../_components/list-toolbar';
 import { getUserPreferences } from '../../_shell/preferences';
@@ -84,14 +83,19 @@ export default async function CollectionsPage({ searchParams }: PageProps) {
           }
           description="Manual lists and rules-driven smart collections. Manual stays the same until you edit it; rules re-project on the next index flush (Phase 1.5 wires the indexer)."
           actions={
-            <Button asChild color="module" leftIcon={<Plus className="h-4 w-4" />}>
-              <Link href="/commerce/collections/new">New collection</Link>
-            </Button>
+            <EntityCreateButton
+              entityType="collection"
+              newHref="/commerce/collections/new"
+              color="module"
+              leftIcon={<Plus className="h-4 w-4" />}
+            >
+              New
+            </EntityCreateButton>
           }
         />
 
         <ListToolbar
-          searchable={false}
+          searchPlaceholder="Search collections…"
           filters={[{ key: 'type', label: 'Types', options: TYPE_OPTIONS }]}
           enableViewToggle
         />
@@ -108,9 +112,14 @@ export default async function CollectionsPage({ searchParams }: PageProps) {
               }
               action={
                 total === 0 ? (
-                  <Button asChild color="module" leftIcon={<Plus className="h-4 w-4" />}>
-                    <Link href="/commerce/collections/new">New collection</Link>
-                  </Button>
+                  <EntityCreateButton
+                    entityType="collection"
+                    newHref="/commerce/collections/new"
+                    color="module"
+                    leftIcon={<Plus className="h-4 w-4" />}
+                  >
+                    New
+                  </EntityCreateButton>
                 ) : undefined
               }
             />

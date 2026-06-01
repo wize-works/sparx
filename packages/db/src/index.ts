@@ -128,10 +128,13 @@ export type {
   // Sitebuilder
   SiteConfig,
   SiteVersion,
-  SiteTemplate,
+  PageLayout,
   SiteSection,
   SiteLayoutBlock,
   SitePublishSchedule,
+  SiteTheme,
+  SiteLayoutDefault,
+  SiteLayoutAssignment,
   // Email platform
   EmailSettings,
   SendingDomain,

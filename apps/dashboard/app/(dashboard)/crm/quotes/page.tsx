@@ -1,9 +1,7 @@
-import Link from 'next/link';
 import { FileText, Plus } from 'lucide-react';
 
 import {
   Badge,
-  Button,
   Card,
   CardContent,
   Container,
@@ -21,6 +19,7 @@ import {
 
 import { api } from '@/lib/api-rest-client';
 
+import { EntityCreateButton } from '../../_components/entity-create-button';
 import { EntityRowLink } from '../../_components/entity-row-link';
 import { ListToolbar } from '../../_components/list-toolbar';
 
@@ -85,9 +84,14 @@ export default async function QuotesPage({ searchParams }: PageProps) {
           }
           description="Sales quotes — draft, submitted, accepted, declined, expired, converted to an order. Accepted quotes convert atomically to a new Order via the quote detail page."
           actions={
-            <Button asChild color="module" leftIcon={<Plus className="h-4 w-4" />}>
-              <Link href="/crm/quotes/new">New quote</Link>
-            </Button>
+            <EntityCreateButton
+              entityType="quote"
+              newHref="/crm/quotes/new"
+              color="module"
+              leftIcon={<Plus className="h-4 w-4" />}
+            >
+              New
+            </EntityCreateButton>
           }
         />
 

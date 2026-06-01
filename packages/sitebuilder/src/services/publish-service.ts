@@ -126,6 +126,11 @@ async function overlayBrand(
       colorPrimary: true,
       colorPrimaryForeground: true,
       colorAccent: true,
+      // secondary + the accent/secondary `-content` overrides — feed compiledV2
+      // only (the v1 identity overlay below has no slot for them).
+      colorAccentForeground: true,
+      colorSecondary: true,
+      colorSecondaryForeground: true,
       fontHeading: true,
       fontBody: true,
       // shape/rhythm/effect — feeds compiledV2 (the v1 identity overlay below
