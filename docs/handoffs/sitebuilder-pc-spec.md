@@ -25,15 +25,15 @@ layout-driven authoring (§8).
   SB references it by id.
 - **Assignments are read LIVE, not baked into the version** (no new `SiteVersion` column). Computed at
   snapshot-read from the tables — exactly like brand / `compiledV2` (publish-service `overlayBrand`). Rationale:
-  a layout's *sections* must be published to take effect regardless, so baking the assignment buys nothing;
+  a layout's _sections_ must be published to take effect regardless, so baking the assignment buys nothing;
   LIVE avoids a column + rollback-restore complexity, and an assignment edit reflects as soon as the
   referenced layout's sections are published. Existing tenants (no rows) → resolver lands on `default` → today's
   behavior unchanged.
 - **Resolver cascade** (storefront, per page render): `per-item override → per-target default → 'default' key
-  → seeded code default (DEFAULT_TEMPLATES) → empty`. `resolveTemplateSections(snapshot, targetId, itemRef?)`
+→ seeded code default (DEFAULT_TEMPLATES) → empty`. `resolveTemplateSections(snapshot, targetId, itemRef?)`
   resolves a `layoutKey`, then renders `sectionsForTarget(snapshot, targetId, layoutKey)`.
 - **Snapshot shape** gains `assignments?: { defaults: Record<targetId, layoutKey>; items: Array<{ targetId,
-  itemRef, layoutKey }> }`. Only non-`default` defaults and actual overrides appear (small).
+itemRef, layoutKey }> }`. Only non-`default` defaults and actual overrides appear (small).
 - **Picker scope (owner decision 2026-05-31): build both editors' pickers now.** The Commerce product/collection
   picker is wired end-to-end (the storefront resolver consumes it). **The CMS entry-editor picker stores valid,
   forward-compatible assignments but has NO storefront effect until §8** (CMS pages still render off `pageKey`,
