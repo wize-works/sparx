@@ -73,6 +73,10 @@ function patchHistory(): void {
   if (historyPatched || typeof history === 'undefined') return;
   historyPatched = true;
   (['pushState', 'replaceState'] as const).forEach((key) => {
+    // Held unbound on purpose: `patched` below forwards the caller's own
+    // receiver with `original.apply(this, args)`, so binding here would
+    // pin `this` and change what a global History patch does.
+    // eslint-disable-next-line @typescript-eslint/unbound-method
     const original = history[key];
     history[key] = function patched(
       this: History,

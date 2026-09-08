@@ -38,8 +38,9 @@ export function VideoMontage() {
   const [fading, setFading] = useState(false);
 
   useEffect(() => {
-    const m = window.matchMedia;
-    if (m('(prefers-reduced-motion: reduce)').matches || m('(max-width: 768px)').matches) return;
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const narrow = window.matchMedia('(max-width: 768px)').matches;
+    if (reduced || narrow) return;
     const el = wrapRef.current;
     if (!el) return;
     const io = new IntersectionObserver(
