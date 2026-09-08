@@ -37,6 +37,13 @@ COPY wizeworks/packages/silica-corrections/package.json wizeworks/packages/silic
 # cms-editor) are above.
 COPY wizeworks/packages/builder-render/package.json wizeworks/packages/builder-render/
 COPY wizeworks/packages/chat-widget/package.json wizeworks/packages/chat-widget/
+# @wizeworks/commerce-schemas — shared selling vocabulary (carrier labels on the
+# order timeline). It pulls crm-schemas, automation-schemas and field-schema in
+# turn, so all four have to be present for the install to resolve.
+COPY wizeworks/packages/commerce-schemas/package.json wizeworks/packages/commerce-schemas/
+COPY wizeworks/packages/crm-schemas/package.json wizeworks/packages/crm-schemas/
+COPY wizeworks/packages/automation-schemas/package.json wizeworks/packages/automation-schemas/
+COPY wizeworks/packages/field-schema/package.json wizeworks/packages/field-schema/
 
 # Install only the @wizeworks/site subgraph (its deps + transitive workspace deps).
 RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \
@@ -54,6 +61,10 @@ COPY wizeworks/packages/silica-catalog wizeworks/packages/silica-catalog
 COPY wizeworks/packages/silica-corrections wizeworks/packages/silica-corrections
 COPY wizeworks/packages/builder-render wizeworks/packages/builder-render
 COPY wizeworks/packages/chat-widget wizeworks/packages/chat-widget
+COPY wizeworks/packages/commerce-schemas wizeworks/packages/commerce-schemas
+COPY wizeworks/packages/crm-schemas wizeworks/packages/crm-schemas
+COPY wizeworks/packages/automation-schemas wizeworks/packages/automation-schemas
+COPY wizeworks/packages/field-schema wizeworks/packages/field-schema
 COPY wizeworks/apps/site wizeworks/apps/site
 
 # Stripe.js publishable key. `NEXT_PUBLIC_*` is INLINED INTO THE CLIENT BUNDLE AT
