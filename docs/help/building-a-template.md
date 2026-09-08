@@ -75,35 +75,19 @@ const manifest = {
   preview: '/blueprint-previews/retail-store-blog.png', // marketplace screenshot
   requiresModules: ['builder', 'commerce', 'cms', 'email'],
 
-  brand: {
-    /* identity: name, colors, fonts, logo */
-  },
-  theme: {
-    /* the named theme this template ships */
-  },
-  assets: [
-    /* every image, declared once and referenced by id */
-  ],
+  brand: {/* identity: name, colors, fonts, logo */},
+  theme: {/* the named theme this template ships */},
+  assets: [/* every image, declared once and referenced by id */],
 
   contentTypes: [], // custom content types (usually none)
-  content: [
-    /* blog posts, pages */
-  ],
+  content: [/* blog posts, pages */],
 
   commerce: { categories, collections, products },
 
-  components: [
-    /* reusable tenant components (optional) */
-  ],
-  layout: {
-    /* site chrome: header · Outlet · footer */
-  },
-  pages: [
-    /* home, blog index, and templates for each record type */
-  ],
-  emails: [
-    /* welcome, newsletter, … */
-  ],
+  components: [/* reusable tenant components (optional) */],
+  layout: {/* site chrome: header · Outlet · footer */},
+  pages: [/* home, blog index, and templates for each record type */],
+  emails: [/* welcome, newsletter, … */],
 };
 
 export const retailStoreBlog: Blueprint = parseBlueprint(manifest);
@@ -316,9 +300,7 @@ node('Heading', { props: { level: 'h1', text: 'Everyday goods, built to last' } 
 node('Section', {
   box: { surface: 'subtle', padding: 'lg', contentWidth: 'contained' },
   layout: { direction: 'stack', gap: 'md' },
-  children: [
-    /* … */
-  ],
+  children: [/* … */],
 });
 ```
 

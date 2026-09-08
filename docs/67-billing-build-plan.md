@@ -104,18 +104,19 @@ the manual ops are done.
 In the Stripe Dashboard (not in code — prices are created once and referenced by ID):
 
 Create one Stripe Product per module:
-| Product | Monthly Price | Annual Price |
-|---------|--------------|--------------|
-| Builder | $10/mo | $96/yr |
-| Commerce | $49/mo | $470/yr |
-| CMS | $49/mo | $470/yr |
-| CRM | $49/mo | $470/yr |
-| Email | $29/mo | $278/yr |
-| B2B/Wholesale | $99/mo | $950/yr |
-| AI/MCP | $49/mo | $470/yr |
-| Dropship | $29/mo | $278/yr |
-| Managed Hosting | $750/mo | — |
-| Additional Site | (TBD per site/mo) | — |
+
+| Product         | Monthly Price     | Annual Price |
+| --------------- | ----------------- | ------------ |
+| Builder         | $10/mo            | $96/yr       |
+| Commerce        | $49/mo            | $470/yr      |
+| CMS             | $49/mo            | $470/yr      |
+| CRM             | $49/mo            | $470/yr      |
+| Email           | $29/mo            | $278/yr      |
+| B2B/Wholesale   | $99/mo            | $950/yr      |
+| AI/MCP          | $49/mo            | $470/yr      |
+| Dropship        | $29/mo            | $278/yr      |
+| Managed Hosting | $750/mo           | —            |
+| Additional Site | (TBD per site/mo) | —            |
 
 Store Stripe Price IDs in Secret Manager (not `.env` — these are prod-only values):
 

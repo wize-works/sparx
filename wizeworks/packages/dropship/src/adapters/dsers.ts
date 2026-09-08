@@ -116,18 +116,16 @@ export class DsersAdapter implements SupplierAdapter {
           category: p.categories?.[0] ?? null,
           tags: p.tags ?? [],
           imageUrls: p.images ?? [],
-          variants: p.variants.map(
-            (v): NormalizedProductVariant => ({
-              supplierSku: v.sku_id,
-              title: v.variant_title,
-              options: this.parseOptions(v.variant_title),
-              costPriceCents: Math.round(v.original_price * 100),
-              msrpCents: Math.round(v.sale_price * 100),
-              inventoryQuantity: v.stock,
-              weight: v.weight,
-              imageUrls: v.images ?? [],
-            })
-          ),
+          variants: p.variants.map((v): NormalizedProductVariant => ({
+            supplierSku: v.sku_id,
+            title: v.variant_title,
+            options: this.parseOptions(v.variant_title),
+            costPriceCents: Math.round(v.original_price * 100),
+            msrpCents: Math.round(v.sale_price * 100),
+            inventoryQuantity: v.stock,
+            weight: v.weight,
+            imageUrls: v.images ?? [],
+          })),
           raw: p as unknown as Record<string, unknown>,
         };
       }

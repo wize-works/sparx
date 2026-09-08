@@ -45,14 +45,7 @@ import {
 export type SmsScope = 'marketing' | 'transactional';
 
 export type SmsOutcome =
-  | 'sent'
-  | 'failed'
-  | 'suppressed'
-  | 'held'
-  | 'capped'
-  | 'disabled'
-  | 'no_consent'
-  | 'invalid';
+  'sent' | 'failed' | 'suppressed' | 'held' | 'capped' | 'disabled' | 'no_consent' | 'invalid';
 
 export interface SendTenantSmsInput {
   to: string;

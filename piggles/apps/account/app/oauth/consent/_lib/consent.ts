@@ -96,8 +96,7 @@ function originOf(url: string): string | null {
 }
 
 export type ValidationResult =
-  | { ok: true; client: RegisteredMcpClient }
-  | { ok: false; error: string };
+  { ok: true; client: RegisteredMcpClient } | { ok: false; error: string };
 
 /**
  * Validate an authorize request against the protocol rules and the registered

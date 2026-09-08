@@ -253,14 +253,12 @@ describe('the form that thanked people for messages it threw away', () => {
       behavior: { type: 'form' },
       data: { kind: 'action', ref },
       children: [
-        ...fields.map(
-          (name): Node => ({
-            kind: 'element',
-            tag: 'input',
-            class: 'input input-bordered w-full',
-            attrs: { type: 'text', name },
-          })
-        ),
+        ...fields.map((name): Node => ({
+          kind: 'element',
+          tag: 'input',
+          class: 'input input-bordered w-full',
+          attrs: { type: 'text', name },
+        })),
         { kind: 'element', tag: 'button', class: 'btn btn-primary', attrs: { type: 'submit' } },
       ],
     };

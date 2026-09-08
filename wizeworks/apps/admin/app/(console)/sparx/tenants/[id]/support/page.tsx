@@ -81,9 +81,11 @@ export default async function TenantSupportPage({
   const [index, log] = await Promise.all([
     operatorApi()
       .getSearchIndex(id, operator.id)
-      .catch(
-        (): OperatorSearchIndexStatus => ({ tenantId: id, collections: [], unavailable: true })
-      ),
+      .catch((): OperatorSearchIndexStatus => ({
+        tenantId: id,
+        collections: [],
+        unavailable: true,
+      })),
     operatorApi()
       .getEmailLog(
         id,

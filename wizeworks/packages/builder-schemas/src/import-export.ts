@@ -149,8 +149,7 @@ export function ensureUniqueIds(tree: BuilderNode): BuilderNode {
 // ── Parse / validate ─────────────────────────────────────────────────────────
 
 export type ImportParse<TMeta> =
-  | { ok: true; tree: BuilderNode; meta: TMeta }
-  | { ok: false; error: string };
+  { ok: true; tree: BuilderNode; meta: TMeta } | { ok: false; error: string };
 
 export interface PageImportMeta {
   name?: string;

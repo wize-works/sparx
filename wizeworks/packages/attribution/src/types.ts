@@ -26,12 +26,7 @@ export type Channel =
 
 /** Attribution models (docs/80 §9). First/last are stored; the rest compute from the retained touch path. */
 export type AttributionModel =
-  | 'first'
-  | 'last'
-  | 'last_non_direct'
-  | 'linear'
-  | 'position_based'
-  | 'time_decay';
+  'first' | 'last' | 'last_non_direct' | 'linear' | 'position_based' | 'time_decay';
 
 /** The five canonical UTM parameters plus the optional paid `utm_id`. */
 export interface UtmParams {

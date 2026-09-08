@@ -180,12 +180,7 @@ export function hslToHex(hsl: Hsl): string {
 }
 
 export type HarmonyKind =
-  | 'complementary'
-  | 'analogous'
-  | 'triadic'
-  | 'tetradic'
-  | 'monochromatic'
-  | 'random';
+  'complementary' | 'analogous' | 'triadic' | 'tetradic' | 'monochromatic' | 'random';
 
 export const HARMONY_KINDS: { value: HarmonyKind; label: string }[] = [
   { value: 'complementary', label: 'Complementary' },

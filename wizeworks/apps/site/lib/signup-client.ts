@@ -23,9 +23,7 @@ export async function subscribeEmail(
     body: JSON.stringify(formNodeId ? { email, formNodeId } : { email }),
   });
   const body = (await res.json().catch(() => null)) as
-    | { success: true }
-    | { success: false; error: { message: string; code: string } }
-    | null;
+    { success: true } | { success: false; error: { message: string; code: string } } | null;
   if (!res.ok || !body || body.success === false) {
     const message =
       body?.success === false ? body.error.message : `Couldn’t subscribe (${res.status}).`;

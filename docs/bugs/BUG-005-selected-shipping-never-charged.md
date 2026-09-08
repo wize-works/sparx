@@ -69,8 +69,8 @@ route-local:
 ## Verified in production 2026-07-24
 
 Order **O-000003** (`keen-cedar-6433`): picked Standard Shipping $5.00 →
-checkout summary went `Shipping: Free / $25.00` → `Shipping: $5.00 / $30.00`,
+checkout summary went `Shipping: Free / $25.00`→`Shipping: $5.00 / $30.00`,
 button read **Pay $30.00**. Stripe PaymentIntent `pi_3Twp7x…`: `amount: 3000`,
-`application_fee_amount: 15` (0.5% of the new $30, so the fee tracks the real
-total too). Order record: `subtotal 25 / shippingTotal 5 / total 30 / amountPaid 30`.
+`application_fee_amount: 15`(0.5% of the new $30, so the fee tracks the real
+total too). Order record:`subtotal 25 / shippingTotal 5 / total 30 / amountPaid 30`.
 The merchant no longer eats the carrier cost.

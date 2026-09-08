@@ -20,8 +20,7 @@ function errorMessage(err: unknown): string {
 }
 
 export type ModuleToggleActionResult =
-  | { ok: true; result: OperatorModuleToggleResult }
-  | { ok: false; error: string };
+  { ok: true; result: OperatorModuleToggleResult } | { ok: false; error: string };
 
 export async function toggleTenantModuleAction(
   tenantId: string,
@@ -86,8 +85,7 @@ export async function setTenantStatusAction(
 }
 
 export type StorageLimitActionResult =
-  | { ok: true; limitBytes: number | null }
-  | { ok: false; error: string };
+  { ok: true; limitBytes: number | null } | { ok: false; error: string };
 
 /** Set (or clear, with null) a tenant's storage-cap override. Gated
  *  `tenant:suspend` (a tenant-account administration lever). */

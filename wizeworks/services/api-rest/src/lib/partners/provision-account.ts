@@ -12,10 +12,7 @@ const TOKEN_HEADER = 'x-sparx-internal-provision-token';
 const TIMEOUT_MS = 15_000;
 
 export type ProvisionAccountErrorCode =
-  | 'EMAIL_TAKEN'
-  | 'INVALID_INPUT'
-  | 'UNAVAILABLE'
-  | 'PROVISION_FAILED';
+  'EMAIL_TAKEN' | 'INVALID_INPUT' | 'UNAVAILABLE' | 'PROVISION_FAILED';
 
 /** A typed failure from the dashboard provisioning call — the approve path maps
  *  these to operator-facing errors (EMAIL_TAKEN → a clear "already has an account"

@@ -20,12 +20,10 @@ function errorMessage(err: unknown): string {
 }
 
 export type MembershipActionResult =
-  | { ok: true; result: OperatorUserMembershipsResult }
-  | { ok: false; error: string };
+  { ok: true; result: OperatorUserMembershipsResult } | { ok: false; error: string };
 
 export type PasswordResetActionResult =
-  | { ok: true; result: OperatorPasswordResetResult }
-  | { ok: false; error: string };
+  { ok: true; result: OperatorPasswordResetResult } | { ok: false; error: string };
 
 export async function setMembershipStatusAction(
   userId: string,

@@ -16,8 +16,7 @@ function errorMessage(err: unknown): string {
 }
 
 export type SiteStatusActionResult =
-  | { ok: true; result: OperatorSiteStatusResult }
-  | { ok: false; error: string };
+  { ok: true; result: OperatorSiteStatusResult } | { ok: false; error: string };
 
 export async function setSiteStatusAction(
   siteId: string,

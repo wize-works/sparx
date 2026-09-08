@@ -24,8 +24,7 @@ import { fromLocalInput } from '@/lib/announcements';
 const LIST_PATH = '/platform/announcements';
 
 export type AnnouncementActionResult =
-  | { ok: true; announcement: OperatorAnnouncement }
-  | { ok: false; error: string };
+  { ok: true; announcement: OperatorAnnouncement } | { ok: false; error: string };
 
 function errorMessage(err: unknown): string {
   return err instanceof OperatorApiError ? err.message : 'Something went wrong. Please try again.';

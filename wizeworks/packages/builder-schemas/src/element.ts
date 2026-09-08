@@ -22,13 +22,7 @@
 export const RAW_PREFIX = 'el:';
 
 export type RawElementGroup =
-  | 'structure'
-  | 'text'
-  | 'list'
-  | 'media'
-  | 'table'
-  | 'form'
-  | 'interactive';
+  'structure' | 'text' | 'list' | 'media' | 'table' | 'form' | 'interactive';
 
 /** A raw element's role in the editor: a `container` arranges children (gets the
  *  Layout panel); a `leaf` renders content and may still nest inline children

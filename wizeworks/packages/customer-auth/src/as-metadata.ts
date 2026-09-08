@@ -146,8 +146,7 @@ function originOf(url: string): string | null {
 }
 
 export type CustomerAuthorizeValidation =
-  | { ok: true; client: RegisteredCustomerMcpClient }
-  | { ok: false; error: string };
+  { ok: true; client: RegisteredCustomerMcpClient } | { ok: false; error: string };
 
 /** Validate an authorize request against protocol rules + the registered client.
  *  `storeOrigin` is the AS origin (the store's own origin); an RFC 8707 `resource`

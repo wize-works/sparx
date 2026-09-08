@@ -4,10 +4,7 @@
 // these codes are for legitimate, non-leaky failures like a weak password).
 
 export type CustomerAuthErrorCode =
-  | 'EMAIL_TAKEN'
-  | 'INVALID_CREDENTIALS'
-  | 'INVALID_INPUT'
-  | 'INVALID_TOKEN';
+  'EMAIL_TAKEN' | 'INVALID_CREDENTIALS' | 'INVALID_INPUT' | 'INVALID_TOKEN';
 
 export class CustomerAuthError extends Error {
   readonly code: CustomerAuthErrorCode;

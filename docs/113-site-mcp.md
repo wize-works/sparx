@@ -194,42 +194,46 @@ appointments, shops, checks out end to end). **Phase 2G** adds the `customer` ti
 Each tool wraps the named public route. `property` is threaded on every call.
 
 **Discovery / store**
-| tool | kind | public route |
-| --- | --- | --- |
+
+| tool            | kind | public route                                                                                                                          |
+| --------------- | ---- | ------------------------------------------------------------------------------------------------------------------------------------- |
 | `get_site_info` | read | **new** lean `GET /v1/public/site-info` (projected: name, tagline, hours, contact, socials, policy links) — _not_ raw `tenants/:slug` |
-| `search_site` | read | `GET /v1/public/search` (products + collections + pages) |
+| `search_site`   | read | `GET /v1/public/search` (products + collections + pages)                                                                              |
 
 **Catalog**
-| tool | kind | public route |
-| --- | --- | --- |
-| `search_products` | read | `GET /v1/public/commerce/search` (Typesense facets, price/stock/fitment filters, sort) |
-| `list_products` | read | `GET /v1/public/commerce/products` |
-| `get_product` | read | `GET /v1/public/commerce/products/:handle` (full PDP: variants, options, images, fitment) |
-| `list_collections` | read | `GET /v1/public/commerce/collections` |
-| `get_collection_products` | read | `GET /v1/public/commerce/collections/:handle/products` |
-| `list_categories` | read | `GET /v1/public/commerce/categories` |
-| `get_reviews` | read | `GET /v1/public/commerce/products/:handle/reviews` |
-| `get_questions` | read | `GET /v1/public/commerce/products/:handle/questions` |
-| `submit_review` | guest_write | `POST /v1/public/commerce/products/:handle/reviews` |
-| `ask_question` | guest_write | `POST /v1/public/commerce/products/:handle/questions` |
+
+| tool                      | kind        | public route                                                                              |
+| ------------------------- | ----------- | ----------------------------------------------------------------------------------------- |
+| `search_products`         | read        | `GET /v1/public/commerce/search` (Typesense facets, price/stock/fitment filters, sort)    |
+| `list_products`           | read        | `GET /v1/public/commerce/products`                                                        |
+| `get_product`             | read        | `GET /v1/public/commerce/products/:handle` (full PDP: variants, options, images, fitment) |
+| `list_collections`        | read        | `GET /v1/public/commerce/collections`                                                     |
+| `get_collection_products` | read        | `GET /v1/public/commerce/collections/:handle/products`                                    |
+| `list_categories`         | read        | `GET /v1/public/commerce/categories`                                                      |
+| `get_reviews`             | read        | `GET /v1/public/commerce/products/:handle/reviews`                                        |
+| `get_questions`           | read        | `GET /v1/public/commerce/products/:handle/questions`                                      |
+| `submit_review`           | guest_write | `POST /v1/public/commerce/products/:handle/reviews`                                       |
+| `ask_question`            | guest_write | `POST /v1/public/commerce/products/:handle/questions`                                     |
 
 **Scheduling**
-| tool | kind | public route |
-| --- | --- | --- |
-| `list_services` | read | `GET /v1/public/scheduling/services` |
-| `check_availability` | read | `GET /v1/public/scheduling/availability` |
-| `list_class_sessions` | read | `GET /v1/public/scheduling/sessions` |
-| `book_appointment` | guest_write | `POST /v1/public/scheduling/bookings` (name/email inline) |
-| `join_waitlist` | guest_write | `POST /v1/public/scheduling/waitlist` |
-| `join_class` | guest_write | `POST /v1/public/scheduling/sessions/:id/join` |
+
+| tool                  | kind        | public route                                              |
+| --------------------- | ----------- | --------------------------------------------------------- |
+| `list_services`       | read        | `GET /v1/public/scheduling/services`                      |
+| `check_availability`  | read        | `GET /v1/public/scheduling/availability`                  |
+| `list_class_sessions` | read        | `GET /v1/public/scheduling/sessions`                      |
+| `book_appointment`    | guest_write | `POST /v1/public/scheduling/bookings` (name/email inline) |
+| `join_waitlist`       | guest_write | `POST /v1/public/scheduling/waitlist`                     |
+| `join_class`          | guest_write | `POST /v1/public/scheduling/sessions/:id/join`            |
 
 **Cart / checkout** (MCP holds the `x-cart-token` for the session)
-| tool | kind | public route |
-| --- | --- | --- |
-| `create_cart` / `get_cart` | guest_write / read | `POST` / `GET /v1/public/commerce/cart[/:id]` |
-| `add_to_cart` / `update_cart_item` / `remove_cart_item` | guest_write | `…/cart/:id/items…` |
-| `apply_discount` / `remove_discount` | guest_write | `…/cart/:id/discount…` |
-| `start_checkout` … `complete_checkout` | guest_write | the `…/checkout/:sessionId/*` chain (contact → shipping-quote → shipping → payment-intent → payment → complete) |
+
+| tool                                                    | kind               | public route                                                                                                    |
+| ------------------------------------------------------- | ------------------ | --------------------------------------------------------------------------------------------------------------- |
+| `create_cart` / `get_cart`                              | guest_write / read | `POST` / `GET /v1/public/commerce/cart[/:id]`                                                                   |
+| `add_to_cart` / `update_cart_item` / `remove_cart_item` | guest_write        | `…/cart/:id/items…`                                                                                             |
+| `apply_discount` / `remove_discount`                    | guest_write        | `…/cart/:id/discount…`                                                                                          |
+| `start_checkout` … `complete_checkout`                  | guest_write        | the `…/checkout/:sessionId/*` chain (contact → shipping-quote → shipping → payment-intent → payment → complete) |
 
 **Newsletter**
 | `subscribe_newsletter` | guest_write | `POST /v1/public/newsletter` |

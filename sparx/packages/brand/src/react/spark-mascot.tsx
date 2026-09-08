@@ -32,14 +32,7 @@ const EYES = {
 } as const;
 
 export type SparkExpression =
-  | 'neutral'
-  | 'happy'
-  | 'wink'
-  | 'excited'
-  | 'content'
-  | 'surprised'
-  | 'sad'
-  | 'asleep';
+  'neutral' | 'happy' | 'wink' | 'excited' | 'content' | 'surprised' | 'sad' | 'asleep';
 
 // sparky's canonical smile, lifted verbatim from sparky.svg — a FILLED navy
 // crescent under the eyes. Every "happy" beat reuses it so the rest pose matches

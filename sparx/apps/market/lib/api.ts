@@ -31,8 +31,7 @@ export class MarketApiError extends Error {
 
 /** The standard api-rest response envelope. */
 type ApiEnvelope<T> =
-  | { success: true; data: T }
-  | { success: false; error?: { code?: string; message?: string } };
+  { success: true; data: T } | { success: false; error?: { code?: string; message?: string } };
 
 /**
  * Low-level JSON fetch against an ABSOLUTE api-rest path. Prefer `marketApi`,

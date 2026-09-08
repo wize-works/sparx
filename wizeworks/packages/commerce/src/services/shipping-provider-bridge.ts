@@ -181,8 +181,7 @@ async function persistPurchasedLabel(
 }
 
 export type BuyLabelInput =
-  | { rateRef: string }
-  | { request: ShipmentRequest; service: string; carrier: string };
+  { rateRef: string } | { request: ShipmentRequest; service: string; carrier: string };
 
 /** Resolve the active provider + call buyLabel — the part outbound
  *  fulfillment labels and return labels both need. Persistence (which

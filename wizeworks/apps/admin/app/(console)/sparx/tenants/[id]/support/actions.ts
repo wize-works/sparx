@@ -16,8 +16,7 @@ import {
 import { operatorApi } from '@/lib/operator-api';
 
 export type ReindexActionResult =
-  | { ok: true; result: OperatorReindexResult }
-  | { ok: false; error: string };
+  { ok: true; result: OperatorReindexResult } | { ok: false; error: string };
 
 export async function reindexTenantAction(
   tenantId: string,

@@ -82,9 +82,7 @@ export function ReviewForm({ tenantSlug, handle }: { tenantSlug: string; handle:
         }
       );
       const json = (await res.json().catch(() => null)) as
-        | { success: true }
-        | { success: false; error: { message: string } }
-        | null;
+        { success: true } | { success: false; error: { message: string } } | null;
       if (!res.ok || !json || json.success === false) {
         throw new Error(json?.success === false ? json.error.message : 'Could not submit.');
       }

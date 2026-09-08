@@ -177,7 +177,7 @@ framework:
 
 [docs/81](81-automation-module.md) §10 currently scopes external integration to \*\*Zapier / Make / n8n
 
-- inbound webhooks**. That's the *escape-hatch* tier. The richer, first-party tier is a **Connector**:
+- inbound webhooks**. That's the _escape-hatch_ tier. The richer, first-party tier is a **Connector**:
   a registered outbound effector that an automation **action\*\* invokes directly. This section is the
   contract; the build lands in docs/81 Phase 5.
 

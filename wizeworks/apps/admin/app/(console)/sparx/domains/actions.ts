@@ -13,8 +13,7 @@ import { OperatorApiError, type OperatorDomainReverifyResult } from '@wizeworks/
 import { operatorApi } from '@/lib/operator-api';
 
 export type ReverifyActionResult =
-  | { ok: true; result: OperatorDomainReverifyResult }
-  | { ok: false; error: string };
+  { ok: true; result: OperatorDomainReverifyResult } | { ok: false; error: string };
 
 export async function reverifyDomainAction(
   domainId: string,

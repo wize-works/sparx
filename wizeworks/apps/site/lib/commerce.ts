@@ -281,9 +281,7 @@ export interface PublicProduct extends PublicProductListItem {
 /** How much of the price is taken at checkout. Three shapes; `none` is what
  *  every ordinary product carries. */
 export type PublicDeposit =
-  | { type: 'none' }
-  | { type: 'amount'; amountCents: number }
-  | { type: 'percent'; percent: number };
+  { type: 'none' } | { type: 'amount'; amountCents: number } | { type: 'percent'; percent: number };
 
 export interface PublicMadeToOrder {
   /** Days of notice the shop needs. Null = none, and the buy box says nothing. */
@@ -436,12 +434,7 @@ export async function listCollectionProducts(
 }
 
 export type ProductSort =
-  | 'relevance'
-  | 'price-asc'
-  | 'price-desc'
-  | 'title-asc'
-  | 'title-desc'
-  | 'newest';
+  'relevance' | 'price-asc' | 'price-desc' | 'title-asc' | 'title-desc' | 'newest';
 
 export interface ProductListFilters {
   q?: string;

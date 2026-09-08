@@ -11,8 +11,7 @@ import { OperatorApiError, type OperatorResendConfirmationResult } from '@wizewo
 import { operatorApi } from '@/lib/operator-api';
 
 export type ResendActionResult =
-  | { ok: true; result: OperatorResendConfirmationResult }
-  | { ok: false; error: string };
+  { ok: true; result: OperatorResendConfirmationResult } | { ok: false; error: string };
 
 export async function resendOrderConfirmationAction(
   tenantId: string,

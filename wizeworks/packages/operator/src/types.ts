@@ -781,13 +781,7 @@ export interface OperatorResendConfirmationResult {
 // wize_admin). No impersonation (D7): context entities are shown, not deep-linked.
 
 export type OperatorFeedbackStatus =
-  | 'new'
-  | 'triaged'
-  | 'planned'
-  | 'in_progress'
-  | 'shipped'
-  | 'declined'
-  | 'answered';
+  'new' | 'triaged' | 'planned' | 'in_progress' | 'shipped' | 'declined' | 'answered';
 
 export type OperatorFeedbackCategory = 'idea' | 'problem' | 'question' | 'praise';
 

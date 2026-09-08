@@ -28,14 +28,7 @@ import type { ServiceContext } from '../errors';
 
 /** Everything a scan can be. Ordered as the resolver ranks them. */
 export type ScanKind =
-  | 'variant'
-  | 'bin'
-  | 'purchase_order'
-  | 'goods_receipt'
-  | 'transfer'
-  | 'count'
-  | 'lot'
-  | 'serial';
+  'variant' | 'bin' | 'purchase_order' | 'goods_receipt' | 'transfer' | 'count' | 'lot' | 'serial';
 
 interface ScanMatchBase {
   kind: ScanKind;
@@ -99,11 +92,7 @@ export interface SerialScanMatch extends ScanMatchBase {
 }
 
 export type ScanMatch =
-  | VariantScanMatch
-  | BinScanMatch
-  | DocumentScanMatch
-  | LotScanMatch
-  | SerialScanMatch;
+  VariantScanMatch | BinScanMatch | DocumentScanMatch | LotScanMatch | SerialScanMatch;
 
 export interface ResolveScanOptions {
   /** Restrict to the kinds this workflow can act on. Omit for everything. */

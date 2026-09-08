@@ -115,13 +115,11 @@ export async function handleOrderRoute(
     const adapterOrder: Order = {
       sparxOrderId: orderId,
       sparxOrderNumber: order.orderNumber,
-      lineItems: lineItems.map(
-        (l): OrderLineItem => ({
-          supplierSku: l.sku,
-          quantity: l.quantity,
-          unitPriceCents: l.unitPriceCents,
-        })
-      ),
+      lineItems: lineItems.map((l): OrderLineItem => ({
+        supplierSku: l.sku,
+        quantity: l.quantity,
+        unitPriceCents: l.unitPriceCents,
+      })),
       shippingAddress: shipping,
       customerNote: order.customerNote ?? undefined,
     };

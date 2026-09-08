@@ -192,12 +192,12 @@ src/
 
 ## 9. Workspace Dependencies
 
-| Workspace   | Depends on                                                             |
+| Workspace | Depends on |
 | ----------- | ---------------------------------------------------------------------- | --- | ----- |
-| `dashboard` | `@wizeworks/ui`, `@wizeworks/auth`, `@wizeworks/db`, `@sparx/types`    |
-| `api`       | `@wizeworks/db`, `@wizeworks/auth`, `@wizeworks/email`, `@sparx/types` |
-| `site`      | `@wizeworks/ui`, `@sparx/sdk`, `@sparx/types`                          |
-| `ui`        | `@sparx/types` (peerDeps: `react ^18                                   |     | ^19`) |
+| `dashboard` | `@wizeworks/ui`, `@wizeworks/auth`, `@wizeworks/db`, `@sparx/types` |
+| `api` | `@wizeworks/db`, `@wizeworks/auth`, `@wizeworks/email`, `@sparx/types` |
+| `site` | `@wizeworks/ui`, `@sparx/sdk`, `@sparx/types` |
+| `ui` | `@sparx/types` (peerDeps: `react ^18                                   |     | ^19`) |
 
 All internal: `"workspace:*"`
 

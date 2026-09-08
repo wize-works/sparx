@@ -68,15 +68,15 @@ per-site behaviors ([per-site brand]).
 
 ## 3. Work breakdown
 
-| Step | Area                          | Change                                                                                                                   |
+| Step | Area | Change |
 | ---- | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------ | ---- | --------------------------------------------------------------------- |
-| 1    | route                         | Make the unified editor the `/builder` editor; remove any temp path.                                                     |
-| 2    | `next.config.mjs`             | Redirect `/builder/brand                                                                                                 | site | page`(+`?page=`) to the unified editor with the right zone/selection. |
-| 3    | `registry.tsx` / `canvas.tsx` | Delete the dead render functions + mock branches; registry = metadata only.                                              |
-| 4    | nav/breadcrumb/recents/⌘K     | Repoint all references; remove dangling items.                                                                           |
-| 5    | docs/manifest                 | Supersede old docs where relevant; update manifest + hardcoded module lists.                                             |
-| 6    | parity checklist              | Walk the §2.6 checklist in the browser; fix gaps before flipping.                                                        |
-| 7    | cleanup                       | Remove `site-builder-app.tsx` / `builder-app.tsx` shells if fully replaced; delete unused imports; lint/typecheck clean. |
+| 1 | route | Make the unified editor the `/builder` editor; remove any temp path. |
+| 2 | `next.config.mjs` | Redirect `/builder/brand                                                                                                 | site | page`(+`?page=`) to the unified editor with the right zone/selection. |
+| 3 | `registry.tsx` / `canvas.tsx` | Delete the dead render functions + mock branches; registry = metadata only. |
+| 4 | nav/breadcrumb/recents/⌘K | Repoint all references; remove dangling items. |
+| 5 | docs/manifest | Supersede old docs where relevant; update manifest + hardcoded module lists. |
+| 6 | parity checklist | Walk the §2.6 checklist in the browser; fix gaps before flipping. |
+| 7 | cleanup | Remove `site-builder-app.tsx` / `builder-app.tsx` shells if fully replaced; delete unused imports; lint/typecheck clean. |
 
 ## 4. Acceptance criteria
 

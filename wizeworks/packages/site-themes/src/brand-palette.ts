@@ -87,8 +87,7 @@ export function serializeBrandPalette(input: SerializeBrandPaletteInput): string
 }
 
 export type ParseBrandPaletteResult =
-  | { ok: true; palette: SparxBrandPalette }
-  | { ok: false; error: string };
+  { ok: true; palette: SparxBrandPalette } | { ok: false; error: string };
 
 /** Parse + validate pasted text into a palette, with friendly errors. */
 export function parseBrandPalette(text: string): ParseBrandPaletteResult {

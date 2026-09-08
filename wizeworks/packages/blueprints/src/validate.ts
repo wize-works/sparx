@@ -308,8 +308,7 @@ export function parseBlueprint(input: unknown): Blueprint {
 }
 
 export type SafeParseResult =
-  | { success: true; data: Blueprint }
-  | { success: false; issues: BlueprintIssue[] };
+  { success: true; data: Blueprint } | { success: false; issues: BlueprintIssue[] };
 
 /** Non-throwing parse + validate — returns the issues for surfacing in a UI. */
 export function safeParseBlueprint(input: unknown): SafeParseResult {

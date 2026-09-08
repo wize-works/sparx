@@ -51,7 +51,6 @@ import {
   AlertTitle,
   Badge,
   Button,
-  ColorPicker,
   EmptyState,
   Field,
   FieldControl,
@@ -68,6 +67,7 @@ import { useConfirm } from '../../lib/confirm';
 import { ChevronDown, ChevronUp, Plus, Shapes, Trash2, X } from 'lucide-react';
 import { useDirtySource } from '../../lib/workbench/dirty';
 import { FormSection } from '../../components/form-section';
+import { SwatchPicker } from '../../components/swatch-picker';
 import type { SurfaceContext } from '../../lib/surfaces/registry';
 import {
   formatCents,
@@ -808,14 +808,13 @@ function ValueRow({
           cannot come from a token, and a runtime hex can never become a Tailwind
           class (the compiler only ever sees literals in source). ColorPicker's
           `swatch` variant is the sanctioned answer: the library paints the chip
-          from the value, which is exactly where painting belongs. */}
+          from the value, which is exactly where painting belongs. SwatchPicker
+          is that, plus the Escape repair described in its own file. */}
       {swatch ? (
         <>
-          <ColorPicker
-            variant="swatch"
-            format="hex"
-            {...(value.swatchHex ? { value: value.swatchHex } : {})}
-            aria-label={`Color for ${label}`}
+          <SwatchPicker
+            value={value.swatchHex ?? null}
+            label={label}
             onValueChange={(next) => {
               onChange({ swatchHex: next });
             }}

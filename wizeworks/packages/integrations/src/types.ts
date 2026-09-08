@@ -41,13 +41,7 @@
  * it, not that we intend one.
  */
 export type IntegrationCategory =
-  | 'payments'
-  | 'shipping'
-  | 'tax'
-  | 'sales_channels'
-  | 'social'
-  | 'dropship'
-  | 'ai';
+  'payments' | 'shipping' | 'tax' | 'sales_channels' | 'social' | 'dropship' | 'ai';
 
 export const INTEGRATION_CATEGORIES: readonly IntegrationCategory[] = [
   'payments',

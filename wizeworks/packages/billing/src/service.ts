@@ -315,8 +315,7 @@ export async function createPortalSession(
 /** The outcome of opening a checkout session — a URL, or a typed reason the caller
  *  turns into a clear message. */
 export type CheckoutSessionResult =
-  | { url: string }
-  | { url: null; reason: 'unconfigured' | 'no_paid_modules' | 'already_active' };
+  { url: string } | { url: null; reason: 'unconfigured' | 'no_paid_modules' | 'already_active' };
 
 /**
  * Open a Stripe Checkout Session that BIRTHS the tenant's platform subscription —

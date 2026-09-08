@@ -78,11 +78,7 @@ export const OPEN_SUBTREES: readonly string[] = [
 
 /** Which caller-supplied roster backs each parameterized route. */
 export type RosterKey =
-  | 'productHandles'
-  | 'collectionHandles'
-  | 'categoryHandles'
-  | 'postSlugs'
-  | 'serviceIds';
+  'productHandles' | 'collectionHandles' | 'categoryHandles' | 'postSlugs' | 'serviceIds';
 
 export interface DynamicRoute {
   /** Always with a trailing slash — `/products/`. The trailing slash is load-bearing:

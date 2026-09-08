@@ -36,9 +36,7 @@ export async function fetchSuggestions(q: string, signal?: AbortSignal): Promise
       ...(signal ? { signal } : {}),
     });
     const body = (await res.json().catch(() => null)) as
-      | { success: true; data: SuggestResult }
-      | { success: false }
-      | null;
+      { success: true; data: SuggestResult } | { success: false } | null;
     if (!res.ok || !body || body.success === false) return EMPTY;
     return body.data;
   } catch {

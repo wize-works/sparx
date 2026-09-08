@@ -7,9 +7,10 @@
 // typed like a list rather than clicked out one row at a time (issue 168).
 
 import { useEffect, useRef } from 'react';
-import { Badge, Button, ColorPicker, Input } from '@wizeworks/silicaui-react';
+import { Badge, Button, Input } from '@wizeworks/silicaui-react';
 import { faChevronDown, faChevronUp, faXmark } from '@fortawesome/pro-solid-svg-icons';
 import { Icon } from '@piggles/ui';
+import { SwatchPicker } from '../../components/swatch-picker';
 import type { ValueDraft } from './product-options-draft';
 
 export function ValueRow({
@@ -71,14 +72,13 @@ export function ValueRow({
           cannot come from a token, and a runtime hex can never become a Tailwind
           class (the compiler only ever sees literals in source). ColorPicker's
           `swatch` variant is the sanctioned answer: the library paints the chip
-          from the value, which is exactly where painting belongs. */}
+          from the value, which is exactly where painting belongs. SwatchPicker
+          is that, plus the Escape repair described in its own file. */}
       {swatch ? (
         <>
-          <ColorPicker
-            variant="swatch"
-            format="hex"
-            {...(value.swatchHex ? { value: value.swatchHex } : {})}
-            aria-label={`Color for ${label}`}
+          <SwatchPicker
+            value={value.swatchHex ?? null}
+            label={label}
             onValueChange={(next) => {
               onChange({ swatchHex: next });
             }}

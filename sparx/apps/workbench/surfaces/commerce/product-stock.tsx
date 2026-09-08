@@ -92,6 +92,11 @@ import {
   type Tone,
   type Variant,
 } from './products-data';
+import {
+  pickCountLocation,
+  readLastCountLocation,
+  writeLastCountLocation,
+} from '../inventory/count-location';
 
 const LABEL = 'Stock';
 
@@ -250,21 +255,31 @@ function CountForm({
   variant,
   locations,
   levels,
-  initialWarehouseId,
+  nearby,
   onDone,
 }: {
   productId: string;
   variant: Variant;
   locations: StockLocation[];
   levels: ProductStockLevel[];
-  initialWarehouseId: string | null;
+  /** Where the REST of this product is counted, one entry per count. */
+  nearby: string[];
   onDone: () => void;
 }) {
   const toast = useToast();
   const setCount = useSetStockCount(productId);
   useHoldWhileOpen(`count:${variant.id}`);
 
-  const [warehouseId, setWarehouseId] = useState(initialWarehouseId ?? locations[0]?.id ?? '');
+  // Not `locations[0]`. That is the first place by NAME, which is a fact about
+  // the alphabet — see count-location.ts for the ladder this reads instead.
+  const [warehouseId, setWarehouseId] = useState(() =>
+    pickCountLocation({
+      here: levels.map((level) => level.warehouseId),
+      nearby,
+      remembered: readLastCountLocation(),
+      offered: locations.map((location) => location.id),
+    })
+  );
   const current = levels.find((level) => level.warehouseId === warehouseId) ?? null;
   const [counted, setCounted] = useState(String(current?.onHand ?? 0));
   const [note, setNote] = useState('');
@@ -298,6 +313,10 @@ function CountForm({
       },
       {
         onSuccess: () => {
+          // Remember the place, so counting the next version of the same thing
+          // does not ask again. Written on SUCCESS only: a place that failed to
+          // save is not somewhere anybody counted.
+          writeLastCountLocation(warehouseId);
           // Collapse FIRST, announce after, one tick apart. `onDone` unmounts
           // this form, whose `useHoldWhileOpen` cleanup sets state on the
           // surface root — so the toast is describing a state that has already
@@ -689,6 +708,7 @@ function VariantCard({
   variant,
   levels,
   locations,
+  nearby,
   currency,
   onExplain,
 }: {
@@ -697,6 +717,8 @@ function VariantCard({
   variant: Variant;
   levels: ProductStockLevel[];
   locations: StockLocation[];
+  /** Where this whole product is counted, one entry per count. */
+  nearby: string[];
   currency: string;
 }) {
   const [counting, setCounting] = useState(false);
@@ -760,7 +782,7 @@ function VariantCard({
           variant={variant}
           locations={locations}
           levels={levels}
-          initialWarehouseId={levels[0]?.warehouseId ?? null}
+          nearby={nearby}
           onDone={() => {
             setCounting(false);
           }}
@@ -893,6 +915,11 @@ function StockBody({ ctx, scope }: { ctx: SurfaceContext; scope: ReadyScope }) {
     }
     return map;
   }, [levels]);
+
+  // Every place this product is counted, one entry per count. A version nobody
+  // has counted yet is almost always in the same building as its siblings, so
+  // this is what the count form opens on when it has nothing more specific.
+  const nearby = useMemo(() => levels.map((level) => level.warehouseId), [levels]);
 
   const totals = levels.reduce(
     (sum, level) => ({
@@ -1104,6 +1131,7 @@ function StockBody({ ctx, scope }: { ctx: SurfaceContext; scope: ReadyScope }) {
             variant={variant}
             levels={byVariant.get(variant.id) ?? []}
             locations={locations}
+            nearby={nearby}
             currency={currency}
             onExplain={(warehouseId) => {
               ctx.open(

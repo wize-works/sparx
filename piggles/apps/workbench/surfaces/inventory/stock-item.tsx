@@ -33,6 +33,7 @@
 // every save, which teaches people to click through it.
 
 import { useEffect, useMemo, useState } from 'react';
+import { pickCountLocation, readLastCountLocation, writeLastCountLocation } from './count-location';
 import { PaneWaiting } from '../../components/pane-waiting';
 import { PaneLoadError } from '../../components/pane-load-error';
 import { PaneEmpty } from '../../components/pane-empty';
@@ -151,6 +152,8 @@ function CountForm({
   sku: string;
   levels: StockLevel[];
   locations: StockLocation[];
+  /** Set only when somebody pressed Count on ONE location's card. An explicit
+   *  ask beats every guess below it. */
   initialWarehouseId: string | null;
   onDone: () => void;
 }) {
@@ -158,8 +161,20 @@ function CountForm({
   const confirm = useConfirm();
   const record = useRecordCount();
 
+  // Not `locations[0]`. That is the first place by NAME, which is a fact about
+  // the alphabet — see count-location.ts for the ladder this reads instead.
+  // There is no `nearby` here: this pane is one sku, so it never sees the rest
+  // of the product. The remembered place is what carries somebody through a run
+  // of them.
   const [warehouseId, setWarehouseId] = useState(
-    initialWarehouseId ?? levels[0]?.warehouseId ?? locations[0]?.id ?? ''
+    () =>
+      initialWarehouseId ??
+      pickCountLocation({
+        here: levels.map((level) => level.warehouseId),
+        nearby: [],
+        remembered: readLastCountLocation(),
+        offered: locations.map((location) => location.id),
+      })
   );
   const current = levels.find((level) => level.warehouseId === warehouseId) ?? null;
   const [counted, setCounted] = useState(String(current?.onHand ?? 0));
@@ -211,6 +226,10 @@ function CountForm({
       },
       {
         onSuccess: () => {
+          // Remember the place, so the next count does not ask again. Written on
+          // SUCCESS only: a place that failed to save is not somewhere anybody
+          // counted.
+          writeLastCountLocation(warehouseId);
           // Collapse FIRST, announce after. `onDone` unmounts this form, so the
           // toast describes a state that has already settled rather than racing
           // it — see afterPaneChange.

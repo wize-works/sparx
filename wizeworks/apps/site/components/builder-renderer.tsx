@@ -258,8 +258,7 @@ function RenderNode({
     // and `auto`, which follows the device with no manual control — renders nothing.
     // `site.appearance` is threaded by loadSiteData.
     const appearance = resolvePath(scope, 'site.appearance') as
-      | { policy?: string; initial?: 'light' | 'dark' }
-      | undefined;
+      { policy?: string; initial?: 'light' | 'dark' } | undefined;
     if (appearance?.policy !== 'toggle') return null;
     body = <ThemeToggle initial={appearance.initial === 'dark' ? 'dark' : 'light'} />;
   } else {

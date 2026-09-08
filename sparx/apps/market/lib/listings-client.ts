@@ -21,9 +21,7 @@ export async function fetchListingsBySlugs(slugs: string[]): Promise<ProductCard
       { cache: 'no-store' }
     );
     const body = (await res.json().catch(() => null)) as
-      | { success: true; data: { items: RawCard[] } }
-      | { success: false }
-      | null;
+      { success: true; data: { items: RawCard[] } } | { success: false } | null;
     if (!res.ok || !body || body.success === false) return [];
     return body.data.items.map((c) => ({
       slug: c.slug,

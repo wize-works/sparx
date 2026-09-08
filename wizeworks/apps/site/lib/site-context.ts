@@ -256,8 +256,7 @@ async function fetchSiteByHost(host: string): Promise<SiteRoute | null> {
       cache: 'no-store',
     });
     const json = (await res.json()) as
-      | { success: true; data: { tenantSlug: string; propertySlug: string } }
-      | { success: false };
+      { success: true; data: { tenantSlug: string; propertySlug: string } } | { success: false };
     if (!res.ok || !json.success) return null;
     return { tenantSlug: json.data.tenantSlug, propertySlug: json.data.propertySlug, zone: null };
   } catch {

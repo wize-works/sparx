@@ -174,10 +174,7 @@ export const contentProcessor: EntityProcessor = {
         }
 
         const status = ((row.status ?? 'draft').trim().toLowerCase() || 'draft') as
-          | 'draft'
-          | 'published'
-          | 'scheduled'
-          | 'archived';
+          'draft' | 'published' | 'scheduled' | 'archived';
 
         if (existing !== null) {
           await updateEntry({ tenantId: ctx.tenantId, actorId }, existing.id, {

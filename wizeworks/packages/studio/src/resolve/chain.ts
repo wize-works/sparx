@@ -84,9 +84,7 @@ export function resolveCanvas(
 }
 
 type ChromeResolution =
-  | { kind: 'bare' }
-  | { kind: 'found'; root: Node }
-  | { kind: 'missing'; layoutId: string };
+  { kind: 'bare' } | { kind: 'found'; root: Node } | { kind: 'missing'; layoutId: string };
 
 /**
  * Which chrome wraps this page.

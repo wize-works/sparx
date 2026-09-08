@@ -49,11 +49,7 @@ const SocialWorkerEvent = z.discriminatedUnion('type', [
 export type SocialWorkerEvent = z.infer<typeof SocialWorkerEvent>;
 
 export type SocialWorkerOutcome =
-  | CollectOutcome
-  | DrainOutcome
-  | HealthOutcome
-  | InboxOutcome
-  | ReplyOutcome;
+  CollectOutcome | DrainOutcome | HealthOutcome | InboxOutcome | ReplyOutcome;
 
 export function parseEvent(raw: unknown): SocialWorkerEvent | null {
   const result = SocialWorkerEvent.safeParse(raw);

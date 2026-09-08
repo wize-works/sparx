@@ -48,9 +48,7 @@ export interface SignResult {
 
 async function unwrap<T>(res: Response): Promise<T> {
   const body = (await res.json().catch(() => null)) as
-    | { success: true; data: T }
-    | { success: false; error: { message: string } }
-    | null;
+    { success: true; data: T } | { success: false; error: { message: string } } | null;
   if (!res.ok || !body || body.success === false) {
     const message = body?.success === false ? body.error.message : `Request failed (${res.status})`;
     throw new Error(message);

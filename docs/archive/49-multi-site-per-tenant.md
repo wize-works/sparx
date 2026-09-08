@@ -65,7 +65,7 @@ Each of those wants **a second site that shares the back office**, not a second 
 sparx has two orthogonal "more than one" needs. Conflating them is the trap doc 32 §2 was
 guarding against. They are different and both legitimate:
 
-| Axis                         | "One **_ has many _**"          | Isolation boundary                                               | Shares                                                            | Mechanism                                                             |
+| Axis                         | "One **\_ has many _**"         | Isolation boundary                                               | Shares                                                            | Mechanism                                                             |
 | ---------------------------- | ------------------------------- | ---------------------------------------------------------------- | ----------------------------------------------------------------- | --------------------------------------------------------------------- |
 | **Multi-workspace** (doc 32) | one **user** → many **tenants** | **Hard** — separate RLS `tenant_id`, separate org, separate bill | nothing (each tenant is its own world)                            | Better Auth org membership + active-org switch                        |
 | **Multi-site** (this doc)    | one **tenant** → many **sites** | **None between sites** — same `tenant_id`, same RLS, same bill   | back office (catalog, customers, orders, staff, billing) — see §3 | a new `Site` sub-entity + a `site_id` scope on the presentation layer |

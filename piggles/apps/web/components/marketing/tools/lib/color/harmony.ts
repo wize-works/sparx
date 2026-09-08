@@ -1,12 +1,7 @@
 import { clamp, hslToRgb, rgbToHsl, type Rgb } from './convert';
 
 export type HarmonyKind =
-  | 'complementary'
-  | 'analogous'
-  | 'triadic'
-  | 'tetradic'
-  | 'monochromatic'
-  | 'random';
+  'complementary' | 'analogous' | 'triadic' | 'tetradic' | 'monochromatic' | 'random';
 
 export const HARMONY_LABELS: Record<HarmonyKind, { label: string; blurb: string }> = {
   complementary: {

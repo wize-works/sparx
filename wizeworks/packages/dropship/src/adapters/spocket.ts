@@ -109,21 +109,19 @@ export class SpocketAdapter implements SupplierAdapter {
           category: p.category ?? null,
           tags: p.tags ?? [],
           imageUrls: p.images.map((i) => i.src),
-          variants: p.variants.map(
-            (v): NormalizedProductVariant => ({
-              supplierSku: v.sku,
-              title: [v.option1, v.option2].filter(Boolean).join(' / '),
-              options: {
-                ...(v.option1 ? { option1: v.option1 } : {}),
-                ...(v.option2 ? { option2: v.option2 } : {}),
-              },
-              costPriceCents: Math.round(v.cost * 100),
-              msrpCents: Math.round(v.price * 100),
-              inventoryQuantity: v.inventory,
-              weight: v.weight ? Math.round(v.weight * 453.592) : null, // lbs → grams
-              imageUrls: v.image ? [v.image] : [],
-            })
-          ),
+          variants: p.variants.map((v): NormalizedProductVariant => ({
+            supplierSku: v.sku,
+            title: [v.option1, v.option2].filter(Boolean).join(' / '),
+            options: {
+              ...(v.option1 ? { option1: v.option1 } : {}),
+              ...(v.option2 ? { option2: v.option2 } : {}),
+            },
+            costPriceCents: Math.round(v.cost * 100),
+            msrpCents: Math.round(v.price * 100),
+            inventoryQuantity: v.inventory,
+            weight: v.weight ? Math.round(v.weight * 453.592) : null, // lbs → grams
+            imageUrls: v.image ? [v.image] : [],
+          })),
           raw: p as unknown as Record<string, unknown>,
         };
       }

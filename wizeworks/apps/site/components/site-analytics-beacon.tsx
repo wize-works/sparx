@@ -90,8 +90,7 @@ function observeWebVitals(report: (vitals: Record<string, number>) => void): () 
     sent = true;
     const vitals: Record<string, number> = {};
     const nav = performance.getEntriesByType('navigation')[0] as
-      | PerformanceNavigationTiming
-      | undefined;
+      PerformanceNavigationTiming | undefined;
     if (nav && nav.loadEventEnd > 0) vitals.load = Math.round(nav.loadEventEnd);
     if (lcp > 0) vitals.lcp = Math.round(lcp);
     vitals.cls = Math.round(cls * 1000) / 1000;

@@ -227,11 +227,11 @@ and CA / NY / TX still `f` with no stamp.
 
 Three baskets on her shop, same Ash Overshirt at $128.00 with $9.00 delivery:
 
-| Ship to | The place | Charged |
-|---|---|---|
-| Portland, Oregon | none exists | $137.00, no tax line |
-| Denver, Colorado | on, switched on by her, 2.9% | **$140.71 — tax $3.71** |
-| California | has a 7.25% rate, **nobody claimed it** | **$137.00, no tax** |
+| Ship to          | The place                               | Charged                 |
+| ---------------- | --------------------------------------- | ----------------------- |
+| Portland, Oregon | none exists                             | $137.00, no tax line    |
+| Denver, Colorado | on, switched on by her, 2.9%            | **$140.71 — tax $3.71** |
+| California       | has a 7.25% rate, **nobody claimed it** | **$137.00, no tax**     |
 
 $3.71 is 2.9% of $128.00 and correctly leaves the $9.00 delivery out, because
 "Also charge this tax on delivery" was left off. The California basket is the one
