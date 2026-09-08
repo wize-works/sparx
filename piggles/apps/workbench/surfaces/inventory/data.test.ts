@@ -9,7 +9,7 @@
 
 import { describe, expect, it } from 'vitest';
 
-import { listCodes } from './data';
+import { countingMatters, listCodes } from './data';
 
 describe('listCodes', () => {
   it('says nothing when there is nothing to name', () => {
@@ -37,5 +37,26 @@ describe('listCodes', () => {
     // A window SHORTER than the total still names only what it holds and counts
     // the difference against the total — the band never invents a code.
     expect(listCodes(['A-1'], 9)).toBe('A-1 and 8 more.');
+  });
+});
+
+describe('countingMatters', () => {
+  const shipped = { requiresShipping: true };
+
+  it('is true for a version that promises to stop selling when it runs out', () => {
+    // The only broken promise: `deny` cannot fire while nothing was ever counted.
+    expect(countingMatters({ inventoryPolicy: 'deny', ...shipped })).toBe(true);
+  });
+
+  it('is false for a version told to keep selling when out', () => {
+    // Unlimited is what was ASKED for, so an uncounted one is behaving. On
+    // 2026-09-08 the platform held 1,664 of these against 55 real ones, and
+    // without this the band told a shop to count its memberships (issue 445).
+    expect(countingMatters({ inventoryPolicy: 'continue', ...shipped })).toBe(false);
+  });
+
+  it('is false for a version that is never posted', () => {
+    // A download or a service has no shelf, so it cannot be counted at all.
+    expect(countingMatters({ inventoryPolicy: 'deny', requiresShipping: false })).toBe(false);
   });
 });

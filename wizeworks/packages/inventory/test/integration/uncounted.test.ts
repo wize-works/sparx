@@ -35,6 +35,8 @@ describe('listUncounted', () => {
   let alsoUncounted: string; // UC-SLATE  — never counted
   let draftOnly: string; // UC-DRAFT  — never counted, product not on sale
   let removed: string; // UC-GONE   — never counted, version deleted
+  let backorder: string; // UC-BACK   — never counted, told to keep selling when out
+  let download: string; // UC-FILE   — never counted, never posted
 
   beforeAll(async () => {
     const t = await createTestTenant();
@@ -48,6 +50,8 @@ describe('listUncounted', () => {
     alsoUncounted = await newVariant('UC-SLATE', 'The Ash Overshirt');
     draftOnly = await newVariant('UC-DRAFT', 'Winter Coat', { status: 'draft' });
     removed = await newVariant('UC-GONE', 'The Ash Overshirt');
+    backorder = await newVariant('UC-BACK', 'Made to order', { inventoryPolicy: 'continue' });
+    download = await newVariant('UC-FILE', 'The Field Guide', { requiresShipping: false });
 
     await updateLevelCount(ctx(), counted, { warehouseId, onHand: 6, reason: 'recount' });
     await withTenant(ctx(), (tx) =>
@@ -61,7 +65,7 @@ describe('listUncounted', () => {
   async function newVariant(
     sku: string,
     title: string,
-    over: { status?: string } = {}
+    over: { status?: string; inventoryPolicy?: string; requiresShipping?: boolean } = {}
   ): Promise<string> {
     const tag = crypto.randomBytes(3).toString('hex');
     return withTenant(ctx(), async (tx) => {
@@ -80,7 +84,8 @@ describe('listUncounted', () => {
           sku,
           priceCents: 12800,
           currency: 'USD',
-          inventoryPolicy: 'deny',
+          inventoryPolicy: over.inventoryPolicy ?? 'deny',
+          requiresShipping: over.requiresShipping ?? true,
         },
       });
       return v.id;
@@ -134,6 +139,22 @@ describe('listUncounted', () => {
       // The setting that is NOT being honoured while nothing is counted.
       inventoryPolicy: 'deny',
     });
+  });
+
+  it('leaves out a version told to keep selling when it runs out', async () => {
+    // `continue` MEANS unlimited, so an uncounted one is doing what was asked
+    // and there is no promise being broken. Without this the band told a shop to
+    // go and count 33 memberships and reports; the platform held 1,664 of these
+    // against 55 real ones on 2026-09-08 (issue 445).
+    const all = await listUncounted(ctx(), { q: 'UC-' });
+    expect(all.items.map((r) => r.variantId)).not.toContain(backorder);
+  });
+
+  it('leaves out a version that is never posted', async () => {
+    // A download has no shelf, so it cannot be counted at all and naming it
+    // would send somebody to look for a box that does not exist.
+    const all = await listUncounted(ctx(), { q: 'UC-' });
+    expect(all.items.map((r) => r.variantId)).not.toContain(download);
   });
 
   it('narrows by the same needle the stock list uses, and pages', async () => {

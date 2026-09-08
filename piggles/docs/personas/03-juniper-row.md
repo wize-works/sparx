@@ -1,6 +1,6 @@
 # P03 — Devi Raman · Juniper Row
 
-**Version:** 2.53
+**Version:** 2.54
 **Author:** Brandon Korous
 **Last Updated:** 2026-09-08
 
@@ -2222,14 +2222,140 @@ on-sale condition reddens all five.
 
 ### Two more, noticed and not filed
 
+Both were filed and fixed the same day, in act 108. Neither was a judgement call,
+and writing them here rather than doing them was the mistake.
+
 - **The count form defaults to the wrong place.** "Where you counted it" opens on
   **Fulfillment Center** every time, and every unit of stock Juniper Row has is
   at **Main Warehouse**. It is the first location alphabetically, and it does not
   remember the one just used, so counting five versions of one product means
   changing it five times and one slip puts stock in a building she does not use.
+  **Filed as [445], fixed.**
 - **Typing a hex into the color picker and pressing Escape discards it**, with no
   sign it was thrown away. Enter keeps it. Defensible, but the first attempt at
-  Moss silently did nothing.
+  Moss silently did nothing. **Not defensible on a second look: every slider in
+  that panel commits live, so Escape is not a cancel and the HEX box was the odd
+  one out. Filed as [447], fixed.**
+
+## Act 108 — Ink, and the thirty-three things that did not need counting
+
+Two loose ends from act 107, both of them things she had already put up with.
+Closing the first one turned up a third, and the third was mine.
+
+### The band was wrong about her shop, by thirty-three
+
+`Stock → Stock`, cold, said **33 versions you sell have never been counted** and
+named FRQ-BOOK-SIGNAL, FRQ-MEM-ANNUAL and FRQ-REP-AI26. Those are the Frequency
+membership, a field guide and a report on AI infrastructure. Behind them, four
+perfumes made to order, a discovery set, two totes and a sticker pack.
+
+Every one of them is set to **keep selling when it runs out**. There was nothing
+to count. The right number on that screen was **zero**.
+
+This was a day-old regression of my own, and it is the plainest instance of "a
+fix leaves its neighbour behind" I have written down: **the audit SQL in [444]
+carries `AND v.inventory_policy = 'deny'` and the query that shipped does not.**
+I measured with a filter I never implemented, then reported the measured number
+as though the shipped code had produced it. The row payload even carries
+`inventoryPolicy`, and 444's own text says why: _"the setting that is NOT being
+honoured."_ Carried, documented, never read.
+
+The size of it, asked of the database rather than guessed:
+
+| what the version says | posted | uncounted, on sale |
+| --------------------- | ------ | ------------------ |
+| keep selling when out | yes    | **1,664**          |
+| stop selling when out | yes    | **55**             |
+
+Thirty times noise. And a band that names things which do not need doing is
+worse than no band at all: the next time it says five, she has already learned
+to skip it.
+
+One rule now, `countingMatters`, asked by all three renderers and by the server:
+"stop selling when out" cannot fire while nothing was ever counted, so that is a
+broken promise and it is the news; "keep selling when out" is unlimited exactly
+as asked and there is nothing to say; and a version that is never posted has no
+shelf, so it cannot be counted at all. Filed and fixed as [446].
+
+Her screen went **33 → nothing**, which is the correct answer for her shop.
+
+### Where she counts things
+
+"Where you counted it" opened on **Fulfillment Center** every time. Juniper Row
+has 67 count rows in the **Main Warehouse** and **zero** at the Fulfillment
+Center. It was `locations[0]` — the first location by name, because F comes
+before M. Not a guess about her business; a fact about the alphabet.
+
+The obvious answer was wrong. There IS a `defaultWarehouseId` on site settings,
+and every one of the 35 rows on the platform carries a value — but nothing in the
+console edits it, `bootstrapDefaults` writes it once by picking the oldest
+warehouse, and **34 of the 35 have never been updated by anybody.** Treating a
+machine-written guess as somebody's answer is how the wrong building gets
+authority, so it reads evidence instead:
+
+1. where this exact version is already counted;
+2. where this person last recorded a count;
+3. where the rest of this product is counted;
+4. and only then the first place on the list.
+
+Two above three deliberately. Somebody counting a delivery at the Fulfillment
+Center must not be sent back to the Main Warehouse on the next version — the
+place she picked ON PURPOSE has to survive. Filed and fixed as [445].
+
+### Escape threw the color away
+
+Typing a hex and pressing Escape lost it silently. Enter kept it, clicking away
+kept it, only Escape discarded — because silica's HEX box holds a draft and
+commits on blur, and Escape closes the popover without ever blurring.
+
+Escape is not a cancel there and cannot be: every slider in the same panel
+commits live, so closing already keeps them. The HEX box was the one control in
+its own panel behaving differently, in the direction that loses work. And when
+she is CHANGING a color rather than setting a first one, there is no signal at
+all — the chip shows the old color, which looks exactly like a chip showing the
+right one.
+
+The chip is now one shared `SwatchPicker` that settles the field on the way out,
+running the picker's own commit rather than re-implementing it. The upstream fix
+is named at the top of the file so it can be deleted when silica lands it. Filed
+and fixed as [447].
+
+### The whole thing, proved as her
+
+She added **Ink** to The Ash Overshirt for the autumn drop. Typed `#1F2A44` over
+the default, pressed **Escape** — the chip went deep navy and the "No color
+picked" warning cleared. **Change how it is sold** → **Give them all the same
+price** → **Create them**.
+
+Five new codes: `ASH-OVERSHIRT-XS-INK` and its siblings. Her product code, not
+her web address, and not cut short — [172] still holding a day later.
+
+The band came back reading **5 versions you sell have never been counted**, with
+**Count them**, naming the Ink codes. Not 38. Five.
+
+**Count them** opened the stock pane, and `ASH-OVERSHIRT-XS-INK` offered **Main
+Warehouse** without being asked — rung 3, from its twenty counted siblings. Then
+the test that matters in the other direction: with the Fulfillment Center
+remembered, the next version opened on the **Fulfillment Center** despite all
+twenty-one siblings being in the Main Warehouse. Her choice beat the evidence,
+which is the whole point.
+
+Then the actual work. Four, seven, five, six and three units of Ink, counted in a
+row, **without touching the location picker once after the first**. 108 to sell
+became 133. The band went away. Her shop shows `XS · Ink`, `S · Ink` and `M · Ink`
+buyable beside `XS · Bone` struck through as sold out at a counted zero.
+
+Every guard runs red on its own. Four separate breaks of the location ladder
+redden four different single tests; breaking the policy filter reddens the
+"keep selling" test and leaves the not-posted one green, and breaking the
+shipping filter does the reverse.
+
+### What this act is really about
+
+Both of act 107's "noticed and not filed" notes were defects, and one of them was
+hiding a bigger one. Neither was a judgement call. **Writing something down as
+"noticed, not filed" is the same smell as `Blocked on: decision`** — a way of
+recording work as though recording were the work.
 
 ## Open threads
 
@@ -2599,3 +2725,6 @@ A row with no confirmation is not a fixed defect.
 | [442](issues/442-the-delivery-charge-vanishes-from-the-bill-and-the-total-does-not-add-up.md)                     | major    | The delivery charge vanishes, and the bill does not add up                                               | fixed                             | The editor showed Total $58.00 beside Amount due $27.00 with $40.00 paid, and warned "not saved yet" about a document nobody had touched. totals.ts is the browser mirror of the server totals and its own header names the rule it mirrors -- lines, subtotal, discount, tax, SHIPPING, SURCHARGE, total -- while the function under that comment stopped at tax. No Delivery row existed anywhere in the invoicing surface. The emailed summary was worse: no delivery, no surcharge and no DISCOUNT either, so two of the five invoices this shop had ever sent were already in a customer inbox asking for a number their own rows could not reach (INV-000001 $276 asking $234.60; INV-000003 $634 asking $659). The printed PDF had both rows from the start, which is why every check passed -- the one artifact that got it right is the one nobody reads on screen. Fixed in the mirror, the Summary card, the type + normalizer, the emailed rows (now invoiceSummaryRows, pure and tested on the invariant a customer applies: the rows must add up to what is asked for) and the template binding scope. Red both ways: dropping shipping reddens four of five and leaves the fifth -- a document with neither charge -- green, which is why it shipped                                                                                                                                                             |
 | [443](issues/443-a-shops-invoice-is-signed-by-the-company-that-makes-the-software.md)                             | major    | A shop invoice is signed by the company that makes the software                                          | fixed                             | Brandon read act 105 rendered invoice and asked whether a tenant bill should be signed off by WizeWorks. It should not, and ACT 105 HAD ALREADY LOOKED AT THAT LINE AND CLEARED IT -- on a test comment reading "the operator, correct for both", where both means both PRODUCTS. Every case in that file renders password-reset, whose reader PAYS WizeWorks. I read the comment instead of the cases. The platform had already decided this and built it in the OTHER renderer: silica/frame.ts signs a shop email with the shop name, the shop address, then "Sent with <product>" -- that is [122], and [122] says the sweep before it fixed the React templates and missed the frame. Now the mirror image. Four templates reach somebody who has never heard of us; three also carried our WORDMARK, because header={false} was a separate lever and one template had ever pulled it. Worst was the signature request: platform chassis, our wordmark, our company, naming NO business, asking a stranger to sign -- the shape of a phishing attempt. Fixed with one REQUIRED audience prop deciding masthead and sign-off together; it immediately caught a ninth call site no grep would have found. Two tests were holding the defect in place, one of which had been slicing the whole document since React Email started inserting comment markers                                                                   |
 | [444](issues/444-she-added-a-color-and-five-shirts-went-on-sale-with-no-count-behind-them.md)                     | major    | She added a color and five shirts went on sale with no count behind them                                 | fixed                             | Adding a colorway and pressing "Give them all the same price" put five versions on her website that nobody had counted. A version becomes stock-managed by being COUNTED, not by existing, so they sold WITHOUT LIMIT while their own setting read "stop selling it when you run out". That rule is right and deliberate -- writing a zero row on creation is how "nobody counted this" became "there are none", and how a bakery watched her shop call all ten of her products sold out with bread on the counter -- so the storefront was correct and the console was silent. Stock -> Stock said "Showing 1-15 of 15" for a shirt the products list calls twenty; searching the code said "Nothing matches that". Same shape as always: the pane has a message for a product where NOTHING is counted and the list asks the catalog when a search returns NOTHING, and twelve counted with five not falls between them. Fixed in both: the product pane's summary names the mixed case, and the stock list carries a band above the table (a band, not a filter chip -- a chip is something you have to know to press). Needed a question nobody could ask, since the list starts FROM inventory_levels: GET /v1/inventory/uncounted. 60 versions across 15 businesses were in this state and invisible everywhere. Closed the loop as Devi: Count them -> Record a count x5 -> 78 to sell became 108 and the band went away |
+| [445](issues/445-the-count-form-opens-on-a-building-she-does-not-use.md)                                          | moderate | The count form opens on a building she does not use                                                      | fixed                             | Where you counted it opened on Fulfillment Center every time; Juniper Row has 67 count rows in Main Warehouse and ZERO at the Fulfillment Center. It was locations[0] -- the first place by NAME, because F comes before M. Not a guess about her business, a fact about the alphabet. Counting five versions of one shirt meant correcting it five times, and the form did not remember the correction either. The obvious answer was WRONG: commerce_site_settings.defaultWarehouseId exists and all 35 rows on the platform carry a value, but nothing in the console edits it and bootstrapDefaults writes it once by picking the oldest warehouse -- 34 of 35 never updated by anybody. A machine-written guess must not be given authority over a real shelf, so the form reads EVIDENCE: this version's own place, then the place this person last counted at, then where the rest of the product is, then the list. Two above three deliberately, so somebody counting a delivery at the Fulfillment Center is not sent back to Main Warehouse on the next version -- a place chosen ON PURPOSE has to survive. Proved both directions on screen; four separate breaks of the ladder redden four different single tests                                                                                                                                                                                                 |
+| [446](issues/446-the-uncounted-band-told-her-to-count-33-things-that-cannot-run-out.md)                           | major    | The uncounted band told her to count 33 things that cannot run out                                       | fixed                             | MINE, one day old, and the plainest 'fix leaves its neighbour behind' yet: the audit SQL written into [444] carries AND v.inventory_policy = 'deny' and the query that SHIPPED does not. I measured with a filter I never implemented and reported the measured number as though the shipped code produced it. Her Stock screen read 33 versions you sell have never been counted and named a membership, a field guide and an AI report -- all set to keep selling when out, all unlimited on purpose, nothing to count. The right number was ZERO. Platform-wide it was 1,664 rows against 55: thirty times noise, and a band that names things which do not need doing teaches her to skip the one that says five. The row payload already carried inventoryPolicy and 444's own text says why -- 'the setting that is NOT being honoured' -- carried, documented, never read. One rule now, countingMatters, asked by both consoles' two renderers AND the server: stop-selling-when-out cannot fire while nothing was counted so that is the news; keep-selling-when-out is unlimited as asked; a version never posted has no shelf. Two conditions, two dedicated tests, each the other's green twin                                                                                                                                                                                                                      |
+| [447](issues/447-escape-threw-away-the-color-she-typed.md)                                                        | moderate | Escape threw away the color she typed                                                                    | fixed                             | Typing a hex into the swatch and pressing Escape lost it silently. Enter kept it, clicking away kept it, only Escape discarded -- silica's HEX box holds a draft and commits on blur, and Escape closes the popover without ever blurring. Escape is not a cancel there and CANNOT be: every slider in the same panel commits live, so closing already keeps them, which made the HEX box the one control in its own panel behaving differently, in the direction that loses work. Silent in the worst case too: setting a first color at least leaves the No color picked badge up, while CHANGING one shows the old color, which looks exactly like a chip showing the right one. Now one shared SwatchPicker for both consoles that settles the field on the way out, running the picker's OWN commit rather than re-implementing parsing. Belongs upstream -- ColorPicker should commit its draft on unmount -- and that is written at the top of the file so it can be deleted when silica lands it                                                                                                                                                                                                                                                                                                                                                                                                                        |

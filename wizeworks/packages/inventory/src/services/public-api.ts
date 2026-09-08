@@ -355,6 +355,21 @@ export async function listUncounted(
     product: { deletedAt: null, status: 'active' },
     // The whole definition: no level row, at any location.
     inventoryLevels: { none: {} },
+    // ONLY the ones where a setting is going unhonoured. `deny` means "stop
+    // selling it when it runs out", and it cannot fire while nothing has ever
+    // been counted — that broken promise is the news. `continue` means "keep
+    // selling when out", so an uncounted one is unlimited exactly as asked and
+    // there is nothing to report. Both are deliberate: the column defaults to
+    // `deny`, so `continue` was always written by somebody.
+    //
+    // This filter was missing on the first cut and it mattered: on 2026-09-08
+    // the platform held 1,664 uncounted `continue` versions against 55 `deny`
+    // ones, so the band told a shop to go and count 33 memberships, reports and
+    // made-to-order perfumes that are unlimited on purpose (issue 445).
+    inventoryPolicy: 'deny',
+    // A version that is not posted cannot be on a shelf, so it cannot be
+    // counted and must never be named as something to go and count.
+    requiresShipping: true,
     ...(filter.productId ? { productId: filter.productId } : {}),
     ...(needle
       ? {

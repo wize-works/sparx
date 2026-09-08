@@ -97,6 +97,7 @@ import {
   readLastCountLocation,
   writeLastCountLocation,
 } from '../inventory/count-location';
+import { countingMatters } from '../inventory/data';
 
 const LABEL = 'Stock';
 
@@ -934,17 +935,24 @@ function StockBody({ ctx, scope }: { ctx: SurfaceContext; scope: ReadyScope }) {
     (level) => level.reorderPoint !== null && sellable(level) <= level.reorderPoint
   );
 
-  // Versions nobody has ever counted. A version becomes stock-managed by being
-  // COUNTED, not by existing (availability.ts), so these sell WITHOUT LIMIT
-  // however their "when you run out" setting reads — and the totals above are
-  // the counted ones only.
+  // Versions nobody has ever counted, whose own setting says the shop should
+  // stop selling them when they run out. A version becomes stock-managed by
+  // being COUNTED, not by existing (availability.ts), so these sell WITHOUT
+  // LIMIT and that setting can never fire — and the totals above leave them out.
   //
   // The card for each one already says so, and the message below is that
   // sentence raised to the top of the pane. It had to be, because the mixed case
   // is the one that arrives by surprise: adding a color to a shirt that already
   // sells makes five new versions in one press, and the person doing it is
   // thinking about the color (issue 444).
-  const uncounted = variants.filter((variant) => !byVariant.has(variant.id));
+  //
+  // `countingMatters` is what keeps this about a BROKEN PROMISE rather than
+  // about every uncounted version: a version set to keep selling when out is
+  // unlimited on purpose, and a version that is not posted has no shelf to be
+  // counted on (issue 445).
+  const uncounted = variants.filter(
+    (variant) => !byVariant.has(variant.id) && countingMatters(variant)
+  );
 
   // ONE message, the most specific true one. A "running low" warning while
   // something is outright unsellable would bury the worse news under the milder.

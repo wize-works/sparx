@@ -243,6 +243,19 @@ Her live shop then read correctly: `XS · Moss` buyable with six behind it, besi
 `XS · Bone` struck through as **sold out** at a counted zero. The five that had
 been selling without limit are now the finite run she actually cut.
 
+## Corrected the next day by [446]
+
+The first cut of `listUncounted` left out the `deny` filter this document's own
+audit SQL carries, so the band counted every uncounted version rather than the
+ones whose setting is going unhonored. On Devi's screen that read **38** where
+the honest number was **5**, and platform-wide it was **1,664** rows against
+**55**. The numbers quoted in "Why it matters" below (60 across 15 businesses)
+came from the SQL and were right; the shipped query did not match them.
+
+Fixed in [446](446-the-uncounted-band-told-her-to-count-33-things-that-cannot-run-out.md)
+— read that one for the rule. The "Confirmed by" section below records what the
+screen said on the day, 38 included, rather than being rewritten.
+
 ## Rating effect
 
 `Sell › Product › How many you have` and `Stock › Stock` — recorded in

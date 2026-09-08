@@ -512,6 +512,34 @@ export function overallState(levels: StockLevel[]): StockState {
 }
 
 /**
+ * Does an uncounted version of this break a promise the shop has made?
+ *
+ * A version that has never been counted is UNTRACKED, so the website sells it
+ * without limit (availability.ts). Whether that is a PROBLEM is the version's
+ * own setting:
+ *
+ * - `deny` — "stop selling it when it runs out". It cannot fire while nothing
+ *   has ever been counted, so the shop is promising something it cannot keep.
+ *   This is the one worth telling somebody about.
+ * - `continue` — "keep selling when out". Unlimited is what was asked for, so an
+ *   uncounted one is behaving correctly and there is nothing to report.
+ *
+ * And a version that is not posted cannot sit on a shelf, so it cannot be
+ * counted at all.
+ *
+ * The rule lives here because TWO screens ask it — the band over the stock list
+ * and the summary on a product's stock pane — and the server's `/uncounted`
+ * query is the third. Leaving it out of the first cut told a shop to go and
+ * count 33 memberships and reports (issue 445).
+ */
+export function countingMatters(variant: {
+  inventoryPolicy: string;
+  requiresShipping: boolean;
+}): boolean {
+  return variant.inventoryPolicy === 'deny' && variant.requiresShipping;
+}
+
+/**
  * Name a few things inside a sentence, and stop before the sentence turns into a
  * list.
  *
