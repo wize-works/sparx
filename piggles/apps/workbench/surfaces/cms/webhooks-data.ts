@@ -1,376 +1,71 @@
 'use client';
 
-// ══════════════════════════════════════════════════════════════════════════
-// THE WEBHOOKS DATA LAYER
+// Everything the notification list and its editor read or write.
 //
-// A webhook tells ANOTHER system, over the internet, the moment something
-// happens on your site — you publish a page, a file finishes uploading, a
-// redirect is added. A developer building on top of your content points a
-// webhook at their own address and gets a message there instead of having to
-// poll for changes.
+// One list, no single-record endpoint: api-rest returns the whole (small) set
+// in one call, so the editor reads its record out of the loaded list rather
+// than a route that does not exist. A write invalidates the list and both the
+// list and every open editor re-derive from one refreshed array.
 //
-// Everything the Webhooks list and the webhook editor read or write goes
-// through here, so the list and the editor can never disagree about a field one
-// of them forgot to fetch, and a Save in the editor refreshes the row in the
-// list docked beside it.
-//
-// ── One list, no single-record endpoint ────────────────────────────────────
-//
-// api-rest exposes the collection (GET), a create (POST), a patch and a delete
-// — but NO `GET /:id`. The set is small and fully returned in one call, so the
-// editor reads its record straight out of the loaded list (`useWebhook`) rather
-// than a route that does not exist. A write invalidates the list, and both the
-// list AND every open editor re-derive from the one refreshed array.
-//
-// ── The signing secret is shown ONCE ───────────────────────────────────────
-//
-// The server generates the secret and returns the FULL value exactly once, in
-// the create response (Stripe-style). Every later read returns a redacted
-// preview only (`whsec_xxxxxxxx…`). There is no reveal-again and no rotate
-// endpoint, so the create pane is the one and only place the whole secret can
-// be copied — see webhook-detail.tsx.
-// ══════════════════════════════════════════════════════════════════════════
+// The signing secret is returned in FULL exactly once, on create. Every later
+// read gives a redacted preview, so the create pane is the only place it can be
+// copied — see webhook-detail.tsx.
 
 import { useMutation, useQuery, useQueryClient } from '@wizeworks/query';
 import { apiErrorMessage } from '../../lib/api-error';
 import { api } from '../../lib/api/client';
+import type { WebhookEventKey } from './webhook-events';
+
+export * from './webhook-events';
+
+export * from './webhook-status';
 
 /* ── Shapes ─────────────────────────────────────────────────────────────── */
 
-/** Exactly the event keys the server accepts (`EVENT_KEYS` in the route). We do
- *  NOT invent these — an off-list key is rejected by the create/patch schema. */
-export type WebhookEventKey =
-  | 'content.entry.created'
-  | 'content.entry.updated'
-  | 'content.entry.published'
-  | 'content.entry.scheduled'
-  | 'content.entry.unpublished'
-  | 'content.entry.deleted'
-  | 'media.uploaded'
-  | 'media.processed'
-  | 'redirect.added'
-  | 'redirect.removed'
-  // Inventory (docs/146 Phase 12.3). `inventory.levels.updated` is absent on
-  // purpose: it exists in the event registry and nothing publishes it, so a
-  // subscription to it would sit silent and read as a broken endpoint.
-  | 'inventory.adjusted'
-  | 'inventory.low'
-  | 'inventory.depleted'
-  | 'inventory.count.completed'
-  | 'inventory.reconciliation.drift'
-  | 'inventory.oversell.blocked'
-  | 'inventory.classification.changed'
-  | 'inventory.lot.expiring'
-  | 'inventory.bin.moved'
-  | 'inventory.pick_list.created'
-  | 'inventory.pick_list.completed'
-  | 'inventory.pick.short'
-  | 'inventory.package.packed'
-  | 'inventory.transfer.shipped'
-  | 'inventory.transfer.received'
-  | 'inventory.assembly.completed'
-  | 'inventory.purchase_order.late'
-  | 'inventory.backorder.created'
-  | 'inventory.backorder.allocated'
-  | 'inventory.source.created'
-  | 'inventory.source.sync_started'
-  | 'inventory.source.sync_completed'
-  | 'inventory.source.error'
-  | 'inventory.source.stale'
-  | 'inventory.source.recovered';
+/**
+ * What actually came back from the address, as opposed to what was asked for.
+ *
+ * `lastOutcome: null` alongside `lastAttemptAt: null` means NOTHING HAS BEEN
+ * SENT YET, which is a different fact from "everything worked" and must never
+ * render as one.
+ */
+export interface WebhookHealth {
+  delivered: number;
+  failed: number;
+  pending: number;
+  lastAttemptAt: string | null;
+  lastOutcome: 'delivered' | 'failed' | 'pending' | null;
+  windowDays: number;
+}
 
-/** One subscription, exactly as api-rest serialises it (camelCase — the handler
- *  spreads the Prisma row). `signingSecret` is a redacted preview on reads and
- *  the full value ONLY on the create response. */
+/** One subscription, as api-rest serialises it (camelCase — the handler spreads
+ *  the Prisma row). `signingSecret` is redacted on reads. */
 export interface WebhookSubscription {
   id: string;
   name: string;
   url: string;
-  /** Kept as `string[]` rather than `WebhookEventKey[]`: a subscription saved by
-   *  an older release could carry a key this build does not know, and it should
-   *  still list rather than fail to type. `eventLabel` handles the unknown. */
+  /** `string[]`, not `WebhookEventKey[]`: a subscription saved by an older
+   *  release could carry a key this build does not know, and should still list.
+   *  `eventLabel` handles the unknown. */
   events: string[];
   signingSecret: string;
   active: boolean;
   createdAt: string;
   updatedAt: string;
+  health?: WebhookHealth;
 }
 
-/* ── The one human catalogue of events ──────────────────────────────────────
- *
- * The keys are wire values; everything a person reads comes from here. Grouped
- * so the editor can lay them out under plain headings, and worded for a business
- * owner — "Content published", not `content.entry.published`. */
-
-export type WebhookEventGroup =
-  | 'Content'
-  | 'Files'
-  | 'Redirects'
-  | 'Stock'
-  | 'Warehouse'
-  | 'Supply'
-  | 'Stock feeds';
-
-export interface WebhookEventDef {
-  key: WebhookEventKey;
-  label: string;
-  description: string;
-  group: WebhookEventGroup;
-}
-
-export const WEBHOOK_EVENTS: readonly WebhookEventDef[] = [
-  {
-    key: 'content.entry.published',
-    label: 'Content published',
-    description: 'Something you write goes live on your site.',
-    group: 'Content',
-  },
-  {
-    key: 'content.entry.unpublished',
-    label: 'Content taken down',
-    description: 'A live page is unpublished and becomes a private draft again.',
-    group: 'Content',
-  },
-  {
-    key: 'content.entry.scheduled',
-    label: 'Content scheduled',
-    description: 'A page is set to publish itself at a future time.',
-    group: 'Content',
-  },
-  {
-    key: 'content.entry.created',
-    label: 'Content created',
-    description: 'A brand-new draft is started, before it is published.',
-    group: 'Content',
-  },
-  {
-    key: 'content.entry.updated',
-    label: 'Content edited',
-    description: 'Any change is saved to an existing page, draft or live.',
-    group: 'Content',
-  },
-  {
-    key: 'content.entry.deleted',
-    label: 'Content deleted',
-    description: 'A page is removed for good.',
-    group: 'Content',
-  },
-  {
-    key: 'media.uploaded',
-    label: 'File uploaded',
-    description: 'An image, video or file is added to your media library.',
-    group: 'Files',
-  },
-  {
-    key: 'media.processed',
-    label: 'File ready',
-    description: 'An uploaded file finishes processing and is ready to use.',
-    group: 'Files',
-  },
-  {
-    key: 'redirect.added',
-    label: 'Redirect added',
-    description: 'A rule is set up to send an old web address to a new one.',
-    group: 'Redirects',
-  },
-  {
-    key: 'redirect.removed',
-    label: 'Redirect removed',
-    description: 'A redirect rule is deleted.',
-    group: 'Redirects',
-  },
-
-  /* ── Stock ─────────────────────────────────────────────────────────────── */
-
-  {
-    key: 'inventory.adjusted',
-    label: 'Stock changed',
-    description:
-      'Any quantity moves, for any reason — a sale, a delivery, a count, a correction. The busiest of these by a wide margin; take it when another system needs to mirror your numbers, not when a person needs telling.',
-    group: 'Stock',
-  },
-  {
-    key: 'inventory.low',
-    label: 'Stock running low',
-    description: 'An item drops to the level you said counts as low, and is worth reordering.',
-    group: 'Stock',
-  },
-  {
-    key: 'inventory.depleted',
-    label: 'Stock ran out',
-    description: 'An item reaches zero at a location and can no longer be sold from it.',
-    group: 'Stock',
-  },
-  {
-    key: 'inventory.count.completed',
-    label: 'Count posted',
-    description:
-      'A stock count is applied and the figures on the shelf become the figures in the system.',
-    group: 'Stock',
-  },
-  {
-    key: 'inventory.reconciliation.drift',
-    label: 'Numbers stopped adding up',
-    description:
-      'The running total for an item no longer matches the sum of its movements. This is the alarm that says a figure somewhere cannot be trusted.',
-    group: 'Stock',
-  },
-  {
-    key: 'inventory.oversell.blocked',
-    label: 'Oversell prevented',
-    description:
-      'Someone tried to buy more than you actually had and was stopped. Worth watching — a run of these is demand you are turning away.',
-    group: 'Stock',
-  },
-  {
-    key: 'inventory.classification.changed',
-    label: 'Item importance changed',
-    description:
-      'An item moves between top value, mid value and long tail, or its demand becomes predictable enough to forecast.',
-    group: 'Stock',
-  },
-  {
-    key: 'inventory.lot.expiring',
-    label: 'Batch nearing expiry',
-    description: 'A batch crosses into the window where it needs shifting before it is unsellable.',
-    group: 'Stock',
-  },
-
-  /* ── Warehouse ─────────────────────────────────────────────────────────── */
-
-  {
-    key: 'inventory.bin.moved',
-    label: 'Stock moved shelf',
-    description:
-      'Stock is put away or moved between shelves inside one location. The location total does not change — nothing entered or left the building.',
-    group: 'Warehouse',
-  },
-  {
-    key: 'inventory.pick_list.created',
-    label: 'Picking started',
-    description: 'A picking run is raised and the work is ready for somebody on the floor.',
-    group: 'Warehouse',
-  },
-  {
-    key: 'inventory.pick_list.completed',
-    label: 'Picking finished',
-    description: 'Every line on a picking run is accounted for and the run is closed.',
-    group: 'Warehouse',
-  },
-  {
-    key: 'inventory.pick.short',
-    label: 'Shelf came up short',
-    description:
-      'A picker found fewer than the system promised. The earliest honest warning that a number is wrong, straight from the floor.',
-    group: 'Warehouse',
-  },
-  {
-    key: 'inventory.package.packed',
-    label: 'Box packed',
-    description: 'A box is sealed and verified against what the order asked for.',
-    group: 'Warehouse',
-  },
-  {
-    key: 'inventory.transfer.shipped',
-    label: 'Transfer sent',
-    description: 'Stock leaves one of your locations bound for another and is now in transit.',
-    group: 'Warehouse',
-  },
-  {
-    key: 'inventory.transfer.received',
-    label: 'Transfer arrived',
-    description: 'Stock in transit lands at the receiving location and is sellable again.',
-    group: 'Warehouse',
-  },
-  {
-    key: 'inventory.assembly.completed',
-    label: 'Build finished',
-    description:
-      'A build run is completed: the components come off the shelf and the finished item goes on.',
-    group: 'Warehouse',
-  },
-
-  /* ── Supply ────────────────────────────────────────────────────────────── */
-
-  {
-    key: 'inventory.purchase_order.late',
-    label: 'Supplier order late',
-    description: 'A purchase order passes the date the supplier promised it, and has not arrived.',
-    group: 'Supply',
-  },
-  {
-    key: 'inventory.backorder.created',
-    label: 'Item promised without stock',
-    description:
-      'Something is sold that you cannot ship yet, so a promise to a named customer now exists.',
-    group: 'Supply',
-  },
-  {
-    key: 'inventory.backorder.allocated',
-    label: 'Promise covered by new stock',
-    description:
-      'Arriving stock is assigned to somebody already waiting for it, in the order they were promised.',
-    group: 'Supply',
-  },
-
-  /* ── Stock feeds ───────────────────────────────────────────────────────── */
-
-  {
-    key: 'inventory.source.created',
-    label: 'Feed connected',
-    description: 'A new supplier or warehouse feed is set up to send you stock figures.',
-    group: 'Stock feeds',
-  },
-  {
-    key: 'inventory.source.sync_started',
-    label: 'Feed started',
-    description: 'A scheduled pull from one of your feeds begins.',
-    group: 'Stock feeds',
-  },
-  {
-    key: 'inventory.source.sync_completed',
-    label: 'Feed finished',
-    description: 'A pull finishes, with how many lines it changed.',
-    group: 'Stock feeds',
-  },
-  {
-    key: 'inventory.source.error',
-    label: 'Feed failed',
-    description:
-      'A feed could not be read. Until it is fixed, its figures are frozen at whatever they last were.',
-    group: 'Stock feeds',
-  },
-  {
-    key: 'inventory.source.stale',
-    label: 'Feed went quiet',
-    description:
-      'A feed has not reported for long enough that its figures should no longer be relied on. Silence is not the same as no change, and this is the event that says so.',
-    group: 'Stock feeds',
-  },
-  {
-    key: 'inventory.source.recovered',
-    label: 'Feed recovered',
-    description: 'A feed that was failing or quiet starts reporting again.',
-    group: 'Stock feeds',
-  },
-] as const;
-
-const EVENT_LABELS = new Map<string, string>(WEBHOOK_EVENTS.map((e) => [e.key, e.label]));
-
-export const WEBHOOK_EVENT_GROUPS: readonly WebhookEventGroup[] = [
-  'Content',
-  'Files',
-  'Redirects',
-  'Stock',
-  'Warehouse',
-  'Supply',
-  'Stock feeds',
-];
-
-/** The plain-language name for an event key, or the raw key for one this build
- *  does not recognise (a subscription saved by a newer release). */
-export function eventLabel(key: string): string {
-  return EVENT_LABELS.get(key) ?? key;
+/** One attempt to reach the address. */
+export interface WebhookDelivery {
+  id: string;
+  event_type: string;
+  status: string;
+  attempt_count: number;
+  response_status: number | null;
+  response_body: string | null;
+  next_attempt_at: string | null;
+  delivered_at: string | null;
+  created_at: string;
 }
 
 /* ── The query-key tree ─────────────────────────────────────────────────── */
@@ -378,15 +73,12 @@ export function eventLabel(key: string): string {
 export const webhookKeys = {
   all: ['cms', 'webhooks'] as const,
   list: () => [...webhookKeys.all, 'list'] as const,
+  deliveries: (id: string) => [...webhookKeys.all, 'deliveries', id] as const,
 };
 
 /* ── Reads ──────────────────────────────────────────────────────────────── */
 
-/**
- * Every webhook this site has. The endpoint returns the whole set in one call
- * (no paging), so there is one query and the list, the editor and the count all
- * read from it.
- */
+/** Every notification this site sends. */
 export function useWebhooks() {
   return useQuery({
     queryKey: webhookKeys.list(),
@@ -395,9 +87,8 @@ export function useWebhooks() {
 }
 
 /**
- * One webhook, for the editor — read out of the loaded list rather than a
- * single-record route (there isn't one). Returns the list's own loading/error
- * state alongside the resolved row, and `webhook: null` once the list has
+ * One webhook, read out of the loaded list. Returns the list's own loading and
+ * error state alongside the resolved row, and `webhook: null` once the list has
  * loaded but holds no such id (deleted elsewhere, or a stale saved layout).
  */
 export function useWebhook(id: string) {
@@ -406,12 +97,31 @@ export function useWebhook(id: string) {
   return { ...query, webhook };
 }
 
+/**
+ * The recent attempts for one subscription.
+ *
+ * Kept OUT of the list payload: it is per-record detail, and the list only
+ * needs the summary that rides on `health`.
+ */
+export function useWebhookDeliveries(id: string, enabled = true) {
+  return useQuery({
+    queryKey: webhookKeys.deliveries(id),
+    queryFn: () =>
+      api.get<{ items: WebhookDelivery[]; health: WebhookHealth }>(
+        `/v1/webhooks/subscriptions/${id}/deliveries`
+      ),
+    enabled: enabled && id !== 'new',
+  });
+}
+
 /* ── Invalidation ───────────────────────────────────────────────────────── */
 
-function useInvalidateWebhooks() {
+/** Refetch the list AND the delivery history together. Refreshing only one of
+ *  them let the badge say "Working" over a panel still saying "Nothing yet". */
+export function useInvalidateWebhooks() {
   const queryClient = useQueryClient();
   return () => {
-    void queryClient.invalidateQueries({ queryKey: webhookKeys.list() });
+    void queryClient.invalidateQueries({ queryKey: webhookKeys.all });
   };
 }
 
@@ -424,8 +134,8 @@ export interface CreateWebhookInput {
   active?: boolean;
 }
 
-/** Create returns the FULL signing secret in `signingSecret` — the only time it
- *  is ever the real value. The create pane must surface it before it is gone. */
+/** Create returns the FULL signing secret — the only time it is the real value.
+ *  The create pane must surface it before it is gone. */
 export function useCreateWebhook() {
   const invalidate = useInvalidateWebhooks();
   return useMutation({
@@ -460,45 +170,24 @@ export function useDeleteWebhook(id: string) {
   return useMutation({
     mutationFn: () => api.delete(`/v1/webhooks/subscriptions/${id}`),
     onSuccess: () => {
-      // Refreshing the list is safe here — unlike a single-record detail query,
-      // the collection endpoint still resolves after the row is gone (it just
-      // returns one fewer). The pane closes; the toast is deferred by the caller.
+      // Safe here — unlike a single-record query, the collection endpoint still
+      // resolves after the row is gone. The pane closes; the caller defers the
+      // toast.
       invalidate();
     },
   });
 }
 
-/* ── Saying what a state means ──────────────────────────────────────────── */
-
-export type Tone = 'success' | 'warning' | 'error' | 'info' | 'neutral';
-
-/** Active vs paused, in an owner's words, with the tone that carries the color
- *  on a `<Badge>`. Paused is `warning`, not neutral: it is a deliberately-off
- *  state worth noticing, not a bland fact. */
-export function webhookState(active: boolean): { label: string; tone: Tone; detail: string } {
-  return active
-    ? {
-        label: 'Active',
-        tone: 'success',
-        detail: 'Notifications are being sent to this address as events happen.',
-      }
-    : {
-        label: 'Paused',
-        tone: 'warning',
-        detail: 'No notifications are being sent. Turn it back on whenever you like.',
-      };
-}
-
 /**
  * The server's own sentence for a 4xx, shown verbatim — the webhook routes name
- * the real problem (a bad URL, an unknown event) far better than a status code.
- * A 5xx carries no such sentence, so it falls back to the caller's wording.
+ * the real problem far better than a status code. A 5xx carries no such
+ * sentence, so it falls back to the caller's wording.
  */
 export function webhookErrorMessage(error: unknown, fallback: string): string {
   return apiErrorMessage(error, fallback);
 }
 
-/** Medium date and time — a webhook's "added" moment is a fact people scan. */
+/** Medium date and time — a notification's moment is a fact people scan. */
 export function formatDateTime(value: string | null | undefined): string {
   if (!value) return '—';
   const date = new Date(value);

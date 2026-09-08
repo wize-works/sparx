@@ -180,7 +180,7 @@ export function CompaniesListSurface({ ctx }: { ctx: SurfaceContext }) {
               title: 'No companies yet',
               description: tradeEnabled
                 ? 'The businesses you work with live here — each one holding its own credit limit, discount and payment terms, and the people you deal with there.'
-                : 'The businesses your contacts work for live here. Add one and you can see everyone you know there in a single place, and let new contacts from their email domain be recognised automatically.',
+                : 'The businesses your contacts work for live here. Add one and you can see everyone you know there in a single place, and let new contacts from their email domain be recognized automatically.',
             }}
           />
         ) : (

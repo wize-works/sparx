@@ -33,7 +33,6 @@ import {
   FilterItem,
   SearchInput,
   Table,
-  ToolbarSeparator,
 } from '@wizeworks/silicaui-react';
 import { ArrowDown, ArrowUp, GitBranch, Plus } from 'lucide-react';
 import { ListPagination, MAX_TAKE, type PageSize } from '../../components/list-pagination';
@@ -145,62 +144,68 @@ export function WorkflowsListSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Workflow list controls" wrap>
-        <div className="max-w-xs min-w-0 flex-1">
-          <SearchInput
+      <PaneToolbar
+        label="Workflow list controls"
+        search={
+          <div className="max-w-xs min-w-0 flex-1">
+            <SearchInput
+              size="sm"
+              aria-label="Search workflows"
+              placeholder="Search workflows…"
+              value={search}
+              onValueChange={(next) => {
+                setSearch(next);
+                resetWindow();
+              }}
+            />
+          </div>
+        }
+        primary={
+          <Button
+            color="module"
             size="sm"
-            aria-label="Search workflows"
-            placeholder="Search workflows…"
-            value={search}
-            onValueChange={(next) => {
-              setSearch(next);
-              resetWindow();
+            className="ml-auto"
+            title="New workflow — hold Shift to open alongside, Alt for a new window"
+            onClick={(event) => {
+              ctx.open('invoicing.workflow.edit', { id: 'new' }, { target: targetFor(event) });
+            }}
+          >
+            <Plus className="size-4" aria-hidden />
+            <span className="hidden @lg:inline">New workflow</span>
+          </Button>
+        }
+        controls={
+          <>
+            <Filter
+              color="module"
+              value={state}
+              onValueChange={(next) => {
+                setState((next as StateFilter | null) ?? 'active');
+                resetWindow();
+              }}
+              showReset={false}
+              aria-label="Filter by state"
+            >
+              {STATE_FILTERS.map((filter) => (
+                <FilterItem key={filter.value} value={filter.value}>
+                  {filter.label}
+                </FilterItem>
+              ))}
+            </Filter>
+            {/* ALWAYS the last child of a list toolbar — see RefreshButton. Inside
+            the Toolbar so it joins the roving arrow-key focus. */}
+          </>
+        }
+        refresh={
+          <RefreshButton
+            isFetching={isFetching}
+            updatedAt={data ? dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void refetch();
             }}
           />
-        </div>
-
-        <ToolbarSeparator className="hidden @xl:block" />
-
-        <Filter
-          color="module"
-          value={state}
-          onValueChange={(next) => {
-            setState((next as StateFilter | null) ?? 'active');
-            resetWindow();
-          }}
-          showReset={false}
-          aria-label="Filter by state"
-        >
-          {STATE_FILTERS.map((filter) => (
-            <FilterItem key={filter.value} value={filter.value}>
-              {filter.label}
-            </FilterItem>
-          ))}
-        </Filter>
-
-        <Button
-          color="module"
-          size="sm"
-          className="ml-auto"
-          title="New workflow — hold Shift to open alongside, Alt for a new window"
-          onClick={(event) => {
-            ctx.open('invoicing.workflow.edit', { id: 'new' }, { target: targetFor(event) });
-          }}
-        >
-          <Plus className="size-4" aria-hidden />
-          <span className="hidden @lg:inline">New workflow</span>
-        </Button>
-
-        {/* ALWAYS the last child of a list toolbar — see RefreshButton. Inside
-            the Toolbar so it joins the roving arrow-key focus. */}
-        <RefreshButton
-          isFetching={isFetching}
-          updatedAt={data ? dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void refetch();
-          }}
-        />
-      </PaneToolbar>
+        }
+      />
 
       <Card className="min-h-0 flex-1 overflow-y-auto">
         {isError ? (

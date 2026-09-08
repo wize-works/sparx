@@ -27,6 +27,8 @@ import {
   voidOutboundLabel,
 } from './shipping-provider-bridge';
 import type { LabelResult } from './shipping-provider-bridge';
+import { offerableRates, profilePresenceFor } from './shipping-profile-match';
+import type { ItemProfileLinks, ProfilePresence } from './shipping-profile-match';
 // Imported (not just re-exported) because `quoteForCart` below composes them.
 import { resolvePackageForItems, resolveShipFromAddress } from './shipping-request-resolver';
 import { listInstallations } from './provider-service';
@@ -61,6 +63,12 @@ export interface ShippingProfileRow {
   requiresFreight: boolean;
   productCount: number;
   variantCount: number;
+  /** True for the ONE group everything not filed elsewhere ships under — the
+   *  shop's oldest. The console labels it "All other products" and everything
+   *  else by its member count, and both read this rather than guessing from a
+   *  count of zero: two empty groups look identical, and calling the newer one
+   *  a default priced a basket of scarves as coats (issue 427). */
+  isDefault: boolean;
   collectionCount: number;
   updatedAt: string;
 }
@@ -191,7 +199,7 @@ export async function listProfiles(
   filter: { take?: number; skip?: number } = {}
 ): Promise<{ items: ShippingProfileRow[]; total: number }> {
   return withTenant(ctx, async (tx) => {
-    const [rows, total] = await Promise.all([
+    const [rows, total, defaultId] = await Promise.all([
       tx.shippingProfile.findMany({
         include: {
           _count: {
@@ -203,24 +211,29 @@ export async function listProfiles(
         skip: filter.skip ?? 0,
       }),
       tx.shippingProfile.count(),
+      defaultProfileId(tx),
     ]);
-    return { items: rows.map(serializeProfile), total };
+    return { items: rows.map((row) => serializeProfile(row, defaultId)), total };
   });
 }
 
 export async function getProfile(ctx: ServiceContext, id: string): Promise<ShippingProfileRow> {
-  const row = await withTenant(ctx, (tx) =>
-    tx.shippingProfile.findFirst({
-      where: { id },
-      include: {
-        _count: {
-          select: { productLinks: true, variantLinks: true, collectionLinks: true },
+  const found = await withTenant(ctx, async (tx) => {
+    const [row, defaultId] = await Promise.all([
+      tx.shippingProfile.findFirst({
+        where: { id },
+        include: {
+          _count: {
+            select: { productLinks: true, variantLinks: true, collectionLinks: true },
+          },
         },
-      },
-    })
-  );
-  if (!row) throw new CommerceNotFoundError('ShippingProfile', id);
-  return serializeProfile(row);
+      }),
+      defaultProfileId(tx),
+    ]);
+    return row ? serializeProfile(row, defaultId) : null;
+  });
+  if (!found) throw new CommerceNotFoundError('ShippingProfile', id);
+  return found;
 }
 
 export async function createProfile(
@@ -453,9 +466,61 @@ export async function deliveryIsConfigured(
 // unconfigured warehouse address just means fewer rates, never a broken
 // checkout (see tryLiveRates).
 
+/**
+ * Which PRODUCT GROUPS a shipment's contents belong to, read from the variants
+ * in it. Pass it to `rateShipment` so a group's delivery options only reach a
+ * basket that group covers — see shipping-profile-match.ts for the rule.
+ */
+export async function shipmentContents(
+  ctx: ServiceContext,
+  variantIds: readonly string[]
+): Promise<ProfilePresence> {
+  if (variantIds.length === 0) return profilePresenceFor([]);
+  const unique = [...new Set(variantIds)];
+  const rows = await withTenant(ctx, (tx) =>
+    tx.productVariant.findMany({
+      where: { id: { in: unique } },
+      select: {
+        id: true,
+        shippingProfileLinks: { select: { profileId: true } },
+        product: {
+          select: {
+            shippingProfileLinks: { select: { profileId: true } },
+            collectionLinks: {
+              select: {
+                collection: { select: { shippingProfileLinks: { select: { profileId: true } } } },
+              },
+            },
+          },
+        },
+      },
+    })
+  );
+  const byId = new Map(rows.map((row) => [row.id, row]));
+  const links: ItemProfileLinks[] = unique.map((id) => {
+    const row = byId.get(id);
+    // A variant the catalog no longer has still occupies the basket, and it is
+    // in no group — which is the honest answer, and the one that keeps a
+    // deleted line from silently pulling in a freight surcharge.
+    if (!row) return {};
+    return {
+      variantProfileId: row.shippingProfileLinks[0]?.profileId ?? null,
+      productProfileId: row.product.shippingProfileLinks[0]?.profileId ?? null,
+      collectionProfileIds: row.product.collectionLinks.flatMap((link) =>
+        link.collection.shippingProfileLinks.map((l) => l.profileId)
+      ),
+    };
+  });
+  return profilePresenceFor(links);
+}
+
 export async function rateShipment(
   ctx: ServiceContext,
-  request: ShipmentRequest
+  request: ShipmentRequest,
+  /** What is in the parcel, in product-group terms. OMITTED means the caller
+   *  could not say, and the shipment is then priced as ordinary goods rather
+   *  than being offered every group's price — see applicableProfileIds. */
+  contents?: ProfilePresence
 ): Promise<RateOption[]> {
   if (!request?.toAddress?.country) {
     throw new CommerceValidationError('toAddress.country is required');
@@ -480,16 +545,25 @@ export async function rateShipment(
       // business that has never said how it delivers; SOME BUT NONE MATCHING is
       // a business that has said, and this address is outside it. Only the first
       // gets answered on their behalf — see collection-option.ts.
+      // The group everything not filed elsewhere ships under. Same function
+      // the two screens read, so checkout and the shipping list cannot end up
+      // calling different groups the default. See shipping-profile-match.ts,
+      // rule 2, for why it is age and not emptiness.
       return {
         anyConfigured: zones.length > 0,
         matching: zones.filter((z) => zoneMatchesAddress(z.targeting, request.toAddress.country)),
+        fallbackProfileId: await defaultProfileId(tx, request.propertyId),
       };
     }),
     tryLiveRates(ctx, request),
   ]);
   const matchingZones = zoneRead.matching;
 
-  const out: RateOption[] = [...liveRates];
+  // Manual rates are priced FIRST and filtered second, because the rule that
+  // picks between product groups compares what each group would actually cost.
+  // Live carrier rates are left alone: they price the physical parcel, and a
+  // carrier has no opinion about which group a shop filed a product under.
+  const priced: { profileId: string; amountCents: number; option: RateOption }[] = [];
   for (const zone of matchingZones) {
     for (const rate of zone.rates) {
       if (rate.currency !== request.currency) continue;
@@ -499,17 +573,26 @@ export async function rateShipment(
         itemCount: request.packages.length,
       });
       if (amount == null) continue;
-      out.push({
-        rateRef: `manual:${rate.id}`,
-        providerSlug: 'sparx-manual',
-        carrier: rate.carrier ?? 'Standard',
-        service: rate.name,
+      priced.push({
+        profileId: rate.profileId,
         amountCents: amount,
-        currency: rate.currency,
-        estimatedDeliveryDays: rate.estimatedDeliveryDays ?? undefined,
-        isFreight: false,
+        option: {
+          rateRef: `manual:${rate.id}`,
+          providerSlug: 'sparx-manual',
+          carrier: rate.carrier ?? 'Standard',
+          service: rate.name,
+          amountCents: amount,
+          currency: rate.currency,
+          estimatedDeliveryDays: rate.estimatedDeliveryDays ?? undefined,
+          isFreight: false,
+        },
       });
     }
+  }
+
+  const out: RateOption[] = [...liveRates];
+  for (const row of offerableRates(priced, contents, zoneRead.fallbackProfileId)) {
+    out.push(row.option);
   }
 
   // Delivery was never set up here, and no carrier answered. Rather than invent
@@ -561,6 +644,7 @@ export async function quoteForCart(
             subtotalCents: true,
             variant: {
               select: {
+                id: true,
                 weightGrams: true,
                 lengthMm: true,
                 widthMm: true,
@@ -597,6 +681,14 @@ export async function quoteForCart(
   );
   shipmentPackage.declaredValueCents = cart.items.reduce((sum, it) => sum + it.subtotalCents, 0);
 
+  // What is actually in the basket, in product-group terms. Without this every
+  // group's delivery options were offered to every basket: a shop that priced
+  // coats at $25 offered $25 to somebody buying a scarf (issue 427).
+  const contents = await shipmentContents(
+    ctx,
+    cart.items.map((it) => it.variant.id)
+  );
+
   // A missing/placeholder warehouse address only costs LIVE rates — manual zone
   // rates still quote, so checkout is never blocked by an unconfigured ship-from.
   const fromAddress = await resolveShipFromAddress(ctx).catch(() => ({
@@ -605,15 +697,19 @@ export async function quoteForCart(
     country: 'US',
   }));
 
-  return rateShipment(ctx, {
-    ...(cart.propertyId ? { propertyId: cart.propertyId } : {}),
-    fromAddress,
-    toAddress,
-    currency: cart.currency,
-    signatureRequired: false,
-    saturdayDelivery: false,
-    packages: [shipmentPackage],
-  });
+  return rateShipment(
+    ctx,
+    {
+      ...(cart.propertyId ? { propertyId: cart.propertyId } : {}),
+      fromAddress,
+      toAddress,
+      currency: cart.currency,
+      signatureRequired: false,
+      saturdayDelivery: false,
+      packages: [shipmentPackage],
+    },
+    contents
+  );
 }
 
 export interface LiveRateReadiness {
@@ -785,10 +881,28 @@ function serializeZone(row: ShippingZone & { _count: { rates: number } }): Shipp
   };
 }
 
+/**
+ * The ONE group everything not filed elsewhere ships under: the shop's oldest.
+ *
+ * The single definition, read by the rate matcher and by both screens, so a
+ * merchant can never be told one thing by the list and another by checkout.
+ * `id` breaks a tie, since two rows created in the same seed transaction can
+ * share a timestamp and the default must not swap between reloads.
+ */
+export async function defaultProfileId(tx: TxClient, propertyId?: string): Promise<string | null> {
+  const row = await tx.shippingProfile.findFirst({
+    where: propertyId ? { OR: [{ propertyId }, { propertyId: null }] } : {},
+    orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+    select: { id: true },
+  });
+  return row?.id ?? null;
+}
+
 function serializeProfile(
   row: ShippingProfile & {
     _count: { productLinks: number; variantLinks: number; collectionLinks: number };
-  }
+  },
+  defaultId: string | null
 ): ShippingProfileRow {
   return {
     id: row.id,
@@ -805,6 +919,7 @@ function serializeProfile(
     productCount: row._count.productLinks,
     variantCount: row._count.variantLinks,
     collectionCount: row._count.collectionLinks,
+    isDefault: row.id === defaultId,
     updatedAt: row.updatedAt.toISOString(),
   };
 }

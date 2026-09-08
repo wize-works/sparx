@@ -4,15 +4,7 @@
 // differ by which fields are required rather than by what they are.
 
 import { useEffect, useState } from 'react';
-import {
-  Alert,
-  AlertContent,
-  AlertDescription,
-  AlertTitle,
-  Badge,
-  Button,
-  Text,
-} from '@wizeworks/silicaui-react';
+import { Badge, Button, Text } from '@wizeworks/silicaui-react';
 import { faFloppyDisk, faLocationDot } from '@fortawesome/pro-solid-svg-icons';
 import { Icon } from '@piggles/ui';
 import { PaneToolbar, PANE_SHELL } from '../../components/pane-toolbar';
@@ -34,6 +26,7 @@ import { useLocationValidity } from './location-validity';
 import { LocationFields } from './location-fields';
 import { LocationLifecycle } from './location-lifecycle';
 import { useLocationSave } from './location-save';
+import { SaveFailure } from '@/components/save-failure';
 
 function EditorToolbar({
   isNew,
@@ -219,14 +212,7 @@ export function LocationEditor({
         <div className={COLUMN}>
           <IdentityLine existing={existing} />
 
-          {saveError ? (
-            <Alert color="error">
-              <AlertContent>
-                <AlertTitle>Could not save this location</AlertTitle>
-                <AlertDescription>{saveError}</AlertDescription>
-              </AlertContent>
-            </Alert>
-          ) : null}
+          <SaveFailure title="Could not save this location" message={saveError} />
 
           <LocationFields
             isNew={isNew}

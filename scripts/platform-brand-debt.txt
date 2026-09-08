@@ -1,51 +1,13 @@
-${uncostedUnits} units counted with no purchase behind them. sparx values them at nothing; an opening balance in your books may not have
 <p>A hands-on two-day cohort: leave with a live sparx site, a stocked catalog and your first checkout tested — no code, no jargon.</p>
 A full-service sparx partner — we design, build and run content-and-commerce sites for growing businesses, then stay on as their team.
-Author a sparx site page as a tree of nodes. Every node is { id?, type, name?, class?, props, binding?, children? }.
-Bind the brand mark to the platform-owned site data via siteNavbar/siteFooter (sparx composites, bound to
-Brings orders into sparx
-Consigned or customer-owned stock in your building. sparx leaves it out of your value; if your books include it, this is the difference (measured today, not at the date above — ownership is not dated)
-Either the platform has not approved sparx for them yet, or this account was connected before they were added — reconnecting the account will tell you which.
-Expected a sparx palette object.
-From first-time sellers to established wholesalers, teams ship faster on sparx.
-Limit to the records sparx ships (builtin) or the ones this business invented.
-List available silica blocks (native marketing/content patterns) and sparx composites (commerce/content
-List on the sparx marketplace — we process payment and settle to you.
-List the phone systems this business has connected and which number each calls from. Returns nothing when none is connected, which means calls cannot be placed from sparx — a person can still make them by hand and log them afterwards. Never returns any credential.
-Not a sparx palette. Use the “Copy for sparx” button on the color palette tool.
-Paste a sparx palette to import.
-Publish posts from sparx
-Route checkout through your own Stripe account — you keep the full Stripe relationship, payouts, and disputes, with no sparx markup. Installs the gateway; add your API keys in Finance → Payments to go live.
-SEO, chrome, and collection-template targeting live on the sparx BuilderPage row, not the silica tree — set
-Shop auto parts, industrial supplies, and equipment from independent sellers across the sparx network — fitment-aware, in stock, and ready to ship.
 Sparx footer
 Sparx navbar
-Stock value in sparx
-That isn’t valid JSON. Paste the full “Copy for sparx” output from the palette tool.
-The kinds of stock file sparx knows how to read — a hand-kept spreadsheet, an item list from accounts software, a marketplace listing report, a till export, or a stock-take sheet sparx itself produced. Each says how to recognise it. Use it to pick the right recipe before previewing an import.
-The sparx storefront editor in action
-This account has a role on the sparx developer app, so Meta hands it every permission whether or not App Review approved them. Its permission list proves nothing — to test a review, connect an account with no role on the app.
-This palette was made with a newer version of sparx. Update and try again.
-What sparx says your stock is worth against your accounting inventory account, with every difference itemised.
-You earned ${amountLabel} on sparx
-You earned a commission on sparx
-You have a new referral on sparx
-Your sparx payout is on the way
-block for anything generic; reach for a sparx composite only when the section needs real commerce/CMS data.
 fill the slots and they are the tenant’s. For the FRAME prefer sparx.navbar / sparx.footer, which are these
-grid/card, buy box, featured products, collection header, the sparx-branded navbar/footer). Prefer a native
 sparx ${name}
 sparx Managed Hosting
 sparx Pay
-sparx Pay is unavailable — the platform Stripe key is not configured.
-sparx Pay webhook signature did not match any configured secret
 sparx Shipping
-sparx bans EYEBROWS (a small uppercase kicker label above a heading) — hierarchy is carried by scale/weight/
 sparx commission (${commissionRateLabel})
-sparx domain composites and when to use each, the data-binding model, the theme token model, and the SEO/
-sparx is finishing its ${descriptor.name} app approval. Nothing for you to do — this will switch on by itself.
-sparx is finishing its ${descriptor.name} partner approval. Nothing for you to do — this will switch on by itself.
-sparx migration
 sparx operations
 sparx order ${ref}
 sparx platform billing
@@ -58,4 +20,4 @@ sparxcms.com → CMS
 sparxcrm.com → CRM
 sparxemail.com → Email
 zsh — sparx
-“sparx replaced four separate tools for us. We relaunched our store in a weekend and orders climbed 38% the first month.”
+— The sparx team

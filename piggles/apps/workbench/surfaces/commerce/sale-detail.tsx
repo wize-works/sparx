@@ -6,6 +6,7 @@
 // so the sale lands in Orders, in Payments, in what she is owed and in her
 // takings, exactly like one placed on the website.
 
+import { shownInPlace } from '@wizeworks/query';
 import { useEffect, useMemo, useState } from 'react';
 import {
   Alert,
@@ -125,6 +126,7 @@ export function SaleDetailSurface({ ctx }: { ctx: SurfaceContext }) {
             toast.add({ title: 'Sale written down', type: 'success' });
           });
         },
+        onError: shownInPlace,
       }
     );
   };

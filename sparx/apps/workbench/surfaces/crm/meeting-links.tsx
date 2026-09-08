@@ -218,31 +218,40 @@ export function MeetingLinksSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Booking link actions">
-        <CalendarClock className="size-4 shrink-0" aria-hidden />
-        <Text as="span" className="text-sm">
-          {rows.length === 0
-            ? 'No booking links yet'
-            : rows.length === 1
-              ? '1 booking link'
-              : `${String(rows.length)} booking links`}
-        </Text>
-        <Button
-          color="module"
-          size="sm"
-          className="ml-auto shrink-0"
-          disabled={noServices}
-          title={
-            noServices
-              ? 'Set up something bookable under Scheduling first'
-              : 'Make a new booking link'
-          }
-          onClick={startNew}
-        >
-          <Plus className="size-4" aria-hidden />
-          New booking link
-        </Button>
-      </PaneToolbar>
+      <PaneToolbar
+        label="Booking link actions"
+        status={
+          <Text as="span" className="text-sm">
+            {rows.length === 0
+              ? 'No booking links yet'
+              : rows.length === 1
+                ? '1 booking link'
+                : `${String(rows.length)} booking links`}
+          </Text>
+        }
+        primary={
+          <Button
+            color="module"
+            size="sm"
+            className="ml-auto shrink-0"
+            disabled={noServices}
+            title={
+              noServices
+                ? 'Set up something bookable under Scheduling first'
+                : 'Make a new booking link'
+            }
+            onClick={startNew}
+          >
+            <Plus className="size-4" aria-hidden />
+            New booking link
+          </Button>
+        }
+        controls={
+          <>
+            <CalendarClock className="size-4 shrink-0" aria-hidden />
+          </>
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className={COLUMN}>

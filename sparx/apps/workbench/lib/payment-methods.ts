@@ -29,6 +29,9 @@ const MONEY_WORDS: Record<string, string> = {
   paypal: 'PayPal',
   net_terms: 'On account',
   account_credit: 'Account credit',
+  // Money the shop was paid when the card was BOUGHT, now being spent. Recorded
+  // as a payment rather than a discount, so this is a way money arrived.
+  gift_card: 'Gift card',
   other: 'Other',
 };
 

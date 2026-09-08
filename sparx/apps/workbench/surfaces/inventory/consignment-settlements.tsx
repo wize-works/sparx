@@ -32,7 +32,6 @@ import {
   Table,
   Text,
   Timestamp,
-  ToolbarSeparator,
 } from '@wizeworks/silicaui-react';
 import { Handshake, ReceiptText } from 'lucide-react';
 import { useState } from 'react';
@@ -67,41 +66,46 @@ export function ConsignmentSettlementsSurface({ ctx }: { ctx: SurfaceContext }) 
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Consignment controls">
-        <NativeSelect
-          size="sm"
-          className="max-w-44 shrink"
-          aria-label="Which settlements"
-          value={status}
-          onChange={(event) => {
-            setStatus(event.target.value);
-          }}
-        >
-          <option value="">All periods</option>
-          <option value="draft">Drafts</option>
-          <option value="closed">Closed, unbilled</option>
-          <option value="invoiced">Billed</option>
-          <option value="paid">Paid</option>
-        </NativeSelect>
-
-        <ToolbarSeparator />
-
-        <Text className="text-sm">
-          {owedCents > 0
-            ? `${formatCents(owedCents)} owed on closed periods`
-            : 'Nothing outstanding'}
-        </Text>
-
-        <RefreshButton
-          className="ml-auto"
-          isFetching={list.isFetching || unsettled.isFetching}
-          updatedAt={list.data ? list.dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void list.refetch();
-            void unsettled.refetch();
-          }}
-        />
-      </PaneToolbar>
+      <PaneToolbar
+        label="Consignment controls"
+        status={
+          <Text className="text-sm">
+            {owedCents > 0
+              ? `${formatCents(owedCents)} owed on closed periods`
+              : 'Nothing outstanding'}
+          </Text>
+        }
+        controls={
+          <>
+            <NativeSelect
+              size="sm"
+              className="max-w-44 shrink"
+              aria-label="Which settlements"
+              value={status}
+              onChange={(event) => {
+                setStatus(event.target.value);
+              }}
+            >
+              <option value="">All periods</option>
+              <option value="draft">Drafts</option>
+              <option value="closed">Closed, unbilled</option>
+              <option value="invoiced">Billed</option>
+              <option value="paid">Paid</option>
+            </NativeSelect>
+          </>
+        }
+        refresh={
+          <RefreshButton
+            className="ml-auto"
+            isFetching={list.isFetching || unsettled.isFetching}
+            updatedAt={list.data ? list.dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void list.refetch();
+              void unsettled.refetch();
+            }}
+          />
+        }
+      />
 
       {unpricedTotal > 0 ? (
         <Alert color="warning">

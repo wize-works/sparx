@@ -105,20 +105,50 @@ function OrderRow({
       }}
     >
       <td className="text-sm">
-        <span className="font-mono">{order.orderNumber}</span>
+        {/* An order number is one token and must never be broken across lines.
+            Auto table layout hands this column whatever is left after the others
+            have taken theirs, and in a docked pane that was 83px — enough to
+            render "O-000016" as "O-" over "000016". The identifier is what she
+            reads a row by, so it claims its width; the wrapper scrolls if the
+            table ever genuinely outgrows the pane. */}
+        <span className="font-mono whitespace-nowrap">{order.orderNumber}</span>
         {/* Same reasoning as the due day below: on a phone the Customer column
             is gone and an owner scans this list for "Ravi's order", never for
-            O-000001. Hidden once that column appears (issue 262). */}
-        <span className="block truncate text-xs @lg:hidden">{customerName(order.customer)}</span>
+            O-000001. Hidden once that column appears (issue 262).
+
+            The cap is what makes `truncate` mean anything. A name has no natural
+            width, so with nothing to truncate AGAINST the span just grew the
+            column: "Marguerite Adeyemi" wanted 115px against the 77px the order
+            number needs, and a longer name would have taken more still. That is
+            the failure IDENTITY_CELL's own note describes, and here it pushed the
+            money off the right edge on a phone.
+
+            96px because that is about what "Due Thu, Sep 10" already costs. The
+            column has to fit the due line regardless, so a name held to the same
+            width can never be the thing that widens it — which is the rule, not a
+            number picked to make one screen fit. It relaxes as soon as there is
+            room, and disappears entirely once the Customer column appears. */}
+        <span className="block max-w-24 truncate text-xs @sm:max-w-48 @lg:hidden">
+          {customerName(order.customer)}
+        </span>
         {/* Under the number rather than in a column of its own, so it survives
             every width — the day a made-to-order job is due is the thing a
             shop that makes things scans this list for (issue 026). */}
+        {/* Nowrap for the same reason. "Due Thu, Sep 10" in an 83px column wraps
+            to four lines and the last one is clipped by the row height, so the
+            date a late job is late BY was the part that disappeared. */}
         {dueLine(order) ? (
-          <span className="text-module block text-xs font-semibold">{dueLine(order)}</span>
+          <span className="text-module block text-xs font-semibold whitespace-nowrap">
+            {dueLine(order)}
+          </span>
         ) : null}
       </td>
       <td className="hidden max-w-48 truncate @lg:table-cell">{customerName(order.customer)}</td>
-      <td className="hidden text-sm @2xl:table-cell">{formatDate(order.placedAt)}</td>
+      {/* @3xl, not @2xl. Six columns need 719px and @2xl let the sixth in at 672,
+          so a docked pane rendered all of them and pushed the TOTAL off the right
+          edge — "$67" where "$67.00" belongs. Placed was already the last column
+          to appear, so it is the one that waits a step longer. */}
+      <td className="hidden text-sm @3xl:table-cell">{formatDate(order.placedAt)}</td>
       <td>
         <Badge color={paid.tone} variant="soft" size="sm">
           {paid.label}
@@ -156,7 +186,7 @@ export function OrdersTable({
           <SortHeader
             sortKey="placedAt"
             label="Placed"
-            className="hidden @2xl:table-cell"
+            className="hidden @3xl:table-cell"
             sort={sort}
             onSort={onSort}
           />

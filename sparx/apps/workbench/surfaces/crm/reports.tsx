@@ -303,19 +303,24 @@ export function CrmReportsSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Reports controls">
-        <Text as="span" className="text-sm font-medium">
-          How your customers are doing
-        </Text>
-        <RefreshButton
-          className="ml-auto"
-          isFetching={snapshot.isFetching}
-          updatedAt={snapshot.data ? snapshot.dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void refreshAll();
-          }}
-        />
-      </PaneToolbar>
+      <PaneToolbar
+        label="Reports controls"
+        status={
+          <Text as="span" className="text-sm font-medium">
+            How your customers are doing
+          </Text>
+        }
+        refresh={
+          <RefreshButton
+            className="ml-auto"
+            isFetching={snapshot.isFetching}
+            updatedAt={snapshot.data ? snapshot.dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void refreshAll();
+            }}
+          />
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className="mx-auto flex w-full max-w-6xl flex-col gap-4">

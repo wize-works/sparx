@@ -103,7 +103,7 @@ export function ArSummary() {
           <Stat>
             <StatTitle>Late</StatTitle>
             <StatValue className="text-success text-2xl">None</StatValue>
-            <StatDesc>Everything is within terms</StatDesc>
+            <StatDesc>Nothing has passed its deadline</StatDesc>
           </Stat>
         )}
       </Stats>

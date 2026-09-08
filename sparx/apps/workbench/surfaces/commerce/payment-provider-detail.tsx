@@ -55,6 +55,7 @@ import {
   type MaskedGatewayCredential,
   type PaymentConfig,
 } from './providers-data';
+import { PaneLoadError } from '../../components/pane-load-error';
 
 const COLUMN = 'mx-auto flex w-full max-w-3xl flex-col gap-4';
 
@@ -73,30 +74,20 @@ export function PaymentProviderDetailSurface({ ctx }: { ctx: SurfaceContext }) {
   if (config.isError || catalog.isError) {
     return (
       <div className={PANE_SHELL}>
-        <div className="flex h-full items-center justify-center p-8">
-          <Alert color="error" className="max-w-md">
-            <AlertContent>
-              <AlertTitle>Could not load this provider</AlertTitle>
-              <AlertDescription>
-                {paymentsErrorMessage(
-                  config.error ?? catalog.error,
-                  'This is a problem reaching the server. Nothing has been changed.'
-                )}
-              </AlertDescription>
-            </AlertContent>
-            <Button
-              size="sm"
-              color="error"
-              variant="soft"
-              onClick={() => {
-                void config.refetch();
-                void catalog.refetch();
-              }}
-            >
-              Try again
-            </Button>
-          </Alert>
-        </div>
+        {/* No `noun` here, deliberately. A 404 on a provider's config means it
+            has never been set up, not that somebody deleted it, so the missing
+            wording would tell the wrong story. */}
+        <PaneLoadError
+          title="Could not load this provider"
+          description={paymentsErrorMessage(
+            config.error ?? catalog.error,
+            'This is a problem reaching the server. Nothing has been changed.'
+          )}
+          onRetry={() => {
+            void config.refetch();
+            void catalog.refetch();
+          }}
+        />
       </div>
     );
   }
@@ -164,12 +155,18 @@ function ProviderEditor({
             <Text className="text-sm">{descriptor.blurb}</Text>
           </div>
 
+          {/* Two different true sentences, because there are two different
+              situations. A provider with no online checkout is switched on and
+              charges nothing, and calling that "takes payments" is the screen
+              telling an owner her orders are being paid when they are not. */}
           {isActive ? (
-            <Alert color="success" variant="soft">
+            <Alert color={descriptor.checkout === 'none' ? 'info' : 'success'} variant="soft">
               <AlertContent>
                 <AlertTitle>This is your active provider</AlertTitle>
                 <AlertDescription>
-                  Checkout uses {descriptor.name} to take payments. {descriptor.feeNote}
+                  {descriptor.checkout === 'none'
+                    ? `Checkout places the order and charges nothing — you mark each one paid yourself. ${descriptor.feeNote}`
+                    : `Checkout uses ${descriptor.name} to take payments. ${descriptor.feeNote}`}
                 </AlertDescription>
               </AlertContent>
             </Alert>
@@ -366,6 +363,10 @@ function ApiKeysBody({
   isSelected: boolean;
   webhookUrl: string | undefined;
 }) {
+  // The name of the company whose dashboard she opens in the other tab. The
+  // shelf name is a different thing and is wrong in a possessive — see
+  // GatewayDescriptor.processor.
+  const processorName = descriptor.processor ?? descriptor.name;
   const capture = useCaptureCredentials();
   const select = useSelectGateway();
   const remove = useDeleteCredentials();
@@ -381,7 +382,7 @@ function ApiKeysBody({
     if (!touched) setDraft(saved);
   }, [saved, touched]);
 
-  useDirtySource(touched, `Your ${descriptor.name} keys have unsaved changes. Close anyway?`);
+  useDirtySource(touched, `Your ${processorName} keys have unsaved changes. Close anyway?`);
 
   const setField = (key: string, value: string) => {
     setTouched(true);
@@ -401,7 +402,7 @@ function ApiKeysBody({
       {
         onSuccess: () => {
           setTouched(false);
-          toast.add({ title: `${descriptor.name} keys saved`, type: 'success' });
+          toast.add({ title: `${processorName} keys saved`, type: 'success' });
         },
         onError: (error) => {
           toast.add({
@@ -432,7 +433,7 @@ function ApiKeysBody({
   const onRemove = () => {
     void (async () => {
       const ok = await confirm({
-        title: `Remove your ${descriptor.name} keys?`,
+        title: `Remove your ${processorName} keys?`,
         description:
           'Your saved keys are deleted and this provider can no longer take payments until you enter them again. Any orders already taken are unaffected. This cannot be undone.',
         confirmLabel: 'Remove the keys',
@@ -445,7 +446,7 @@ function ApiKeysBody({
           setTouched(false);
           setDraft(initialDraft(descriptor, undefined));
           afterPaneChange(() => {
-            toast.add({ title: `${descriptor.name} keys removed`, type: 'success' });
+            toast.add({ title: `${processorName} keys removed`, type: 'success' });
           });
         },
         onError: (error) => {
@@ -463,7 +464,7 @@ function ApiKeysBody({
     <>
       <FormSection
         title="Your keys"
-        description={`Paste these from your ${descriptor.name} account. Saved keys are never shown again — leave a key blank to keep the one already saved.`}
+        description={`Paste these from your ${processorName} account. Saved keys are never shown again — leave a key blank to keep the one already saved.`}
       >
         {descriptor.environments ? (
           <Field>
@@ -521,7 +522,7 @@ function ApiKeysBody({
 
         {descriptor.docsUrl ? (
           <Text className="text-sm">
-            Not sure where to find these? They are in your {descriptor.name} account settings.
+            Not sure where to find these? They are in your {processorName} account settings.
           </Text>
         ) : null}
 
@@ -540,8 +541,8 @@ function ApiKeysBody({
 
       {webhookUrl ? (
         <FormSection
-          title={`Tell ${descriptor.name} where to send updates`}
-          description={`Add this address in your ${descriptor.name} account so it can tell us when a payment goes through. Until you do, cards will still be charged — but orders will keep showing as unpaid and your customers won't get a receipt.`}
+          title={`Tell ${processorName} where to send updates`}
+          description={`Add this address in your ${processorName} account so it can tell us when a payment goes through. Until you do, cards will still be charged — but orders will keep showing as unpaid and your customers won't get a receipt.`}
         >
           <CopyValue value={webhookUrl} label="webhook address" />
           <Text className="text-sm">

@@ -19,10 +19,6 @@ import { useEffect, useMemo, useState } from 'react';
 import { PaneWaiting } from '../../components/pane-waiting';
 import { PaneLoadError } from '../../components/pane-load-error';
 import {
-  Alert,
-  AlertContent,
-  AlertDescription,
-  AlertTitle,
   Badge,
   Button,
   Card,
@@ -57,6 +53,7 @@ import { CustomPropertiesPanel } from '../crm/custom-properties-panel';
 import type { OpenTarget, SurfaceContext } from '../../lib/surfaces/registry';
 import { MoneyInput } from '../../components/money-input';
 import { CustomerPicker, customerLabel, type CustomerSummary } from '../invoicing/customer-picker';
+import { SaveFailure } from '@/components/save-failure';
 import {
   CONTACT_ROLE_LABELS,
   accountErrorMessage,
@@ -455,14 +452,7 @@ function AccountEditor({
             </Text>
           ) : null}
 
-          {failure ? (
-            <Alert color="error">
-              <AlertContent>
-                <AlertTitle>Could not save this account</AlertTitle>
-                <AlertDescription>{failure}</AlertDescription>
-              </AlertContent>
-            </Alert>
-          ) : null}
+          <SaveFailure title="Could not save this account" message={failure} />
 
           {/* 1 — Who they are */}
           <FormSection title="Who they are">

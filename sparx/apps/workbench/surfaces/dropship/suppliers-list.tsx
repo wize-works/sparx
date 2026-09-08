@@ -23,7 +23,6 @@ import {
   Table,
   Text,
   Timestamp,
-  ToolbarSeparator,
 } from '@wizeworks/silicaui-react';
 import { ArrowDown, ArrowUp, Link2, PackageSearch, Plus } from 'lucide-react';
 import { ListPagination, MAX_TAKE, type PageSize } from '../../components/list-pagination';
@@ -110,61 +109,67 @@ export function SuppliersListSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Supplier list controls" wrap>
-        <div className="max-w-xs min-w-0 flex-1">
-          <SearchInput
+      <PaneToolbar
+        label="Supplier list controls"
+        search={
+          <div className="max-w-xs min-w-0 flex-1">
+            <SearchInput
+              size="sm"
+              aria-label="Search suppliers"
+              placeholder="Search by name…"
+              value={search}
+              onValueChange={(next) => {
+                setSearch(next);
+                resetWindow();
+              }}
+            />
+          </div>
+        }
+        primary={
+          <Button
+            color="module"
             size="sm"
-            aria-label="Search suppliers"
-            placeholder="Search by name…"
-            value={search}
-            onValueChange={(next) => {
-              setSearch(next);
-              resetWindow();
+            className="ml-auto shrink-0"
+            title="Connect a supplier — hold Shift to open alongside, Alt for a new window"
+            onClick={(event) => {
+              ctx.open('dropship.supplier.detail', { id: 'new' }, { target: targetFor(event) });
+            }}
+          >
+            <Plus className="size-4" aria-hidden />
+            <span className="hidden @lg:inline">Connect a supplier</span>
+          </Button>
+        }
+        controls={
+          <>
+            <div className="hidden w-44 shrink-0 @md:block">
+              <Select
+                size="sm"
+                aria-label="Show which suppliers"
+                value={status}
+                items={{
+                  all: 'All suppliers',
+                  active: 'Connected',
+                  error: 'Needs attention',
+                  connecting: 'Connecting',
+                }}
+                onValueChange={(next) => {
+                  setStatus(next as string);
+                  resetWindow();
+                }}
+              />
+            </div>
+          </>
+        }
+        refresh={
+          <RefreshButton
+            isFetching={isFetching}
+            updatedAt={data ? dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void refetch();
             }}
           />
-        </div>
-
-        <ToolbarSeparator className="hidden @xl:block" />
-
-        <div className="hidden w-44 shrink-0 @md:block">
-          <Select
-            size="sm"
-            aria-label="Show which suppliers"
-            value={status}
-            items={{
-              all: 'All suppliers',
-              active: 'Connected',
-              error: 'Needs attention',
-              connecting: 'Connecting',
-            }}
-            onValueChange={(next) => {
-              setStatus(next as string);
-              resetWindow();
-            }}
-          />
-        </div>
-
-        <Button
-          color="module"
-          size="sm"
-          className="ml-auto shrink-0"
-          title="Connect a supplier — hold Shift to open alongside, Alt for a new window"
-          onClick={(event) => {
-            ctx.open('dropship.supplier.detail', { id: 'new' }, { target: targetFor(event) });
-          }}
-        >
-          <Plus className="size-4" aria-hidden />
-          <span className="hidden @lg:inline">Connect a supplier</span>
-        </Button>
-
-        <RefreshButton
-          isFetching={isFetching}
-          updatedAt={data ? dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void refetch();
-          }}
-        />
-      </PaneToolbar>
+        }
+      />
 
       <Card className="min-h-0 flex-1 overflow-y-auto">
         {error ? (

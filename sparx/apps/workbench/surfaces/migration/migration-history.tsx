@@ -86,23 +86,30 @@ export function MigrationHistorySurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Past moves controls">
-        <Button
-          color="primary"
-          size="sm"
-          onClick={() => ctx.open('platform.migrate', {}, { target: 'tab' })}
-        >
-          <PackagePlus className="size-4" aria-hidden />
-          Move something in
-        </Button>
-        <div className="ml-auto flex items-center gap-2">
-          <RefreshButton
-            onRefresh={() => void refetch()}
-            isFetching={isFetching}
-            updatedAt={dataUpdatedAt}
-          />
-        </div>
-      </PaneToolbar>
+      <PaneToolbar
+        label="Past moves controls"
+        controls={
+          <>
+            <Button
+              color="primary"
+              size="sm"
+              onClick={() => ctx.open('platform.migrate', {}, { target: 'tab' })}
+            >
+              <PackagePlus className="size-4" aria-hidden />
+              Move something in
+            </Button>
+          </>
+        }
+        refresh={
+          <div className="ml-auto flex items-center gap-2">
+            <RefreshButton
+              onRefresh={() => void refetch()}
+              isFetching={isFetching}
+              updatedAt={dataUpdatedAt}
+            />
+          </div>
+        }
+      />
 
       <div className="mx-auto flex w-full max-w-4xl flex-col gap-3 overflow-y-auto">
         {isPending ? <Text>Loading…</Text> : null}

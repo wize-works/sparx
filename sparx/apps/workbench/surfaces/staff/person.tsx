@@ -108,6 +108,7 @@ import {
   timeState,
   toDateInput,
 } from './format';
+import { PaneLoadError } from '../../components/pane-load-error';
 
 const COLUMN = 'mx-auto flex w-full max-w-3xl flex-col gap-4';
 
@@ -1296,32 +1297,18 @@ export function PersonSurface({ ctx }: { ctx: SurfaceContext }) {
     const gone = isNotFound(person.error);
     return (
       <div className={PANE_SHELL}>
-        <div className="flex h-full items-center justify-center p-8">
-          <Alert color={gone ? 'warning' : 'danger'} variant="soft" className="max-w-md">
-            <AlertContent>
-              <AlertTitle>
-                {gone ? 'This person is no longer on file' : 'Could not load this person'}
-              </AlertTitle>
-              <AlertDescription>
-                {gone
-                  ? 'The record may have been deleted. Everything else on your roster is unaffected.'
-                  : 'This is a problem reaching the server. The record itself is unaffected.'}
-              </AlertDescription>
-            </AlertContent>
-            {gone ? null : (
-              <Button
-                size="sm"
-                color="danger"
-                variant="soft"
-                onClick={() => {
-                  void person.refetch();
-                }}
-              >
-                Try again
-              </Button>
-            )}
-          </Alert>
-        </div>
+        <PaneLoadError
+          reason={gone ? 'missing' : 'unreachable'}
+          title={gone ? 'This person is no longer on file' : 'Could not load this person'}
+          description={
+            gone
+              ? 'The record may have been deleted. Everything else on your roster is unaffected.'
+              : 'This is a problem reaching the server. The record itself is unaffected.'
+          }
+          onRetry={() => {
+            void person.refetch();
+          }}
+        />
       </div>
     );
   }
@@ -1342,140 +1329,145 @@ export function PersonSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Person actions" wrap>
-        {isNew ? (
-          <span className="inline-flex items-center gap-1.5">
-            <Coins className="size-4" aria-hidden />
-            <Text as="span" className="text-sm font-medium">
-              New person
-            </Text>
-          </span>
-        ) : (
-          <Badge color={state.tone} variant="soft" size="sm">
-            {state.label}
-          </Badge>
-        )}
-
-        {running ? (
-          <Badge color="info" size="sm">
-            <Clock className="size-3.5" aria-hidden />
-            On the clock
-          </Badge>
-        ) : null}
-
-        {!isNew && !archived ? (
-          running ? (
-            <Button
-              size="sm"
-              variant="outline"
-              color="info"
-              loading={clockOut.isPending}
-              onClick={() => {
-                clockOut.mutate(
-                  { staffMemberId: id },
-                  {
-                    onSuccess: (entry) => {
-                      afterPaneChange(() => {
-                        toast.add({
-                          title: `Clocked out — ${formatMinutes(entry.minutes)}`,
-                          description: 'It is waiting to be approved on the timesheet.',
-                          type: 'success',
-                        });
-                      });
-                    },
-                    onError: (error) => {
-                      toast.add({
-                        title: 'Could not clock out',
-                        description: staffErrorMessage(error, 'Nothing was changed.'),
-                        type: 'error',
-                      });
-                    },
-                  }
-                );
-              }}
-            >
-              Clock out
-            </Button>
-          ) : (
-            <Button
-              size="sm"
-              variant="outline"
-              color="info"
-              loading={clockIn.isPending}
-              onClick={() => {
-                clockIn.mutate(
-                  { staffMemberId: id },
-                  {
-                    onError: (error) => {
-                      toast.add({
-                        title: 'Could not clock in',
-                        description: staffErrorMessage(error, 'Nothing was changed.'),
-                        type: 'error',
-                      });
-                    },
-                  }
-                );
-              }}
-            >
-              <Clock className="size-4" aria-hidden />
-              Clock in
-            </Button>
-          )
-        ) : null}
-
-        <Button
-          size="sm"
-          color="module"
-          className="ml-auto shrink-0"
-          disabled={!canSave}
-          loading={save.isPending}
-          onClick={onSave}
-        >
-          <Save className="size-4" aria-hidden />
-          {isNew ? 'Add them' : 'Save'}
-        </Button>
-
-        {isNew ? null : (
+      <PaneToolbar
+        label="Person actions"
+        primary={
+          <Button
+            size="sm"
+            color="module"
+            className="ml-auto shrink-0"
+            disabled={!canSave}
+            loading={save.isPending}
+            onClick={onSave}
+          >
+            <Save className="size-4" aria-hidden />
+            {isNew ? 'Add them' : 'Save'}
+          </Button>
+        }
+        controls={
           <>
-            <Button
-              size="sm"
-              variant="ghost"
-              color={archived ? 'success' : 'neutral'}
-              loading={archive.isPending}
-              aria-label={archived ? 'Bring them back' : 'Mark as left'}
-              title={archived ? 'Bring them back' : 'Mark as left'}
-              onClick={() => {
-                void onArchive(!archived);
-              }}
-            >
-              {archived ? (
-                <ArchiveRestore className="size-4" aria-hidden />
+            {isNew ? (
+              <span className="inline-flex items-center gap-1.5">
+                <Coins className="size-4" aria-hidden />
+                <Text as="span" className="text-sm font-medium">
+                  New person
+                </Text>
+              </span>
+            ) : (
+              <Badge color={state.tone} variant="soft" size="sm">
+                {state.label}
+              </Badge>
+            )}
+            {running ? (
+              <Badge color="info" size="sm">
+                <Clock className="size-3.5" aria-hidden />
+                On the clock
+              </Badge>
+            ) : null}
+            {!isNew && !archived ? (
+              running ? (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  color="info"
+                  loading={clockOut.isPending}
+                  onClick={() => {
+                    clockOut.mutate(
+                      { staffMemberId: id },
+                      {
+                        onSuccess: (entry) => {
+                          afterPaneChange(() => {
+                            toast.add({
+                              title: `Clocked out — ${formatMinutes(entry.minutes)}`,
+                              description: 'It is waiting to be approved on the timesheet.',
+                              type: 'success',
+                            });
+                          });
+                        },
+                        onError: (error) => {
+                          toast.add({
+                            title: 'Could not clock out',
+                            description: staffErrorMessage(error, 'Nothing was changed.'),
+                            type: 'error',
+                          });
+                        },
+                      }
+                    );
+                  }}
+                >
+                  Clock out
+                </Button>
               ) : (
-                <Archive className="size-4" aria-hidden />
-              )}
-            </Button>
-            <Button
-              size="sm"
-              variant="ghost"
-              color="danger"
-              aria-label="Delete this record"
-              title="Delete this record"
-              onClick={() => {
-                void onDelete();
-              }}
-            >
-              <Trash2 className="size-4" aria-hidden />
-            </Button>
-            <RefreshButton
-              isFetching={person.isFetching}
-              updatedAt={person.data ? person.dataUpdatedAt : undefined}
-              onRefresh={() => {
-                void person.refetch();
-              }}
-            />
+                <Button
+                  size="sm"
+                  variant="outline"
+                  color="info"
+                  loading={clockIn.isPending}
+                  onClick={() => {
+                    clockIn.mutate(
+                      { staffMemberId: id },
+                      {
+                        onError: (error) => {
+                          toast.add({
+                            title: 'Could not clock in',
+                            description: staffErrorMessage(error, 'Nothing was changed.'),
+                            type: 'error',
+                          });
+                        },
+                      }
+                    );
+                  }}
+                >
+                  <Clock className="size-4" aria-hidden />
+                  Clock in
+                </Button>
+              )
+            ) : null}
           </>
-        )}
-      </PaneToolbar>
+        }
+        refresh={
+          isNew ? null : (
+            <>
+              <Button
+                size="sm"
+                variant="ghost"
+                color={archived ? 'success' : 'neutral'}
+                loading={archive.isPending}
+                aria-label={archived ? 'Bring them back' : 'Mark as left'}
+                title={archived ? 'Bring them back' : 'Mark as left'}
+                onClick={() => {
+                  void onArchive(!archived);
+                }}
+              >
+                {archived ? (
+                  <ArchiveRestore className="size-4" aria-hidden />
+                ) : (
+                  <Archive className="size-4" aria-hidden />
+                )}
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                color="danger"
+                aria-label="Delete this record"
+                title="Delete this record"
+                onClick={() => {
+                  void onDelete();
+                }}
+              >
+                <Trash2 className="size-4" aria-hidden />
+              </Button>
+              <RefreshButton
+                isFetching={person.isFetching}
+                updatedAt={person.data ? person.dataUpdatedAt : undefined}
+                onRefresh={() => {
+                  void person.refetch();
+                }}
+              />
+            </>
+          )
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className={COLUMN}>

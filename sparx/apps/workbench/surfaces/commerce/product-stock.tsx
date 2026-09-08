@@ -178,6 +178,19 @@ function plural(count: number, one: string, many: string): string {
   return `${String(count)} ${count === 1 ? one : many}`;
 }
 
+/** Name a few things inside a sentence, and stop naming them before the sentence
+ *  turns into a list. WHICH ones is the useful part when there are three; when
+ *  there are fifteen the cards below are the list and the number is the news —
+ *  and this pane is built to be docked at 340px, where fifteen codes is a wall. */
+function listNames(names: string[]): string {
+  if (names.length === 0) return '';
+  if (names.length === 1) return `${String(names[0])}.`;
+  if (names.length <= 3) {
+    return `${names.slice(0, -1).join(', ')} and ${String(names[names.length - 1])}.`;
+  }
+  return `${names.slice(0, 3).join(', ')} and ${String(names.length - 3)} more.`;
+}
+
 /** The ledger's stored reason, said in plain words. The stored words are the
  *  engineer's ("sync", "transfer_out"); these are the shop's. */
 function movementReason(movement: StockMovement): string {
@@ -894,6 +907,18 @@ function StockBody({ ctx, scope }: { ctx: SurfaceContext; scope: ReadyScope }) {
     (level) => level.reorderPoint !== null && sellable(level) <= level.reorderPoint
   );
 
+  // Versions nobody has ever counted. A version becomes stock-managed by being
+  // COUNTED, not by existing (availability.ts), so these sell WITHOUT LIMIT
+  // however their "when you run out" setting reads — and the totals above are
+  // the counted ones only.
+  //
+  // The card for each one already says so, and the message below is that
+  // sentence raised to the top of the pane. It had to be, because the mixed case
+  // is the one that arrives by surprise: adding a color to a shirt that already
+  // sells makes five new versions in one press, and the person doing it is
+  // thinking about the color (issue 444).
+  const uncounted = variants.filter((variant) => !byVariant.has(variant.id));
+
   // ONE message, the most specific true one. A "running low" warning while
   // something is outright unsellable would bury the worse news under the milder.
   const outOfStock = levels.filter((level) => sellable(level) <= 0);
@@ -1037,6 +1062,10 @@ function StockBody({ ctx, scope }: { ctx: SurfaceContext; scope: ReadyScope }) {
           </Alert>
         ) : null}
 
+        {/* One message about the ABSENCE of counts, beside the one above about the
+            counts themselves. They are different news and neither buries the
+            other: "nothing left" is a sale you will not make, "not counted" is a
+            sale you will make and cannot fill. */}
         {levels.length === 0 ? (
           <Alert color="info">
             <AlertContent>
@@ -1045,6 +1074,24 @@ function StockBody({ ctx, scope }: { ctx: SurfaceContext; scope: ReadyScope }) {
                 Until you count it, your website sells this one without limit — nobody has told it
                 there is a number. Record a count against any version below and it starts keeping
                 track: it comes off sale at zero, and back on when you bring more in.
+              </AlertDescription>
+            </AlertContent>
+          </Alert>
+        ) : uncounted.length > 0 ? (
+          // `soft`, unlike the standalone one above it: this one sits directly
+          // under the counted-stock band, and a solid fill over a soft one reads
+          // as the louder of the two whatever the words say.
+          <Alert color="info" variant="soft">
+            <AlertContent>
+              <AlertTitle>
+                {plural(uncounted.length, 'version has', 'versions have')} never been counted
+              </AlertTitle>
+              <AlertDescription>
+                {uncounted.length === 1
+                  ? 'Nobody has said how many of it you have, so your website sells it without limit and the numbers above leave it out.'
+                  : 'Nobody has said how many of these you have, so your website sells them without limit and the numbers above leave them out.'}{' '}
+                {listNames(uncounted.map((variant) => variant.sku))} Record a count against{' '}
+                {uncounted.length === 1 ? 'it' : 'each'} below and it starts keeping track.
               </AlertDescription>
             </AlertContent>
           </Alert>
@@ -1076,40 +1123,47 @@ function StockBody({ ctx, scope }: { ctx: SurfaceContext; scope: ReadyScope }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Stock actions">
-        <Warehouse className="size-4 shrink-0" aria-hidden />
-        <Heading level={2} className="min-w-0 truncate text-base font-semibold">
-          {scope.product.title}
-        </Heading>
-        {scope.isFollowing ? (
-          <Badge color="info" variant="soft" size="sm">
-            Following
-          </Badge>
-        ) : null}
-        {/* Sheds its label first when the pane is narrow — the number is the
+      <PaneToolbar
+        label="Stock actions"
+        controls={
+          <>
+            <Warehouse className="size-4 shrink-0" aria-hidden />
+            <Heading level={2} className="min-w-0 truncate text-base font-semibold">
+              {scope.product.title}
+            </Heading>
+            {scope.isFollowing ? (
+              <Badge color="info" variant="soft" size="sm">
+                Following
+              </Badge>
+            ) : null}
+            {/* Sheds its label first when the pane is narrow — the number is the
             point, and it is already carried by the summary card below. */}
-        {levels.length > 0 ? (
-          <Badge
-            color="neutral"
-            variant="outline"
-            size="sm"
-            className="ml-auto hidden @md:inline-flex"
-          >
-            <Boxes className="size-3" aria-hidden />
-            {String(totals.available)} to sell
-          </Badge>
-        ) : null}
-        <RefreshButton
-          className={levels.length > 0 ? undefined : 'ml-auto'}
-          isFetching={stock.isFetching}
-          updatedAt={stock.dataUpdatedAt}
-          onRefresh={() => {
-            void stock.refetch();
-            void reservations.refetch();
-            void movements.refetch();
-          }}
-        />
-      </PaneToolbar>
+            {levels.length > 0 ? (
+              <Badge
+                color="neutral"
+                variant="outline"
+                size="sm"
+                className="ml-auto hidden @md:inline-flex"
+              >
+                <Boxes className="size-3" aria-hidden />
+                {String(totals.available)} to sell
+              </Badge>
+            ) : null}
+          </>
+        }
+        refresh={
+          <RefreshButton
+            className={levels.length > 0 ? undefined : 'ml-auto'}
+            isFetching={stock.isFetching}
+            updatedAt={stock.dataUpdatedAt}
+            onRefresh={() => {
+              void stock.refetch();
+              void reservations.refetch();
+              void movements.refetch();
+            }}
+          />
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className={COLUMN}>

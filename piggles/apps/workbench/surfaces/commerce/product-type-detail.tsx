@@ -23,6 +23,7 @@
 // Explicit-save only: one Save button, last write wins. An unsaved edit registers
 // the leave-guard, so closing or navigating away asks first.
 
+import { shownInPlace } from '@wizeworks/query';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { PaneWaiting } from '../../components/pane-waiting';
 import { PaneLoadError } from '../../components/pane-load-error';
@@ -82,6 +83,7 @@ import {
   type TypeMetaInput,
 } from './product-types-data';
 import { productCopy } from '../../lib/product';
+import { SaveFailure } from '@/components/save-failure';
 
 const COLUMN = 'mx-auto flex w-full max-w-3xl flex-col gap-4';
 
@@ -253,6 +255,7 @@ function CreateType({ ctx }: { ctx: SurfaceContext }) {
           toast.add({ title: `${type.name} created`, type: 'success' });
         });
       },
+      onError: shownInPlace,
     });
   };
 
@@ -282,14 +285,7 @@ function CreateType({ ctx }: { ctx: SurfaceContext }) {
             set those details on any product of this kind.
           </Text>
 
-          {failure ? (
-            <Alert color="error">
-              <AlertContent>
-                <AlertTitle>Could not create this</AlertTitle>
-                <AlertDescription>{failure}</AlertDescription>
-              </AlertContent>
-            </Alert>
-          ) : null}
+          <SaveFailure title="Could not create this" message={failure} />
 
           <MetaForm
             draft={draft}

@@ -37,7 +37,6 @@ import {
   SearchInput,
   Table,
   Timestamp,
-  ToolbarSeparator,
   Tooltip,
 } from '@wizeworks/silicaui-react';
 import { History, Search, ShieldCheck } from 'lucide-react';
@@ -300,113 +299,114 @@ export function MovementsListSurface({ ctx }: { ctx: SurfaceContext }) {
       {/* Genuinely more filters than a bar can hold on one line — search, place,
           reason and a two-ended date range — so this is one of the rare bars that
           earns `wrap`. */}
-      <PaneToolbar label="Movements filters" wrap>
-        <div className="max-w-xs min-w-0 flex-1">
-          <SearchInput
-            size="sm"
-            aria-label="Search movements by item"
-            placeholder="Product name or code…"
-            value={search}
-            onValueChange={(next) => {
-              setSearch(next);
-              resetWindow();
+      <PaneToolbar
+        label="Movements filters"
+        search={
+          <div className="max-w-xs min-w-0 flex-1">
+            <SearchInput
+              size="sm"
+              aria-label="Search movements by item"
+              placeholder="Product name or code…"
+              value={search}
+              onValueChange={(next) => {
+                setSearch(next);
+                resetWindow();
+              }}
+            />
+          </div>
+        }
+        controls={
+          <>
+            <NativeSelect
+              size="sm"
+              className="max-w-40 shrink"
+              aria-label="Show changes at"
+              value={locationId}
+              onChange={(event) => {
+                setLocationId(event.target.value);
+                resetWindow();
+              }}
+            >
+              <option value="">Every location</option>
+              {activeLocations.map((location) => (
+                <option key={location.id} value={location.id}>
+                  {location.name}
+                </option>
+              ))}
+            </NativeSelect>
+            <NativeSelect
+              size="sm"
+              className="max-w-44 shrink"
+              aria-label="Show only this kind of change"
+              value={reason}
+              onChange={(event) => {
+                setReason(event.target.value);
+                resetWindow();
+              }}
+            >
+              <option value="">Any reason</option>
+              {MOVEMENT_REASONS.map((value) => (
+                <option key={value} value={value}>
+                  {movementReason(value)}
+                </option>
+              ))}
+            </NativeSelect>
+            <label className="flex items-center gap-1.5">
+              <span className="text-sm whitespace-nowrap">From</span>
+              <Input
+                size="sm"
+                type="date"
+                aria-label="Changes on or after"
+                className="max-w-40"
+                value={from}
+                max={to || undefined}
+                onChange={(event) => {
+                  setFrom(event.target.value);
+                  resetWindow();
+                }}
+              />
+            </label>
+            <label className="flex items-center gap-1.5">
+              <span className="text-sm whitespace-nowrap">To</span>
+              <Input
+                size="sm"
+                type="date"
+                aria-label="Changes on or before"
+                className="max-w-40"
+                value={to}
+                min={from || undefined}
+                onChange={(event) => {
+                  setTo(event.target.value);
+                  resetWindow();
+                }}
+              />
+            </label>
+            <SavedViewsBar
+              target="/inventory/movements"
+              params={viewParams}
+              className="ml-auto"
+              onApply={(next) => {
+                setSearch(next.q ?? '');
+                setLocationId(next.warehouse ?? '');
+                setReason(next.reason ?? '');
+                setFrom(next.from ?? '');
+                setTo(next.to ?? '');
+                resetWindow();
+              }}
+            />
+            {/* ALWAYS the last child of a list toolbar — see RefreshButton. */}
+          </>
+        }
+        refresh={
+          <RefreshButton
+            isFetching={isFetching}
+            updatedAt={data ? dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void refetch();
             }}
           />
-        </div>
-
-        <ToolbarSeparator className="hidden @xl:block" />
-
-        <NativeSelect
-          size="sm"
-          className="max-w-40 shrink"
-          aria-label="Show changes at"
-          value={locationId}
-          onChange={(event) => {
-            setLocationId(event.target.value);
-            resetWindow();
-          }}
-        >
-          <option value="">Every location</option>
-          {activeLocations.map((location) => (
-            <option key={location.id} value={location.id}>
-              {location.name}
-            </option>
-          ))}
-        </NativeSelect>
-
-        <NativeSelect
-          size="sm"
-          className="max-w-44 shrink"
-          aria-label="Show only this kind of change"
-          value={reason}
-          onChange={(event) => {
-            setReason(event.target.value);
-            resetWindow();
-          }}
-        >
-          <option value="">Any reason</option>
-          {MOVEMENT_REASONS.map((value) => (
-            <option key={value} value={value}>
-              {movementReason(value)}
-            </option>
-          ))}
-        </NativeSelect>
-
-        <label className="flex items-center gap-1.5">
-          <span className="text-sm whitespace-nowrap">From</span>
-          <Input
-            size="sm"
-            type="date"
-            aria-label="Changes on or after"
-            className="max-w-40"
-            value={from}
-            max={to || undefined}
-            onChange={(event) => {
-              setFrom(event.target.value);
-              resetWindow();
-            }}
-          />
-        </label>
-
-        <label className="flex items-center gap-1.5">
-          <span className="text-sm whitespace-nowrap">To</span>
-          <Input
-            size="sm"
-            type="date"
-            aria-label="Changes on or before"
-            className="max-w-40"
-            value={to}
-            min={from || undefined}
-            onChange={(event) => {
-              setTo(event.target.value);
-              resetWindow();
-            }}
-          />
-        </label>
-
-        <SavedViewsBar
-          target="/inventory/movements"
-          params={viewParams}
-          className="ml-auto"
-          onApply={(next) => {
-            setSearch(next.q ?? '');
-            setLocationId(next.warehouse ?? '');
-            setReason(next.reason ?? '');
-            setFrom(next.from ?? '');
-            setTo(next.to ?? '');
-            resetWindow();
-          }}
-        />
-
-        {/* ALWAYS the last child of a list toolbar — see RefreshButton. */}
-        <RefreshButton
-          isFetching={isFetching}
-          updatedAt={data ? dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void refetch();
-          }}
-        />
-      </PaneToolbar>
+        }
+      />
 
       <Card className="min-h-0 flex-1 overflow-y-auto">{body()}</Card>
 

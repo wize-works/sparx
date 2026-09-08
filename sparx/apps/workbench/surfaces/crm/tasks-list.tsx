@@ -74,49 +74,60 @@ export function TasksListSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Task list controls">
-        <div className="max-w-xs min-w-0 flex-1">
-          <SearchInput
+      <PaneToolbar
+        label="Task list controls"
+        search={
+          <div className="max-w-xs min-w-0 flex-1">
+            <SearchInput
+              color="module"
+              size="sm"
+              aria-label="Search tasks"
+              placeholder="Search tasks…"
+              value={search}
+              onValueChange={setSearch}
+            />
+          </div>
+        }
+        primary={
+          <Button
             color="module"
             size="sm"
-            aria-label="Search tasks"
-            placeholder="Search tasks…"
-            value={search}
-            onValueChange={setSearch}
-          />
-        </div>
-        <div className="hidden w-36 shrink-0 @lg:block">
-          <Select
-            color="module"
-            size="sm"
-            aria-label="Which tasks to show"
-            value={status}
-            items={statusItems}
-            onValueChange={(next) => {
-              setStatus(next as 'all' | TaskStatus);
+            className="ml-auto shrink-0"
+            title="New task — hold Shift to open alongside, Alt for a new window"
+            onClick={(event) => {
+              ctx.open('crm.task.detail', { id: 'new' }, { target: targetFor(event) });
+            }}
+          >
+            <Plus className="size-4" aria-hidden />
+            New task
+          </Button>
+        }
+        controls={
+          <>
+            <div className="hidden w-36 shrink-0 @lg:block">
+              <Select
+                color="module"
+                size="sm"
+                aria-label="Which tasks to show"
+                value={status}
+                items={statusItems}
+                onValueChange={(next) => {
+                  setStatus(next as 'all' | TaskStatus);
+                }}
+              />
+            </div>
+          </>
+        }
+        refresh={
+          <RefreshButton
+            isFetching={isFetching}
+            updatedAt={data ? dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void refetch();
             }}
           />
-        </div>
-        <Button
-          color="module"
-          size="sm"
-          className="ml-auto shrink-0"
-          title="New task — hold Shift to open alongside, Alt for a new window"
-          onClick={(event) => {
-            ctx.open('crm.task.detail', { id: 'new' }, { target: targetFor(event) });
-          }}
-        >
-          <Plus className="size-4" aria-hidden />
-          New task
-        </Button>
-        <RefreshButton
-          isFetching={isFetching}
-          updatedAt={data ? dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void refetch();
-          }}
-        />
-      </PaneToolbar>
+        }
+      />
 
       <Card className="min-h-0 flex-1 overflow-y-auto">
         {isError ? (

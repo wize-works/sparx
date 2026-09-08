@@ -580,3 +580,107 @@ h6 {
   --color-base-300: var(--color-chrome);
   --color-base-content: var(--color-chrome-deep-content);
 }
+
+/* ── THE SELECTED TAB MARKS ITSELF WHEN THE SLIDING PILL CANNOT ─────────────
+ *
+ * Silica splits "this tab is selected" across TWO elements. The ink flips on the
+ * tab itself, from `[data-active]`, which Base UI always sets. The fill is a
+ * separate `.tabs-indicator` span that Base UI positions from measurements — and
+ * hides outright, with `hidden`, whenever it cannot resolve the active tab.
+ *
+ * So the two halves come apart, and the half that survives is the wrong one. On
+ * `pills` the active ink is `--tabs-accent-content`, which is the correct ink FOR
+ * A FILLED ACCENT PILL: with no pill behind it, a persona opened her first
+ * customer review to a strip reading
+ *
+ *     Reviews (1)          Questions
+ *     ^ rgb(32,38,49)      ^ rgb(244,245,247)
+ *
+ * on a dark pane — the tab she was ON was the only one she could not read, and
+ * the strip told her she was somewhere she was not.
+ *
+ * These rules paint, on the tab, exactly what the indicator would have painted,
+ * and ONLY while it is hidden. When Base UI measures normally the `:has()` does
+ * not match and nothing here applies, so the slide animation is untouched.
+ *
+ * THIS IS A FALLBACK, NOT THE FIX. The cause is upstream: when a pane is opened
+ * mid-session the whole composite list goes dead — every tab lands on
+ * `tabindex="-1"`, arrow keys move nothing, and the indicator therefore never
+ * finds a tab to measure. Roving focus is still broken and this does not mend
+ * it. Reproduced only against a dev server with React StrictMode on; whether a
+ * production build shares it is NOT CHECKED. Issue 409. */
+
+.tabs-pills .tabs-list:has(> .tabs-indicator[hidden]) .tabs-tab[data-active] {
+  background-color: var(--tabs-accent, var(--color-primary));
+}
+
+.tabs-boxed .tabs-list:has(> .tabs-indicator[hidden]) .tabs-tab[data-active] {
+  background-color: var(--color-base-100);
+}
+
+/* The default variant's mark is a 2px underline. An inset shadow rather than a
+ * border, so nothing on the strip moves when it appears. */
+.tabs .tabs-list:has(> .tabs-indicator[hidden]) .tabs-tab[data-active] {
+  box-shadow: inset 0 -2px 0 var(--tabs-accent, var(--color-primary));
+}
+
+.tabs-pills .tabs-list:has(> .tabs-indicator[hidden]) .tabs-tab[data-active],
+.tabs-boxed .tabs-list:has(> .tabs-indicator[hidden]) .tabs-tab[data-active] {
+  box-shadow: none;
+}
+
+/* ── SOFT INK IS DARKENED IN LIGHT AND LIGHTENED IN DARK ────────────────────
+ *
+ * Silica's `soft` treatment paints the background as a 12–15% tint of the accent
+ * and then sets the TEXT to the accent itself. On a dark theme that reads: a
+ * semantic hue is a pale color, and pale on a dark tint is fine. On a LIGHT
+ * theme it asks a pale color to be ink on a paler version of itself, and every
+ * soft badge, button and alert in the console falls under the readable floor.
+ *
+ * Measured on this console's own light theme, against rendered pixels:
+ *
+ *     On sale       badge-success badge-soft   1.77 : 1   at 12px
+ *     Not on sale   badge-info    badge-soft   2.14 : 1
+ *     Waiting for   badge-warning badge-soft   1.37 : 1
+ *                                              4.5 : 1 is the floor
+ *
+ * That is not a palette problem — the SOLID pairing of the same hues measures
+ * 6.35 : 1. It is the recipe: no light-mode semantic hue can be ink on itself.
+ * Issue 076 has the full working, including the same four numbers measured from
+ * silica's own default light theme.
+ *
+ * Mixing the accent toward `--color-base-content` is the correction, and it is
+ * the right one in BOTH themes without a media query: base-content is dark in
+ * light and light in dark, so the ink moves away from its own tint either way.
+ * The hue survives at 48% — a success badge is still green, an error badge still
+ * red — it is only pulled far enough from the background to be read.
+ *
+ * DELETE THIS when `@wizeworks/silicaui` ships the same three lines upstream; it
+ * is one change in `alert.js`, `badge.js` and `button.js`, and this repo does not
+ * own that package. Until then a call-site sweep is the alternative, across
+ * 1,005 `variant="soft"` in 411 files, every one of which chose correctly from
+ * the component's own API. */
+
+.badge-soft {
+  color: color-mix(
+    in oklab,
+    var(--badge-accent, var(--color-base-content)) 48%,
+    var(--color-base-content)
+  );
+}
+
+.alert-soft {
+  color: color-mix(
+    in oklab,
+    var(--alert-accent, var(--color-base-content)) 48%,
+    var(--color-base-content)
+  );
+}
+
+.btn-soft {
+  color: color-mix(
+    in oklab,
+    var(--btn-accent, var(--color-base-content)) 48%,
+    var(--color-base-content)
+  );
+}

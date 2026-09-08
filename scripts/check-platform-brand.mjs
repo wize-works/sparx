@@ -88,8 +88,30 @@ import { fileURLToPath } from 'node:url';
 const ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
 
 // Shared code only. An app under sparx/ or piggles/ serves ONE brand and may
-// name it; these packages serve both and may not.
+// name ITSELF; these packages serve both and may not name either.
 const SCAN_ROOTS = ['wizeworks/packages'];
+
+// THE SECOND PASS, and the reason it exists.
+//
+// "An app serves one brand and may name it" is true of its OWN name and false of
+// the other one, and reading it as symmetric left the brand apps unscanned. A
+// Piggles shop owner setting up a notification was shown the example address
+// `https://example.com/hooks/sparx`, and the check that exists to stop exactly
+// that could not see the file (persona issue 406). Piggles is checked for
+// "sparx" and sparx for "piggles"; each may still say its own name freely.
+// It found 62 on the first run and 14 once it learned to skip a default the
+// brand's own copy file already replaces. All 14 are dead behind a RUNTIME seam
+// a static check cannot see -- `hiddenSurfaces` (partner.*), `hiddenFeatures`
+// (sparx Pay, sparx.market), or the section-rename table, whose keys are the
+// other brand's headings by definition. They are banked in the debt file, and
+// per piggles/CLAUDE.md they must NOT be "fixed": renaming another product's
+// marketplace to Piggles' invents something nobody can sign up for, which is
+// worse than the leak because nothing looks wrong any more.
+const BRAND_TREES = [
+  { dir: 'piggles', foreign: 'sparx' },
+  { dir: 'sparx', foreign: 'piggles' },
+];
+const FOREIGN_DEBT_FILE_NAME = 'foreign-brand-debt.txt';
 
 const BRANDS = ['sparx', 'piggles'];
 
@@ -167,6 +189,30 @@ function walk(dir, files = []) {
 
 const LITERAL = /(['"`])([^'"`\n]{2,400}?)\1/g;
 
+// JSX TEXT, which is where most prose in a React app actually lives.
+//
+// The check read quoted strings only, so it saw `placeholder="…/hooks/sparx"`
+// but not `<p>Featured by sparx</p>` — and the second is the commoner shape by
+// a wide margin. Proving that gap was the point of trying to make the new pass
+// go red and watching it stay green.
+const JSX_TEXT = />([^<>{}'"`]{2,400})</g;
+
+// A TypeScript generic also sits between `>` and `<` — `Promise<Foo>` next to
+// `Bar<Baz>` reads as text to that regex, and the first run reported
+// `(event: SparxEvent` as a brand leak. Prose does not carry code punctuation.
+const CODE_PUNCTUATION = /[;=(){}|[\]]/;
+
+/** Every run of prose in a file: quoted literals, and JSX text in a .tsx. */
+function* literals(src, file) {
+  for (const m of src.matchAll(LITERAL)) yield m[2].trim();
+  if (!file.endsWith('.tsx')) return;
+  for (const m of src.matchAll(JSX_TEXT)) {
+    const text = m[1].replace(/\s+/g, ' ').trim();
+    if (text === '' || CODE_PUNCTUATION.test(text)) continue;
+    yield text;
+  }
+}
+
 // A literal only counts when it reads like something somebody could see. A bare
 // identifier or a path is not prose.
 function isProse(lit) {
@@ -190,8 +236,7 @@ function scan() {
     for (const file of walk(abs)) {
       scanned += 1;
       const src = stripComments(readFileSync(file, 'utf8'));
-      for (const m of src.matchAll(LITERAL)) {
-        const lit = m[2].trim();
+      for (const lit of literals(src, file)) {
         const low = lit.toLowerCase();
         if (!BRANDS.some((b) => low.includes(b))) continue;
         if (!isProse(lit)) continue;
@@ -203,12 +248,80 @@ function scan() {
   return { found, scanned };
 }
 
+/**
+ * Defaults that a brand's own copy file already replaces.
+ *
+ * These consoles were forked from the other brand's, so a surface reads
+ * `productCopy('some.key', <the other brand's sentence>)` and the brand's
+ * copy file supplies its own. An overridden default is DEAD TEXT — reporting it
+ * would fill the list with strings nobody can reach and bury the ones they can.
+ */
+function replacedDefaults(dir) {
+  const copyFile = join(ROOT, dir, 'apps/workbench/lib/console/copy.ts');
+  if (!existsSync(copyFile)) return new Set();
+  const copySrc = readFileSync(copyFile, 'utf8');
+  const overridden = new Set([...copySrc.matchAll(/^\s*'([^']+)':/gm)].map((m) => m[1]));
+  const dead = new Set();
+  for (const file of walk(join(ROOT, dir))) {
+    const src = stripComments(readFileSync(file, 'utf8'));
+    for (const m of src.matchAll(/productCopy(?:With)?\(\s*'([^']+)'\s*,\s*(['"`])([\s\S]*?)\2/g)) {
+      if (overridden.has(m[1])) dead.add(m[3].trim());
+    }
+  }
+  return dead;
+}
+
+/** Prose in one brand's tree that names the OTHER brand. */
+function scanForeign() {
+  const found = [];
+  let scanned = 0;
+  let trees = 0;
+  let replaced = 0;
+  for (const { dir, foreign } of BRAND_TREES) {
+    const abs = join(ROOT, dir);
+    if (!existsSync(abs)) continue;
+    trees += 1;
+    const dead = replacedDefaults(dir);
+    for (const file of walk(abs)) {
+      // A brand's own docs may quote the other product; only shipped code counts.
+      if (file.includes(`${sep}docs${sep}`)) continue;
+      scanned += 1;
+      const src = stripComments(readFileSync(file, 'utf8'));
+      for (const lit of literals(src, file)) {
+        if (!lit.toLowerCase().includes(foreign)) continue;
+        if (!isProse(lit)) continue;
+        if (ALLOWED_PATTERNS.some((a) => lit.includes(a))) continue;
+        if (dead.has(lit)) {
+          replaced += 1;
+          continue;
+        }
+        found.push({ file: relative(ROOT, file).split(sep).join('/'), lit });
+      }
+    }
+  }
+  // Both trees are expected. One means a rename made this pass blind.
+  if (trees < BRAND_TREES.length) {
+    console.error('\nBrand check FAILED: found ' + trees + ' of ' + BRAND_TREES.length + ' brand');
+    console.error('  trees. A moved or renamed tree makes the foreign-name pass blind.\n');
+    process.exit(1);
+  }
+  return { found, scanned, replaced };
+}
+
 const { found, scanned } = scan();
 const unique = [...new Set(found.map((f) => f.lit))].sort();
 
+const foreign = scanForeign();
+const foreignUnique = [...new Set(foreign.found.map((f) => f.lit))].sort();
+const FOREIGN_DEBT_FILE = join(ROOT, 'scripts', FOREIGN_DEBT_FILE_NAME);
+
 if (process.argv.includes('--update')) {
   writeFileSync(DEBT_FILE, unique.join('\n') + '\n', 'utf8');
+  writeFileSync(FOREIGN_DEBT_FILE, foreignUnique.join('\n') + '\n', 'utf8');
   console.log('Wrote ' + unique.length + ' known string(s) to ' + relative(ROOT, DEBT_FILE));
+  console.log(
+    'Wrote ' + foreignUnique.length + ' known string(s) to ' + relative(ROOT, FOREIGN_DEBT_FILE)
+  );
   process.exit(0);
 }
 
@@ -253,4 +366,49 @@ if (fixed.length > 0) {
   );
   for (const f of fixed.slice(0, 20)) console.log('  - ' + f);
 }
-console.log('OK: no new brand-named strings in shared code.');
+
+/* ── Pass two: a brand app naming the OTHER brand ───────────────────────── */
+
+const foreignDebt = existsSync(FOREIGN_DEBT_FILE)
+  ? new Set(
+      readFileSync(FOREIGN_DEBT_FILE, 'utf8')
+        .split('\n')
+        .map((l) => l.trim())
+        .filter(Boolean)
+    )
+  : new Set();
+
+const foreignFresh = foreign.found.filter((f) => !foreignDebt.has(f.lit));
+const foreignFixed = [...foreignDebt].filter((d) => !foreignUnique.includes(d));
+
+console.log(
+  'Foreign-brand check: ' +
+    foreign.scanned +
+    ' brand file(s) scanned, ' +
+    foreignUnique.length +
+    ' foreign-named string(s) found, ' +
+    foreignDebt.size +
+    ' known, ' +
+    foreign.replaced +
+    " replaced by the brand's own copy."
+);
+
+if (foreignFresh.length > 0) {
+  console.error(
+    '\nBrand check FAILED: ' + foreignFresh.length + ' NEW string(s) naming the OTHER brand.\n'
+  );
+  for (const f of foreignFresh) console.error('  ' + f.file + '\n    ' + f.lit + '\n');
+  console.error('  A brand app may name ITSELF. Naming the other product tells a customer');
+  console.error('  about something they cannot buy, in a console whose every other word');
+  console.error('  says the brand they did. Remove it, or say what the thing does.\n');
+  process.exit(1);
+}
+
+if (foreignFixed.length > 0) {
+  console.log(
+    '\n' + foreignFixed.length + ' known foreign-named string(s) are gone. Run --update to bank it:'
+  );
+  for (const f of foreignFixed.slice(0, 20)) console.log('  - ' + f);
+}
+
+console.log('OK: no new brand-named strings in shared code, and none naming the other brand.');

@@ -136,6 +136,24 @@ export interface BillingDocument {
    * a working receivables list.
    */
   billedToName?: string | null;
+  /**
+   * When the customer was actually emailed this, resolved server-side on LIST
+   * rows. Null means the bill is still sitting here.
+   *
+   * Present on list responses. Read it rather than the metadata bag directly:
+   * the send route is the only writer and the server owns the shape.
+   */
+  sentAt?: string | null;
+  /**
+   * Where a send would actually go, resolved server-side on the single-document
+   * read: the frozen `billTo` address first, else the customer's own.
+   *
+   * The Send dialog must not resolve this itself. Reading `billTo.email` alone
+   * made it announce "there is no email address on this invoice" about an
+   * invoice whose customer has one, and then send it anyway on confirm, because
+   * the server knew the fallback and the screen did not.
+   */
+  billedToEmail?: string | null;
   taxRate: number;
   /** The note printed on the document the customer receives — `billing-document-html`
    *  renders it under a "Notes" heading. It was missing from this interface, which
@@ -143,6 +161,12 @@ export interface BillingDocument {
   notes: string | null;
   subtotal: number;
   taxTotal: number;
+  /** Document-level charges carried across from the order: not lines, not taxed,
+   *  added last. They were missing from this interface, so the editor's running
+   *  total was short by exactly the delivery charge and no screen ever showed
+   *  it -- see issue 442. */
+  shippingTotal: number;
+  surchargeTotal: number;
   total: number;
   balance: number;
   amountPaid: number;
@@ -209,6 +233,8 @@ export function normalizeDocument(raw: BillingDocument): BillingDocument {
     taxRate: num(raw.taxRate),
     subtotal: num(raw.subtotal),
     taxTotal: num(raw.taxTotal),
+    shippingTotal: num(raw.shippingTotal),
+    surchargeTotal: num(raw.surchargeTotal),
     total: num(raw.total),
     balance: num(raw.balance),
     amountPaid: num(raw.amountPaid),

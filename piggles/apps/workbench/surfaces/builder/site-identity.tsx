@@ -20,15 +20,12 @@
 // form, not a form-plus-summary, so the bento chassis would float a near-empty
 // rail beside it.
 
+import { shownInPlace } from '@wizeworks/query';
 import { useEffect, useMemo, useState } from 'react';
 import { PaneWaiting } from '../../components/pane-waiting';
 import { PaneLoadError } from '../../components/pane-load-error';
 import Image from 'next/image';
 import {
-  Alert,
-  AlertContent,
-  AlertDescription,
-  AlertTitle,
   Badge,
   Button,
   Card,
@@ -64,6 +61,7 @@ import { MediaPickerProvider, useMediaPicker } from '../cms/media-picker';
 import { useMediaAssets } from '../cms/media';
 import { useDomains } from '../domains/data';
 import type { Site } from '../sites/data';
+import { SaveFailure } from '@/components/save-failure';
 import {
   contactOf,
   effectiveBrand,
@@ -235,6 +233,7 @@ function IdentityEditor({
         },
         // A failure keeps the draft intact and shows the server's own sentence in
         // the page (below), not a toast that vanishes mid-read.
+        onError: shownInPlace,
       }
     );
   };
@@ -301,14 +300,7 @@ function IdentityEditor({
             logo, or links on any of your other sites.
           </Text>
 
-          {failure ? (
-            <Alert color="error">
-              <AlertContent>
-                <AlertTitle>Could not save your changes</AlertTitle>
-                <AlertDescription>{failure}</AlertDescription>
-              </AlertContent>
-            </Alert>
-          ) : null}
+          <SaveFailure title="Could not save your changes" message={failure} />
 
           <FormSection title="Name & tagline">
             <Field>

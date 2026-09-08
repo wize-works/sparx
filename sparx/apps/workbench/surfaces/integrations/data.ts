@@ -26,13 +26,7 @@ import { api } from '../../lib/api/client';
 /** Mirrors @wizeworks/integrations. `subscription_billing` and `identity` are absent
  *  because nothing implements either — see the note on IntegrationCategory there. */
 export type IntegrationCategory =
-  | 'payments'
-  | 'shipping'
-  | 'tax'
-  | 'sales_channels'
-  | 'social'
-  | 'dropship'
-  | 'ai';
+  'payments' | 'shipping' | 'tax' | 'sales_channels' | 'social' | 'dropship' | 'ai';
 
 /** Whether a tenant can connect this today, and if not, whose problem it is.
  *  `needs_platform_setup` is sparx's to finish, never the tenant's — the distinction

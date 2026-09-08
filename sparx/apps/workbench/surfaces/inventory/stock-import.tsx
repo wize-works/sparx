@@ -575,40 +575,47 @@ export function StockImportSurface(_props: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Stock import controls">
-        <Button
-          color="neutral"
-          variant="outline"
-          size="sm"
-          render={
-            <a href={importTemplatePath(warehouseId === '' ? undefined : warehouseId)} download>
-              <Download className="size-4" aria-hidden />
-              Download what you have
-            </a>
-          }
-        />
-
-        <Button
-          color="module"
-          size="sm"
-          className="ml-auto"
-          disabled={previewImport.isPending}
-          onClick={() => {
-            fileInput.current?.click();
-          }}
-        >
-          <Upload className="size-4" aria-hidden />
-          Upload a file
-        </Button>
-
-        <RefreshButton
-          isFetching={batches.isFetching}
-          updatedAt={batches.data ? batches.dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void batches.refetch();
-          }}
-        />
-      </PaneToolbar>
+      <PaneToolbar
+        label="Stock import controls"
+        primary={
+          <Button
+            color="module"
+            size="sm"
+            className="ml-auto"
+            disabled={previewImport.isPending}
+            onClick={() => {
+              fileInput.current?.click();
+            }}
+          >
+            <Upload className="size-4" aria-hidden />
+            Upload a file
+          </Button>
+        }
+        controls={
+          <>
+            <Button
+              color="neutral"
+              variant="outline"
+              size="sm"
+              render={
+                <a href={importTemplatePath(warehouseId === '' ? undefined : warehouseId)} download>
+                  <Download className="size-4" aria-hidden />
+                  Download what you have
+                </a>
+              }
+            />
+          </>
+        }
+        refresh={
+          <RefreshButton
+            isFetching={batches.isFetching}
+            updatedAt={batches.data ? batches.dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void batches.refetch();
+            }}
+          />
+        }
+      />
 
       {/* Hidden, driven by the toolbar button — a bare file input in the layout
           is the one control nobody can style and everybody notices. */}

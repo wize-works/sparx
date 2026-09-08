@@ -160,39 +160,44 @@ export function PoliciesListSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Booking rules list controls">
-        <div className="max-w-xs min-w-0 flex-1">
-          <SearchInput
+      <PaneToolbar
+        label="Booking rules list controls"
+        search={
+          <div className="max-w-xs min-w-0 flex-1">
+            <SearchInput
+              size="sm"
+              aria-label="Search booking rules"
+              placeholder="Rule set name…"
+              value={search}
+              onValueChange={(next) => {
+                setSearch(next);
+                resetWindow();
+              }}
+            />
+          </div>
+        }
+        primary={
+          <Button
+            color="module"
             size="sm"
-            aria-label="Search booking rules"
-            placeholder="Rule set name…"
-            value={search}
-            onValueChange={(next) => {
-              setSearch(next);
-              resetWindow();
+            className="ml-auto shrink-0 whitespace-nowrap"
+            title="New rule set — hold Shift to open alongside, Alt for a new window"
+            onClick={openNew}
+          >
+            <Plus className="size-4" aria-hidden />
+            <span className="hidden @lg:inline">New rule set</span>
+          </Button>
+        }
+        refresh={
+          <RefreshButton
+            isFetching={isFetching}
+            updatedAt={data ? dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void refetch();
             }}
           />
-        </div>
-
-        <Button
-          color="module"
-          size="sm"
-          className="ml-auto shrink-0 whitespace-nowrap"
-          title="New rule set — hold Shift to open alongside, Alt for a new window"
-          onClick={openNew}
-        >
-          <Plus className="size-4" aria-hidden />
-          <span className="hidden @lg:inline">New rule set</span>
-        </Button>
-
-        <RefreshButton
-          isFetching={isFetching}
-          updatedAt={data ? dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void refetch();
-          }}
-        />
-      </PaneToolbar>
+        }
+      />
 
       <Card className="mx-auto min-h-0 w-full max-w-4xl flex-1 overflow-y-auto">{body()}</Card>
 

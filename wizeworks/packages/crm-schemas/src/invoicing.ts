@@ -251,6 +251,20 @@ export const ListBillingDocumentsInput = z.object({
   // restricted member sees strictly their granted businesses' documents.
   propertyIds: z.array(z.string().uuid()).optional(),
   status: z.string().max(20).optional(),
+  /**
+   * Whether the customer has actually been given the document.
+   *
+   * Separate from `status`, and deliberately so: status is about the MONEY
+   * (unpaid, partial, paid, void) and this is about whether the bill was ever
+   * handed over. An unpaid invoice nobody sent and an unpaid invoice sent three
+   * weeks ago are the same status and completely different problems, and only
+   * one of them is the customer's fault. `false` is the one worth filtering to.
+   *
+   * `preprocess`, never `z.coerce.boolean()`: that is `Boolean(value)`, so the
+   * string "false" off a query string arrives as TRUE and the filter returns the
+   * exact opposite of what was asked for.
+   */
+  sent: z.preprocess((v) => (typeof v === 'string' ? v === 'true' : v), z.boolean()).optional(),
   includeDeleted: z.boolean().optional(),
   // `z.coerce.number()` (not `z.number()`) so HTTP query strings — the dashboard
   // hits `/v1/invoicing/documents?limit=100`, and the route pipes `request.query`

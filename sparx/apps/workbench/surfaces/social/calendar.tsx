@@ -24,14 +24,7 @@ import {
   type DragEndEvent,
   type DragStartEvent,
 } from '@dnd-kit/core';
-import {
-  Button,
-  EmptyState,
-  Heading,
-  Text,
-  ToggleGroup,
-  ToggleGroupItem,
-} from '@wizeworks/silicaui-react';
+import { Button, Heading, Text, ToggleGroup, ToggleGroupItem } from '@wizeworks/silicaui-react';
 import { CalendarPlus, ChevronLeft, ChevronRight, Plus, ServerCrash } from 'lucide-react';
 import { slotOccurrences } from '@wizeworks/social/cadence';
 import { PaneToolbar, PANE_SHELL } from '../../components/pane-toolbar';
@@ -42,6 +35,7 @@ import { PostThumb, excerpt, formatTime, postDate } from './post-visuals';
 import { useSocialBoard } from './board';
 import { isEditablePost, postStatusMeta, socialErrorMessage, type Post } from './data';
 import { usePostingSlots, type PostingSlot } from './planning-data';
+import { PaneLoadError } from '../../components/pane-load-error';
 
 interface OpenEvent {
   shiftKey: boolean;
@@ -744,57 +738,54 @@ export function SocialCalendarSurface({ ctx }: { ctx: SurfaceContext }) {
   if (posts.isError) {
     return (
       <div className={PANE_SHELL}>
-        <div className="flex h-full items-center justify-center p-8">
-          <EmptyState
-            icon={<ServerCrash className="size-6" aria-hidden />}
-            title="Could not load your posts"
-            description={socialErrorMessage(
-              posts.error,
-              'This is a problem reaching the server. Nothing about your posts has changed.'
-            )}
-            actions={
-              <Button
-                size="sm"
-                color="module"
-                onClick={() => {
-                  void posts.refetch();
-                }}
-              >
-                Try again
-              </Button>
-            }
-          />
-        </div>
+        <PaneLoadError
+          icon={<ServerCrash className="size-6" aria-hidden />}
+          title="Could not load your posts"
+          description={socialErrorMessage(
+            posts.error,
+            'This is a problem reaching the server. Nothing about your posts has changed.'
+          )}
+          onRetry={() => {
+            void posts.refetch();
+          }}
+        />
       </div>
     );
   }
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Calendar controls" wrap>
-        {canWrite ? (
-          <Button
-            color="module"
-            size="sm"
-            className="ml-auto shrink-0 whitespace-nowrap"
-            title="Write a new post — hold Shift to open alongside, Alt for a new window"
-            onClick={(event) => {
-              board.openNew(event);
+      <PaneToolbar
+        label="Calendar controls"
+        controls={
+          <>
+            {canWrite ? (
+              <Button
+                color="module"
+                size="sm"
+                className="ml-auto shrink-0 whitespace-nowrap"
+                title="Write a new post — hold Shift to open alongside, Alt for a new window"
+                onClick={(event) => {
+                  board.openNew(event);
+                }}
+              >
+                <Plus className="size-4" aria-hidden />
+                New post
+              </Button>
+            ) : null}
+          </>
+        }
+        refresh={
+          <RefreshButton
+            className={canWrite ? undefined : 'ml-auto'}
+            isFetching={posts.isFetching}
+            updatedAt={posts.data ? posts.dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void posts.refetch();
             }}
-          >
-            <Plus className="size-4" aria-hidden />
-            New post
-          </Button>
-        ) : null}
-        <RefreshButton
-          className={canWrite ? undefined : 'ml-auto'}
-          isFetching={posts.isFetching}
-          updatedAt={posts.data ? posts.dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void posts.refetch();
-          }}
-        />
-      </PaneToolbar>
+          />
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         {posts.isPending ? (

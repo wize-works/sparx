@@ -95,6 +95,8 @@ import {
   saveWorkspace,
   type NamedWorkspace,
 } from '../lib/workbench/persistence';
+import { readWindowMode, writeWindowMode } from '../lib/window-mode';
+import { coerceZoom, readZoom, writeZoom } from '../lib/window-zoom';
 
 interface RailProps {
   /** Module currently being browsed, or null when the panel is closed. */
@@ -184,6 +186,14 @@ export function Rail({ browsing, siteKey, expanded, onBrowse }: RailProps) {
         color: 'danger',
       });
       if (!ok) return;
+    }
+    // Put the presentation back BEFORE the reload, so the dock boots straight
+    // into the one this arrangement was captured in rather than tiling it and
+    // then re-floating a beat later.
+    const restoredZoom = workspace.zoom === undefined ? null : coerceZoom(workspace.zoom);
+    if (restoredZoom) writeZoom(restoredZoom);
+    if (workspace.mode === 'windows' || workspace.mode === 'tabs') {
+      writeWindowMode(workspace.mode);
     }
     saveLayout(siteKey, workspace.grid, workspace.panes);
     window.location.reload();
@@ -442,9 +452,16 @@ export function Rail({ browsing, siteKey, expanded, onBrowse }: RailProps) {
         open={saveOpen}
         onOpenChange={setSaveOpen}
         onSave={(name) => {
-          saveWorkspace(name, controller.serializeGrid(), {
-            ...controller.snapshotDescriptors(),
-          });
+          // The presentation goes in WITH the boxes. A grid is a set of pixel
+          // rectangles measured at whatever zoom was on screen at the time, so
+          // replaying a 50% arrangement at 100% brings every window back half
+          // size — and replaying a windows arrangement in tabs tiles it.
+          saveWorkspace(
+            name,
+            controller.serializeGrid(),
+            { ...controller.snapshotDescriptors() },
+            { zoom: readZoom(), mode: readWindowMode() ?? 'tabs' }
+          );
           setWorkspaces(listWorkspaces());
           toast.add({
             title: 'Workspace saved',

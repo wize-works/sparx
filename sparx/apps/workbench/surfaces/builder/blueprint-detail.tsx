@@ -64,6 +64,7 @@ import {
   type BlueprintInstall,
   type ContentsLine,
 } from './blueprints-data';
+import { PaneLoadError } from '../../components/pane-load-error';
 
 const COLUMN = 'mx-auto flex w-full max-w-3xl flex-col gap-4';
 
@@ -73,6 +74,7 @@ export function BlueprintDetailSurface({ ctx }: { ctx: SurfaceContext }) {
     data: blueprint,
     isPending,
     isError,
+    error,
     isFetching,
     dataUpdatedAt,
     refetch,
@@ -84,27 +86,15 @@ export function BlueprintDetailSurface({ ctx }: { ctx: SurfaceContext }) {
 
   if (isError) {
     return (
-      <div className="flex h-full items-center justify-center p-8">
-        <Alert color="error" className="max-w-md">
-          <AlertContent>
-            <AlertTitle>Could not load this design</AlertTitle>
-            <AlertDescription>
-              This is a problem reaching the server, or the design is no longer in the catalog. Your
-              site is unaffected.
-            </AlertDescription>
-          </AlertContent>
-          <Button
-            size="sm"
-            color="error"
-            variant="soft"
-            onClick={() => {
-              void refetch();
-            }}
-          >
-            Try again
-          </Button>
-        </Alert>
-      </div>
+      <PaneLoadError
+        error={error}
+        noun="design"
+        title="Could not load this design"
+        description="This is a problem reaching the server, or the design is no longer in the catalog. Your site is unaffected."
+        onRetry={() => {
+          void refetch();
+        }}
+      />
     );
   }
 
@@ -348,29 +338,36 @@ function BlueprintBody({
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Blueprint actions">
-        {state ? (
-          <Badge color={state.tone} variant="soft" size="sm">
-            {state.label}
-          </Badge>
-        ) : (
-          <Text className="text-sm">Preview</Text>
-        )}
-        {updateAvailable ? (
-          <Badge color="module" variant="soft" size="sm">
-            Update available
-          </Badge>
-        ) : null}
-        <RefreshButton
-          className="ml-auto"
-          isFetching={isFetching || installsFetching}
-          updatedAt={dataUpdatedAt}
-          onRefresh={() => {
-            refetch();
-            void refetchInstalls();
-          }}
-        />
-      </PaneToolbar>
+      <PaneToolbar
+        label="Blueprint actions"
+        controls={
+          <>
+            {state ? (
+              <Badge color={state.tone} variant="soft" size="sm">
+                {state.label}
+              </Badge>
+            ) : (
+              <Text className="text-sm">Preview</Text>
+            )}
+            {updateAvailable ? (
+              <Badge color="module" variant="soft" size="sm">
+                Update available
+              </Badge>
+            ) : null}
+          </>
+        }
+        refresh={
+          <RefreshButton
+            className="ml-auto"
+            isFetching={isFetching || installsFetching}
+            updatedAt={dataUpdatedAt}
+            onRefresh={() => {
+              refetch();
+              void refetchInstalls();
+            }}
+          />
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className={COLUMN}>

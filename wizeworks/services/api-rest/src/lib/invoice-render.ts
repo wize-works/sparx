@@ -22,22 +22,39 @@ import {
 import type { BuilderNode } from '@wizeworks/builder-schemas';
 
 import { renderInvoiceTree } from './invoice-tree-render.js';
-import { resolveBusinessIdentity } from './business-identity.js';
+import { frozenIssuerIdentity, resolveBusinessIdentity } from './business-identity.js';
 
 /** Resolve the tenant brand into the invoice renderer's brand shape: the visual
  *  identity from the shared brand resolver, but the printed NAME and seller
- *  ADDRESS from the BUSINESS (TenantBusiness → tenant legal name), never a site
- *  name. Returns just the identity when the tenant has no visual brand.
+ *  ADDRESS from the document's own FROZEN issuer where it has one, else from the
+ *  BUSINESS (TenantBusiness → tenant legal name), never a site name. Returns
+ *  just the identity when the tenant has no visual brand.
  *
  *  The address block is shared with purchase orders via business-identity.ts —
  *  `addressLines` had been declared on this brand shape since the renderer was
  *  written and populated by nothing, so the seller block printed empty on every
  *  invoice ever rendered. */
-export async function resolveInvoiceBrand(ctx: ServiceContext): Promise<BillingRenderBrand> {
-  const [brand, identity] = await Promise.all([
+export async function resolveInvoiceBrand(
+  ctx: ServiceContext,
+  /**
+   * The document's frozen `issuedBy`, when rendering a real document.
+   *
+   * Omitted only where there is no document to freeze against — the template
+   * PREVIEW, which is showing a design rather than a bill somebody was sent, and
+   * where the live business is the right and only answer.
+   *
+   * Passing it is what makes the freeze mean anything. The visual brand still
+   * resolves live and deliberately: colors and a logo are the tenant's current
+   * look, and re-rendering an old invoice in the new house style is a cosmetic
+   * change. WHO ISSUED IT is not cosmetic.
+   */
+  issuedBy?: unknown
+): Promise<BillingRenderBrand> {
+  const [brand, live] = await Promise.all([
     brandService.resolveEmailBrand(ctx),
     resolveBusinessIdentity(ctx),
   ]);
+  const identity = frozenIssuerIdentity(issuedBy) ?? live;
   if (!brand) return identity;
   return {
     primary: brand.primary,

@@ -21,7 +21,7 @@
 import { useState } from 'react';
 import { PaneWaiting } from '../../components/pane-waiting';
 import { PaneLoadError } from '../../components/pane-load-error';
-import { Badge, Card, EmptyState, SearchInput, Text } from '@wizeworks/silicaui-react';
+import { Card, EmptyState, SearchInput } from '@wizeworks/silicaui-react';
 import { Table } from '../../components/table';
 import { faLanguage } from '@fortawesome/pro-solid-svg-icons';
 import { Icon } from '@piggles/ui';
@@ -31,14 +31,12 @@ import { RefreshButton } from '../../components/refresh-button';
 import { ModuleScope } from '../../components/module-scope';
 import type { OpenTarget, SurfaceContext } from '../../lib/surfaces/registry';
 import {
-  coverageSummary,
-  formatDate,
-  productStatusState,
   useCoverage,
   useTranslatableProducts,
   type ProductStatus,
   type TranslatableProduct,
 } from './translations-data';
+import { TranslationRow } from './translation-row';
 import { RowOpenHint } from '../../components/row-open-hint';
 
 /** The status chips ARE questions someone opens this list to answer. Each maps
@@ -170,7 +168,7 @@ export function TranslationsListSurface({ ctx }: { ctx: SurfaceContext }) {
             title={narrowed ? 'Nothing matches that' : 'No products to translate yet'}
             description={
               narrowed
-                ? 'Try part of the product name, or widen the filter to see the rest of your catalogue.'
+                ? 'Try part of the product name, or widen the filter to see the rest of your catalog.'
                 : 'Once you add a product, this is where you translate its name and description into the other languages your customers read.'
             }
           />
@@ -180,68 +178,20 @@ export function TranslationsListSurface({ ctx }: { ctx: SurfaceContext }) {
               <tr>
                 <th>Product</th>
                 <th className="hidden @2xl:table-cell">Status</th>
-                <th className="hidden @4xl:table-cell">Changed</th>
+                <th className="hidden @4xl:table-cell">Last translated</th>
                 <th>Languages</th>
               </tr>
             </thead>
             <tbody>
-              {rows.map((product) => {
-                const state = productStatusState(product.status);
-                const locales = byProduct.get(product.id);
-                const translated = locales !== undefined && locales.length > 0;
-                return (
-                  <tr
-                    key={product.id}
-                    className="cursor-pointer"
-                    tabIndex={0}
-                    role="button"
-                    onClick={(event) => {
-                      open(product, event);
-                    }}
-                    onKeyDown={(event) => {
-                      if (event.key !== 'Enter' && event.key !== ' ') return;
-                      event.preventDefault();
-                      open(product, event);
-                    }}
-                  >
-                    <td>
-                      <span className="block max-w-72 truncate font-medium">{product.title}</span>
-                      {product.handle ? (
-                        <span className="block max-w-72 truncate font-mono text-sm">
-                          /{product.handle}
-                        </span>
-                      ) : null}
-                    </td>
-                    <td className="hidden @2xl:table-cell">
-                      <Badge color={state.tone} variant="soft" size="sm">
-                        {state.label}
-                      </Badge>
-                    </td>
-                    <td className="hidden text-sm whitespace-nowrap @4xl:table-cell">
-                      {formatDate(product.updatedAt)}
-                    </td>
-                    <td>
-                      {locales === undefined ? (
-                        // Still resolving — never flash "Not translated" under a
-                        // product whose coverage simply hasn't arrived yet.
-                        <Text className="text-sm" role="status">
-                          {coverageLoading ? 'Checking…' : '—'}
-                        </Text>
-                      ) : translated ? (
-                        // A colored badge marks the products that ARE translated;
-                        // the untranslated baseline stays plain text rather than a
-                        // wall of neutral pills down the default state of a fresh
-                        // catalogue.
-                        <Badge color="success" variant="soft" size="sm">
-                          {coverageSummary(locales)}
-                        </Badge>
-                      ) : (
-                        <Text className="text-sm">Not translated</Text>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
+              {rows.map((product) => (
+                <TranslationRow
+                  key={product.id}
+                  product={product}
+                  languages={byProduct.get(product.id)}
+                  coverageLoading={coverageLoading}
+                  onOpen={open}
+                />
+              ))}
             </tbody>
           </Table>
         )}

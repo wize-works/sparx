@@ -17,10 +17,6 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import {
-  Alert,
-  AlertContent,
-  AlertDescription,
-  AlertTitle,
   Badge,
   Button,
   Field,
@@ -46,6 +42,7 @@ import type { OpenTarget, SurfaceContext } from '../../lib/surfaces/registry';
 import { MoneyInput } from '@/components/money-input';
 import { CustomerPicker, customerLabel, type CustomerSummary } from '../invoicing/customer-picker';
 import { PaymentTermsField } from '../../components/payment-terms-field';
+import { SaveFailure } from '@/components/save-failure';
 import {
   CONTACT_ROLE_LABELS,
   accountErrorMessage,
@@ -67,6 +64,7 @@ import {
   type ContactRole,
   type PaymentTerms,
 } from './accounts-data';
+import { PaneLoadError } from '../../components/pane-load-error';
 
 const COLUMN = 'mx-auto flex w-full max-w-3xl flex-col gap-4';
 
@@ -154,27 +152,15 @@ function AccountLoader({ ctx, id }: { ctx: SurfaceContext; id: string }) {
 
   if (accountQuery.isError) {
     return (
-      <div className="flex h-full items-center justify-center p-8">
-        <Alert color="error" className="max-w-md">
-          <AlertContent>
-            <AlertTitle>Could not load this account</AlertTitle>
-            <AlertDescription>
-              This is a problem reaching the server. The account itself is unaffected — nothing has
-              been lost.
-            </AlertDescription>
-          </AlertContent>
-          <Button
-            size="sm"
-            color="error"
-            variant="soft"
-            onClick={() => {
-              void accountQuery.refetch();
-            }}
-          >
-            Try again
-          </Button>
-        </Alert>
-      </div>
+      <PaneLoadError
+        error={accountQuery.error}
+        noun="account"
+        title="Could not load this account"
+        description="This is a problem reaching the server. The account itself is unaffected — nothing has been lost."
+        onRetry={() => {
+          void accountQuery.refetch();
+        }}
+      />
     );
   }
 
@@ -393,23 +379,30 @@ function AccountEditor({
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Account actions">
-        {state ? (
-          <Badge color={state.tone} variant="soft" size="sm">
-            {state.label}
-          </Badge>
-        ) : null}
-        <Button
-          color="module"
-          size="sm"
-          className="ml-auto"
-          loading={saving}
-          disabled={Boolean(nameError) || (!isNew && !dirty)}
-          onClick={submit}
-        >
-          {isNew ? 'Add account' : 'Save'}
-        </Button>
-      </PaneToolbar>
+      <PaneToolbar
+        label="Account actions"
+        primary={
+          <Button
+            color="module"
+            size="sm"
+            className="ml-auto"
+            loading={saving}
+            disabled={Boolean(nameError) || (!isNew && !dirty)}
+            onClick={submit}
+          >
+            {isNew ? 'Add account' : 'Save'}
+          </Button>
+        }
+        controls={
+          <>
+            {state ? (
+              <Badge color={state.tone} variant="soft" size="sm">
+                {state.label}
+              </Badge>
+            ) : null}
+          </>
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className={COLUMN}>
@@ -435,14 +428,7 @@ function AccountEditor({
             </div>
           ) : null}
 
-          {failure ? (
-            <Alert color="error">
-              <AlertContent>
-                <AlertTitle>Could not save this account</AlertTitle>
-                <AlertDescription>{failure}</AlertDescription>
-              </AlertContent>
-            </Alert>
-          ) : null}
+          <SaveFailure title="Could not save this account" message={failure} />
 
           {/* 1 — Who they are */}
           <FormSection title="Who they are">

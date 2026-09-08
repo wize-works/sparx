@@ -74,14 +74,7 @@ export interface BarcodeConflict {
 }
 
 export type ScanKind =
-  | 'variant'
-  | 'bin'
-  | 'purchase_order'
-  | 'goods_receipt'
-  | 'transfer'
-  | 'count'
-  | 'lot'
-  | 'serial';
+  'variant' | 'bin' | 'purchase_order' | 'goods_receipt' | 'transfer' | 'count' | 'lot' | 'serial';
 
 export interface ScanMatch {
   kind: ScanKind;

@@ -18,6 +18,7 @@ import type { TaxExemption, TaxRate, TaxZone, TxClient } from '@wizeworks/db';
 import { writeAuditLog } from '../audit';
 import { CommerceNotFoundError, CommerceValidationError } from '../errors';
 import type { ServiceContext } from '../errors';
+import { coveringExemption } from './tax-exemption';
 
 // ─── Row shapes ──────────────────────────────────────────────────────
 
@@ -29,6 +30,10 @@ export interface TaxZoneRow {
   registrationNumber: string | null;
   registeredAt: string | null;
   isActive: boolean;
+  /** When a signed-in person switched collection on here, if one ever has.
+   *  Paired with `isActive` by `zoneIsCollecting` — see the note on that
+   *  function; a place without this charges nothing. */
+  activatedAt: string | null;
   rateCount: number;
 }
 
@@ -51,6 +56,49 @@ export interface TaxExemptionRow {
   certificateMediaId: string | null;
   validFrom: string;
   validTo: string | null;
+}
+
+// ─── A tax place is created switched OFF, always ─────────────────────
+//
+// A machine may set tax UP — the places, the rates, ready to go. It may not
+// decide that a business is registered somewhere and start taking money from its
+// customers on that basis. The `tax-us-sales` preset did exactly that from five
+// industry starters, and a Denver studio spent months described as having staff
+// in California, Texas and New York (issue 429). It went unnoticed only because
+// nothing charged tax at all; the afternoon that was fixed, it became real money.
+//
+// THE TEST IS THE SHAPE OF THE REQUEST, NOT WHO SIGNED IT. The obvious guard —
+// "does this caller have a user id?" — does not work, because an industry
+// starter installs during onboarding under the new owner's own session. Her
+// actor id is on the write either way, so it cannot tell "she chose to collect
+// in California" from "she picked the clothing starter".
+//
+// What CAN tell them apart is that switching on becomes its own act: a place is
+// always created off, and collection starts only on a later update whose whole
+// content is "start collecting here". No starter, blueprint, import or template
+// makes a call like that; a person clicking a switch makes exactly that call.
+// It is also the honest order of work — add the place, put the rate in, look at
+// it, then switch it on — and it removes a state that never made sense, a place
+// switched on before it has a rate.
+//
+// Refused out loud rather than quietly downgraded to off: a caller asking to
+// collect and silently not collecting is the same class of mistake facing the
+// other way. `tax_zones_active_needs_a_person` in the database is the backstop
+// for everything that never comes through here at all.
+
+function assertNotCreatedCollecting(wantsToCollect: boolean): void {
+  if (!wantsToCollect) return;
+  throw new CommerceValidationError(
+    'A tax place is always created switched off. Add it, set its rate, then switch it on.'
+  );
+}
+
+// The update-side guard. Narrower than the one above and aimed at a different
+// caller: a background job, a worker or a script has no signed-in person behind
+// it, so it has no business starting a shop collecting tax.
+function assertAPersonIsSwitchingItOn(ctx: ServiceContext): void {
+  if (ctx.userId) return;
+  throw new CommerceValidationError('Only a signed-in person can switch tax collection on.');
 }
 
 // ─── Zones ───────────────────────────────────────────────────────────
@@ -86,6 +134,7 @@ export async function getZone(ctx: ServiceContext, id: string): Promise<TaxZoneR
 
 export async function createZone(ctx: ServiceContext, rawInput: unknown): Promise<{ id: string }> {
   const input = CreateTaxZoneInput.parse(rawInput);
+  assertNotCreatedCollecting(input.isActive);
   return withTenant(ctx, async (tx) => {
     const created = await tx.taxZone.create({
       data: {
@@ -95,7 +144,8 @@ export async function createZone(ctx: ServiceContext, rawInput: unknown): Promis
         nexusType: input.nexusType,
         registrationNumber: input.registrationNumber ?? null,
         registeredAt: input.registeredAt ? new Date(input.registeredAt) : null,
-        isActive: input.isActive,
+        isActive: false,
+        activatedAt: null,
       },
       select: { id: true },
     });
@@ -107,7 +157,7 @@ export async function createZone(ctx: ServiceContext, rawInput: unknown): Promis
       action: 'commerce.tax_zone.created',
       entityType: 'TaxZone',
       entityId: created.id,
-      diff: { after: { country: input.country, region: input.region } },
+      diff: { after: { country: input.country, region: input.region, isActive: false } },
     });
     return created;
   });
@@ -122,6 +172,16 @@ export async function updateZone(
   await withTenant(ctx, async (tx) => {
     const before = await tx.taxZone.findFirst({ where: { id } });
     if (!before) throw new CommerceNotFoundError('TaxZone', id);
+
+    // Starting to collect somewhere is the only change on this form that moves
+    // money, so it is the only one that needs a person behind it and a record of
+    // when. Switching OFF keeps the stamp — "this shop collected here from
+    // March" stays true after it stops, and losing it would make an old place
+    // indistinguishable from one nobody ever chose.
+    const startingToCollect = input.isActive === true && !before.isActive;
+    if (startingToCollect) assertAPersonIsSwitchingItOn(ctx);
+    const stoppingCollection = input.isActive === false && before.isActive;
+
     await tx.taxZone.update({
       where: { id },
       data: {
@@ -135,6 +195,7 @@ export async function updateZone(
           ? { registeredAt: input.registeredAt ? new Date(input.registeredAt) : null }
           : {}),
         ...(input.isActive !== undefined ? { isActive: input.isActive } : {}),
+        ...(startingToCollect ? { activatedAt: new Date() } : {}),
       },
     });
     await writeAuditLog({
@@ -145,7 +206,13 @@ export async function updateZone(
       action: 'commerce.tax_zone.updated',
       entityType: 'TaxZone',
       entityId: id,
-      diff: null,
+      // Only the money-moving change is worth a diff. Who started collecting
+      // where, and when, is the question an accountant asks afterwards.
+      diff: startingToCollect
+        ? { after: { isActive: true } }
+        : stoppingCollection
+          ? { after: { isActive: false } }
+          : null,
     });
   });
 }
@@ -381,6 +448,11 @@ export async function calculate(ctx: ServiceContext, rawRequest: unknown): Promi
     return tx.taxZone.findMany({
       where: {
         isActive: true,
+        // A place nobody switched on charges nothing, whatever its switch says.
+        // `zoneIsCollecting` in @wizeworks/commerce-schemas is this same rule,
+        // and it is what both consoles draw their badge from, so no screen can
+        // say "Collecting" about a place that takes nothing.
+        activatedAt: { not: null },
         country: request.shipTo.country,
       },
       include: { rates: true },
@@ -396,6 +468,22 @@ export async function calculate(ctx: ServiceContext, rawRequest: unknown): Promi
   // return a zero breakdown so checkout can continue.
   if (!zone) {
     return emptyBreakdown(request);
+  }
+
+  // A certificate on file, covering THIS place, today. The schema has claimed
+  // for a long time that this happens here; it did not — the ids were parsed
+  // and never read, so a reseller with a certificate paid tax like anybody
+  // else. Nobody noticed while no tax was charged at all.
+  if (request.customerExemptionIds.length > 0) {
+    const certificates = await withTenant(ctx, (tx) =>
+      tx.taxExemption.findMany({
+        where: { id: { in: request.customerExemptionIds } },
+        select: { jurisdiction: true, validFrom: true, validTo: true },
+      })
+    );
+    if (coveringExemption(zone, certificates, new Date())) {
+      return emptyBreakdown(request);
+    }
   }
 
   const lines = request.lines.map((line, idx) => {
@@ -488,6 +576,7 @@ function serializeZone(row: TaxZone & { _count: { rates: number } }): TaxZoneRow
     registrationNumber: row.registrationNumber,
     registeredAt: row.registeredAt?.toISOString() ?? null,
     isActive: row.isActive,
+    activatedAt: row.activatedAt?.toISOString() ?? null,
     rateCount: row._count.rates,
   };
 }

@@ -201,3 +201,104 @@ h6 {
     transform: translate(-50%, -50%) rotate(0deg);
   }
 }
+
+/* ── THE SELECTED TAB MARKS ITSELF WHEN THE SLIDING PILL CANNOT ─────────────
+ *
+ * Silica splits "this tab is selected" across TWO elements. The ink flips on the
+ * tab itself, from `[data-active]`, which Base UI always sets. The fill is a
+ * separate `.tabs-indicator` span that Base UI positions from measurements — and
+ * hides outright, with `hidden`, whenever it cannot resolve the active tab.
+ *
+ * So the two halves come apart, and the half that survives is the wrong one. On
+ * `pills` the active ink is `--tabs-accent-content`, which is the correct ink FOR
+ * A FILLED ACCENT PILL: with no pill behind it, a persona opened her first
+ * customer review to a strip reading
+ *
+ *     Reviews (1)          Questions
+ *     ^ rgb(32,38,49)      ^ rgb(244,245,247)
+ *
+ * on a dark pane — the tab she was ON was the only one she could not read, and
+ * the strip told her she was somewhere she was not.
+ *
+ * These rules paint, on the tab, exactly what the indicator would have painted,
+ * and ONLY while it is hidden. When Base UI measures normally the `:has()` does
+ * not match and nothing here applies, so the slide animation is untouched.
+ *
+ * THIS IS A FALLBACK, NOT THE FIX. The cause is upstream: when a pane is opened
+ * mid-session the whole composite list goes dead — every tab lands on
+ * `tabindex="-1"`, arrow keys move nothing, and the indicator therefore never
+ * finds a tab to measure. Roving focus is still broken and this does not mend
+ * it. Reproduced only against a dev server with React StrictMode on; whether a
+ * production build shares it is NOT CHECKED. Issue 409. */
+
+.tabs-pills .tabs-list:has(> .tabs-indicator[hidden]) .tabs-tab[data-active] {
+  background-color: var(--tabs-accent, var(--color-primary));
+}
+
+.tabs-boxed .tabs-list:has(> .tabs-indicator[hidden]) .tabs-tab[data-active] {
+  background-color: var(--color-base-100);
+}
+
+/* The default variant's mark is a 2px underline. An inset shadow rather than a
+ * border, so nothing on the strip moves when it appears. */
+.tabs .tabs-list:has(> .tabs-indicator[hidden]) .tabs-tab[data-active] {
+  box-shadow: inset 0 -2px 0 var(--tabs-accent, var(--color-primary));
+}
+
+.tabs-pills .tabs-list:has(> .tabs-indicator[hidden]) .tabs-tab[data-active],
+.tabs-boxed .tabs-list:has(> .tabs-indicator[hidden]) .tabs-tab[data-active] {
+  box-shadow: none;
+}
+
+/* ── SOFT INK IS DARKENED IN LIGHT AND LIGHTENED IN DARK ────────────────────
+ *
+ * Silica's `soft` treatment paints the background as a 12–15% tint of the accent
+ * and then sets the TEXT to the accent itself — asking a color to be ink on a
+ * paler version of itself. On a dark theme that reads, because a semantic hue is
+ * a pale color there. In light it only reads if the hue happens to be dark.
+ *
+ * This palette mostly gets away with it: `success #16865a`, `info #147ea3` and
+ * `error #b42318` are dark enough in light to carry themselves. **`warning
+ * #f2b84b` is not** — a soft warning badge here measures about 1.6 : 1 against
+ * its own tint, well under the 4.5 : 1 floor, and warning is what a stock alert
+ * or an overdue invoice wears.
+ *
+ * Mixing the accent toward `--color-base-content` is the correction, and it is
+ * monotonic: base-content is dark in light and light in dark, so the ink can
+ * only move AWAY from its own tint. It cannot make any tone worse, which is why
+ * one rule covers a palette where only one tone is failing.
+ *
+ * The other console shares this file's twin, with its own numbers — it is a
+ * COPY, not an import, since neither brand tree may depend on the other. Found
+ * and measured over there, on a persona's product list; **this console's own
+ * numbers are computed from the palette above and NOT driven on screen.**
+ *
+ * DELETE THIS when `@wizeworks/silicaui` ships the same three lines upstream; it
+ * is one change in `alert.js`, `badge.js` and `button.js`, and this repo does not
+ * own that package. Issue 076 carries the full working, including the same
+ * failure measured on silica's OWN default light theme, where four of eight
+ * tones fall under the floor. */
+
+.badge-soft {
+  color: color-mix(
+    in oklab,
+    var(--badge-accent, var(--color-base-content)) 48%,
+    var(--color-base-content)
+  );
+}
+
+.alert-soft {
+  color: color-mix(
+    in oklab,
+    var(--alert-accent, var(--color-base-content)) 48%,
+    var(--color-base-content)
+  );
+}
+
+.btn-soft {
+  color: color-mix(
+    in oklab,
+    var(--btn-accent, var(--color-base-content)) 48%,
+    var(--color-base-content)
+  );
+}

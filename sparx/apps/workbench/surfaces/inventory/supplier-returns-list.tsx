@@ -198,47 +198,56 @@ export function SupplierReturnsListSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Supplier return controls">
-        <NativeSelect
-          size="sm"
-          className="max-w-52 shrink"
-          aria-label="Show returns that are"
-          value={view}
-          onChange={(event) => {
-            setView(event.target.value as View);
-          }}
-        >
-          <option value="awaiting">Waiting for a credit</option>
-          <option value="draft">Being put together</option>
-          <option value="credited">Credited</option>
-          <option value="all">Everything</option>
-        </NativeSelect>
-
-        <Text className="text-sm">
-          {owedCount === 0
-            ? 'Nothing outstanding'
-            : `${formatCents(owed)} owed across ${plural(owedCount, 'return', 'returns')}`}
-        </Text>
-
-        <Button
-          className="ml-auto"
-          size="sm"
-          color="module"
-          onClick={() => {
-            ctx.open('inventory.supplier-returns.detail', { id: 'new' });
-          }}
-        >
-          <PlusCircle className="size-4" aria-hidden />
-          Send something back
-        </Button>
-        <RefreshButton
-          isFetching={report.isFetching}
-          updatedAt={report.data ? report.dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void report.refetch();
-          }}
-        />
-      </PaneToolbar>
+      <PaneToolbar
+        label="Supplier return controls"
+        status={
+          <Text className="text-sm">
+            {owedCount === 0
+              ? 'Nothing outstanding'
+              : `${formatCents(owed)} owed across ${plural(owedCount, 'return', 'returns')}`}
+          </Text>
+        }
+        primary={
+          <Button
+            className="ml-auto"
+            size="sm"
+            color="module"
+            onClick={() => {
+              ctx.open('inventory.supplier-returns.detail', { id: 'new' });
+            }}
+          >
+            <PlusCircle className="size-4" aria-hidden />
+            Send something back
+          </Button>
+        }
+        controls={
+          <>
+            <NativeSelect
+              size="sm"
+              className="max-w-52 shrink"
+              aria-label="Show returns that are"
+              value={view}
+              onChange={(event) => {
+                setView(event.target.value as View);
+              }}
+            >
+              <option value="awaiting">Waiting for a credit</option>
+              <option value="draft">Being put together</option>
+              <option value="credited">Credited</option>
+              <option value="all">Everything</option>
+            </NativeSelect>
+          </>
+        }
+        refresh={
+          <RefreshButton
+            isFetching={report.isFetching}
+            updatedAt={report.data ? report.dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void report.refetch();
+            }}
+          />
+        }
+      />
 
       <Card className="min-h-0 flex-1 overflow-auto">{body()}</Card>
     </div>

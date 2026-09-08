@@ -161,16 +161,19 @@ export function CalendarConnectionsSurface(_props: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Linked calendars actions">
-        <RefreshButton
-          className="ml-auto"
-          isFetching={connections.isFetching}
-          updatedAt={connections.data ? connections.dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void connections.refetch();
-          }}
-        />
-      </PaneToolbar>
+      <PaneToolbar
+        label="Linked calendars actions"
+        refresh={
+          <RefreshButton
+            className="ml-auto"
+            isFetching={connections.isFetching}
+            updatedAt={connections.data ? connections.dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void connections.refetch();
+            }}
+          />
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className={COLUMN}>

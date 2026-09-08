@@ -43,6 +43,7 @@ import { PaneToolbar, PANE_SHELL } from '../../components/pane-toolbar';
 import { FormSection } from '../../components/form-section';
 import type { SurfaceContext } from '../../lib/surfaces/registry';
 import { providerKindIcon } from './kind-icon';
+import { SaveFailure } from '@/components/save-failure';
 import {
   installationState,
   integrationErrorMessage,
@@ -60,6 +61,7 @@ import {
   type ProviderEnvironment,
   type ProviderKind,
 } from './provider-connection';
+import { PaneLoadError } from '../../components/pane-load-error';
 
 const COLUMN = 'mx-auto flex w-full max-w-3xl flex-col gap-4';
 
@@ -210,7 +212,7 @@ function ConnectIntegration({
   presetKind?: ProviderKind;
 }) {
   const toast = useToast();
-  const { data: metadata, isPending, isError, refetch } = useProviderMetadata(slug);
+  const { data: metadata, isPending, isError, error, refetch } = useProviderMetadata(slug);
   const install = useInstallProvider();
 
   const fields = useMemo(() => (metadata ? parseConfigFields(metadata) : []), [metadata]);
@@ -268,26 +270,15 @@ function ConnectIntegration({
 
   if (isError) {
     return (
-      <div className="flex h-full items-center justify-center p-8">
-        <Alert color="error" className="max-w-md">
-          <AlertContent>
-            <AlertTitle>Could not load this service</AlertTitle>
-            <AlertDescription>
-              This is a problem reaching the server. Nothing has been connected.
-            </AlertDescription>
-          </AlertContent>
-          <Button
-            size="sm"
-            color="error"
-            variant="soft"
-            onClick={() => {
-              void refetch();
-            }}
-          >
-            Try again
-          </Button>
-        </Alert>
-      </div>
+      <PaneLoadError
+        error={error}
+        noun="service"
+        title="Could not load this service"
+        description="This is a problem reaching the server. Nothing has been connected."
+        onRetry={() => {
+          void refetch();
+        }}
+      />
     );
   }
 
@@ -306,19 +297,22 @@ function ConnectIntegration({
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Connect a service actions">
-        <Button
-          color="module"
-          size="sm"
-          className="ml-auto"
-          loading={install.isPending}
-          disabled={!canSubmit}
-          onClick={submit}
-        >
-          <Link2 className="size-4" aria-hidden />
-          Connect
-        </Button>
-      </PaneToolbar>
+      <PaneToolbar
+        label="Connect a service actions"
+        primary={
+          <Button
+            color="module"
+            size="sm"
+            className="ml-auto"
+            loading={install.isPending}
+            disabled={!canSubmit}
+            onClick={submit}
+          >
+            <Link2 className="size-4" aria-hidden />
+            Connect
+          </Button>
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className={COLUMN}>
@@ -337,14 +331,7 @@ function ConnectIntegration({
             </div>
           </div>
 
-          {failure ? (
-            <Alert color="error">
-              <AlertContent>
-                <AlertTitle>Could not connect that service</AlertTitle>
-                <AlertDescription>{failure}</AlertDescription>
-              </AlertContent>
-            </Alert>
-          ) : null}
+          <SaveFailure title="Could not connect that service" message={failure} />
 
           <FormSection
             title="Its details"
@@ -406,7 +393,7 @@ function ManageIntegration({
 }) {
   const toast = useToast();
   const confirm = useConfirm();
-  const { data: installation, isPending, isError, refetch } = useInstallation(id);
+  const { data: installation, isPending, isError, error, refetch } = useInstallation(id);
   const { data: metadata } = useProviderMetadata(slug ?? installation?.providerSlug);
 
   const test = useTestIntegration(id);
@@ -436,26 +423,15 @@ function ManageIntegration({
 
   if (isError) {
     return (
-      <div className="flex h-full items-center justify-center p-8">
-        <Alert color="error" className="max-w-md">
-          <AlertContent>
-            <AlertTitle>Could not load this connection</AlertTitle>
-            <AlertDescription>
-              This is a problem reaching the server. The connection itself is unaffected.
-            </AlertDescription>
-          </AlertContent>
-          <Button
-            size="sm"
-            color="error"
-            variant="soft"
-            onClick={() => {
-              void refetch();
-            }}
-          >
-            Try again
-          </Button>
-        </Alert>
-      </div>
+      <PaneLoadError
+        error={error}
+        noun="connection"
+        title="Could not load this connection"
+        description="This is a problem reaching the server. The connection itself is unaffected."
+        onRetry={() => {
+          void refetch();
+        }}
+      />
     );
   }
 
@@ -561,44 +537,49 @@ function ManageIntegration({
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Connection actions" wrap>
-        <Badge color={state.tone} variant="soft" size="sm">
-          {state.label}
-        </Badge>
-        {!isLive ? (
-          <Badge color="warning" variant="soft" size="sm">
-            Test mode
-          </Badge>
-        ) : null}
-        <div className="flex-1" />
-        {canEdit ? (
+      <PaneToolbar
+        label="Connection actions"
+        controls={
           <>
-            <Button size="sm" color="module" loading={test.isPending} onClick={onTest}>
-              <RefreshCw className="size-4" aria-hidden />
-              Test connection
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              color="neutral"
-              loading={setEnabled.isPending}
-              onClick={onToggleEnabled}
-            >
-              {installation.enabled ? (
-                <>
-                  <Pause className="size-4" aria-hidden />
-                  Pause
-                </>
-              ) : (
-                <>
-                  <Play className="size-4" aria-hidden />
-                  Switch on
-                </>
-              )}
-            </Button>
+            <Badge color={state.tone} variant="soft" size="sm">
+              {state.label}
+            </Badge>
+            {!isLive ? (
+              <Badge color="warning" variant="soft" size="sm">
+                Test mode
+              </Badge>
+            ) : null}
+            <div className="flex-1" />
+            {canEdit ? (
+              <>
+                <Button size="sm" color="module" loading={test.isPending} onClick={onTest}>
+                  <RefreshCw className="size-4" aria-hidden />
+                  Test connection
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  color="neutral"
+                  loading={setEnabled.isPending}
+                  onClick={onToggleEnabled}
+                >
+                  {installation.enabled ? (
+                    <>
+                      <Pause className="size-4" aria-hidden />
+                      Pause
+                    </>
+                  ) : (
+                    <>
+                      <Play className="size-4" aria-hidden />
+                      Switch on
+                    </>
+                  )}
+                </Button>
+              </>
+            ) : null}
           </>
-        ) : null}
-      </PaneToolbar>
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className={COLUMN}>

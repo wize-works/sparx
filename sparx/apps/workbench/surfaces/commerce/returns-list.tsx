@@ -81,33 +81,39 @@ export function ReturnsListSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Returns list controls" wrap>
-        <Filter
-          color="module"
-          value={filter}
-          onValueChange={(next) => {
-            setFilter((next as FilterValue | null) ?? 'all');
-            resetWindow();
-          }}
-          showReset={false}
-          aria-label="Filter returns"
-        >
-          {FILTERS.map((entry) => (
-            <FilterItem key={entry.value} value={entry.value}>
-              {entry.label}
-            </FilterItem>
-          ))}
-        </Filter>
-
-        <RefreshButton
-          className="ml-auto"
-          isFetching={isFetching}
-          updatedAt={data ? dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void refetch();
-          }}
-        />
-      </PaneToolbar>
+      <PaneToolbar
+        label="Returns list controls"
+        controls={
+          <>
+            <Filter
+              color="module"
+              value={filter}
+              onValueChange={(next) => {
+                setFilter((next as FilterValue | null) ?? 'all');
+                resetWindow();
+              }}
+              showReset={false}
+              aria-label="Filter returns"
+            >
+              {FILTERS.map((entry) => (
+                <FilterItem key={entry.value} value={entry.value}>
+                  {entry.label}
+                </FilterItem>
+              ))}
+            </Filter>
+          </>
+        }
+        refresh={
+          <RefreshButton
+            className="ml-auto"
+            isFetching={isFetching}
+            updatedAt={data ? dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void refetch();
+            }}
+          />
+        }
+      />
 
       <Card className="min-h-0 flex-1 overflow-y-auto">
         {error ? (

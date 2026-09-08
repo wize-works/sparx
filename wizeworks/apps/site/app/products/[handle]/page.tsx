@@ -61,9 +61,24 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       accent: site.theme?.colorPrimary,
       platformBrand: site.platformBrand,
     });
+  // hreflang, so a search engine indexes the Spanish page as the Spanish page
+  // rather than as a duplicate of the English one. Only emitted for a shop that
+  // has actually written another language; `x-default` points at the shop's own
+  // words, which is what a reader with no matching language should land on.
+  const languages: Record<string, string> = {};
+  for (const tag of site.languages) languages[tag] = `/products/${handle}?lang=${tag}`;
+  const alternates =
+    site.languages.length > 0
+      ? {
+          canonical: `/products/${handle}`,
+          languages: { ...languages, 'x-default': `/products/${handle}` },
+        }
+      : undefined;
+
   return {
     title: product.seoTitle ?? product.title,
     description: product.seoDescription ?? product.description ?? undefined,
+    ...(alternates ? { alternates } : {}),
     openGraph: {
       title: product.seoTitle ?? product.title,
       description: product.seoDescription ?? product.description ?? undefined,

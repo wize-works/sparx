@@ -20,6 +20,7 @@
 // produces is a half-finished job. Here a wrong key produces a sentence naming the
 // screen it came from, before anything has begun.
 
+import { shownInPlace } from '@wizeworks/query';
 import { useCallback, useMemo, useState } from 'react';
 import {
   Alert,
@@ -179,7 +180,10 @@ export function LiveConnection({
     setTouched(Object.fromEntries(connector.fields.map((field) => [field.key, true])));
     if (problems.length > 0) return;
     try {
-      const result = await connect.mutateAsync({ vendor: vendor.slug, credentials: values });
+      const result = await connect.mutateAsync(
+        { vendor: vendor.slug, credentials: values },
+        { onError: shownInPlace }
+      );
       setConnected(result);
       // Everything they can have, pre-ticked. Somebody moving house does not want to
       // choose which rooms — they want to be told what is coming and untick the rest.

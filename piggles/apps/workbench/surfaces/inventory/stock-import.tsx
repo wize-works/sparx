@@ -709,7 +709,7 @@ export function StockImportSurface(_props: { ctx: SurfaceContext }) {
                 <Text className="text-sm">
                   {productCopy(
                     'inventory.import.recipeNote',
-                    'Only widens the list of headings Piggles recognises. It never changes what the import does.'
+                    'Only widens the list of headings Piggles recognizes. It never changes what the import does.'
                   )}
                 </Text>
               </Field>

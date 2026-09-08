@@ -75,38 +75,47 @@ export function CustomerOrdersSurface({ ctx }: { ctx: SurfaceContext }) {
     // one signal that says so is the module color on its controls.
     <ModuleScope module="commerce" className="h-full">
       <div className={PANE_SHELL}>
-        <PaneToolbar label="Customer order list controls">
-          <div className="max-w-xs min-w-0 flex-1">
-            <SearchInput
-              color="module"
-              size="sm"
-              aria-label="Search orders"
-              placeholder="Search by order number…"
-              value={search}
-              onValueChange={setSearch}
-            />
-          </div>
-          <div className="hidden w-40 shrink-0 @lg:block">
-            <Select
-              color="module"
-              size="sm"
-              aria-label="Which orders to show"
-              value={status}
-              items={STATUS_ITEMS}
-              onValueChange={(next) => {
-                setStatus(next as string);
+        <PaneToolbar
+          label="Customer order list controls"
+          search={
+            <div className="max-w-xs min-w-0 flex-1">
+              <SearchInput
+                color="module"
+                size="sm"
+                aria-label="Search orders"
+                placeholder="Search by order number…"
+                value={search}
+                onValueChange={setSearch}
+              />
+            </div>
+          }
+          controls={
+            <>
+              <div className="hidden w-40 shrink-0 @lg:block">
+                <Select
+                  color="module"
+                  size="sm"
+                  aria-label="Which orders to show"
+                  value={status}
+                  items={STATUS_ITEMS}
+                  onValueChange={(next) => {
+                    setStatus(next as string);
+                  }}
+                />
+              </div>
+            </>
+          }
+          refresh={
+            <RefreshButton
+              className="ml-auto"
+              isFetching={isFetching}
+              updatedAt={data ? dataUpdatedAt : undefined}
+              onRefresh={() => {
+                void refetch();
               }}
             />
-          </div>
-          <RefreshButton
-            className="ml-auto"
-            isFetching={isFetching}
-            updatedAt={data ? dataUpdatedAt : undefined}
-            onRefresh={() => {
-              void refetch();
-            }}
-          />
-        </PaneToolbar>
+          }
+        />
 
         <Card className="min-h-0 flex-1 overflow-y-auto">
           {isError ? (

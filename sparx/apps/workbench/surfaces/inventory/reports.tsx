@@ -36,7 +36,6 @@ import {
   DateInput,
   EmptyState,
   Heading,
-  NativeSelect,
   Stat,
   StatDesc,
   StatTitle,
@@ -988,53 +987,44 @@ export function ReportsSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Report controls">
-        {/* Sets the window for the selling-pace figures. Named for what it does,
-            not "range". */}
-        <NativeSelect
-          size="sm"
-          className="max-w-40 shrink"
-          aria-label="Selling period for turnover"
-          value={String(rangeDays)}
-          onChange={(event) => {
-            setRangeDays(Number(event.target.value));
-          }}
-        >
-          {RANGE_PRESETS.map((preset) => (
-            <option key={preset.days} value={preset.days}>
-              {preset.label}
-            </option>
-          ))}
-        </NativeSelect>
-
-        {/* Narrows the ageing breakdown to one place — "which shop is holding
-            money it isn't turning" is a real question. */}
-        <NativeSelect
-          size="sm"
-          className="max-w-40 shrink"
-          aria-label="Location for the ageing breakdown"
-          value={locationId}
-          onChange={(event) => {
-            setLocationId(event.target.value);
-          }}
-        >
-          <option value="">Every location</option>
-          {activeLocations.map((location) => (
-            <option key={location.id} value={location.id}>
-              {location.name}
-            </option>
-          ))}
-        </NativeSelect>
-
-        {/* ALWAYS the last child of a toolbar. No primary action here, so it
-            carries the ml-auto that pushes the right-hand group over. */}
-        <RefreshButton
-          className="ml-auto"
-          isFetching={summary.isFetching || turnover.isFetching || aging.isFetching}
-          updatedAt={summary.data ? summary.dataUpdatedAt : undefined}
-          onRefresh={refreshAll}
-        />
-      </PaneToolbar>
+      <PaneToolbar
+        label="Report controls"
+        filters={[
+          {
+            label: 'Selling period',
+            key: 'range',
+            value: String(rangeDays),
+            onValueChange: (next) => {
+              setRangeDays(Number(next));
+            },
+            options: RANGE_PRESETS.map((preset) => ({
+              value: String(preset.days),
+              label: preset.label,
+            })),
+            present: 'select',
+          },
+          {
+            label: 'Location',
+            key: 'location',
+            value: locationId,
+            onValueChange: setLocationId,
+            options: [
+              { value: '', label: 'Everywhere' },
+              ...activeLocations.map((location) => ({ value: location.id, label: location.name })),
+            ],
+            neutralValue: '',
+            present: 'select',
+          },
+        ]}
+        refresh={
+          <RefreshButton
+            className="ml-auto"
+            isFetching={summary.isFetching || turnover.isFetching || aging.isFetching}
+            updatedAt={summary.data ? summary.dataUpdatedAt : undefined}
+            onRefresh={refreshAll}
+          />
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">{body()}</div>
     </div>

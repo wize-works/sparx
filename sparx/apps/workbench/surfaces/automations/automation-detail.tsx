@@ -42,6 +42,7 @@ import {
   useCloneAutomation,
   type Automation,
 } from './automations-data';
+import { PaneLoadError } from '../../components/pane-load-error';
 
 const COLUMN = 'mx-auto flex w-full max-w-3xl flex-col gap-4';
 
@@ -58,31 +59,19 @@ export function AutomationDetailSurface({ ctx }: { ctx: SurfaceContext }) {
 }
 
 function ManageAutomation({ ctx, id }: { ctx: SurfaceContext; id: string }) {
-  const { data: automation, isPending, isError, refetch } = useAutomation(id);
+  const { data: automation, isPending, isError, error, refetch } = useAutomation(id);
 
   if (isError) {
     return (
-      <div className="flex h-full items-center justify-center p-8">
-        <Alert color="error" className="max-w-md">
-          <AlertContent>
-            <AlertTitle>Could not load this automation</AlertTitle>
-            <AlertDescription>
-              This is a problem reaching the server, or the automation no longer exists. Nothing has
-              been changed.
-            </AlertDescription>
-          </AlertContent>
-          <Button
-            size="sm"
-            color="error"
-            variant="soft"
-            onClick={() => {
-              void refetch();
-            }}
-          >
-            Try again
-          </Button>
-        </Alert>
-      </div>
+      <PaneLoadError
+        error={error}
+        noun="automation"
+        title="Could not load this automation"
+        description="This is a problem reaching the server, or the automation no longer exists. Nothing has been changed."
+        onRetry={() => {
+          void refetch();
+        }}
+      />
     );
   }
 
@@ -134,38 +123,45 @@ function LockedAutomation({ ctx, automation }: { ctx: SurfaceContext; automation
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Automation actions" wrap>
-        <Badge color={state.tone} variant="soft" size="sm">
-          {state.label}
-        </Badge>
-        <TierBadge origin={automation.origin} locked={automation.locked} />
-        <Button
-          size="sm"
-          variant="outline"
-          color="neutral"
-          className="ml-auto shrink-0"
-          onClick={(event) => {
-            ctx.open(
-              'automations.runs',
-              { automationId: automation.id },
-              { target: targetFor(event) }
-            );
-          }}
-        >
-          <ListChecks className="size-4" aria-hidden />
-          Runs
-        </Button>
-        <Button
-          size="sm"
-          color="module"
-          className="shrink-0"
-          loading={clone.isPending}
-          onClick={onClone}
-        >
-          <CopyPlus className="size-4" aria-hidden />
-          Duplicate to edit
-        </Button>
-      </PaneToolbar>
+      <PaneToolbar
+        label="Automation actions"
+        primary={
+          <Button
+            size="sm"
+            variant="outline"
+            color="neutral"
+            className="ml-auto shrink-0"
+            onClick={(event) => {
+              ctx.open(
+                'automations.runs',
+                { automationId: automation.id },
+                { target: targetFor(event) }
+              );
+            }}
+          >
+            <ListChecks className="size-4" aria-hidden />
+            Runs
+          </Button>
+        }
+        controls={
+          <>
+            <Badge color={state.tone} variant="soft" size="sm">
+              {state.label}
+            </Badge>
+            <TierBadge origin={automation.origin} locked={automation.locked} />
+            <Button
+              size="sm"
+              color="module"
+              className="shrink-0"
+              loading={clone.isPending}
+              onClick={onClone}
+            >
+              <CopyPlus className="size-4" aria-hidden />
+              Duplicate to edit
+            </Button>
+          </>
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className={COLUMN}>

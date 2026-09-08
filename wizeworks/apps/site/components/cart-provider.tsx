@@ -43,6 +43,11 @@ export interface CartTotals {
   discountTotalCents: number;
   shippingTotalCents: number;
   taxTotalCents: number;
+  /** Already SUBTRACTED inside totalCents. Kept as its own figure so a summary
+   *  can name the money rather than leave a gap: rows that do not add up to the
+   *  total under them read as a broken page, and this is what closed it. */
+  giftCardAppliedCents: number;
+  accountCreditAppliedCents: number;
   // Disclosed only at checkout (docs/48 §6) once a payment method is known; the
   // cart itself carries no surcharge, so this is absent in cart context.
   surchargeTotalCents?: number;
@@ -77,6 +82,10 @@ export interface CartState {
    *  the money splits between checkout and collection. */
   madeToOrder: CartMadeToOrder;
   appliedDiscountCodes: string[];
+  /** The gift card reserved against this basket. A list because the discount
+   *  codes beside it are one and the two are read together; the basket models a
+   *  single card. */
+  appliedGiftCardCodes: string[];
   count: number;
   currency: string;
   loading: boolean;
@@ -87,8 +96,14 @@ export interface CartContextValue extends CartState {
   addItem: (variantId: string, quantity?: number) => Promise<void>;
   updateItem: (lineId: string, quantity: number) => Promise<void>;
   removeItem: (lineId: string) => Promise<void>;
-  applyDiscount: (code: string) => Promise<{ ok: boolean; error?: string }>;
+  /** Apply whatever is printed on the code the shopper is holding. The server
+   *  decides whether it is a discount or a gift card, because she cannot and
+   *  should not have to. */
+  applyCode: (
+    code: string
+  ) => Promise<{ ok: boolean; kind?: 'discount' | 'gift_card'; error?: string }>;
   removeDiscount: (code: string) => Promise<void>;
+  removeGiftCard: () => Promise<void>;
   openDrawer: () => void;
   closeDrawer: () => void;
   refresh: () => Promise<void>;
@@ -126,6 +141,8 @@ const EMPTY_TOTALS: CartTotals = {
   discountTotalCents: 0,
   shippingTotalCents: 0,
   taxTotalCents: 0,
+  giftCardAppliedCents: 0,
+  accountCreditAppliedCents: 0,
   totalCents: 0,
 };
 
@@ -153,6 +170,7 @@ export function CartProvider({ tenantSlug, propertySlug, currency, children }: C
     totals: EMPTY_TOTALS,
     madeToOrder: NOTHING_MADE_TO_ORDER,
     appliedDiscountCodes: [],
+    appliedGiftCardCodes: [],
     count: 0,
     currency,
     loading: false,
@@ -328,11 +346,18 @@ export function CartProvider({ tenantSlug, propertySlug, currency, children }: C
     [applyApi, authHeaders, tenantSlug]
   );
 
-  const applyDiscount = useCallback(
-    async (code: string): Promise<{ ok: boolean; error?: string }> => {
+  // One box, either kind of code. A shopper handed a gift card types it into the
+  // only code box on the page; when that box was a DISCOUNT box she was told
+  // there was no such discount, and the money on a live card was unreachable.
+  // The server tries both and says which it was, so the reply can name what
+  // happened instead of just changing a number.
+  const applyCode = useCallback(
+    async (
+      code: string
+    ): Promise<{ ok: boolean; kind?: 'discount' | 'gift_card'; error?: string }> => {
       const id = await ensureCart();
       const res = await fetch(
-        `${API_BASE}/v1/public/commerce/cart/${id}/discount?tenant=${encodeURIComponent(tenantSlug)}`,
+        `${API_BASE}/v1/public/commerce/cart/${id}/code?tenant=${encodeURIComponent(tenantSlug)}`,
         {
           method: 'POST',
           headers: { 'content-type': 'application/json', ...authHeaders() },
@@ -340,14 +365,25 @@ export function CartProvider({ tenantSlug, propertySlug, currency, children }: C
         }
       );
       if (res.ok) {
-        applyApi(((await res.json()) as { data: CartApiShape }).data);
-        return { ok: true };
+        const data = ((await res.json()) as { data: CartApiShape & { kind?: string } }).data;
+        applyApi(data);
+        return { ok: true, kind: data.kind === 'gift_card' ? 'gift_card' : 'discount' };
       }
       const err = (await res.json().catch(() => null)) as { error?: { message?: string } } | null;
       return { ok: false, error: err?.error?.message ?? 'That code can’t be applied.' };
     },
     [applyApi, authHeaders, ensureCart, tenantSlug]
   );
+
+  const removeGiftCard = useCallback(async () => {
+    const id = cartIdRef.current;
+    if (!id) return;
+    const res = await fetch(
+      `${API_BASE}/v1/public/commerce/cart/${id}/gift-card?tenant=${encodeURIComponent(tenantSlug)}`,
+      { method: 'DELETE', headers: authHeaders() }
+    );
+    if (res.ok) applyApi(((await res.json()) as { data: CartApiShape }).data);
+  }, [applyApi, authHeaders, tenantSlug]);
 
   const removeDiscount = useCallback(
     async (code: string) => {
@@ -374,6 +410,7 @@ export function CartProvider({ tenantSlug, propertySlug, currency, children }: C
       totals: EMPTY_TOTALS,
       madeToOrder: NOTHING_MADE_TO_ORDER,
       appliedDiscountCodes: [],
+      appliedGiftCardCodes: [],
       count: 0,
       drawerOpen: false,
     }));
@@ -385,8 +422,9 @@ export function CartProvider({ tenantSlug, propertySlug, currency, children }: C
       addItem,
       updateItem,
       removeItem,
-      applyDiscount,
+      applyCode,
       removeDiscount,
+      removeGiftCard,
       openDrawer,
       closeDrawer,
       refresh,
@@ -397,8 +435,9 @@ export function CartProvider({ tenantSlug, propertySlug, currency, children }: C
       addItem,
       updateItem,
       removeItem,
-      applyDiscount,
+      applyCode,
       removeDiscount,
+      removeGiftCard,
       openDrawer,
       closeDrawer,
       refresh,
@@ -414,6 +453,7 @@ interface CartApiShape {
   cartId: string;
   currency: string;
   appliedDiscountCodes?: string[];
+  appliedGiftCardCodes?: string[];
   items: {
     id: string;
     variantId: string;
@@ -431,6 +471,8 @@ interface CartApiShape {
     discountTotalCents?: number;
     shippingTotalCents?: number;
     taxTotalCents?: number;
+    giftCardAppliedCents?: number;
+    accountCreditAppliedCents?: number;
     totalCents?: number;
   };
   madeToOrder?: Partial<CartMadeToOrder>;
@@ -456,11 +498,14 @@ function fromApi(
     cartId: data.cartId,
     lines,
     appliedDiscountCodes: data.appliedDiscountCodes ?? [],
+    appliedGiftCardCodes: data.appliedGiftCardCodes ?? [],
     totals: {
       subtotalCents: data.totals.subtotalCents,
       discountTotalCents: data.totals.discountTotalCents ?? 0,
       shippingTotalCents: data.totals.shippingTotalCents ?? 0,
       taxTotalCents: data.totals.taxTotalCents ?? 0,
+      giftCardAppliedCents: data.totals.giftCardAppliedCents ?? 0,
+      accountCreditAppliedCents: data.totals.accountCreditAppliedCents ?? 0,
       totalCents: data.totals.totalCents ?? data.totals.subtotalCents,
     },
     // Defaults mean "no deposit, everything due now" — the shape every cart had

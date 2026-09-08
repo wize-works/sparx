@@ -35,6 +35,7 @@ import { useConfirm } from '../../lib/confirm';
 import { Plus, Trash2, X } from 'lucide-react';
 import type { CreateShippingRateInput } from '@wizeworks/commerce-schemas';
 import { MoneyInput } from '@/components/money-input';
+import { SaveFailure } from '@/components/save-failure';
 import {
   rateTypeLabel,
   shippingErrorMessage,
@@ -218,14 +219,7 @@ function RateComposer({
         </Button>
       </div>
 
-      {failure ? (
-        <Alert color="error">
-          <AlertContent>
-            <AlertTitle>Could not add this option</AlertTitle>
-            <AlertDescription>{failure}</AlertDescription>
-          </AlertContent>
-        </Alert>
-      ) : null}
+      <SaveFailure title="Could not add this option" message={failure} />
 
       <Field>
         <FieldLabel>What shoppers see</FieldLabel>

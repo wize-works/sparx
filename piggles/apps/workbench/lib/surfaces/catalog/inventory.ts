@@ -468,6 +468,7 @@ export const INVENTORY_SURFACES: SurfaceDefinition[] = [
     order: 23.5,
     keywords: [
       'approval',
+      'authorize',
       'authorise',
       'authorize',
       'sign off',
@@ -1105,6 +1106,7 @@ export const INVENTORY_SURFACES: SurfaceDefinition[] = [
     order: 38.5,
     keywords: [
       'approval rule',
+      'authorization',
       'authorisation',
       'authorization',
       'purchase limit',

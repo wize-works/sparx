@@ -6,14 +6,7 @@
 // Advancing it (confirm → check in → complete) is its position, so that lives in
 // the toolbar. The rare, hard-to-undo outcomes sit at the bottom under a divider.
 
-import {
-  Alert,
-  AlertContent,
-  AlertDescription,
-  AlertTitle,
-  Badge,
-  Text,
-} from '@wizeworks/silicaui-react';
+import { Badge, Text } from '@wizeworks/silicaui-react';
 
 import { PaneToolbar, PANE_SHELL } from '../../components/pane-toolbar';
 import { RefreshButton } from '../../components/refresh-button';
@@ -28,6 +21,7 @@ import { BookingMove, BookingNotes } from './booking-editing';
 import { depositLine } from './booking-money';
 import { BookingWho } from './booking-who';
 import { COLUMN } from './booking-shell';
+import { SaveFailure } from '@/components/save-failure';
 import {
   bookingResourceLabel,
   bookingStateMeta,
@@ -128,14 +122,7 @@ export function BookingManage({
             <Text className="text-sm">{depositLine(booking, policy.data)}</Text>
           </div>
 
-          {actionError ? (
-            <Alert color="error">
-              <AlertContent>
-                <AlertTitle>That did not go through</AlertTitle>
-                <AlertDescription>{actionError}</AlertDescription>
-              </AlertContent>
-            </Alert>
-          ) : null}
+          <SaveFailure title="That did not go through" message={actionError} />
 
           <BookingWho
             ctx={ctx}

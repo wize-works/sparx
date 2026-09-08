@@ -69,6 +69,7 @@ import {
   type DnsRecord,
 } from './data';
 import { productCopy } from '../../lib/product';
+import { SaveFailure } from '@/components/save-failure';
 
 /** The one column everything in this pane sits in. Centred and capped, because a
  *  pane torn onto a second monitor is otherwise 2000px of dead grey with a
@@ -197,14 +198,7 @@ function ConnectDomain({ ctx }: { ctx: SurfaceContext }) {
             is now until you finish, and your site stays up throughout.
           </Text>
 
-          {failure ? (
-            <Alert color="error">
-              <AlertContent>
-                <AlertTitle>Could not connect that domain</AlertTitle>
-                <AlertDescription>{failure}</AlertDescription>
-              </AlertContent>
-            </Alert>
-          ) : null}
+          <SaveFailure title="Could not connect that domain" message={failure} />
 
           <FormSection title="The domain">
             <Field>

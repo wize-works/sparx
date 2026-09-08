@@ -13,7 +13,17 @@
 // record, so inventing a list of them here would be a place you could never
 // actually add one.
 
-import { Badge, Button, Card, EmptyState, Text } from '@wizeworks/silicaui-react';
+import {
+  Alert,
+  AlertContent,
+  AlertDescription,
+  AlertTitle,
+  Badge,
+  Button,
+  Card,
+  EmptyState,
+  Text,
+} from '@wizeworks/silicaui-react';
 import { faMoneyBill, faPlus, faServer } from '@fortawesome/pro-solid-svg-icons';
 import { Icon } from '@piggles/ui';
 import { PaneToolbar, PANE_SHELL } from '../../components/pane-toolbar';
@@ -32,6 +42,7 @@ import {
   taxErrorMessage,
   useAutomaticTaxProvider,
   useTaxZones,
+  zoneIsCollecting,
   type TaxZone,
 } from './tax-data';
 import { RowOpenHint } from '../../components/row-open-hint';
@@ -57,6 +68,10 @@ function ZoneRow({
   onOpen: (id: string, event: { shiftKey: boolean; altKey: boolean }) => void;
 }) {
   const place = zonePlace(zone);
+  // Not `zone.isActive`. A place also needs a record of the person who switched
+  // it on before a penny is charged, and this is the checkout's own rule, so the
+  // badge and the till can never disagree.
+  const collecting = zoneIsCollecting(zone);
   return (
     <button
       type="button"
@@ -68,7 +83,13 @@ function ZoneRow({
       <span className="flex min-w-0 flex-1 flex-col">
         <span className="font-semibold">{place.title}</span>
         <Text as="span" className="text-sm">
-          {place.sub} · {nexusLabel(zone.nexusType)}
+          {/* Why she collects here is only worth saying once she DOES. On a place
+              that is switched off, "You have a shop, office, or staff here" is
+              the screen asserting a fact about her business that nobody asked
+              her — which is exactly how a Denver studio came to be described as
+              having a presence in California, Texas and New York (issue 429). */}
+          {place.sub}
+          {collecting ? ` · ${nexusLabel(zone.nexusType)}` : ' · Nothing is charged here yet'}
         </Text>
       </span>
       {zone.rateCount === 0 ? (
@@ -80,8 +101,8 @@ function ZoneRow({
           {zone.rateCount === 1 ? '1 rate' : `${String(zone.rateCount)} rates`}
         </Badge>
       )}
-      <Badge color={zone.isActive ? 'success' : 'neutral'} variant="soft" size="sm">
-        {zone.isActive ? 'Collecting' : 'Off'}
+      <Badge color={collecting ? 'success' : 'neutral'} variant="soft" size="sm">
+        {collecting ? 'Collecting' : 'Off'}
       </Badge>
     </button>
   );
@@ -97,6 +118,17 @@ export function TaxSurface({ ctx }: { ctx: SurfaceContext }) {
 
   const rows = zones.data?.items ?? [];
   const automatic = auto.data ?? null;
+
+  // A place that has a rate but is not charging is worth explaining. It is the
+  // exact state every shop woke up in the day tax started working: the industry
+  // starters had set three US states collecting on nobody's say-so, and the
+  // migration that made tax real switched them all off rather than start
+  // charging in states nobody chose (issues 428, 429).
+  //
+  // Deliberately keyed on HAVING A RATE. A brand-new shop is seeded one empty
+  // country place, switched off, and telling that owner their tax is not working
+  // would be a warning about nothing.
+  const setUpButSilent = rows.some((zone) => zone.rateCount > 0 && !zoneIsCollecting(zone));
 
   return (
     <div className={PANE_SHELL}>
@@ -148,6 +180,20 @@ export function TaxSurface({ ctx }: { ctx: SurfaceContext }) {
                   ? `Tax is worked out automatically by ${automatic.label ?? automatic.providerSlug}. The places and rates below are a backup used only if that service is ever unavailable.`
                   : 'Add a place for each country or state where you have to collect tax, then set the rate. A shopper is only charged tax in a place that is switched on. If you are not sure where you owe tax, check with an accountant.'}
               </Text>
+
+              {setUpButSilent ? (
+                <Alert color="warning">
+                  <AlertContent>
+                    <AlertTitle>Set up, but charging nothing</AlertTitle>
+                    <AlertDescription>
+                      Tax is worked out and added at checkout. Every place starts switched off, so
+                      nothing is charged before you have looked at it. Open each place you are
+                      registered to collect in, check its rate, then switch it on. If you are not
+                      sure where you have to collect, ask an accountant.
+                    </AlertDescription>
+                  </AlertContent>
+                </Alert>
+              ) : null}
 
               <FormSection
                 title="Places you collect tax"

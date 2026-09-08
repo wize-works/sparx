@@ -285,37 +285,44 @@ export function PoApprovalsSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Approval queue controls">
-        <NativeSelect
-          size="sm"
-          className="max-w-48 shrink"
-          aria-label="Show requests that are"
-          value={status}
-          onChange={(event) => {
-            setStatus(event.target.value as QueueStatus);
-          }}
-        >
-          <option value="pending">Waiting</option>
-          <option value="approved">Signed off</option>
-          <option value="rejected">Turned down</option>
-          <option value="cancelled">Withdrawn</option>
-        </NativeSelect>
-
-        <Text className="text-sm">
-          {pending === 0
-            ? 'Nothing waiting'
-            : `${plural(pending, 'order is', 'orders are')} waiting for sign-off`}
-        </Text>
-
-        <RefreshButton
-          className="ml-auto"
-          isFetching={queue.isFetching}
-          updatedAt={queue.data ? queue.dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void queue.refetch();
-          }}
-        />
-      </PaneToolbar>
+      <PaneToolbar
+        label="Approval queue controls"
+        status={
+          <Text className="text-sm">
+            {pending === 0
+              ? 'Nothing waiting'
+              : `${plural(pending, 'order is', 'orders are')} waiting for sign-off`}
+          </Text>
+        }
+        controls={
+          <>
+            <NativeSelect
+              size="sm"
+              className="max-w-48 shrink"
+              aria-label="Show requests that are"
+              value={status}
+              onChange={(event) => {
+                setStatus(event.target.value as QueueStatus);
+              }}
+            >
+              <option value="pending">Waiting</option>
+              <option value="approved">Signed off</option>
+              <option value="rejected">Turned down</option>
+              <option value="cancelled">Withdrawn</option>
+            </NativeSelect>
+          </>
+        }
+        refresh={
+          <RefreshButton
+            className="ml-auto"
+            isFetching={queue.isFetching}
+            updatedAt={queue.data ? queue.dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void queue.refetch();
+            }}
+          />
+        }
+      />
 
       <Card className="min-h-0 flex-1 overflow-auto">{body()}</Card>
 

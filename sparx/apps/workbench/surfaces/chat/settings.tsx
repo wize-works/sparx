@@ -46,6 +46,7 @@ import { PaneToolbar, PANE_SHELL } from '../../components/pane-toolbar';
 import { FormSection } from '../../components/form-section';
 import { RefreshButton } from '../../components/refresh-button';
 import type { SurfaceContext } from '../../lib/surfaces/registry';
+import { SaveFailure } from '@/components/save-failure';
 import {
   AI_PROVIDERS,
   chatErrorMessage,
@@ -55,6 +56,7 @@ import {
   type ChatConfig,
   type OperatingHours,
 } from './data';
+import { PaneLoadError } from '../../components/pane-load-error';
 
 const COLUMN = 'mx-auto flex w-full max-w-3xl flex-col gap-4';
 
@@ -248,26 +250,13 @@ export function ChatSettingsSurface({ ctx }: { ctx: SurfaceContext }) {
 
   if (isError) {
     return (
-      <div className="flex h-full items-center justify-center p-8">
-        <Alert color="error" className="max-w-md">
-          <AlertContent>
-            <AlertTitle>Could not load your chat settings</AlertTitle>
-            <AlertDescription>
-              This is a problem reaching the server. Your live chat is unaffected.
-            </AlertDescription>
-          </AlertContent>
-          <Button
-            size="sm"
-            color="error"
-            variant="soft"
-            onClick={() => {
-              void refetch();
-            }}
-          >
-            Try again
-          </Button>
-        </Alert>
-      </div>
+      <PaneLoadError
+        title="Could not load your chat settings"
+        description="This is a problem reaching the server. Your live chat is unaffected."
+        onRetry={() => {
+          void refetch();
+        }}
+      />
     );
   }
 
@@ -318,31 +307,40 @@ export function ChatSettingsSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Chat settings actions">
-        {dirty ? (
-          <Badge color="warning" variant="soft" size="sm">
-            Unsaved changes
-          </Badge>
-        ) : null}
-        <Button
-          color="module"
-          size="sm"
-          className="ml-auto"
-          loading={update.isPending}
-          disabled={!canEdit || !dirty}
-          onClick={save}
-        >
-          <Save className="size-4" aria-hidden />
-          Save changes
-        </Button>
-        <RefreshButton
-          isFetching={isFetching}
-          updatedAt={config ? dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void refetch();
-          }}
-        />
-      </PaneToolbar>
+      <PaneToolbar
+        label="Chat settings actions"
+        primary={
+          <Button
+            color="module"
+            size="sm"
+            className="ml-auto"
+            loading={update.isPending}
+            disabled={!canEdit || !dirty}
+            onClick={save}
+          >
+            <Save className="size-4" aria-hidden />
+            Save changes
+          </Button>
+        }
+        controls={
+          <>
+            {dirty ? (
+              <Badge color="warning" variant="soft" size="sm">
+                Unsaved changes
+              </Badge>
+            ) : null}
+          </>
+        }
+        refresh={
+          <RefreshButton
+            isFetching={isFetching}
+            updatedAt={config ? dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void refetch();
+            }}
+          />
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className={COLUMN}>
@@ -370,14 +368,7 @@ export function ChatSettingsSurface({ ctx }: { ctx: SurfaceContext }) {
 
           {/* One message, the most specific one — the server's own reason a save
               failed (a rejected AI key names itself) beats a generic banner. */}
-          {failure ? (
-            <Alert color="error">
-              <AlertContent>
-                <AlertTitle>Could not save your settings</AlertTitle>
-                <AlertDescription>{failure}</AlertDescription>
-              </AlertContent>
-            </Alert>
-          ) : null}
+          <SaveFailure title="Could not save your settings" message={failure} />
 
           <FormSection title="The chat box">
             <Field>

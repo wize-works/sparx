@@ -16,10 +16,6 @@ import { useEffect, useMemo, useState } from 'react';
 import { PaneWaiting } from '../../components/pane-waiting';
 import { PaneLoadError } from '../../components/pane-load-error';
 import {
-  Alert,
-  AlertContent,
-  AlertDescription,
-  AlertTitle,
   Badge,
   Button,
   Card,
@@ -53,6 +49,7 @@ import { FormSection } from '../../components/form-section';
 import { ModuleScope } from '../../components/module-scope';
 import type { OpenTarget, SurfaceContext } from '../../lib/surfaces/registry';
 import { MoneyInput } from '../../components/money-input';
+import { SaveFailure } from '@/components/save-failure';
 import {
   PAID_METHOD_LABELS,
   formatCents,
@@ -235,14 +232,7 @@ function InvoiceCreate({ ctx }: { ctx: SurfaceContext }) {
             this is for everything else.
           </Text>
 
-          {failure ? (
-            <Alert color="error">
-              <AlertContent>
-                <AlertTitle>Could not raise this invoice</AlertTitle>
-                <AlertDescription>{failure}</AlertDescription>
-              </AlertContent>
-            </Alert>
-          ) : null}
+          <SaveFailure title="Could not raise this invoice" message={failure} />
 
           <FormSection title="The invoice">
             <Field>
@@ -495,14 +485,7 @@ function InvoiceManage({
             {formatCents(invoice.amountCents)}
           </Text>
 
-          {failure ? (
-            <Alert color="error">
-              <AlertContent>
-                <AlertTitle>Could not save this invoice</AlertTitle>
-                <AlertDescription>{failure}</AlertDescription>
-              </AlertContent>
-            </Alert>
-          ) : null}
+          <SaveFailure title="Could not save this invoice" message={failure} />
 
           <FormSection title="The money">
             <div className="flex flex-col gap-2">
@@ -718,7 +701,7 @@ function MarkPaidDialog({ invoice }: { invoice: InvoiceRow }) {
                   <Input
                     color="module"
                     value={note}
-                    placeholder="Cheque number, reference…"
+                    placeholder="Check number, reference…"
                     onChange={(event) => {
                       setNote(event.target.value);
                     }}

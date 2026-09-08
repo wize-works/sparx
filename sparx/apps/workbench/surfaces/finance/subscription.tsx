@@ -151,17 +151,20 @@ export function SubscriptionSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Bill controls">
-        <p className="text-sm">Your sparx bill</p>
-        <RefreshButton
-          className="ml-auto"
-          isFetching={isFetching}
-          updatedAt={bill ? dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void refetch();
-          }}
-        />
-      </PaneToolbar>
+      <PaneToolbar
+        label="Bill controls"
+        status={<p className="text-sm">Your sparx bill</p>}
+        refresh={
+          <RefreshButton
+            className="ml-auto"
+            isFetching={isFetching}
+            updatedAt={bill ? dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void refetch();
+            }}
+          />
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         {isError ? (

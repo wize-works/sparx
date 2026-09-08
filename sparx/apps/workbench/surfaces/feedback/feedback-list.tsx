@@ -9,7 +9,7 @@
 // be starred — none of which an overlay can do.
 
 import { Button, EmptyState, Table } from '@wizeworks/silicaui-react';
-import { MessageSquarePlus, RefreshCw } from 'lucide-react';
+import { MessageSquarePlus } from 'lucide-react';
 import { describeAgo } from '../../lib/api/activity';
 import { useMyFeedback, type FeedbackSubmission } from '../../lib/api/feedback';
 import type { OpenTarget, SurfaceContext } from '../../lib/surfaces/registry';
@@ -17,6 +17,7 @@ import { CATEGORY_ICON, FeedbackStatusBadge, deriveTitle } from '../../component
 import { useFeedback } from '../../components/feedback/provider';
 import { PaneToolbar, PANE_SHELL } from '../../components/pane-toolbar';
 import { RowOpenHint } from '../../components/row-open-hint';
+import { PaneLoadError } from '../../components/pane-load-error';
 
 /** Same modifier contract as the launcher and every other list. */
 function targetFor(event: { shiftKey: boolean; altKey: boolean }): OpenTarget {
@@ -35,25 +36,14 @@ export function FeedbackListSurface({ ctx }: { ctx: SurfaceContext }) {
 
   if (isError) {
     return (
-      <div className="flex h-full items-center justify-center p-8">
-        <EmptyState
-          icon={<MessageSquarePlus className="size-6" aria-hidden />}
-          title="Could not load your feedback"
-          description="This is a problem reaching the server, not a problem with anything you sent. Nothing was lost."
-          actions={
-            <Button
-              size="sm"
-              color="module"
-              onClick={() => {
-                void refetch();
-              }}
-            >
-              <RefreshCw className="size-4" aria-hidden />
-              Try again
-            </Button>
-          }
-        />
-      </div>
+      <PaneLoadError
+        icon={<MessageSquarePlus className="size-6" aria-hidden />}
+        title="Could not load your feedback"
+        description="This is a problem reaching the server, not a problem with anything you sent. Nothing was lost."
+        onRetry={() => {
+          void refetch();
+        }}
+      />
     );
   }
 
@@ -61,23 +51,32 @@ export function FeedbackListSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Feedback list controls">
-        <p className="shrink-0 text-sm whitespace-nowrap">
-          {rows.length === 1 ? '1 message' : `${String(rows.length)} messages`}
-          {data && data.unreadCount > 0 ? ` · ${String(data.unreadCount)} with a new reply` : ''}
-        </p>
-        <div className="flex-1" />
-        <Button
-          color="module"
-          size="sm"
-          onClick={() => {
-            feedback.openSend({ source: 'button' });
-          }}
-        >
-          <MessageSquarePlus className="size-4" aria-hidden />
-          Send feedback
-        </Button>
-      </PaneToolbar>
+      <PaneToolbar
+        label="Feedback list controls"
+        status={
+          <p className="shrink-0 text-sm whitespace-nowrap">
+            {rows.length === 1 ? '1 message' : `${String(rows.length)} messages`}
+            {data && data.unreadCount > 0 ? ` · ${String(data.unreadCount)} with a new reply` : ''}
+          </p>
+        }
+        primary={
+          <Button
+            color="module"
+            size="sm"
+            onClick={() => {
+              feedback.openSend({ source: 'button' });
+            }}
+          >
+            <MessageSquarePlus className="size-4" aria-hidden />
+            Send feedback
+          </Button>
+        }
+        controls={
+          <>
+            <div className="flex-1" />
+          </>
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto p-4">
         {isPending ? (

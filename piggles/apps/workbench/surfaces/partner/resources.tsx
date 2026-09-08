@@ -43,7 +43,7 @@ const PITCH: PitchSection[] = [
     body: 'sparx is modular. A publisher can run content-only, a services team customers-only, a shop the full commerce stack — each is first-class. Modules switch on independently, and a client pays for exactly the ones they use. Nothing is bundled they didn’t ask for.',
     points: [
       'Site Builder — pages, content and design, live fast',
-      'Commerce — catalogue, checkout and payments',
+      'Commerce — catalog, checkout and payments',
       'CMS — pages, posts and structured content',
       'CRM — customers, pipelines and segments',
       'Email — broadcasts and flows on their own domain',
@@ -97,10 +97,10 @@ const GUIDES: ModuleGuide[] = [
   },
   {
     label: 'Commerce',
-    blurb: 'Turn the site into a shop — catalogue, checkout, payments.',
+    blurb: 'Turn the site into a shop — catalog, checkout, payments.',
     steps: [
       'Switch on Commerce and connect the client’s payment account.',
-      'Add products (or import a catalogue) with images, variants and prices.',
+      'Add products (or import a catalog) with images, variants and prices.',
       'Set up shipping and tax, then place a test order end to end.',
       'Drop product and cart components onto the site and publish.',
     ],

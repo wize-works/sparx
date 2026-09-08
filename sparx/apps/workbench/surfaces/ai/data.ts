@@ -24,14 +24,7 @@ import { slugify as slugifyWebSegment } from '../../lib/slugify';
 /* ── Prompt library shapes (mirror wizeworks/services/api-rest/src/lib/ai/types.ts) ──── */
 
 export type PromptCategory =
-  | 'persona'
-  | 'support'
-  | 'email'
-  | 'product'
-  | 'seo'
-  | 'social'
-  | 'crm'
-  | 'general';
+  'persona' | 'support' | 'email' | 'product' | 'seo' | 'social' | 'crm' | 'general';
 
 /** Group order for the list — persona first, since it is the one that grounds
  *  the live-chat assistant's whole personality. */

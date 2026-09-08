@@ -41,6 +41,7 @@ import { useDirtySource } from '../../lib/workbench/dirty';
 import { PaneToolbar, PANE_SHELL } from '../../components/pane-toolbar';
 import { FormSection } from '../../components/form-section';
 import type { SurfaceContext } from '../../lib/surfaces/registry';
+import { SaveFailure } from '@/components/save-failure';
 import {
   broadcastErrorMessage,
   broadcastState,
@@ -59,6 +60,7 @@ import {
   type Broadcast,
   type BroadcastStats,
 } from './broadcasts-data';
+import { PaneLoadError } from '../../components/pane-load-error';
 
 const DETAIL_KEY = 'email.broadcasts.detail';
 const SETTINGS_KEY = 'email.settings';
@@ -112,31 +114,19 @@ export function BroadcastDetailSurface({ ctx }: { ctx: SurfaceContext }) {
 }
 
 function LoadBroadcast({ ctx, id }: { ctx: SurfaceContext; id: string }) {
-  const { data: broadcast, isPending, isError, refetch } = useBroadcast(id);
+  const { data: broadcast, isPending, isError, error, refetch } = useBroadcast(id);
 
   if (isError) {
     return (
-      <div className="flex h-full items-center justify-center p-8">
-        <Alert color="error" className="max-w-md">
-          <AlertContent>
-            <AlertTitle>Could not load this broadcast</AlertTitle>
-            <AlertDescription>
-              This is a problem reaching the server, or the broadcast no longer exists. Nothing has
-              been changed.
-            </AlertDescription>
-          </AlertContent>
-          <Button
-            size="sm"
-            color="error"
-            variant="soft"
-            onClick={() => {
-              void refetch();
-            }}
-          >
-            Try again
-          </Button>
-        </Alert>
-      </div>
+      <PaneLoadError
+        error={error}
+        noun="broadcast"
+        title="Could not load this broadcast"
+        description="This is a problem reaching the server, or the broadcast no longer exists. Nothing has been changed."
+        onRetry={() => {
+          void refetch();
+        }}
+      />
     );
   }
 
@@ -323,61 +313,68 @@ function BroadcastComposer({ ctx, broadcast }: { ctx: SurfaceContext; broadcast?
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Broadcast composer actions" wrap>
-        <Badge color="info" variant="soft" size="sm">
-          Draft
-        </Badge>
-        {recipientCount !== undefined ? (
-          <Text as="span" className="text-sm">
-            {recipientCount.toLocaleString()} {recipientCount === 1 ? 'person' : 'people'}
-          </Text>
-        ) : null}
-
-        <Button
-          size="sm"
-          variant="outline"
-          color="neutral"
-          className="ml-auto shrink-0"
-          disabled={!canSave || busy || (!dirty && currentId !== null)}
-          loading={(create.isPending || update.isPending) && !send.isPending && !schedule.isPending}
-          onClick={() => {
-            void onSaveDraft();
-          }}
-        >
-          <Save className="size-4" aria-hidden />
-          Save draft
-        </Button>
-
-        {timing === 'now' ? (
+      <PaneToolbar
+        label="Broadcast composer actions"
+        primary={
           <Button
             size="sm"
-            color="module"
-            className="shrink-0"
-            disabled={!ready || busy}
-            loading={send.isPending}
+            variant="outline"
+            color="neutral"
+            className="ml-auto shrink-0"
+            disabled={!canSave || busy || (!dirty && currentId !== null)}
+            loading={
+              (create.isPending || update.isPending) && !send.isPending && !schedule.isPending
+            }
             onClick={() => {
-              void onSend();
+              void onSaveDraft();
             }}
           >
-            <Send className="size-4" aria-hidden />
-            Send now
+            <Save className="size-4" aria-hidden />
+            Save draft
           </Button>
-        ) : (
-          <Button
-            size="sm"
-            color="module"
-            className="shrink-0"
-            disabled={!ready || !scheduleValid || busy}
-            loading={schedule.isPending}
-            onClick={() => {
-              void onSchedule();
-            }}
-          >
-            <CalendarClock className="size-4" aria-hidden />
-            Schedule
-          </Button>
-        )}
-      </PaneToolbar>
+        }
+        controls={
+          <>
+            <Badge color="info" variant="soft" size="sm">
+              Draft
+            </Badge>
+            {recipientCount !== undefined ? (
+              <Text as="span" className="text-sm">
+                {recipientCount.toLocaleString()} {recipientCount === 1 ? 'person' : 'people'}
+              </Text>
+            ) : null}
+            {timing === 'now' ? (
+              <Button
+                size="sm"
+                color="module"
+                className="shrink-0"
+                disabled={!ready || busy}
+                loading={send.isPending}
+                onClick={() => {
+                  void onSend();
+                }}
+              >
+                <Send className="size-4" aria-hidden />
+                Send now
+              </Button>
+            ) : (
+              <Button
+                size="sm"
+                color="module"
+                className="shrink-0"
+                disabled={!ready || !scheduleValid || busy}
+                loading={schedule.isPending}
+                onClick={() => {
+                  void onSchedule();
+                }}
+              >
+                <CalendarClock className="size-4" aria-hidden />
+                Schedule
+              </Button>
+            )}
+          </>
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className={COLUMN}>
@@ -393,14 +390,7 @@ function BroadcastComposer({ ctx, broadcast }: { ctx: SurfaceContext; broadcast?
             </div>
           )}
 
-          {serverError ? (
-            <Alert color="error">
-              <AlertContent>
-                <AlertTitle>That didn’t go through</AlertTitle>
-                <AlertDescription>{serverError}</AlertDescription>
-              </AlertContent>
-            </Alert>
-          ) : null}
+          <SaveFailure title="That didn’t go through" message={serverError} />
 
           <FormSection
             title="The email"
@@ -713,26 +703,31 @@ function BroadcastReview({ ctx, broadcast }: { ctx: SurfaceContext; broadcast: B
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Broadcast actions" wrap>
-        <Badge color={state.tone} variant="soft" size="sm">
-          {state.label}
-        </Badge>
-        {broadcast.status === 'scheduled' ? (
-          <Button
-            size="sm"
-            variant="outline"
-            color="danger"
-            className="ml-auto shrink-0"
-            loading={cancel.isPending}
-            onClick={() => {
-              void onCancel();
-            }}
-          >
-            <X className="size-4" aria-hidden />
-            Cancel send
-          </Button>
-        ) : null}
-      </PaneToolbar>
+      <PaneToolbar
+        label="Broadcast actions"
+        controls={
+          <>
+            <Badge color={state.tone} variant="soft" size="sm">
+              {state.label}
+            </Badge>
+            {broadcast.status === 'scheduled' ? (
+              <Button
+                size="sm"
+                variant="outline"
+                color="danger"
+                className="ml-auto shrink-0"
+                loading={cancel.isPending}
+                onClick={() => {
+                  void onCancel();
+                }}
+              >
+                <X className="size-4" aria-hidden />
+                Cancel send
+              </Button>
+            ) : null}
+          </>
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className={COLUMN}>

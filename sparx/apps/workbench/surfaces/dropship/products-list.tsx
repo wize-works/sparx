@@ -26,7 +26,6 @@ import {
   Select,
   Table,
   Text,
-  ToolbarSeparator,
   useToast,
 } from '@wizeworks/silicaui-react';
 import { useConfirm } from '../../lib/confirm';
@@ -280,67 +279,71 @@ export function DropshipProductsListSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Supplier products controls" wrap>
-        <div className="max-w-xs min-w-0 flex-1">
-          <SearchInput
-            size="sm"
-            aria-label="Search supplier products"
-            placeholder="Search products…"
-            value={search}
-            onValueChange={(next) => {
-              setSearch(next);
-              resetWindow();
-            }}
-          />
-        </div>
-
-        <ToolbarSeparator className="hidden @xl:block" />
-
-        {supplierList.length > 1 ? (
-          <div className="hidden w-44 shrink-0 @2xl:block">
-            <Select
+      <PaneToolbar
+        label="Supplier products controls"
+        search={
+          <div className="max-w-xs min-w-0 flex-1">
+            <SearchInput
               size="sm"
-              aria-label="Which supplier"
-              value={supplierFilter}
-              items={{
-                all: 'All suppliers',
-                ...Object.fromEntries(supplierList.map((s) => [s.id, s.name])),
-              }}
+              aria-label="Search supplier products"
+              placeholder="Search products…"
+              value={search}
               onValueChange={(next) => {
-                setSupplierFilter(next as string);
+                setSearch(next);
                 resetWindow();
               }}
             />
           </div>
-        ) : null}
-
-        <div className="hidden w-40 shrink-0 @md:block">
-          <Select
-            size="sm"
-            aria-label="Show which products"
-            value={statusFilter}
-            items={{
-              all: 'All products',
-              imported: 'In your catalog',
-              available: 'Not imported yet',
-            }}
-            onValueChange={(next) => {
-              setStatusFilter(next as StatusFilter);
-              resetWindow();
+        }
+        controls={
+          <>
+            {supplierList.length > 1 ? (
+              <div className="hidden w-44 shrink-0 @2xl:block">
+                <Select
+                  size="sm"
+                  aria-label="Which supplier"
+                  value={supplierFilter}
+                  items={{
+                    all: 'All suppliers',
+                    ...Object.fromEntries(supplierList.map((s) => [s.id, s.name])),
+                  }}
+                  onValueChange={(next) => {
+                    setSupplierFilter(next as string);
+                    resetWindow();
+                  }}
+                />
+              </div>
+            ) : null}
+            <div className="hidden w-40 shrink-0 @md:block">
+              <Select
+                size="sm"
+                aria-label="Show which products"
+                value={statusFilter}
+                items={{
+                  all: 'All products',
+                  imported: 'In your catalog',
+                  available: 'Not imported yet',
+                }}
+                onValueChange={(next) => {
+                  setStatusFilter(next as StatusFilter);
+                  resetWindow();
+                }}
+              />
+            </div>
+          </>
+        }
+        refresh={
+          <RefreshButton
+            className="ml-auto"
+            isFetching={isFetching || suppliers.isFetching}
+            updatedAt={data ? dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void refetch();
+              void suppliers.refetch();
             }}
           />
-        </div>
-
-        <RefreshButton
-          className="ml-auto"
-          isFetching={isFetching || suppliers.isFetching}
-          updatedAt={data ? dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void refetch();
-            void suppliers.refetch();
-          }}
-        />
-      </PaneToolbar>
+        }
+      />
 
       <Card className="min-h-0 flex-1 overflow-y-auto">
         {error ? (

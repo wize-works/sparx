@@ -18,7 +18,6 @@ import { useEffect, useMemo, useState } from 'react';
 import {
   Alert,
   AlertContent,
-  AlertDescription,
   AlertTitle,
   Badge,
   Button,
@@ -62,6 +61,7 @@ import type { OpenTarget, SurfaceContext } from '../../lib/surfaces/registry';
 import { useTeamRoster } from '../../lib/api/team';
 import { useViewer } from '../../lib/api/shell-data';
 import { PaymentTermsField } from '../../components/payment-terms-field';
+import { SaveFailure } from '@/components/save-failure';
 import {
   ACCOUNT_STATUSES,
   accountErrorMessage,
@@ -75,6 +75,7 @@ import {
   type Company,
   type CompanyStatus,
 } from './companies-data';
+import { PaneLoadError } from '../../components/pane-load-error';
 
 const COLUMN = 'mx-auto flex w-full max-w-3xl flex-col gap-4';
 
@@ -184,31 +185,19 @@ export function CompanyDetailSurface({ ctx }: { ctx: SurfaceContext }) {
 }
 
 function CompanyLoader({ ctx, id }: { ctx: SurfaceContext; id: string }) {
-  const { data: account, isPending, isError, refetch } = useAccount(id);
+  const { data: account, isPending, isError, error, refetch } = useAccount(id);
 
   if (isError) {
     return (
-      <div className="flex h-full items-center justify-center p-8">
-        <Alert color="error" className="max-w-md">
-          <AlertContent>
-            <AlertTitle>Could not load this company</AlertTitle>
-            <AlertDescription>
-              This is a problem reaching the server, or the account has been removed. Nothing has
-              been changed.
-            </AlertDescription>
-          </AlertContent>
-          <Button
-            size="sm"
-            color="error"
-            variant="soft"
-            onClick={() => {
-              void refetch();
-            }}
-          >
-            Try again
-          </Button>
-        </Alert>
-      </div>
+      <PaneLoadError
+        error={error}
+        noun="company"
+        title="Could not load this company"
+        description="This is a problem reaching the server, or the account has been removed. Nothing has been changed."
+        onRetry={() => {
+          void refetch();
+        }}
+      />
     );
   }
 
@@ -392,26 +381,33 @@ function CompanyEditor({
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Company actions">
-        <Badge color={meta.tone} variant="soft" size="sm">
-          {meta.label}
-        </Badge>
-        {tradeEnabled && account && Number(account.creditUsed) > 0 ? (
-          <Text as="span" className="hidden shrink-0 text-sm @md:inline">
-            {formatMoney(account.creditUsed)} of {formatMoney(account.creditLimit)} used
-          </Text>
-        ) : null}
-        <Button
-          color="module"
-          size="sm"
-          className="ml-auto shrink-0"
-          loading={saving}
-          disabled={Boolean(blocked) || (!isNew && !dirty)}
-          onClick={submit}
-        >
-          {isNew ? 'Add company' : 'Save'}
-        </Button>
-      </PaneToolbar>
+      <PaneToolbar
+        label="Company actions"
+        primary={
+          <Button
+            color="module"
+            size="sm"
+            className="ml-auto shrink-0"
+            loading={saving}
+            disabled={Boolean(blocked) || (!isNew && !dirty)}
+            onClick={submit}
+          >
+            {isNew ? 'Add company' : 'Save'}
+          </Button>
+        }
+        controls={
+          <>
+            <Badge color={meta.tone} variant="soft" size="sm">
+              {meta.label}
+            </Badge>
+            {tradeEnabled && account && Number(account.creditUsed) > 0 ? (
+              <Text as="span" className="hidden shrink-0 text-sm @md:inline">
+                {formatMoney(account.creditUsed)} of {formatMoney(account.creditLimit)} used
+              </Text>
+            ) : null}
+          </>
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className={COLUMN}>
@@ -427,14 +423,7 @@ function CompanyEditor({
             </div>
           ) : null}
 
-          {failure ? (
-            <Alert color="error">
-              <AlertContent>
-                <AlertTitle>Could not save this company</AlertTitle>
-                <AlertDescription>{failure}</AlertDescription>
-              </AlertContent>
-            </Alert>
-          ) : null}
+          <SaveFailure title="Could not save this company" message={failure} />
 
           <FormSection title="The business">
             <Field>

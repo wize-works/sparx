@@ -148,34 +148,43 @@ export function RecordDetailSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label={`${label} actions`}>
-        <Table2 className="size-4 shrink-0" aria-hidden />
-        <Text as="span" className="truncate text-sm">
-          {isNew ? `New ${label.toLowerCase()}` : title}
-        </Text>
-        {!isNew ? (
+      <PaneToolbar
+        label={`${label} actions`}
+        status={
+          <Text as="span" className="truncate text-sm">
+            {isNew ? `New ${label.toLowerCase()}` : title}
+          </Text>
+        }
+        primary={
           <Button
-            color="danger"
-            variant="ghost"
+            color="module"
             size="sm"
-            aria-label={`Remove this ${label.toLowerCase()}`}
-            title="Remove it"
-            onClick={() => void onDelete()}
+            className="ml-auto shrink-0"
+            loading={saving}
+            disabled={!isNew && !dirty}
+            onClick={submit}
           >
-            <Trash2 className="size-4" aria-hidden />
+            {isNew ? `Add ${label.toLowerCase()}` : 'Save'}
           </Button>
-        ) : null}
-        <Button
-          color="module"
-          size="sm"
-          className="ml-auto shrink-0"
-          loading={saving}
-          disabled={!isNew && !dirty}
-          onClick={submit}
-        >
-          {isNew ? `Add ${label.toLowerCase()}` : 'Save'}
-        </Button>
-      </PaneToolbar>
+        }
+        controls={
+          <>
+            <Table2 className="size-4 shrink-0" aria-hidden />
+            {!isNew ? (
+              <Button
+                color="danger"
+                variant="ghost"
+                size="sm"
+                aria-label={`Remove this ${label.toLowerCase()}`}
+                title="Remove it"
+                onClick={() => void onDelete()}
+              >
+                <Trash2 className="size-4" aria-hidden />
+              </Button>
+            ) : null}
+          </>
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className={COLUMN}>

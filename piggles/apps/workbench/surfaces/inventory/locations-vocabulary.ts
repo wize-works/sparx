@@ -16,7 +16,7 @@ export const LOCATION_TYPES = [
   {
     value: '3pl',
     label: 'Run by a partner',
-    hint: 'A fulfilment company stores your stock and ships it for you.',
+    hint: 'A fulfillment company stores your stock and ships it for you.',
   },
   {
     value: 'dropship',

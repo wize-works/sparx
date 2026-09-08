@@ -8,7 +8,7 @@ import { FormSection } from '../../../components/form-section';
 import { slotLabel, type Slot } from './slots';
 import { EmptySlotRow, RetiredSlotRows } from './slot-rows';
 import { VariantRow, type RowProps } from './variant-row';
-import type { Product, ProductOption, Variant, useCreateVariant } from '../products-data';
+import type { ProductOption, Variant, useCreateVariant } from '../products-data';
 
 /**
  * A card per value of the FIRST choice, a row per combination inside it.
@@ -22,7 +22,8 @@ export function GroupedGrid({
   slots,
   axes,
   rowProps,
-  product,
+  stem,
+  taken,
   create,
   restoring,
   onRestore,
@@ -30,7 +31,10 @@ export function GroupedGrid({
   slots: Slot[];
   axes: ProductOption[];
   rowProps: RowProps;
-  product: Product;
+  /** The code this product already carries, and every code it already holds —
+   *  both worked out once in `useVariantsTab` (issue 172). */
+  stem: string;
+  taken: Set<string>;
   create: ReturnType<typeof useCreateVariant>;
   restoring: boolean;
   onRestore: (variant: Variant) => void;
@@ -74,7 +78,9 @@ export function GroupedGrid({
                 />
               );
             }
-            return <EmptySlotRow key={slot.key} slot={slot} product={product} create={create} />;
+            return (
+              <EmptySlotRow key={slot.key} slot={slot} stem={stem} taken={taken} create={create} />
+            );
           })}
         </FormSection>
       ))}

@@ -142,22 +142,31 @@ export function CrmSettingsSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="CRM behaviour actions">
-        <SlidersHorizontal className="size-4 shrink-0" aria-hidden />
-        <Text as="span" className="text-sm">
-          These apply to the business you are working in.
-        </Text>
-        <Button
-          color="module"
-          size="sm"
-          className="ml-auto shrink-0"
-          loading={save.isPending}
-          disabled={!dirty}
-          onClick={submit}
-        >
-          Save
-        </Button>
-      </PaneToolbar>
+      <PaneToolbar
+        label="CRM behaviour actions"
+        status={
+          <Text as="span" className="text-sm">
+            These apply to the business you are working in.
+          </Text>
+        }
+        primary={
+          <Button
+            color="module"
+            size="sm"
+            className="ml-auto shrink-0"
+            loading={save.isPending}
+            disabled={!dirty}
+            onClick={submit}
+          >
+            Save
+          </Button>
+        }
+        controls={
+          <>
+            <SlidersHorizontal className="size-4 shrink-0" aria-hidden />
+          </>
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className={COLUMN}>

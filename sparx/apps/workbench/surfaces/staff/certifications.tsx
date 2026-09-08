@@ -73,32 +73,38 @@ export function CertificationsSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Certification controls" wrap>
-        <Filter
-          color="module"
-          value={horizon}
-          onValueChange={(next) => {
-            setHorizon(typeof next === 'string' ? next : 'attention');
-          }}
-          showReset={false}
-          aria-label="How far ahead to look"
-        >
-          {HORIZONS.map((option) => (
-            <FilterItem key={option.value} value={option.value}>
-              {option.label}
-            </FilterItem>
-          ))}
-        </Filter>
-
-        <RefreshButton
-          className="ml-auto"
-          isFetching={certs.isFetching}
-          updatedAt={certs.data ? certs.dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void certs.refetch();
-          }}
-        />
-      </PaneToolbar>
+      <PaneToolbar
+        label="Certification controls"
+        controls={
+          <>
+            <Filter
+              color="module"
+              value={horizon}
+              onValueChange={(next) => {
+                setHorizon(typeof next === 'string' ? next : 'attention');
+              }}
+              showReset={false}
+              aria-label="How far ahead to look"
+            >
+              {HORIZONS.map((option) => (
+                <FilterItem key={option.value} value={option.value}>
+                  {option.label}
+                </FilterItem>
+              ))}
+            </Filter>
+          </>
+        }
+        refresh={
+          <RefreshButton
+            className="ml-auto"
+            isFetching={certs.isFetching}
+            updatedAt={certs.data ? certs.dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void certs.refetch();
+            }}
+          />
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         {certs.isError ? (

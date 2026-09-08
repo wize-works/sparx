@@ -28,11 +28,12 @@ import {
   Text,
   useToast,
 } from '@wizeworks/silicaui-react';
-import { Check, Link2, Plug, RefreshCw, Trash2 } from 'lucide-react';
+import { Check, LineChart, Link2, Plug, RefreshCw, Trash2 } from 'lucide-react';
 import { useConfirm } from '../../lib/confirm';
 import { PaneToolbar, PANE_SHELL } from '../../components/pane-toolbar';
 import { FormSection } from '../../components/form-section';
-import type { SurfaceContext } from '../../lib/surfaces/registry';
+import { surfaceTitle, type SurfaceContext } from '../../lib/surfaces/registry';
+import { SaveFailure } from '@/components/save-failure';
 import {
   seoErrorMessage,
   useConnectUrl,
@@ -153,9 +154,10 @@ function SearchConsole({ ctx }: { ctx: SurfaceContext }) {
   const [pendingSite, setPendingSite] = useState<string | null>(null);
   const [connectFailure, setConnectFailure] = useState<string | null>(null);
 
-  useEffect(() => {
-    ctx.setTitle('Search Console');
-  }, [ctx]);
+  // The other screen's name in THIS console's words. Read from the registry rather
+  // than typed, because the brand renames it there ("How people find you") and a
+  // sentence pointing at a name nobody sees is worse than no pointer at all.
+  const performanceTitle = surfaceTitle('seo.performance') ?? 'Search performance';
 
   const connection = status.data?.connection ?? null;
   const configured = status.data?.configured ?? false;
@@ -324,28 +326,33 @@ function SearchConsole({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Search Console actions">
-        {status.data ? (
-          <Badge color={configured ? badge.tone : 'info'} variant="soft" size="sm">
-            {configured ? badge.label : 'Not available'}
-          </Badge>
-        ) : null}
-        <div className="flex-1" />
-        <Button
-          size="sm"
-          variant="ghost"
-          color="neutral"
-          shape="square"
-          aria-label="Check the connection again"
-          title="Check the connection again"
-          loading={status.isFetching}
-          onClick={() => {
-            void status.refetch();
-          }}
-        >
-          <RefreshCw className="size-4" aria-hidden />
-        </Button>
-      </PaneToolbar>
+      <PaneToolbar
+        label="Search Console actions"
+        controls={
+          <>
+            {status.data ? (
+              <Badge color={configured ? badge.tone : 'info'} variant="soft" size="sm">
+                {configured ? badge.label : 'Not available'}
+              </Badge>
+            ) : null}
+            <div className="flex-1" />
+            <Button
+              size="sm"
+              variant="ghost"
+              color="neutral"
+              shape="square"
+              aria-label="Check the connection again"
+              title="Check the connection again"
+              loading={status.isFetching}
+              onClick={() => {
+                void status.refetch();
+              }}
+            >
+              <RefreshCw className="size-4" aria-hidden />
+            </Button>
+          </>
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         {status.isPending ? (
@@ -377,16 +384,47 @@ function SearchConsole({ ctx }: { ctx: SurfaceContext }) {
             </div>
 
             {!configured ? (
-              <Alert color="info">
-                <AlertContent>
-                  <AlertTitle>Not available yet</AlertTitle>
-                  <AlertDescription>
-                    This connection is not switched on for your account yet. Once it is, you will be
-                    able to link Google here and see your real search numbers on the Search
-                    performance screen.
-                  </AlertDescription>
-                </AlertContent>
-              </Alert>
+              /* "Your account" was doing real damage here. Whether this connection
+                 works is a PLATFORM setting — an OAuth client on the server — and
+                 has nothing to do with the tenant, the plan or anything a person
+                 can reach. The old sentence read "not switched on for your account
+                 yet", which sends a shop owner to check her settings, then her
+                 plan, then support, for a thing none of them control. Say whose
+                 side it is on, say there is nothing to do, and hand her the screen
+                 that does work today. */
+              <>
+                <Alert color="info">
+                  <AlertContent>
+                    <AlertTitle>Not ready here yet</AlertTitle>
+                    <AlertDescription>
+                      This one is on our side, not yours. Nothing in your account, your plan or your
+                      settings is holding it up, and there is nothing for you to switch on or ask
+                      for. When it is ready, you will be able to link Google from this screen.
+                    </AlertDescription>
+                  </AlertContent>
+                </Alert>
+                <FormSection
+                  title="What you can see today"
+                  description={`Google's own figures are the only part missing. Everything measured here — how each page scores, and what is worth fixing — is on ${performanceTitle}, and it is up to date.`}
+                >
+                  <div>
+                    <Button
+                      size="sm"
+                      color="module"
+                      onClick={(event) => {
+                        ctx.open(
+                          'seo.performance',
+                          {},
+                          { target: event.altKey ? 'window' : event.shiftKey ? 'beside' : 'tab' }
+                        );
+                      }}
+                    >
+                      <LineChart className="size-4" aria-hidden />
+                      Open {performanceTitle}
+                    </Button>
+                  </div>
+                </FormSection>
+              </>
             ) : state === 'connected' ? (
               <FormSection title="Connected">
                 <div className="flex flex-wrap items-center gap-2">
@@ -481,14 +519,7 @@ function SearchConsole({ ctx }: { ctx: SurfaceContext }) {
               </FormSection>
             )}
 
-            {connectFailure ? (
-              <Alert color="error">
-                <AlertContent>
-                  <AlertTitle>Could not connect</AlertTitle>
-                  <AlertDescription>{connectFailure}</AlertDescription>
-                </AlertContent>
-              </Alert>
-            ) : null}
+            <SaveFailure title="Could not connect" message={connectFailure} />
           </div>
         )}
       </div>

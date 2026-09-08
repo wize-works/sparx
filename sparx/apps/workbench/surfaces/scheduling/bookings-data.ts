@@ -78,13 +78,7 @@ export interface BookingAttendeeRow {
 
 export type BookingType = 'appointment' | 'class' | 'reservation' | 'rental';
 export type BookingStatus =
-  | 'requested'
-  | 'confirmed'
-  | 'in_progress'
-  | 'completed'
-  | 'cancelled'
-  | 'no_show'
-  | 'waitlisted';
+  'requested' | 'confirmed' | 'in_progress' | 'completed' | 'cancelled' | 'no_show' | 'waitlisted';
 
 /**
  * One booking in full — the shape the list rows AND the detail pane both read

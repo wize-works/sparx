@@ -99,9 +99,58 @@ describe('naming a row', () => {
     expect(rowLabel(named)).toBe('Main menu');
   });
 
-  it('names an instance for what it is', () => {
-    expect(rowLabel({ ...el('x'), instanceOf: 'sym' })).toBe('Saved design');
+  it('calls a live region by its registry name, not its key', () => {
+    // A shop owner adding customer questions to her product page got two rows
+    // reading `commerce.product-revi…` and `commerce.product-que…` among rows called
+    // "Product name" and "Shipping & delivery". The Inspector's identity header
+    // showed the same string, truncated to `commerce….`
+    const reviews = { ...el('x'), kind: 'host' as const, component: 'commerce.product-reviews' };
+    const questions = {
+      ...el('y'),
+      kind: 'host' as const,
+      component: 'commerce.product-questions',
+    };
+    expect(rowLabel(reviews)).toBe('Reviews and ratings');
+    expect(rowLabel(questions)).toBe('Questions and answers');
+  });
+
+  it('shows an unregistered key as itself rather than hiding it', () => {
+    // A key with no registry entry is a half-built core. Naming it "Live region"
+    // would make that indistinguishable from a working one.
+    const unknown = { ...el('x'), kind: 'host' as const, component: 'not.a.real.core' };
+    expect(rowLabel(unknown)).toBe('not.a.real.core');
+  });
+
+  it('lets the author rename a live region', () => {
+    // The registry name is a fallback, not a lock: `node.label` still wins.
+    const renamed = {
+      ...el('x'),
+      kind: 'host' as const,
+      component: 'commerce.product-questions',
+      label: 'Ask the maker',
+    };
+    expect(rowLabel(renamed)).toBe('Ask the maker');
+  });
+
+  it('calls an instance by the name its author gave the piece', () => {
+    // She typed "Send me a message" and the row said "Saved design" — a category
+    // where her own word belonged, and the same word on every piece she saved.
+    expect(rowLabel({ ...el('x'), instanceOf: 'sym' }, 'Send me a message')).toBe(
+      'Send me a message'
+    );
     expect(rowIcon({ ...el('x'), instanceOf: 'sym' })).toBe('shared');
+  });
+
+  it('falls back when the master has no name to give', () => {
+    // Not loaded yet, or deleted. "Saved design" is then the honest answer; a
+    // blank row would be worse than a category.
+    expect(rowLabel({ ...el('x'), instanceOf: 'sym' })).toBe('Saved design');
+    expect(rowLabel({ ...el('x'), instanceOf: 'sym' }, undefined)).toBe('Saved design');
+  });
+
+  it('still prefers a name the author put on the layer itself', () => {
+    const named = { ...el('x'), instanceOf: 'sym', label: 'Footer band' };
+    expect(rowLabel(named, 'Send me a message')).toBe('Footer band');
   });
 
   it('reads a bare box by what it does', () => {
@@ -119,6 +168,25 @@ describe('instances', () => {
     // edits that either detach the piece or change every other instance silently.
     expect(ids).toContain('inst');
     expect(ids).not.toContain('leaked');
+  });
+
+  it('names each piece on the page, so three pieces are not three identical rows', () => {
+    const root = el('root', [
+      { ...el('a'), instanceOf: 'tenant:hours' },
+      { ...el('b'), instanceOf: 'tenant:message' },
+      { ...el('c'), instanceOf: 'tenant:unknown' },
+    ]);
+    const rows = layerRows(root, {
+      depth: 'all',
+      symbolNames: { 'tenant:hours': 'Opening hours', 'tenant:message': 'Send me a message' },
+    });
+    expect(rows.map((r) => r.label)).toEqual([
+      'Group',
+      'Opening hours',
+      'Send me a message',
+      // No name for this one, so the category is still the answer.
+      'Saved design',
+    ]);
   });
 });
 

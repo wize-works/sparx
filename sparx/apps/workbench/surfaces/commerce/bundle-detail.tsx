@@ -10,10 +10,6 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import {
-  Alert,
-  AlertContent,
-  AlertDescription,
-  AlertTitle,
   Badge,
   Button,
   Field,
@@ -39,6 +35,7 @@ import { FormSection } from '../../components/form-section';
 import type { SurfaceContext } from '../../lib/surfaces/registry';
 import { type ProductRow } from './products-data';
 import { VariantPicker } from './variant-picker';
+import { SaveFailure } from '@/components/save-failure';
 import {
   bundleErrorMessage,
   useBundle,
@@ -50,6 +47,7 @@ import {
   type BundleInventoryMode,
   type BundlePricingMode,
 } from './bundles-data';
+import { PaneLoadError } from '../../components/pane-load-error';
 
 const COLUMN = 'mx-auto flex w-full max-w-3xl flex-col gap-4';
 
@@ -136,30 +134,19 @@ export function BundleDetailSurface({ ctx }: { ctx: SurfaceContext }) {
 }
 
 function BundleLoader({ ctx, id }: { ctx: SurfaceContext; id: string }) {
-  const { data: bundle, isPending, isError, refetch } = useBundle(id);
+  const { data: bundle, isPending, isError, error, refetch } = useBundle(id);
 
   if (isError) {
     return (
-      <div className="flex h-full items-center justify-center p-8">
-        <Alert color="error" className="max-w-md">
-          <AlertContent>
-            <AlertTitle>Could not load this bundle</AlertTitle>
-            <AlertDescription>
-              This is a problem reaching the server. The bundle itself is unaffected.
-            </AlertDescription>
-          </AlertContent>
-          <Button
-            size="sm"
-            color="error"
-            variant="soft"
-            onClick={() => {
-              void refetch();
-            }}
-          >
-            Try again
-          </Button>
-        </Alert>
-      </div>
+      <PaneLoadError
+        error={error}
+        noun="bundle"
+        title="Could not load this bundle"
+        description="This is a problem reaching the server. The bundle itself is unaffected."
+        onRetry={() => {
+          void refetch();
+        }}
+      />
     );
   }
 
@@ -352,24 +339,31 @@ function BundleEditor({
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Bundle actions">
-        {!isNew ? (
-          <Badge color="info" variant="soft" size="sm">
-            <Blocks className="size-3" aria-hidden />
-            <span className="hidden @md:inline">Bundle</span>
-          </Badge>
-        ) : null}
-        <Button
-          color="module"
-          size="sm"
-          className="ml-auto"
-          loading={saving}
-          disabled={Boolean(blocked) || (!isNew && !dirty)}
-          onClick={submit}
-        >
-          {isNew ? 'Create bundle' : 'Save'}
-        </Button>
-      </PaneToolbar>
+      <PaneToolbar
+        label="Bundle actions"
+        primary={
+          <Button
+            color="module"
+            size="sm"
+            className="ml-auto"
+            loading={saving}
+            disabled={Boolean(blocked) || (!isNew && !dirty)}
+            onClick={submit}
+          >
+            {isNew ? 'Create bundle' : 'Save'}
+          </Button>
+        }
+        controls={
+          <>
+            {!isNew ? (
+              <Badge color="info" variant="soft" size="sm">
+                <Blocks className="size-3" aria-hidden />
+                <span className="hidden @md:inline">Bundle</span>
+              </Badge>
+            ) : null}
+          </>
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className={COLUMN}>
@@ -392,14 +386,7 @@ function BundleEditor({
             </div>
           )}
 
-          {failure ? (
-            <Alert color="error">
-              <AlertContent>
-                <AlertTitle>Could not save this bundle</AlertTitle>
-                <AlertDescription>{failure}</AlertDescription>
-              </AlertContent>
-            </Alert>
-          ) : null}
+          <SaveFailure title="Could not save this bundle" message={failure} />
 
           {isNew ? (
             <FormSection

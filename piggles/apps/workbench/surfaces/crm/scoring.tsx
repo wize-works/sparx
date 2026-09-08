@@ -139,8 +139,7 @@ function RuleRow({
   // condition builder for a job that does not need one, and the sum-of-rules
   // design already covers "several things matter" by writing several rules.
   const leaf = rule.condition.conditions[0] as
-    | { field: string; operator: string; value?: unknown }
-    | undefined;
+    { field: string; operator: string; value?: unknown } | undefined;
   const field = leaf?.field ?? '';
   const operator = leaf?.operator ?? 'eq';
   const value = leaf?.value;

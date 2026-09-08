@@ -60,7 +60,6 @@ import { PaneToolbar, PANE_SHELL } from '../../components/pane-toolbar';
 import { RefreshButton } from '../../components/refresh-button';
 import { FormSection } from '../../components/form-section';
 import type { SurfaceContext } from '../../lib/surfaces/registry';
-import { ScrollStrip } from '../../components/scroll-strip';
 import { FollowingNotice, ProductScopeFallback, useProductScope } from './product-scope';
 import {
   productErrorMessage,
@@ -503,42 +502,49 @@ export function ProductReviewsSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label={`${LABEL} actions`}>
-        <MessageSquare className="size-4 shrink-0" aria-hidden />
-        <Heading level={2} className="min-w-0 truncate text-base font-semibold">
-          {scope.product.title}
-        </Heading>
-        {scope.isFollowing ? (
-          <Badge color="info" variant="soft" size="sm">
-            Following
-          </Badge>
-        ) : null}
-        <Select
-          size="sm"
-          color="module"
-          // Bounded, not `flex-1`: an unbounded Select in a `w-full` toolbar
-          // grows to fill the bar and truncates the product name down to
-          // "Everyday Ceram…". The filter is the thing that gives way here.
-          className="ml-auto w-40 shrink-0"
-          value={filter}
-          // Silica renders the trigger's selected label from `items`, not from
-          // children — without it the bar reads "approved" instead of
-          // "Published".
-          items={FILTER_LABELS}
-          aria-label="Show only"
-          onValueChange={(next) => {
-            setFilter(String(next) as StatusFilter);
-          }}
-        />
-        <RefreshButton
-          isFetching={busy}
-          updatedAt={reviews.dataUpdatedAt}
-          onRefresh={() => {
-            void reviews.refetch();
-            void questions.refetch();
-          }}
-        />
-      </PaneToolbar>
+      <PaneToolbar
+        label={`${LABEL} actions`}
+        controls={
+          <>
+            <MessageSquare className="size-4 shrink-0" aria-hidden />
+            <Heading level={2} className="min-w-0 truncate text-base font-semibold">
+              {scope.product.title}
+            </Heading>
+            {scope.isFollowing ? (
+              <Badge color="info" variant="soft" size="sm">
+                Following
+              </Badge>
+            ) : null}
+            <Select
+              size="sm"
+              color="module"
+              // Bounded, not `flex-1`: an unbounded Select in a `w-full` toolbar
+              // grows to fill the bar and truncates the product name down to
+              // "Everyday Ceram…". The filter is the thing that gives way here.
+              className="ml-auto w-40 shrink-0"
+              value={filter}
+              // Silica renders the trigger's selected label from `items`, not from
+              // children — without it the bar reads "approved" instead of
+              // "Published".
+              items={FILTER_LABELS}
+              aria-label="Show only"
+              onValueChange={(next) => {
+                setFilter(String(next) as StatusFilter);
+              }}
+            />
+          </>
+        }
+        refresh={
+          <RefreshButton
+            isFetching={busy}
+            updatedAt={reviews.dataUpdatedAt}
+            onRefresh={() => {
+              void reviews.refetch();
+              void questions.refetch();
+            }}
+          />
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className="mx-auto flex w-full max-w-3xl flex-col gap-4">
@@ -609,17 +615,15 @@ export function ProductReviewsSurface({ ctx }: { ctx: SurfaceContext }) {
                 className="flex flex-col gap-3"
               >
                 <div className="bg-base-300 shrink-0 rounded-full px-4 py-2">
-                  <ScrollStrip label="tabs">
-                    <TabsList>
-                      <TabsTab value="reviews">
-                        Reviews{allReviews.length > 0 ? ` (${String(allReviews.length)})` : ''}
-                      </TabsTab>
-                      <TabsTab value="questions">
-                        Questions
-                        {allQuestions.length > 0 ? ` (${String(allQuestions.length)})` : ''}
-                      </TabsTab>
-                    </TabsList>
-                  </ScrollStrip>
+                  <TabsList scrollable>
+                    <TabsTab value="reviews">
+                      Reviews{allReviews.length > 0 ? ` (${String(allReviews.length)})` : ''}
+                    </TabsTab>
+                    <TabsTab value="questions">
+                      Questions
+                      {allQuestions.length > 0 ? ` (${String(allQuestions.length)})` : ''}
+                    </TabsTab>
+                  </TabsList>
                 </div>
 
                 <TabsPanel value="reviews">

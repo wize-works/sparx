@@ -174,72 +174,82 @@ export function AssembliesListSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Run list controls">
-        <SearchInput
-          value={q}
-          placeholder="Search runs"
-          onValueChange={(value) => {
-            setQ(value);
-            setSkip(0);
-          }}
-        />
-        <NativeSelect
-          size="sm"
-          className="max-w-36 shrink"
-          aria-label="Status"
-          value={status}
-          onChange={(event) => {
-            setStatus(event.target.value);
-            setSkip(0);
-          }}
-        >
-          <option value="">Any status</option>
-          <option value="planned">On paper</option>
-          <option value="released">Parts held</option>
-          <option value="completed">Made</option>
-          <option value="cancelled">Called off</option>
-        </NativeSelect>
-        <NativeSelect
-          size="sm"
-          className="max-w-40 shrink"
-          aria-label="Location"
-          value={locationId}
-          onChange={(event) => {
-            setLocationId(event.target.value);
-            setSkip(0);
-          }}
-        >
-          <option value="">Everywhere</option>
-          {activeLocations.map((location) => (
-            <option key={location.id} value={location.id}>
-              {location.name}
-            </option>
-          ))}
-        </NativeSelect>
-
-        <Button
-          size="sm"
-          color="module"
-          className="ml-auto shrink-0"
-          onClick={(event) => {
-            ctx.open(
-              'inventory.assemblies.detail',
-              { id: 'new' },
-              { target: event.shiftKey ? 'beside' : 'tab' }
-            );
-          }}
-        >
-          <Plus className="size-4" aria-hidden />
-          <span className="hidden @lg:inline">Plan a run</span>
-        </Button>
-        <RefreshButton
-          isFetching={runs.isFetching}
-          updatedAt={runs.dataUpdatedAt}
-          onRefresh={() => {
-            void runs.refetch();
-          }}
-        />
-      </PaneToolbar>
+      <PaneToolbar
+        label="Run list controls"
+        search={
+          <SearchInput
+            value={q}
+            placeholder="Search runs"
+            onValueChange={(value) => {
+              setQ(value);
+              setSkip(0);
+            }}
+          />
+        }
+        primary={
+          <Button
+            size="sm"
+            color="module"
+            className="ml-auto shrink-0"
+            onClick={(event) => {
+              ctx.open(
+                'inventory.assemblies.detail',
+                { id: 'new' },
+                { target: event.shiftKey ? 'beside' : 'tab' }
+              );
+            }}
+          >
+            <Plus className="size-4" aria-hidden />
+            <span className="hidden @lg:inline">Plan a run</span>
+          </Button>
+        }
+        controls={
+          <>
+            <NativeSelect
+              size="sm"
+              className="max-w-36 shrink"
+              aria-label="Status"
+              value={status}
+              onChange={(event) => {
+                setStatus(event.target.value);
+                setSkip(0);
+              }}
+            >
+              <option value="">Any status</option>
+              <option value="planned">On paper</option>
+              <option value="released">Parts held</option>
+              <option value="completed">Made</option>
+              <option value="cancelled">Called off</option>
+            </NativeSelect>
+            <NativeSelect
+              size="sm"
+              className="max-w-40 shrink"
+              aria-label="Location"
+              value={locationId}
+              onChange={(event) => {
+                setLocationId(event.target.value);
+                setSkip(0);
+              }}
+            >
+              <option value="">Everywhere</option>
+              {activeLocations.map((location) => (
+                <option key={location.id} value={location.id}>
+                  {location.name}
+                </option>
+              ))}
+            </NativeSelect>
+          </>
+        }
+        refresh={
+          <RefreshButton
+            isFetching={runs.isFetching}
+            updatedAt={runs.dataUpdatedAt}
+            onRefresh={() => {
+              void runs.refetch();
+            }}
+          />
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">{body()}</div>
 

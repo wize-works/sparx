@@ -113,7 +113,7 @@ export const MODULE_META: ModuleMeta[] = [
     name: 'Online store',
     hue: 'commerce',
     icon: faBagShopping,
-    blurb: 'Sell products online, with a catalogue, a shopping cart, checkout and card payments.',
+    blurb: 'Sell products online, with a catalog, a shopping cart, checkout and card payments.',
     price: 49,
     requires: [],
   },
@@ -213,7 +213,7 @@ export const MODULE_META: ModuleMeta[] = [
     // otherwise buy this expecting payroll and find out after they have paid.
     blurb: productCopy(
       'modules.staff.blurb',
-      'Keep hours, pay rates, shifts, time off and licence renewals, so you know what an hour of work really costs. Not payroll — sparx hands the hours to whoever runs yours.'
+      'Keep hours, pay rates, shifts, time off and license renewals, so you know what an hour of work really costs. Not payroll — sparx hands the hours to whoever runs yours.'
     ),
     price: 29,
     requires: [],

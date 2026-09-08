@@ -10,14 +10,11 @@
 // has been created — before then, the options section says so rather than
 // pretending.
 
+import { shownInPlace } from '@wizeworks/query';
 import { useEffect, useMemo, useState } from 'react';
 import { PaneWaiting } from '../../components/pane-waiting';
 import { PaneLoadError } from '../../components/pane-load-error';
 import {
-  Alert,
-  AlertContent,
-  AlertDescription,
-  AlertTitle,
   Badge,
   Button,
   Card,
@@ -44,6 +41,7 @@ import { afterPaneChange } from '../../lib/defer';
 import type { SurfaceContext } from '../../lib/surfaces/registry';
 import { countryOptions, coverageSummary } from './geo';
 import { ZoneRatesEditor } from './shipping-rate-editor';
+import { SaveFailure } from '@/components/save-failure';
 import {
   shippingErrorMessage,
   useCreateShippingZone,
@@ -200,6 +198,7 @@ function ZoneEditor({
             toast.add({ title: `${draft.name.trim()} created`, type: 'success' });
           });
         },
+        onError: shownInPlace,
       });
       return;
     }
@@ -208,6 +207,7 @@ function ZoneEditor({
         setTouched(false);
         toast.add({ title: 'Region saved', type: 'success' });
       },
+      onError: shownInPlace,
     });
   };
 
@@ -294,14 +294,7 @@ function ZoneEditor({
             <Text className="text-sm">{coverageSummary(draft.countries)}</Text>
           )}
 
-          {failure ? (
-            <Alert color="error">
-              <AlertContent>
-                <AlertTitle>Could not save this region</AlertTitle>
-                <AlertDescription>{failure}</AlertDescription>
-              </AlertContent>
-            </Alert>
-          ) : null}
+          <SaveFailure title="Could not save this region" message={failure} />
 
           <FormSection title="The region">
             <Field>

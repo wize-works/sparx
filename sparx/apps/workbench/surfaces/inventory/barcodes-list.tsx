@@ -33,7 +33,6 @@ import {
   Timestamp,
   ToggleGroup,
   ToggleGroupItem,
-  ToolbarSeparator,
   Tooltip,
 } from '@wizeworks/silicaui-react';
 import { Barcode, CircleAlert, Printer, Search, Sparkles } from 'lucide-react';
@@ -103,7 +102,7 @@ export function BarcodesListSurface({ ctx }: { ctx: SurfaceContext }) {
 
   const openItem = (row: BarcodeRow, event: { shiftKey: boolean; altKey: boolean }) => {
     if (!row.productId) return;
-    ctx.open('commerce.products.detail', { id: row.productId }, { target: targetFor(event) });
+    ctx.open('commerce.product.detail', { id: row.productId }, { target: targetFor(event) });
   };
 
   const body = () => {
@@ -272,50 +271,54 @@ export function BarcodesListSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Barcode list controls">
-        <Button
-          color="module-inventory"
-          size="sm"
-          onClick={() => {
-            ctx.open('inventory.barcodes.labels', {}, { target: 'beside' });
-          }}
-        >
-          <Printer className="size-4" aria-hidden />
-          Labels
-        </Button>
-
-        <ToolbarSeparator />
-
-        <SearchInput
-          value={search}
-          placeholder="Code, SKU or product"
-          onValueChange={(value) => {
-            setSearch(value);
-            resetWindow();
-          }}
-        />
-
-        <ToggleGroup
-          value={includeInactive ? ['retired'] : []}
-          onValueChange={(value) => {
-            setIncludeInactive(value.includes('retired'));
-            resetWindow();
-          }}
-        >
-          <ToggleGroupItem value="retired" aria-label="Include codes that have been retired">
-            Include retired
-          </ToggleGroupItem>
-        </ToggleGroup>
-
-        <RefreshButton
-          className="ml-auto"
-          isFetching={isFetching}
-          updatedAt={dataUpdatedAt}
-          onRefresh={() => {
-            void refetch();
-          }}
-        />
-      </PaneToolbar>
+      <PaneToolbar
+        label="Barcode list controls"
+        search={
+          <SearchInput
+            value={search}
+            placeholder="Code, SKU or product"
+            onValueChange={(value) => {
+              setSearch(value);
+              resetWindow();
+            }}
+          />
+        }
+        controls={
+          <>
+            <Button
+              color="module-inventory"
+              size="sm"
+              onClick={() => {
+                ctx.open('inventory.barcodes.labels', {}, { target: 'beside' });
+              }}
+            >
+              <Printer className="size-4" aria-hidden />
+              Labels
+            </Button>
+            <ToggleGroup
+              value={includeInactive ? ['retired'] : []}
+              onValueChange={(value) => {
+                setIncludeInactive(value.includes('retired'));
+                resetWindow();
+              }}
+            >
+              <ToggleGroupItem value="retired" aria-label="Include codes that have been retired">
+                Include retired
+              </ToggleGroupItem>
+            </ToggleGroup>
+          </>
+        }
+        refresh={
+          <RefreshButton
+            className="ml-auto"
+            isFetching={isFetching}
+            updatedAt={dataUpdatedAt}
+            onRefresh={() => {
+              void refetch();
+            }}
+          />
+        }
+      />
 
       {/* The one thing that stops scanning working, if it is happening at all.
           A card rather than a badge in the toolbar: two items claiming one code

@@ -65,8 +65,28 @@ describe('the invoice email', () => {
 
   it('carries no platform masthead — the reader never bought anything from us', async () => {
     const { html } = await render();
-    const masthead = html.slice(0, html.indexOf('Invoice from Rosa Flowers'));
-    expect(masthead.toLowerCase()).not.toContain('sparx');
-    expect(masthead.toLowerCase()).not.toContain('piggles');
+    // React Email splits interpolated text with `<!-- -->` markers, so the
+    // heading arrives as `Invoice<!-- --> from <!-- -->Rosa Flowers` and the
+    // anchor this test slices on returned -1 — which made `slice(0, -1)` the
+    // WHOLE document. It has been asserting nothing since, and passed only
+    // because the footer happened to name the operating company rather than a
+    // product. Strip the markers first so the anchor is real.
+    const flat = html.replace(/<!-- -->/g, '');
+    const anchor = flat.indexOf('Invoice from Rosa Flowers');
+    expect(anchor, 'the heading anchor must exist, or this test slices nothing').toBeGreaterThan(0);
+    const masthead = flat.slice(0, anchor).toLowerCase();
+    expect(masthead).not.toContain('sparx');
+    expect(masthead).not.toContain('piggles');
+  });
+
+  it('does not sign a shop invoice with the operating company', async () => {
+    // The masthead was taken off this template with a long argument about how a
+    // software product's name over somebody's invoice reads. The fine print at
+    // the bottom went on saying "WizeWorks · sparx.works" to that same reader —
+    // a company they have never dealt with, named as a party to a bill between
+    // them and a shop. The quiet credit stays; the operator does not.
+    const { html, text } = await render();
+    expect(html).not.toContain('WizeWorks');
+    expect(text).toContain('Sent with');
   });
 });

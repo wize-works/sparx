@@ -177,46 +177,53 @@ export function ReceivablesSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Receivables list controls" wrap>
-        <div className="max-w-xs min-w-0 flex-1">
-          <SearchInput
-            size="sm"
-            aria-label="Search by customer or invoice number"
-            placeholder="Search customer or invoice…"
-            value={search}
-            onValueChange={(next) => {
-              setSearch(next);
-              resetWindow();
+      <PaneToolbar
+        label="Receivables list controls"
+        search={
+          <div className="max-w-xs min-w-0 flex-1">
+            <SearchInput
+              size="sm"
+              aria-label="Search by customer or invoice number"
+              placeholder="Search customer or invoice…"
+              value={search}
+              onValueChange={(next) => {
+                setSearch(next);
+                resetWindow();
+              }}
+            />
+          </div>
+        }
+        controls={
+          <>
+            <Filter
+              color="module"
+              value={bucket}
+              onValueChange={(next) => {
+                setBucket(next ?? 'all');
+                resetWindow();
+              }}
+              showReset={false}
+              aria-label="Filter by how late"
+            >
+              {BUCKET_FILTERS.map((filter) => (
+                <FilterItem key={filter.value} value={filter.value}>
+                  {filter.label}
+                </FilterItem>
+              ))}
+            </Filter>
+          </>
+        }
+        refresh={
+          <RefreshButton
+            className="ml-auto"
+            isFetching={isFetching}
+            updatedAt={data ? dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void refetch();
             }}
           />
-        </div>
-
-        <Filter
-          color="module"
-          value={bucket}
-          onValueChange={(next) => {
-            setBucket(next ?? 'all');
-            resetWindow();
-          }}
-          showReset={false}
-          aria-label="Filter by how late"
-        >
-          {BUCKET_FILTERS.map((filter) => (
-            <FilterItem key={filter.value} value={filter.value}>
-              {filter.label}
-            </FilterItem>
-          ))}
-        </Filter>
-
-        <RefreshButton
-          className="ml-auto"
-          isFetching={isFetching}
-          updatedAt={data ? dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void refetch();
-          }}
-        />
-      </PaneToolbar>
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         {isError ? (

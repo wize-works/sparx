@@ -58,7 +58,11 @@ export function ToolResultEmail({ toolName, toolUrl, lines, note }: ToolResultEm
   const brandName = usePlatformName();
 
   return (
-    <EmailLayout preview={`Your ${toolName} results`}>
+    <EmailLayout
+      // A visitor of OURS asked us for this from our own marketing site.
+      audience="platform"
+      preview={`Your ${toolName} results`}
+    >
       <Section>
         <EmailHeading>Your {toolName} results</EmailHeading>
         <EmailParagraph>

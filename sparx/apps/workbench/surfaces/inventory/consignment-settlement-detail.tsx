@@ -93,128 +93,132 @@ export function ConsignmentSettlementDetailSurface({ ctx }: { ctx: SurfaceContex
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Settlement controls">
-        <Badge color={settlementTone(data.status)} variant="soft">
-          {data.status}
-        </Badge>
-        <Text className="text-sm">
-          {owner} · <Timestamp value={data.periodStart} format="absolute" /> →{' '}
-          <Timestamp value={data.periodEnd} format="absolute" />
-        </Text>
-
-        {isDraft ? (
+      <PaneToolbar
+        label="Settlement controls"
+        status={
+          <Text className="text-sm">
+            {owner} · <Timestamp value={data.periodStart} format="absolute" /> →{' '}
+            <Timestamp value={data.periodEnd} format="absolute" />
+          </Text>
+        }
+        controls={
           <>
-            <Button
-              variant="outline"
-              size="sm"
-              className="ml-auto"
-              disabled={refresh.isPending}
-              onClick={() => {
-                refresh.mutate(undefined, {
-                  onSuccess: () => {
-                    afterCommit(() => {
-                      toast.add({
-                        title: 'Rebuilt from the ledger',
-                        description: 'Any sale recorded since you opened this is now included.',
-                        type: 'success',
+            <Badge color={settlementTone(data.status)} variant="soft">
+              {data.status}
+            </Badge>
+            {isDraft ? (
+              <>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="ml-auto"
+                  disabled={refresh.isPending}
+                  onClick={() => {
+                    refresh.mutate(undefined, {
+                      onSuccess: () => {
+                        afterCommit(() => {
+                          toast.add({
+                            title: 'Rebuilt from the ledger',
+                            description: 'Any sale recorded since you opened this is now included.',
+                            type: 'success',
+                          });
+                        });
+                      },
+                      onError: fail('Could not rebuild it'),
+                    });
+                  }}
+                >
+                  <RefreshCw className="size-4" aria-hidden />
+                  Rebuild
+                </Button>
+                <Button
+                  color="module-inventory"
+                  size="sm"
+                  disabled={close.isPending}
+                  onClick={() => {
+                    void confirm({
+                      title: `Close ${data.number}?`,
+                      description: `${formatCents(data.totalCents, data.currency)} becomes owed to ${owner}. A closed period cannot be edited or rebuilt — a later correction goes in the NEXT period, which is what lets them reconcile against their own paperwork.`,
+                      confirmLabel: 'Close the period',
+                      cancelLabel: 'Keep it as a draft',
+                      color: 'warning',
+                    }).then((confirmed) => {
+                      if (!confirmed) return;
+                      close.mutate(undefined, {
+                        onSuccess: () => {
+                          afterCommit(() => {
+                            toast.add({
+                              title: `${data.number} closed`,
+                              description: `${formatCents(data.totalCents, data.currency)} owed to ${owner}.`,
+                              type: 'success',
+                            });
+                          });
+                        },
+                        onError: fail('Could not close it'),
                       });
                     });
-                  },
-                  onError: fail('Could not rebuild it'),
-                });
-              }}
-            >
-              <RefreshCw className="size-4" aria-hidden />
-              Rebuild
-            </Button>
-            <Button
-              color="module-inventory"
-              size="sm"
-              disabled={close.isPending}
-              onClick={() => {
-                void confirm({
-                  title: `Close ${data.number}?`,
-                  description: `${formatCents(data.totalCents, data.currency)} becomes owed to ${owner}. A closed period cannot be edited or rebuilt — a later correction goes in the NEXT period, which is what lets them reconcile against their own paperwork.`,
-                  confirmLabel: 'Close the period',
-                  cancelLabel: 'Keep it as a draft',
-                  color: 'warning',
-                }).then((confirmed) => {
-                  if (!confirmed) return;
-                  close.mutate(undefined, {
+                  }}
+                >
+                  <CheckCheck className="size-4" aria-hidden />
+                  Close the period
+                </Button>
+              </>
+            ) : null}
+            {data.status === 'closed' || data.status === 'invoiced' ? (
+              <Button
+                color="success"
+                variant="soft"
+                size="sm"
+                className="ml-auto"
+                disabled={pay.isPending}
+                onClick={() => {
+                  pay.mutate(undefined, {
                     onSuccess: () => {
                       afterCommit(() => {
-                        toast.add({
-                          title: `${data.number} closed`,
-                          description: `${formatCents(data.totalCents, data.currency)} owed to ${owner}.`,
-                          type: 'success',
-                        });
+                        toast.add({ title: 'Marked as paid', type: 'success' });
                       });
                     },
-                    onError: fail('Could not close it'),
+                    onError: fail('Could not record that'),
                   });
-                });
-              }}
-            >
-              <CheckCheck className="size-4" aria-hidden />
-              Close the period
-            </Button>
-          </>
-        ) : null}
-
-        {data.status === 'closed' || data.status === 'invoiced' ? (
-          <Button
-            color="success"
-            variant="soft"
-            size="sm"
-            className="ml-auto"
-            disabled={pay.isPending}
-            onClick={() => {
-              pay.mutate(undefined, {
-                onSuccess: () => {
-                  afterCommit(() => {
-                    toast.add({ title: 'Marked as paid', type: 'success' });
-                  });
-                },
-                onError: fail('Could not record that'),
-              });
-            }}
-          >
-            <Wallet className="size-4" aria-hidden />
-            Mark as paid
-          </Button>
-        ) : null}
-
-        {data.status !== 'paid' && data.status !== 'cancelled' ? (
-          <Button
-            color="danger"
-            variant="soft"
-            size="sm"
-            disabled={cancel.isPending}
-            onClick={() => {
-              void confirm({
-                title: `Cancel ${data.number}?`,
-                description:
-                  'The period stops being owed. The sales it covered go back to being unsettled, so they will appear in the next period you open.',
-                confirmLabel: 'Cancel it',
-                cancelLabel: 'Keep it',
-                color: 'danger',
-              }).then((confirmed) => {
-                if (!confirmed) return;
-                cancel.mutate(undefined, {
-                  onSuccess: () => {
-                    afterCommit(() => {
-                      toast.add({ title: `${data.number} cancelled`, type: 'info' });
+                }}
+              >
+                <Wallet className="size-4" aria-hidden />
+                Mark as paid
+              </Button>
+            ) : null}
+            {data.status !== 'paid' && data.status !== 'cancelled' ? (
+              <Button
+                color="danger"
+                variant="soft"
+                size="sm"
+                disabled={cancel.isPending}
+                onClick={() => {
+                  void confirm({
+                    title: `Cancel ${data.number}?`,
+                    description:
+                      'The period stops being owed. The sales it covered go back to being unsettled, so they will appear in the next period you open.',
+                    confirmLabel: 'Cancel it',
+                    cancelLabel: 'Keep it',
+                    color: 'danger',
+                  }).then((confirmed) => {
+                    if (!confirmed) return;
+                    cancel.mutate(undefined, {
+                      onSuccess: () => {
+                        afterCommit(() => {
+                          toast.add({ title: `${data.number} cancelled`, type: 'info' });
+                        });
+                      },
+                      onError: fail('Could not cancel it'),
                     });
-                  },
-                  onError: fail('Could not cancel it'),
-                });
-              });
-            }}
-          >
-            Cancel
-          </Button>
-        ) : null}
-      </PaneToolbar>
+                  });
+                }}
+              >
+                Cancel
+              </Button>
+            ) : null}
+          </>
+        }
+      />
 
       {/* The one thing that blocks closing, said plainly and only while it can
           still be acted on. */}

@@ -67,7 +67,11 @@ export function FormSubmissionNotificationEmail({
   // length check, not `||`/`??`, because a blank name must fall through (not render).
   const replyTarget = name && name.trim().length > 0 ? name.trim() : email;
   return (
-    <EmailLayout preview={`${who} sent a message via ${site}`}>
+    <EmailLayout
+      // Owner-facing: the submission landing in their inbox.
+      audience="platform"
+      preview={`${who} sent a message via ${site}`}
+    >
       <Section>
         <EmailHeading>New {label} submission</EmailHeading>
         <EmailParagraph>

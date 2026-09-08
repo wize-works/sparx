@@ -23,12 +23,7 @@ import { api } from '../../lib/api/client';
 
 /** The kinds of service a provider can be — mirrors commerce-schemas ProviderKind. */
 export type ProviderKind =
-  | 'payment'
-  | 'tax'
-  | 'shipping'
-  | 'subscription_billing'
-  | 'dropship'
-  | 'identity';
+  'payment' | 'tax' | 'shipping' | 'subscription_billing' | 'dropship' | 'identity';
 
 export type ProviderEnvironment = 'sandbox' | 'production';
 

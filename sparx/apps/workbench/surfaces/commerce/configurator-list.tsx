@@ -120,55 +120,71 @@ export function ConfiguratorListSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Configurator list controls">
-        <div className="max-w-xs min-w-0 flex-1">
-          <SearchInput
+      <PaneToolbar
+        label="Configurator list controls"
+        search={
+          <div className="max-w-xs min-w-0 flex-1">
+            <SearchInput
+              size="sm"
+              aria-label="Search builds"
+              placeholder="Search builds…"
+              value={search}
+              onValueChange={(next) => {
+                setSearch(next);
+                resetWindow();
+              }}
+            />
+          </div>
+        }
+        primary={
+          <Button
+            color="module"
             size="sm"
-            aria-label="Search builds"
-            placeholder="Search builds…"
-            value={search}
-            onValueChange={(next) => {
-              setSearch(next);
-              resetWindow();
+            className="ml-auto"
+            title="Set up a build — hold Shift to open alongside, Alt for a new window"
+            onClick={(event) => {
+              ctx.open(
+                'commerce.configurator-template.detail',
+                { id: 'new' },
+                { target: targetFor(event) }
+              );
+            }}
+          >
+            <Plus className="size-4" aria-hidden />
+            <span className="hidden @lg:inline">Set up a build</span>
+          </Button>
+        }
+        controls={
+          <>
+            <div className="hidden w-36 shrink-0 @md:block">
+              <Select
+                size="sm"
+                aria-label="Show which builds"
+                value={status}
+                items={{
+                  all: 'All builds',
+                  active: 'Live',
+                  draft: 'Not live',
+                  archived: 'Retired',
+                }}
+                onValueChange={(next) => {
+                  setStatus(next as string);
+                  resetWindow();
+                }}
+              />
+            </div>
+          </>
+        }
+        refresh={
+          <RefreshButton
+            isFetching={isFetching}
+            updatedAt={data ? dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void refetch();
             }}
           />
-        </div>
-        <div className="hidden w-36 shrink-0 @md:block">
-          <Select
-            size="sm"
-            aria-label="Show which builds"
-            value={status}
-            items={{ all: 'All builds', active: 'Live', draft: 'Not live', archived: 'Retired' }}
-            onValueChange={(next) => {
-              setStatus(next as string);
-              resetWindow();
-            }}
-          />
-        </div>
-        <Button
-          color="module"
-          size="sm"
-          className="ml-auto"
-          title="Set up a build — hold Shift to open alongside, Alt for a new window"
-          onClick={(event) => {
-            ctx.open(
-              'commerce.configurator-template.detail',
-              { id: 'new' },
-              { target: targetFor(event) }
-            );
-          }}
-        >
-          <Plus className="size-4" aria-hidden />
-          <span className="hidden @lg:inline">Set up a build</span>
-        </Button>
-        <RefreshButton
-          isFetching={isFetching}
-          updatedAt={data ? dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void refetch();
-          }}
-        />
-      </PaneToolbar>
+        }
+      />
 
       <Card className="min-h-0 flex-1 overflow-y-auto">
         {isError ? (

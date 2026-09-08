@@ -111,6 +111,7 @@ import {
   type ChargeKind,
 } from './costing-data';
 import { describeQuantityShort } from './assembly-data';
+import { PaneLoadError } from '../../components/pane-load-error';
 
 const COLUMN = 'mx-auto flex w-full max-w-4xl flex-col gap-4';
 
@@ -1136,32 +1137,18 @@ export function PurchaseOrderDetailSurface({ ctx }: { ctx: SurfaceContext }) {
     const gone = isNotFound(po.error);
     return (
       <div className={PANE_SHELL}>
-        <div className="flex h-full items-center justify-center p-8">
-          <Alert color={gone ? 'warning' : 'danger'} variant="soft" className="max-w-md">
-            <AlertContent>
-              <AlertTitle>
-                {gone ? 'This order no longer exists' : 'Could not load this order'}
-              </AlertTitle>
-              <AlertDescription>
-                {gone
-                  ? 'It may have been a draft that was deleted.'
-                  : 'This is a problem reaching the server. The order itself is unaffected.'}
-              </AlertDescription>
-            </AlertContent>
-            {gone ? null : (
-              <Button
-                size="sm"
-                color="danger"
-                variant="soft"
-                onClick={() => {
-                  void po.refetch();
-                }}
-              >
-                Try again
-              </Button>
-            )}
-          </Alert>
-        </div>
+        <PaneLoadError
+          reason={gone ? 'missing' : 'unreachable'}
+          title={gone ? 'This order no longer exists' : 'Could not load this order'}
+          description={
+            gone
+              ? 'It may have been a draft that was deleted.'
+              : 'This is a problem reaching the server. The order itself is unaffected.'
+          }
+          onRetry={() => {
+            void po.refetch();
+          }}
+        />
       </div>
     );
   }
@@ -1183,171 +1170,169 @@ export function PurchaseOrderDetailSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Purchase order actions" wrap>
-        {state ? (
-          <Badge color={state.tone} variant="soft" size="sm">
-            {state.label}
-          </Badge>
-        ) : (
-          <span className="inline-flex items-center gap-1.5">
-            <ClipboardList className="size-4" aria-hidden />
-            <Text as="span" className="text-sm font-medium">
-              New order
-            </Text>
-          </span>
-        )}
-
-        {editable ? (
-          <Button
-            size="sm"
-            color="module"
-            className="ml-auto shrink-0"
-            disabled={!canSave}
-            loading={saving}
-            onClick={() => {
-              void doSave();
-            }}
-          >
-            <Save className="size-4" aria-hidden />
-            {isNew ? 'Save draft' : 'Save'}
-          </Button>
-        ) : (
-          <span className="ml-auto" />
-        )}
-
-        {!isNew && editable ? (
-          <Button
-            size="sm"
-            color="module"
-            variant="outline"
-            className="shrink-0"
-            loading={place.isPending}
-            onClick={() => {
-              void onPlace();
-            }}
-          >
-            <Send className="size-4" aria-hidden />
-            Place order
-          </Button>
-        ) : null}
-
-        {canReceive ? (
-          <Button size="sm" color="module" className="shrink-0" onClick={onReceive}>
-            <PackageCheck className="size-4" aria-hidden />
-            Receive
-          </Button>
-        ) : null}
-
-        {/* Scanning is the OTHER way to receive the same delivery, so it sits
+      <PaneToolbar
+        label="Purchase order actions"
+        controls={
+          <>
+            {state ? (
+              <Badge color={state.tone} variant="soft" size="sm">
+                {state.label}
+              </Badge>
+            ) : (
+              <span className="inline-flex items-center gap-1.5">
+                <ClipboardList className="size-4" aria-hidden />
+                <Text as="span" className="text-sm font-medium">
+                  New order
+                </Text>
+              </span>
+            )}
+            {editable ? (
+              <Button
+                size="sm"
+                color="module"
+                className="ml-auto shrink-0"
+                disabled={!canSave}
+                loading={saving}
+                onClick={() => {
+                  void doSave();
+                }}
+              >
+                <Save className="size-4" aria-hidden />
+                {isNew ? 'Save draft' : 'Save'}
+              </Button>
+            ) : (
+              <span className="ml-auto" />
+            )}
+            {!isNew && editable ? (
+              <Button
+                size="sm"
+                color="module"
+                variant="outline"
+                className="shrink-0"
+                loading={place.isPending}
+                onClick={() => {
+                  void onPlace();
+                }}
+              >
+                <Send className="size-4" aria-hidden />
+                Place order
+              </Button>
+            ) : null}
+            {canReceive ? (
+              <Button size="sm" color="module" className="shrink-0" onClick={onReceive}>
+                <PackageCheck className="size-4" aria-hidden />
+                Receive
+              </Button>
+            ) : null}
+            {/* Scanning is the OTHER way to receive the same delivery, so it sits
             beside it as an equal rather than hidden in a menu — the dock has a
             gun, the desk has a keyboard, and neither is the exception. Outline
             rather than solid: only one of the two can be the primary action on
             a screen, and typing is what someone at this desk is already doing. */}
-        {canReceive && detail ? (
-          <Tooltip content="Open the scanning screen for this delivery">
-            <Button
-              size="sm"
-              variant="outline"
-              color="module"
-              className="shrink-0"
-              onClick={() => {
-                ctx.open('inventory.receiving.scan', { id: detail.id }, { target: 'tab' });
-              }}
-            >
-              <ScanLine className="size-4" aria-hidden />
-              Scan it in
-            </Button>
-          </Tooltip>
-        ) : null}
-
-        {/* The sticker that makes this order scannable at all. Icon-only: it is
+            {canReceive && detail ? (
+              <Tooltip content="Open the scanning screen for this delivery">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  color="module"
+                  className="shrink-0"
+                  onClick={() => {
+                    ctx.open('inventory.receiving.scan', { id: detail.id }, { target: 'tab' });
+                  }}
+                >
+                  <ScanLine className="size-4" aria-hidden />
+                  Scan it in
+                </Button>
+              </Tooltip>
+            ) : null}
+            {/* The sticker that makes this order scannable at all. Icon-only: it is
             a secondary action, and the tooltip carries the meaning. */}
-        {detail && status !== 'draft' ? (
-          <Tooltip content="Print a scannable label for the paperwork and the pallet">
-            <Button
-              size="sm"
-              variant="ghost"
-              color="neutral"
-              shape="square"
-              className="shrink-0"
-              aria-label="Print a scannable label for this order"
-              onClick={() => {
-                ctx.open(
-                  'inventory.documents.label',
-                  {
-                    number: detail.number,
-                    title: 'Purchase order',
-                    subtitle: detail.supplierName ?? '',
-                  },
-                  { target: 'beside' }
-                );
+            {detail && status !== 'draft' ? (
+              <Tooltip content="Print a scannable label for the paperwork and the pallet">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  color="neutral"
+                  shape="square"
+                  className="shrink-0"
+                  aria-label="Print a scannable label for this order"
+                  onClick={() => {
+                    ctx.open(
+                      'inventory.documents.label',
+                      {
+                        number: detail.number,
+                        title: 'Purchase order',
+                        subtitle: detail.supplierName ?? '',
+                      },
+                      { target: 'beside' }
+                    );
+                  }}
+                >
+                  <Printer className="size-4" aria-hidden />
+                </Button>
+              </Tooltip>
+            ) : null}
+            {detail && (status === 'submitted' || status === 'partial' || status === 'received') ? (
+              <Button
+                size="sm"
+                variant="outline"
+                color="neutral"
+                className="shrink-0"
+                loading={close.isPending}
+                onClick={() => {
+                  void onClose();
+                }}
+              >
+                <CheckCircle2 className="size-4" aria-hidden />
+                Close
+              </Button>
+            ) : null}
+            {detail &&
+            (status === 'draft' || status === 'pending_approval' || status === 'submitted') ? (
+              <Button
+                size="sm"
+                variant="ghost"
+                color="danger"
+                className="shrink-0"
+                loading={cancel.isPending}
+                onClick={() => {
+                  void onCancel();
+                }}
+              >
+                <Ban className="size-4" aria-hidden />
+                Cancel
+              </Button>
+            ) : null}
+            {detail && status === 'draft' ? (
+              <Button
+                size="sm"
+                variant="ghost"
+                color="danger"
+                shape="square"
+                aria-label="Delete this draft"
+                title="Delete this draft"
+                loading={remove.isPending}
+                onClick={() => {
+                  void onDelete();
+                }}
+              >
+                <Trash2 className="size-4" aria-hidden />
+              </Button>
+            ) : null}
+          </>
+        }
+        refresh={
+          isNew ? null : (
+            <RefreshButton
+              isFetching={po.isFetching}
+              updatedAt={detail ? po.dataUpdatedAt : undefined}
+              onRefresh={() => {
+                void po.refetch();
               }}
-            >
-              <Printer className="size-4" aria-hidden />
-            </Button>
-          </Tooltip>
-        ) : null}
-
-        {detail && (status === 'submitted' || status === 'partial' || status === 'received') ? (
-          <Button
-            size="sm"
-            variant="outline"
-            color="neutral"
-            className="shrink-0"
-            loading={close.isPending}
-            onClick={() => {
-              void onClose();
-            }}
-          >
-            <CheckCircle2 className="size-4" aria-hidden />
-            Close
-          </Button>
-        ) : null}
-
-        {detail &&
-        (status === 'draft' || status === 'pending_approval' || status === 'submitted') ? (
-          <Button
-            size="sm"
-            variant="ghost"
-            color="danger"
-            className="shrink-0"
-            loading={cancel.isPending}
-            onClick={() => {
-              void onCancel();
-            }}
-          >
-            <Ban className="size-4" aria-hidden />
-            Cancel
-          </Button>
-        ) : null}
-
-        {detail && status === 'draft' ? (
-          <Button
-            size="sm"
-            variant="ghost"
-            color="danger"
-            shape="square"
-            aria-label="Delete this draft"
-            title="Delete this draft"
-            loading={remove.isPending}
-            onClick={() => {
-              void onDelete();
-            }}
-          >
-            <Trash2 className="size-4" aria-hidden />
-          </Button>
-        ) : null}
-
-        {isNew ? null : (
-          <RefreshButton
-            isFetching={po.isFetching}
-            updatedAt={detail ? po.dataUpdatedAt : undefined}
-            onRefresh={() => {
-              void po.refetch();
-            }}
-          />
-        )}
-      </PaneToolbar>
+            />
+          )
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className={COLUMN}>

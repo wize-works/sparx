@@ -144,6 +144,10 @@ export * as billingDocumentService from './billing-document-service';
 export * as billingLineService from './billing-line-service';
 export * as billingDocumentStageService from './billing-document-stage-service';
 export * as billingDocumentConversionService from './billing-document-conversion-service';
+// Raising an invoice FOR an order — the "ask the customer for the money" path a
+// shop that takes no payment at checkout has to walk. Distinct from the
+// conversion service above, which turns a QUOTE into an order.
+export * as billingFromOrderService from './billing-from-order-service';
 export * as billingPaymentService from './billing-payment-service';
 export * as billingRenderService from './billing-render-service';
 // The unsaved-draft render path (live preview while editing) — computes totals

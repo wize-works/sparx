@@ -18,7 +18,7 @@
 // the way" here, "captured" means "taken", and a payment processor's vocabulary
 // never reaches the screen untranslated.
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Alert,
   AlertContent,
@@ -27,6 +27,7 @@ import {
   Badge,
   Button,
   Heading,
+  Input,
   Text,
   useToast,
 } from '@wizeworks/silicaui-react';
@@ -65,19 +66,25 @@ import {
   useOrderPayments,
   useOrderRefunds,
   useRefundOrder,
+  useCreateInvoiceForOrder,
+  useOrderInvoices,
+  useUpdateTracking,
   PAYMENT_PROCESSOR_LABELS,
   PAYMENT_STATUS_LABELS,
   paidByHand,
   REFUND_STATUS_LABELS,
   type Order,
   type OrderAddress,
+  type OrderInvoice,
 } from './data';
+import { PaneLoadError } from '../../components/pane-load-error';
 
 /** The one column everything sits in. */
 const COLUMN = 'mx-auto flex w-full max-w-3xl flex-col gap-4';
 
 /** A money line in the totals block. `emphasis` is the order's own total and the
  *  amount still owed — the two numbers anyone opens this pane for. */
+
 function MoneyRow({
   label,
   amount,
@@ -170,6 +177,273 @@ function SubSection({
   );
 }
 
+/**
+ * Asking the customer for the money.
+ *
+ * A shop with no payment provider takes none at checkout — its last screen says
+ * so, in as many words: "Placing this order does not take any money now. We'll
+ * be in touch about paying for it." The goods then go out and the shop has to be
+ * in touch. This is where it is.
+ *
+ * Before this existed the owner could raise an invoice, but only by opening the
+ * order, reading the items, going to the Invoices screen, finding the customer
+ * again and retyping every line by hand — and when the customer paid it, this
+ * order still read "Not paid", because nothing joined the two.
+ */
+function invoiceState(invoice: OrderInvoice): { label: string; tone: string } {
+  if (invoice.status === 'paid') return { label: 'Paid', tone: 'success' };
+  if (invoice.status === 'void') return { label: 'Cancelled', tone: 'warning' };
+  if (invoice.status === 'overdue') return { label: 'Late', tone: 'danger' };
+  if (invoice.status === 'partial') return { label: 'Part paid', tone: 'info' };
+  return { label: 'Waiting to be paid', tone: 'warning' };
+}
+
+/** Why there is nothing to ask for, when there is nothing to ask for — the same
+ *  refusals the server makes, said here so the button is simply absent rather
+ *  than present and guaranteed to fail. A control whose only job is to return an
+ *  error is worse than no control. */
+function reasonNotToAsk(order: Order): string | null {
+  if (order.status === 'cancelled') {
+    return 'This order was cancelled, so there is nothing to ask for.';
+  }
+  if (order.status === 'refunded') {
+    return 'This order was refunded, so there is nothing to ask for.';
+  }
+  if (order.total - order.amountPaid <= 0) return 'This order is paid in full.';
+  return null;
+}
+
+function OrderInvoicesSection({ order, ctx }: { order: Order; ctx: SurfaceContext }) {
+  const invoices = useOrderInvoices(order.id);
+  const create = useCreateInvoiceForOrder(order.id);
+  const toast = useToast();
+
+  const rows = invoices.data ?? [];
+  const blocked = reasonNotToAsk(order);
+  const alreadyAsked = rows.some((i) => i.status !== 'void');
+
+  return (
+    <SubSection
+      title="Asking for payment"
+      description="The invoices you have raised for this order, whether they went out, and what has come back."
+      isPending={invoices.isPending}
+      isError={invoices.isError}
+      errorText="We could not load the invoices just now. Anything already sent is unaffected — try reopening this order in a moment."
+      emptyText={blocked ?? 'You have not asked for the money on this order yet.'}
+      count={rows.length}
+      footer={
+        blocked || alreadyAsked ? null : (
+          <div className="border-base-300 mt-4 border-t pt-4">
+            <Button
+              color="primary"
+              size="sm"
+              disabled={create.isPending}
+              onClick={() => {
+                create.mutate(
+                  {},
+                  {
+                    onSuccess: (result) => {
+                      toast.add({
+                        title: result.document.number
+                          ? `Invoice ${result.document.number} raised`
+                          : 'Invoice raised',
+                        description:
+                          'Every line came across from this order. Open it to set a deadline and send it.',
+                        type: 'success',
+                      });
+                      ctx.open('invoicing.invoice.edit', { id: result.document.id });
+                    },
+                    onError: (error) => {
+                      toast.add({
+                        title: 'Could not raise the invoice',
+                        description: orderErrorMessage(
+                          error,
+                          'Nothing changed on this order. Try again in a moment.'
+                        ),
+                        type: 'error',
+                      });
+                    },
+                  }
+                );
+              }}
+            >
+              Make an invoice
+            </Button>
+            <Text className="mt-2 text-sm">
+              Copies every line, the delivery charge and the tax from this order, so nothing has to
+              be typed twice. Money already in comes across too.
+            </Text>
+          </div>
+        )
+      }
+    >
+      <ul className="flex flex-col">
+        {rows.map((invoice) => {
+          const state = invoiceState(invoice);
+          return (
+            <li
+              key={invoice.id}
+              className="border-base-300 flex flex-wrap items-center justify-between gap-x-4 gap-y-1 border-b py-3 first:pt-0 last:border-b-0 last:pb-0"
+            >
+              <div className="flex min-w-0 flex-col gap-0.5">
+                <Button
+                  variant="link"
+                  size="sm"
+                  className="self-start px-0 font-mono text-base"
+                  onClick={() => {
+                    ctx.open('invoicing.invoice.edit', { id: invoice.id });
+                  }}
+                >
+                  {invoice.number ?? 'Not numbered yet'}
+                </Button>
+                <span className="text-sm">
+                  {formatMoney(invoice.total, invoice.currency)} asked for
+                  {invoice.amountPaid > 0
+                    ? ` · ${formatMoney(invoice.amountPaid, invoice.currency)} in`
+                    : ''}
+                </span>
+                {/* Whether the customer actually has it. Raising an invoice and
+                    emailing it are two acts, and this line used to print "Sent"
+                    off the date the document was CREATED — telling the owner her
+                    customer had a bill that had never left the building. */}
+                {/* `break-words` because the address is one unbreakable token: at
+                    360px a long one paints past this box with nothing for the
+                    browser to wrap at. Ordinary words still break at spaces. */}
+                <span className="text-sm break-words">
+                  {invoice.sentAt
+                    ? `Sent ${formatDate(invoice.sentAt)}${invoice.sentTo ? ` to ${invoice.sentTo}` : ''}`
+                    : 'Not sent yet · open it to email it'}
+                </span>
+                {/* The due date is the whole reason an invoice counts as late, so
+                    it says when there is one and says there is none when there is
+                    not — rather than leaving a blank to interpret. */}
+                <span className="text-sm">
+                  {invoice.dueAt ? `Due ${formatDate(invoice.dueAt)}` : 'No deadline set'}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                {invoice.balance > 0 ? (
+                  <span className="font-medium tabular-nums">
+                    {formatMoney(invoice.balance, invoice.currency)} still owed
+                  </span>
+                ) : null}
+                <Badge color={state.tone} variant="soft" size="sm">
+                  {state.label}
+                </Badge>
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+    </SubSection>
+  );
+}
+
+/**
+ * Putting a tracking number on after the parcel has gone.
+ *
+ * The number is optional at the counter and, for a shop that posts its own
+ * parcels, usually not known yet — the goods are boxed and marked sent, and the
+ * number comes back from the post office afterwards. Until now there was nowhere
+ * to put it: the shipment record was frozen the moment it was made, and the
+ * customer had already been emailed "on its way" with nothing to follow.
+ *
+ * A collection has nothing to track, so it gets no form.
+ */
+function TrackingEditor({
+  orderId,
+  shipment,
+}: {
+  orderId: string;
+  shipment: { id: string; carrier: string | null; trackingNumber: string | null };
+}) {
+  const update = useUpdateTracking(orderId);
+  const toast = useToast();
+  const [open, setOpen] = useState(false);
+  const [value, setValue] = useState(shipment.trackingNumber ?? '');
+
+  if (shipment.carrier === 'pickup') return null;
+
+  if (!open) {
+    return (
+      <Button
+        variant="link"
+        size="sm"
+        className="self-start px-0"
+        onClick={() => {
+          setValue(shipment.trackingNumber ?? '');
+          setOpen(true);
+        }}
+      >
+        {shipment.trackingNumber ? 'Change the tracking number' : 'Add a tracking number'}
+      </Button>
+    );
+  }
+
+  return (
+    <form
+      className="mt-1 flex flex-wrap items-end gap-2"
+      onSubmit={(event) => {
+        event.preventDefault();
+        update.mutate(
+          { fulfillmentId: shipment.id, trackingNumber: value },
+          {
+            onSuccess: () => {
+              setOpen(false);
+              toast.add({
+                title: value.trim() ? 'Tracking number saved' : 'Tracking number removed',
+                description: value.trim()
+                  ? 'It shows on the customer’s order page.'
+                  : 'The customer’s order page no longer shows one.',
+                type: 'success',
+              });
+            },
+            onError: (error) => {
+              toast.add({
+                title: 'Could not save the tracking number',
+                description: orderErrorMessage(
+                  error,
+                  'Nothing changed on this delivery. Try again in a moment.'
+                ),
+                type: 'error',
+              });
+            },
+          }
+        );
+      }}
+    >
+      {/* A width, so the box does not take the whole row and push Save onto a
+          line of its own. A placeholder, because "Add a tracking number" is on
+          the button that opened this and an empty box under a despatch date
+          otherwise says nothing about what belongs in it. Kept short: the field
+          is monospaced, so a longer hint is clipped rather than read. */}
+      <Input
+        aria-label="Tracking number"
+        placeholder="Tracking number"
+        value={value}
+        size="sm"
+        className="w-56 max-w-full font-mono"
+        onChange={(event) => {
+          setValue(event.target.value);
+        }}
+      />
+      <Button type="submit" color="primary" size="sm" disabled={update.isPending}>
+        Save
+      </Button>
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        onClick={() => {
+          setOpen(false);
+        }}
+      >
+        Cancel
+      </Button>
+    </form>
+  );
+}
+
 function OrderIdentity({ order, siteName }: { order: Order; siteName: string | null }) {
   const facts = [
     `Placed ${formatDate(order.placedAt)}`,
@@ -195,7 +469,7 @@ export function OrderDetailSurface({ ctx }: { ctx: SurfaceContext }) {
   const toast = useToast();
   const confirm = useConfirm();
 
-  const { data: order, isPending, isError, refetch } = useOrder(id);
+  const { data: order, isPending, isError, error, refetch } = useOrder(id);
   const { data: sites } = useSites();
   const payments = useOrderPayments(id);
   const fulfillments = useOrderFulfillments(id);
@@ -226,27 +500,15 @@ export function OrderDetailSurface({ ctx }: { ctx: SurfaceContext }) {
   // Cancel button offers a move against something that isn't there.
   if (isError) {
     return (
-      <div className="flex h-full items-center justify-center p-8">
-        <Alert color="error" className="max-w-md">
-          <AlertContent>
-            <AlertTitle>Could not load this order</AlertTitle>
-            <AlertDescription>
-              This is a problem reaching the server. The order itself is unaffected — nothing has
-              been changed or lost.
-            </AlertDescription>
-          </AlertContent>
-          <Button
-            size="sm"
-            color="error"
-            variant="soft"
-            onClick={() => {
-              void refetch();
-            }}
-          >
-            Try again
-          </Button>
-        </Alert>
-      </div>
+      <PaneLoadError
+        error={error}
+        noun="order"
+        title="Could not load this order"
+        description="This is a problem reaching the server. The order itself is unaffected — nothing has been changed or lost."
+        onRetry={() => {
+          void refetch();
+        }}
+      />
     );
   }
 
@@ -375,21 +637,24 @@ export function OrderDetailSurface({ ctx }: { ctx: SurfaceContext }) {
     <div className={PANE_SHELL}>
       {/* Lifecycle in the pane header: the two states this order is actually in,
           side by side, always visible while the body scrolls. */}
-      <PaneToolbar label="Order actions" wrap>
-        <Badge color={paid.tone} variant="soft" size="sm">
-          {paid.label}
-        </Badge>
-        {/* A refunded order carries the same word on both axes, and two
+      <PaneToolbar
+        label="Order actions"
+        status={<Text className="text-sm tabular-nums">{formatMoney(order.total, currency)}</Text>}
+        controls={
+          <>
+            <Badge color={paid.tone} variant="soft" size="sm">
+              {paid.label}
+            </Badge>
+            {/* A refunded order carries the same word on both axes, and two
             identical badges side by side read as a rendering fault rather than
             as two facts. */}
-        {shipped.label === paid.label ? null : (
-          <Badge color={shipped.tone} variant="soft" size="sm">
-            {shipped.label}
-          </Badge>
-        )}
-        <div className="flex-1" />
-
-        {/* Send it to the warehouse (docs/146 Phase 4). Only while there is
+            {shipped.label === paid.label ? null : (
+              <Badge color={shipped.tone} variant="soft" size="sm">
+                {shipped.label}
+              </Badge>
+            )}
+            <div className="flex-1" />
+            {/* Send it to the warehouse (docs/146 Phase 4). Only while there is
             something left to send: an order already fulfilled has nothing to
             fetch, and offering the button anyway produces a walk that generates
             zero lines and an error nobody expected.
@@ -400,42 +665,42 @@ export function OrderDetailSurface({ ctx }: { ctx: SurfaceContext }) {
             Wears the INVENTORY hue on a commerce pane, deliberately — it is a
             warehouse action surfacing here, and color follows functionality
             rather than the page it happens to be on. */}
-        {stillToFulfil && !plan.collected ? (
-          <Button
-            size="sm"
-            color="module-inventory"
-            variant="outline"
-            disabled={generateWalk.isPending}
-            onClick={() => {
-              void (async () => {
-                try {
-                  const walk = await generateWalk.mutateAsync({ orderIds: [order.id] });
-                  toast.add({
-                    title: `Walk ${walk.number} ready`,
-                    description: `${String(walk.lineCount)} to fetch at ${walk.warehouseName}.`,
-                    type: 'success',
-                  });
-                  ctx.open('inventory.picking.detail', { id: walk.id }, { target: 'beside' });
-                } catch (error) {
-                  toast.add({
-                    title: 'Could not create a walk',
-                    description: pickErrorMessage(
-                      error,
-                      'Nothing was changed. Check the order still has something to send.'
-                    ),
-                    type: 'error',
-                  });
-                }
-              })();
-            }}
-          >
-            <Route className="size-4" aria-hidden />
-            Send to the warehouse
-          </Button>
-        ) : null}
-
-        <Text className="text-sm tabular-nums">{formatMoney(order.total, currency)}</Text>
-      </PaneToolbar>
+            {stillToFulfil && !plan.collected ? (
+              <Button
+                size="sm"
+                color="module-inventory"
+                variant="outline"
+                disabled={generateWalk.isPending}
+                onClick={() => {
+                  void (async () => {
+                    try {
+                      const walk = await generateWalk.mutateAsync({ orderIds: [order.id] });
+                      toast.add({
+                        title: `Walk ${walk.number} ready`,
+                        description: `${String(walk.lineCount)} to fetch at ${walk.warehouseName}.`,
+                        type: 'success',
+                      });
+                      ctx.open('inventory.picking.detail', { id: walk.id }, { target: 'beside' });
+                    } catch (error) {
+                      toast.add({
+                        title: 'Could not create a walk',
+                        description: pickErrorMessage(
+                          error,
+                          'Nothing was changed. Check the order still has something to send.'
+                        ),
+                        type: 'error',
+                      });
+                    }
+                  })();
+                }}
+              >
+                <Route className="size-4" aria-hidden />
+                Send to the warehouse
+              </Button>
+            ) : null}
+          </>
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto p-4">
         <div className={COLUMN}>
@@ -535,6 +800,11 @@ export function OrderDetailSurface({ ctx }: { ctx: SurfaceContext }) {
               {order.taxTotal > 0 ? (
                 <MoneyRow label="Tax" amount={order.taxTotal} currency={currency} />
               ) : null}
+              {/* No gift-card line here on purpose. A card is money IN, not a
+                  discount, so it is an OrderPayment and shows under the payments
+                  list with its code — and the order's own total stays the value
+                  of what was sold. Repeating it as a negative here would take the
+                  same $150 off twice on one screen. */}
               <MoneyRow label="Order total" amount={order.total} currency={currency} emphasis />
               {order.amountPaid > 0 ? (
                 <MoneyRow label="Paid so far" amount={order.amountPaid} currency={currency} />
@@ -605,6 +875,11 @@ export function OrderDetailSurface({ ctx }: { ctx: SurfaceContext }) {
               </div>
             )}
           </FormSection>
+
+          {/* The ask comes before the money, because that is the order the two
+              happen in on a shop that takes no payment at checkout: you send the
+              bill, then it gets paid. */}
+          <OrderInvoicesSection order={order} ctx={ctx} />
 
           <SubSection
             title="Money in"
@@ -722,6 +997,7 @@ export function OrderDetailSurface({ ctx }: { ctx: SurfaceContext }) {
                           ? `Sent ${formatDateTime(shipment.shippedAt)}`
                           : `Created ${formatDateTime(shipment.createdAt)}`}
                     </span>
+                    <TrackingEditor orderId={order.id} shipment={shipment} />
                   </div>
                   <Badge color={fulfillmentTone(shipment.status)} variant="soft" size="sm">
                     {shipmentStatusLabel(shipment)}

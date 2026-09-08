@@ -645,130 +645,134 @@ export function AutomationEditor({
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Automation actions" wrap>
-        {!isNew ? (
-          <Badge color={state.tone} variant="soft" size="sm">
-            {state.label}
-          </Badge>
-        ) : null}
-        {hasUnpublished && !isNew ? (
-          <Badge color="info" variant="soft" size="sm">
-            Unpublished changes
-          </Badge>
-        ) : null}
-
-        {automation ? (
+      <PaneToolbar
+        label="Automation actions"
+        controls={
           <>
-            <Button
-              size="sm"
-              variant={showHistory ? 'soft' : 'ghost'}
-              color={showHistory ? 'module' : 'neutral'}
-              className="ml-auto shrink-0"
-              onClick={() => {
-                setShowHistory((v) => !v);
-                setMobilePane('edit');
-              }}
-            >
-              <History className="size-4" aria-hidden />
-              History
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              color={status === 'active' ? 'neutral' : 'module'}
-              className="shrink-0"
-              loading={setStatusMut.isPending}
-              onClick={onToggleStatus}
-            >
-              <Power className="size-4" aria-hidden />
-              {status === 'active' ? 'Pause' : 'Turn on'}
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              color="neutral"
-              className="shrink-0"
-              title="See when this rule has run"
-              onClick={(event) => {
-                ctx.open(
-                  'automations.runs',
-                  { automationId: automation.id },
-                  { target: targetFor(event) }
-                );
-              }}
-            >
-              <ListChecks className="size-4" aria-hidden />
-              Runs
-            </Button>
-            {showDiscard ? (
-              <Button
-                size="sm"
-                variant="ghost"
-                color="neutral"
-                className="shrink-0"
-                loading={discard.isPending}
-                onClick={() => {
-                  void onDiscard();
-                }}
-              >
-                <Undo2 className="size-4" aria-hidden />
-                Discard draft
-              </Button>
+            {!isNew ? (
+              <Badge color={state.tone} variant="soft" size="sm">
+                {state.label}
+              </Badge>
             ) : null}
-            {hasUnpublished ? (
+            {hasUnpublished && !isNew ? (
+              <Badge color="info" variant="soft" size="sm">
+                Unpublished changes
+              </Badge>
+            ) : null}
+            {automation ? (
+              <>
+                <Button
+                  size="sm"
+                  variant={showHistory ? 'soft' : 'ghost'}
+                  color={showHistory ? 'module' : 'neutral'}
+                  className="ml-auto shrink-0"
+                  onClick={() => {
+                    setShowHistory((v) => !v);
+                    setMobilePane('edit');
+                  }}
+                >
+                  <History className="size-4" aria-hidden />
+                  History
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  color={status === 'active' ? 'neutral' : 'module'}
+                  className="shrink-0"
+                  loading={setStatusMut.isPending}
+                  onClick={onToggleStatus}
+                >
+                  <Power className="size-4" aria-hidden />
+                  {status === 'active' ? 'Pause' : 'Turn on'}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  color="neutral"
+                  className="shrink-0"
+                  title="See when this rule has run"
+                  onClick={(event) => {
+                    ctx.open(
+                      'automations.runs',
+                      { automationId: automation.id },
+                      { target: targetFor(event) }
+                    );
+                  }}
+                >
+                  <ListChecks className="size-4" aria-hidden />
+                  Runs
+                </Button>
+                {showDiscard ? (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    color="neutral"
+                    className="shrink-0"
+                    loading={discard.isPending}
+                    onClick={() => {
+                      void onDiscard();
+                    }}
+                  >
+                    <Undo2 className="size-4" aria-hidden />
+                    Discard draft
+                  </Button>
+                ) : null}
+                {hasUnpublished ? (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    color="module"
+                    className="shrink-0"
+                    loading={publish.isPending || (update.isPending && dirty)}
+                    onClick={() => {
+                      void onPublish();
+                    }}
+                  >
+                    <Upload className="size-4" aria-hidden />
+                    Publish
+                  </Button>
+                ) : null}
+                <Button
+                  size="sm"
+                  color="module"
+                  className="shrink-0"
+                  loading={update.isPending && !publish.isPending}
+                  disabled={!dirty || busy}
+                  onClick={onSave}
+                >
+                  Save
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  color="danger"
+                  shape="square"
+                  className="shrink-0"
+                  aria-label="Delete this automation"
+                  title="Delete this automation"
+                  loading={remove.isPending}
+                  onClick={() => {
+                    void onDelete();
+                  }}
+                >
+                  <Trash2 className="size-4" aria-hidden />
+                </Button>
+              </>
+            ) : (
               <Button
                 size="sm"
-                variant="outline"
                 color="module"
-                className="shrink-0"
-                loading={publish.isPending || (update.isPending && dirty)}
-                onClick={() => {
-                  void onPublish();
-                }}
+                className="ml-auto shrink-0"
+                loading={create.isPending}
+                disabled={busy}
+                onClick={onCreate}
               >
-                <Upload className="size-4" aria-hidden />
-                Publish
+                Create
               </Button>
-            ) : null}
-            <Button
-              size="sm"
-              color="module"
-              className="shrink-0"
-              loading={update.isPending && !publish.isPending}
-              disabled={!dirty || busy}
-              onClick={onSave}
-            >
-              Save
-            </Button>
-            <Button
-              size="sm"
-              variant="ghost"
-              color="danger"
-              shape="square"
-              className="shrink-0"
-              aria-label="Delete this automation"
-              title="Delete this automation"
-              loading={remove.isPending}
-              onClick={() => {
-                void onDelete();
-              }}
-            >
-              <Trash2 className="size-4" aria-hidden />
-            </Button>
+            )}
           </>
-        ) : (
-          <Button
-            size="sm"
-            color="module"
-            className="ml-auto shrink-0"
-            loading={create.isPending}
-            disabled={busy}
-            onClick={onCreate}
-          >
-            Create
-          </Button>
-        )}
-      </PaneToolbar>
+        }
+      />
 
       {error ? (
         <Alert color="error" className="shrink-0">

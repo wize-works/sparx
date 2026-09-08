@@ -8,7 +8,7 @@
 // switching between them. A site is a workspace, not a record.
 
 import { useMemo, useState } from 'react';
-import { Badge, Button, Card, EmptyState, SearchInput, Table } from '@wizeworks/silicaui-react';
+import { Badge, Button, Card, SearchInput, Table } from '@wizeworks/silicaui-react';
 import { useConfirm } from '../../lib/confirm';
 import { ExternalLink, Globe, Plus } from 'lucide-react';
 import { ListPagination, type PageSize } from '../../components/list-pagination';
@@ -21,6 +21,7 @@ import { switchSite } from '../../lib/api/shell-data';
 import type { OpenTarget, SurfaceContext } from '../../lib/surfaces/registry';
 import { useDomains, useSites, type Domain, type Site } from './data';
 import { RowOpenHint } from '../../components/row-open-hint';
+import { PaneLoadError } from '../../components/pane-load-error';
 
 /** Same modifier contract as the launcher and every other list. */
 function targetFor(event: { shiftKey: boolean; altKey: boolean }): OpenTarget {
@@ -101,24 +102,14 @@ export function SitesListSurface({ ctx }: { ctx: SurfaceContext }) {
 
   if (isError) {
     return (
-      <div className="flex h-full items-center justify-center p-8">
-        <EmptyState
-          icon={<Globe className="size-6" aria-hidden />}
-          title="Could not load your sites"
-          description="This is a problem reaching the server, not a problem with your sites."
-          actions={
-            <Button
-              size="sm"
-              color="module"
-              onClick={() => {
-                void refetch();
-              }}
-            >
-              Try again
-            </Button>
-          }
-        />
-      </div>
+      <PaneLoadError
+        icon={<Globe className="size-6" aria-hidden />}
+        title="Could not load your sites"
+        description="This is a problem reaching the server, not a problem with your sites."
+        onRetry={() => {
+          void refetch();
+        }}
+      />
     );
   }
 
@@ -166,57 +157,52 @@ export function SitesListSurface({ ctx }: { ctx: SurfaceContext }) {
     // Surfaces, not one slab: the pane is base-200 and the toolbar is a base-100
     // card lifted onto it, matching invoicing and orders. The house pattern.
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Site list controls">
-        {/* The width has to sit on a WRAPPER: SearchInput forwards className to
-            its inner <input>, so a sizing class aimed at the control never
-            reaches the element that actually lays out. `min-w-0` then lets the
-            box give up width as the pane narrows — without it a flex item
-            refuses to shrink below its content, so everything to its right gets
-            squeezed instead, which is what made the count and button wrap. */}
-        <div className="max-w-xs min-w-0 flex-1">
-          <SearchInput
+      <PaneToolbar
+        label="Site list controls"
+        search={
+          <div className="max-w-xs min-w-0 flex-1">
+            <SearchInput
+              size="sm"
+              aria-label="Search sites"
+              placeholder="Search sites…"
+              value={search}
+              onValueChange={changeSearch}
+            />
+          </div>
+        }
+        status={
+          <p className="shrink-0 text-sm whitespace-nowrap">
+            {needle
+              ? `${String(rows.length)} of ${String(all.length)}`
+              : all.length === 1
+                ? '1 site'
+                : `${String(all.length)} sites`}
+          </p>
+        }
+        primary={
+          <Button
+            color="module"
             size="sm"
-            aria-label="Search sites"
-            placeholder="Search sites…"
-            value={search}
-            onValueChange={changeSearch}
+            className="ml-auto shrink-0 whitespace-nowrap"
+            title="New site — hold Shift to open alongside, Alt for a new window"
+            onClick={(event) => {
+              ctx.open('platform.settings.site', { id: 'new' }, { target: targetFor(event) });
+            }}
+          >
+            <Plus className="size-4" aria-hidden />
+            New site
+          </Button>
+        }
+        refresh={
+          <RefreshButton
+            isFetching={isFetching}
+            updatedAt={sites ? dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void refetch();
+            }}
           />
-        </div>
-        {/* Never wraps and never shrinks: "3 of 12" breaking across two lines
-            makes the toolbar taller than the rows it describes, and this is a
-            pane the operator can drag to any width. The box above yields first. */}
-        <p className="shrink-0 text-sm whitespace-nowrap">
-          {needle
-            ? `${String(rows.length)} of ${String(all.length)}`
-            : all.length === 1
-              ? '1 site'
-              : `${String(all.length)} sites`}
-        </p>
-        <div className="flex-1" />
-        {/* Same reasoning as the count: the label stays on one line and the
-            button keeps its width, so a narrow pane shrinks the search box
-            rather than turning the primary action into two stacked words. */}
-        <Button
-          color="module"
-          size="sm"
-          className="shrink-0 whitespace-nowrap"
-          title="New site — hold Shift to open alongside, Alt for a new window"
-          onClick={(event) => {
-            ctx.open('platform.settings.site', { id: 'new' }, { target: targetFor(event) });
-          }}
-        >
-          <Plus className="size-4" aria-hidden />
-          New site
-        </Button>
-        {/* ALWAYS the last child of a list toolbar — see RefreshButton. */}
-        <RefreshButton
-          isFetching={isFetching}
-          updatedAt={sites ? dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void refetch();
-          }}
-        />
-      </PaneToolbar>
+        }
+      />
 
       {/* The base-200 backdrop and its padding now live on the pane root, above,
           so the toolbar sits on the same surface as the list rather than being

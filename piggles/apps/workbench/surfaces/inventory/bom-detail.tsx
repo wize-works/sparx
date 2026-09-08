@@ -237,7 +237,7 @@ export function BomDetailSurface({ ctx }: { ctx: SurfaceContext }) {
       onError: () => {
         toast.add({
           title: 'No item with that code',
-          description: `Nothing in your catalogue is coded "${sku}". Check the code and try again.`,
+          description: `Nothing in your catalog is coded "${sku}". Check the code and try again.`,
           type: 'error',
         });
       },
@@ -268,7 +268,7 @@ export function BomDetailSurface({ ctx }: { ctx: SurfaceContext }) {
       onError: () => {
         toast.add({
           title: 'No item with that code',
-          description: `Nothing in your catalogue is coded "${sku}".`,
+          description: `Nothing in your catalog is coded "${sku}".`,
           type: 'error',
         });
       },

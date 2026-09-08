@@ -303,71 +303,79 @@ export function StockGridSurface(_props: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Stock grid controls">
-        <Input
-          color="module"
-          size="sm"
-          placeholder="Search items"
-          value={search}
-          onChange={(event) => {
-            setSearch(event.target.value);
-          }}
-          className="max-w-56"
-        />
-        <NativeSelect
-          color="module"
-          size="sm"
-          value={warehouseId}
-          onChange={(event) => {
-            setWarehouseId(event.target.value);
-          }}
-          className="max-w-56"
-        >
-          <option value="">Every location</option>
-          {activeLocations.map((location) => (
-            <option key={location.id} value={location.id}>
-              {location.name}
-            </option>
-          ))}
-        </NativeSelect>
-        <label className="flex items-center gap-2 text-sm">
-          <Checkbox
-            color="module"
-            checked={lowOnly}
-            onChange={(event) => {
-              setLowOnly(event.target.checked);
+      <PaneToolbar
+        label="Stock grid controls"
+        primary={
+          <Button
+            color="neutral"
+            variant="outline"
+            size="sm"
+            className="ml-auto"
+            render={
+              <a
+                href={stockGridCsvPath({
+                  ...(warehouseId ? { warehouseId } : {}),
+                  ...(search ? { search } : {}),
+                  ...(lowOnly ? { lowOnly } : {}),
+                })}
+                download
+              >
+                <Download className="size-4" aria-hidden />
+                Export
+              </a>
+            }
+          />
+        }
+        controls={
+          <>
+            <Input
+              color="module"
+              size="sm"
+              placeholder="Search items"
+              value={search}
+              onChange={(event) => {
+                setSearch(event.target.value);
+              }}
+              className="max-w-56"
+            />
+            <NativeSelect
+              color="module"
+              size="sm"
+              value={warehouseId}
+              onChange={(event) => {
+                setWarehouseId(event.target.value);
+              }}
+              className="max-w-56"
+            >
+              <option value="">Every location</option>
+              {activeLocations.map((location) => (
+                <option key={location.id} value={location.id}>
+                  {location.name}
+                </option>
+              ))}
+            </NativeSelect>
+            <label className="flex items-center gap-2 text-sm">
+              <Checkbox
+                color="module"
+                checked={lowOnly}
+                onChange={(event) => {
+                  setLowOnly(event.target.checked);
+                }}
+              />
+              Running low only
+            </label>
+          </>
+        }
+        refresh={
+          <RefreshButton
+            isFetching={grid.isFetching}
+            updatedAt={grid.data ? grid.dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void grid.refetch();
             }}
           />
-          Running low only
-        </label>
-
-        <Button
-          color="neutral"
-          variant="outline"
-          size="sm"
-          className="ml-auto"
-          render={
-            <a
-              href={stockGridCsvPath({
-                ...(warehouseId ? { warehouseId } : {}),
-                ...(search ? { search } : {}),
-                ...(lowOnly ? { lowOnly } : {}),
-              })}
-              download
-            >
-              <Download className="size-4" aria-hidden />
-              Export
-            </a>
-          }
-        />
-        <RefreshButton
-          isFetching={grid.isFetching}
-          updatedAt={grid.data ? grid.dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void grid.refetch();
-          }}
-        />
-      </PaneToolbar>
+        }
+      />
 
       {selected.size > 0 ? (
         <div className="border-base-300 bg-base-100 flex flex-wrap items-end gap-2 border-b p-3">

@@ -42,6 +42,7 @@ import {
   useExpireCheckoutSession,
   type CheckoutDetail,
 } from './checkout-data';
+import { PaneLoadError } from '../../components/pane-load-error';
 
 const COLUMN = 'mx-auto flex w-full max-w-3xl flex-col gap-4';
 
@@ -100,7 +101,7 @@ export function CheckoutSessionDetailSurface({ ctx }: { ctx: SurfaceContext }) {
   const toast = useToast();
   const confirm = useConfirm();
 
-  const { data, isPending, isError, refetch } = useCheckoutSession(id);
+  const { data, isPending, isError, error, refetch } = useCheckoutSession(id);
   const expire = useExpireCheckoutSession(id);
 
   useEffect(() => {
@@ -109,27 +110,15 @@ export function CheckoutSessionDetailSurface({ ctx }: { ctx: SurfaceContext }) {
 
   if (isError) {
     return (
-      <div className="flex h-full items-center justify-center p-8">
-        <Alert color="error" className="max-w-md">
-          <AlertContent>
-            <AlertTitle>Could not load this checkout</AlertTitle>
-            <AlertDescription>
-              This is a problem reaching the server. The session itself is unaffected — nothing has
-              been changed or lost.
-            </AlertDescription>
-          </AlertContent>
-          <Button
-            size="sm"
-            color="error"
-            variant="soft"
-            onClick={() => {
-              void refetch();
-            }}
-          >
-            Try again
-          </Button>
-        </Alert>
-      </div>
+      <PaneLoadError
+        error={error}
+        noun="checkout"
+        title="Could not load this checkout"
+        description="This is a problem reaching the server. The session itself is unaffected — nothing has been changed or lost."
+        onRetry={() => {
+          void refetch();
+        }}
+      />
     );
   }
 
@@ -189,15 +178,22 @@ export function CheckoutSessionDetailSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Checkout actions" wrap>
-        <Badge color={state.tone} variant="soft" size="sm">
-          {state.label}
-        </Badge>
-        <div className="flex-1" />
-        <Text className="text-sm tabular-nums">
-          {money(session.totals.totalCents, session.currency)}
-        </Text>
-      </PaneToolbar>
+      <PaneToolbar
+        label="Checkout actions"
+        status={
+          <Text className="text-sm tabular-nums">
+            {money(session.totals.totalCents, session.currency)}
+          </Text>
+        }
+        controls={
+          <>
+            <Badge color={state.tone} variant="soft" size="sm">
+              {state.label}
+            </Badge>
+            <div className="flex-1" />
+          </>
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto p-4">
         <div className={COLUMN}>
@@ -250,6 +246,25 @@ export function CheckoutSessionDetailSurface({ ctx }: { ctx: SurfaceContext }) {
                 <MoneyRow
                   label="Tax"
                   cents={session.totals.taxTotalCents}
+                  currency={session.currency}
+                />
+              ) : null}
+              {/* Money already paid, and already SUBTRACTED inside the total
+                  below. Both were fetched here and drawn nowhere, so a checkout
+                  part-paid by a gift card showed rows that came to more than the
+                  total under them — the screen read as broken arithmetic rather
+                  than as a card being spent. */}
+              {session.totals.giftCardAppliedCents > 0 ? (
+                <MoneyRow
+                  label="Gift card"
+                  cents={-session.totals.giftCardAppliedCents}
+                  currency={session.currency}
+                />
+              ) : null}
+              {session.totals.accountCreditAppliedCents > 0 ? (
+                <MoneyRow
+                  label="Credit on account"
+                  cents={-session.totals.accountCreditAppliedCents}
                   currency={session.currency}
                 />
               ) : null}

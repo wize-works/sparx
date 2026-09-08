@@ -289,25 +289,32 @@ export function ProductDropshipSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label={`${LABEL} actions`}>
-        <Truck className="size-4 shrink-0" aria-hidden />
-        <Heading level={2} className="min-w-0 truncate text-base font-semibold">
-          {product.title}
-        </Heading>
-        {scope.isFollowing ? (
-          <Badge color="info" variant="soft" size="sm">
-            Following
-          </Badge>
-        ) : null}
-        <RefreshButton
-          className="ml-auto"
-          isFetching={dropship.isFetching}
-          updatedAt={dropship.dataUpdatedAt}
-          onRefresh={() => {
-            void dropship.refetch();
-          }}
-        />
-      </PaneToolbar>
+      <PaneToolbar
+        label={`${LABEL} actions`}
+        controls={
+          <>
+            <Truck className="size-4 shrink-0" aria-hidden />
+            <Heading level={2} className="min-w-0 truncate text-base font-semibold">
+              {product.title}
+            </Heading>
+            {scope.isFollowing ? (
+              <Badge color="info" variant="soft" size="sm">
+                Following
+              </Badge>
+            ) : null}
+          </>
+        }
+        refresh={
+          <RefreshButton
+            className="ml-auto"
+            isFetching={dropship.isFetching}
+            updatedAt={dropship.dataUpdatedAt}
+            onRefresh={() => {
+              void dropship.refetch();
+            }}
+          />
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className="mx-auto flex w-full max-w-3xl flex-col gap-4">

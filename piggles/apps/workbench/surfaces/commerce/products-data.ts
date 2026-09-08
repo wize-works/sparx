@@ -144,6 +144,9 @@ export interface Product {
    *  should read this — `collectionMemberships` says WHY, and the why is what
    *  decides whether a person is allowed to change it. */
   collectionIds: string[];
+  /** The delivery group this product ships under, or null for the standard
+   *  way. At most one: the rate that prices a basket has to pick exactly one. */
+  shippingProfileId: string | null;
   /**
    * Why this product is in each of its collections.
    *
@@ -895,6 +898,8 @@ export interface ProductPatch {
   propertyIds?: string[];
   categoryIds?: string[];
   collectionIds?: string[];
+  /** null clears it — the product goes back to shipping the standard way. */
+  shippingProfileId?: string | null;
   orderAheadDays?: number | null;
   deposit?: ProductDeposit;
   dailyLimit?: number | null;
@@ -2864,7 +2869,14 @@ export interface CategoryNode {
   path: string;
   depth: number;
   featured: boolean;
+  /** Products a SHOPPER finds under this heading on the site being worked in —
+   *  the same number that site's own category page prints. */
   productCount: number;
+  /** Products filed here that no shopper can see: archived, drafted, or kept for
+   *  one of the business's other sites. Zero for most categories; when it is not
+   *  zero the screen has to say so, or a truthful "0" reads as "my products have
+   *  disappeared" (issue 382). */
+  hiddenProductCount: number;
   children: CategoryNode[];
 }
 
@@ -2876,7 +2888,10 @@ export interface CategoryChoice {
   name: string;
   /** Ancestor names, root first, INCLUDING this one. */
   trail: string[];
+  /** What a shopper finds here — see {@link CategoryNode.productCount}. */
   productCount: number;
+  /** Filed here but not shown — see {@link CategoryNode.hiddenProductCount}. */
+  hiddenProductCount: number;
   /** Whether the category is flagged featured. Carried through so the category
    *  LIST can badge it; the parent picker simply ignores it. */
   featured: boolean;
@@ -2911,6 +2926,7 @@ export function flattenCategories(nodes: CategoryNode[] | undefined): CategoryCh
         name: node.name,
         trail: here,
         productCount: node.productCount,
+        hiddenProductCount: node.hiddenProductCount,
         featured: node.featured,
       });
       walk(node.children, here);

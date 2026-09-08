@@ -123,24 +123,29 @@ export function RedirectsImportSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Bulk import actions">
-        <Text className="truncate px-1 text-sm">
-          {valid.length > 0
-            ? `${valid.length} ready${invalidCount > 0 ? ` · ${invalidCount} to fix` : ''}`
-            : 'Paste your list below'}
-        </Text>
-        <Button
-          color="module"
-          size="sm"
-          className="ml-auto shrink-0"
-          loading={bulk.isPending}
-          disabled={valid.length === 0}
-          onClick={runImport}
-        >
-          <Upload className="size-4" aria-hidden />
-          {valid.length > 1 ? `Import ${valid.length}` : 'Import'}
-        </Button>
-      </PaneToolbar>
+      <PaneToolbar
+        label="Bulk import actions"
+        status={
+          <Text className="truncate px-1 text-sm">
+            {valid.length > 0
+              ? `${valid.length} ready${invalidCount > 0 ? ` · ${invalidCount} to fix` : ''}`
+              : 'Paste your list below'}
+          </Text>
+        }
+        primary={
+          <Button
+            color="module"
+            size="sm"
+            className="ml-auto shrink-0"
+            loading={bulk.isPending}
+            disabled={valid.length === 0}
+            onClick={runImport}
+          >
+            <Upload className="size-4" aria-hidden />
+            {valid.length > 1 ? `Import ${valid.length}` : 'Import'}
+          </Button>
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className={COLUMN}>

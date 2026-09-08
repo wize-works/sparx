@@ -20,6 +20,7 @@
 // or profile a post lands on; a platform's limit is "24 characters over — it will
 // be cut short here", never a raw error.
 
+import { shownInPlace } from '@wizeworks/query';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { PaneWaiting } from '../../components/pane-waiting';
 import { PaneLoadError } from '../../components/pane-load-error';
@@ -106,6 +107,7 @@ import {
 } from './data';
 import { tagsToText, useComposeSeed, useHashtagSets, type HashtagSet } from './planning-data';
 import { productCopy } from '../../lib/product';
+import { SaveFailure } from '@/components/save-failure';
 
 /** A chooseable destination, flattened from the connected accounts. */
 interface Destination {
@@ -939,6 +941,7 @@ function ComposeNew({ ctx }: { ctx: SurfaceContext }) {
             });
           });
         },
+        onError: shownInPlace,
       }
     );
   };
@@ -1027,14 +1030,7 @@ function ComposeNew({ ctx }: { ctx: SurfaceContext }) {
               before it leaves.
             </Text>
 
-            {failure ? (
-              <Alert color="error">
-                <AlertContent>
-                  <AlertTitle>Could not save this post</AlertTitle>
-                  <AlertDescription>{failure}</AlertDescription>
-                </AlertContent>
-              </Alert>
-            ) : null}
+            <SaveFailure title="Could not save this post" message={failure} />
 
             {/* MEDIA FIRST. Most of these platforms are pictures-and-video first, and four
               of them refuse a post without one — so this leads, and its label reflects
@@ -1665,14 +1661,7 @@ function ComposeManage({
               <Text className="text-sm">{meta.detail}</Text>
             </div>
 
-            {actionError ? (
-              <Alert color="error">
-                <AlertContent>
-                  <AlertTitle>That did not go through</AlertTitle>
-                  <AlertDescription>{actionError}</AlertDescription>
-                </AlertContent>
-              </Alert>
-            ) : null}
+            <SaveFailure title="That did not go through" message={actionError} />
 
             {/* Why it came back. Without this a rejection is a silent state change and
                 the author has to go and ask what was wrong with it. */}

@@ -20,7 +20,6 @@ import { PaneLoadError } from '../../components/pane-load-error';
 import {
   Alert,
   AlertContent,
-  AlertDescription,
   AlertTitle,
   Badge,
   Button,
@@ -51,7 +50,7 @@ import { CustomPropertiesPanel } from './custom-properties-panel';
 import { AssociationsPanel } from './associations-panel';
 import { useCustomers } from './customers-data';
 import { customerName, lifecycleStageMeta } from './customer-display';
-import { useQuery } from '@wizeworks/query';
+import { useQuery, shownInPlace } from '@wizeworks/query';
 import { api } from '../../lib/api/client';
 import { ModuleScope } from '../../components/module-scope';
 import { PaymentTermsField } from '../../components/payment-terms-field';
@@ -67,6 +66,7 @@ import { priorityLabel, priorityTone, useTickets } from './tickets-data';
 import type { OpenTarget, SurfaceContext } from '../../lib/surfaces/registry';
 import { useTeamRoster } from '../../lib/api/team';
 import { useViewer } from '../../lib/api/shell-data';
+import { SaveFailure } from '@/components/save-failure';
 import {
   ACCOUNT_STATUSES,
   accountErrorMessage,
@@ -366,6 +366,7 @@ function CompanyEditor({
             toast.add({ title: `${created.companyName} added`, type: 'success' });
           });
         },
+        onError: shownInPlace,
       });
       return;
     }
@@ -375,6 +376,7 @@ function CompanyEditor({
         setTouched(false);
         toast.add({ title: 'Company saved', type: 'success' });
       },
+      onError: shownInPlace,
     });
   };
 
@@ -456,14 +458,7 @@ function CompanyEditor({
             </Text>
           ) : null}
 
-          {failure ? (
-            <Alert color="error">
-              <AlertContent>
-                <AlertTitle>Could not save this company</AlertTitle>
-                <AlertDescription>{failure}</AlertDescription>
-              </AlertContent>
-            </Alert>
-          ) : null}
+          <SaveFailure title="Could not save this company" message={failure} />
 
           <FormSection title="The business">
             <Field>

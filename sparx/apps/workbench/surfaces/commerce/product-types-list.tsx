@@ -92,52 +92,60 @@ export function ProductTypesListSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Product type list controls">
-        <div className="max-w-xs min-w-0 flex-1">
-          <SearchInput
+      <PaneToolbar
+        label="Product type list controls"
+        search={
+          <div className="max-w-xs min-w-0 flex-1">
+            <SearchInput
+              size="sm"
+              aria-label="Search product types"
+              placeholder="Name or id…"
+              value={search}
+              onValueChange={setSearch}
+            />
+          </div>
+        }
+        primary={
+          <Button
+            color="module"
             size="sm"
-            aria-label="Search product types"
-            placeholder="Name or id…"
-            value={search}
-            onValueChange={setSearch}
+            className="ml-auto shrink-0 whitespace-nowrap"
+            title="Define a new kind of product — hold Shift to open alongside, Alt for a new window"
+            onClick={create}
+          >
+            <Plus className="size-4" aria-hidden />
+            <span className="hidden @2xl:inline">New type</span>
+          </Button>
+        }
+        controls={
+          <>
+            <Filter
+              color="module"
+              value={kind}
+              onValueChange={(next) => {
+                setKind((next as KindFilterValue | null) ?? 'all');
+              }}
+              showReset={false}
+              aria-label="Filter by kind"
+            >
+              {KIND_FILTERS.map((entry) => (
+                <FilterItem key={entry.value} value={entry.value}>
+                  {entry.label}
+                </FilterItem>
+              ))}
+            </Filter>
+          </>
+        }
+        refresh={
+          <RefreshButton
+            isFetching={isFetching}
+            updatedAt={data ? dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void refetch();
+            }}
           />
-        </div>
-
-        <Filter
-          color="module"
-          value={kind}
-          onValueChange={(next) => {
-            setKind((next as KindFilterValue | null) ?? 'all');
-          }}
-          showReset={false}
-          aria-label="Filter by kind"
-        >
-          {KIND_FILTERS.map((entry) => (
-            <FilterItem key={entry.value} value={entry.value}>
-              {entry.label}
-            </FilterItem>
-          ))}
-        </Filter>
-
-        <Button
-          color="module"
-          size="sm"
-          className="ml-auto shrink-0 whitespace-nowrap"
-          title="Define a new kind of product — hold Shift to open alongside, Alt for a new window"
-          onClick={create}
-        >
-          <Plus className="size-4" aria-hidden />
-          <span className="hidden @2xl:inline">New type</span>
-        </Button>
-
-        <RefreshButton
-          isFetching={isFetching}
-          updatedAt={data ? dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void refetch();
-          }}
-        />
-      </PaneToolbar>
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         {error ? (

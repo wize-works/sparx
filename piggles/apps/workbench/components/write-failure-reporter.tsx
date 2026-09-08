@@ -17,7 +17,13 @@
 //   • Announce it ONLY if nobody else did. A mutation with its own `onError` has
 //     a call site that owns the conversation (usually a better one: it can name
 //     the invoice, restore the form, undo the optimistic row). Toasting on top
-//     would say the same thing twice and teach people to ignore both.
+//     would say the same thing twice and teach people to ignore both. A surface
+//     that instead RENDERS the error — an Alert inside the dialog, beside the
+//     field, with the way out on it — has spoken just as clearly, but no watcher
+//     can see a render, so it says so by passing `shownInPlace`.
+//   • WITHDRAW it once it stops being true. The toast never dismisses itself, so
+//     a retry that succeeds would otherwise leave "that didn't save" sitting
+//     beside "saved" with nothing to say which one is current.
 //
 // This is a NET, not the answer. A surface that can say something specific still
 // should. What this guarantees is a floor: no failed write is ever silent.
@@ -30,8 +36,13 @@
 // honest report. Adding a failure toast here would announce a loss that has not
 // happened.
 
-import { useEffect } from 'react';
-import { callerHandledError, useQueryClient } from '@wizeworks/query';
+import { useEffect, useRef } from 'react';
+import {
+  callerHandledError,
+  createWriteAnnouncements,
+  useQueryClient,
+  writeIdentity,
+} from '@wizeworks/query';
 import { useToast } from '@wizeworks/silicaui-react';
 import { describeWriteFailure } from '../lib/api/write-failure';
 import { readWriteMeta } from '../lib/api/write-meta';
@@ -44,12 +55,34 @@ export function WriteFailureReporter(): null {
   // app, and re-subscribing to the mutation cache on that churn would drop
   // in-flight notifications. Same trap as components/update-notifier.tsx.
   const addToast = toast.add;
+  // `close` goes through a ref instead of the dependency list for the same
+  // reason: re-subscribing mid-write would drop the notification we are here to
+  // deliver, and this one is not worth the risk of finding out it churns.
+  const closeToast = useRef(toast.close);
+  closeToast.current = toast.close;
+
+  const announcements = useRef(createWriteAnnouncements());
 
   useEffect(() => {
     const cache = queryClient.getMutationCache();
+    const withdraw = (identity: object) => {
+      const shown = announcements.current.take(identity);
+      if (shown !== undefined) closeToast.current(shown);
+    };
 
     return cache.subscribe((event) => {
-      if (event.type !== 'updated' || event.action.type !== 'error') return;
+      if (event.type !== 'updated') return;
+      const identity = writeIdentity(event.mutation.meta);
+
+      // The same write just landed, so what we said about the last attempt is no
+      // longer true. A failure toast stays until dismissed BY DESIGN — which
+      // means that without this it sits beside the success message contradicting
+      // it, and the person has no way to tell which one is current.
+      if (event.action.type === 'success') {
+        if (identity) withdraw(identity);
+        return;
+      }
+      if (event.action.type !== 'error') return;
 
       const error: unknown = event.action.error;
       const meta = readWriteMeta(event.mutation.meta);
@@ -80,7 +113,11 @@ export function WriteFailureReporter(): null {
       if (typeof event.mutation.options.onError === 'function') return;
       if (callerHandledError(event.mutation.meta)) return;
 
-      addToast({
+      // A second failure of the same write replaces the first rather than
+      // stacking beside it. Two identical permanent toasts read as two problems.
+      if (identity) withdraw(identity);
+
+      const shown = addToast({
         title: meta.writing ? `Couldn't save ${meta.writing}` : "That didn't save",
         description: failure.showReference
           ? `${failure.message} If it keeps happening, quote ${failure.reference}.`
@@ -91,6 +128,7 @@ export function WriteFailureReporter(): null {
         // shows the change as though it landed.
         timeout: 0,
       });
+      if (identity) announcements.current.keep(identity, shown);
     });
   }, [queryClient, addToast]);
 

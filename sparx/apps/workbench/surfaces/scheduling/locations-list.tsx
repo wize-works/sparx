@@ -183,45 +183,52 @@ export function LocationsListSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Places list controls">
-        <ToggleGroup
-          size="sm"
-          color="module"
-          className="shrink-0"
-          value={activeOnly ? ['active'] : []}
-          onValueChange={(next: unknown[]) => {
-            setActiveOnly(next.includes('active'));
-          }}
-        >
-          <ToggleGroupItem
-            value="active"
-            aria-label="Hide switched-off ones"
-            title="Hide switched-off ones"
+      <PaneToolbar
+        label="Places list controls"
+        primary={
+          <Button
+            color="module"
+            size="sm"
+            className="ml-auto shrink-0 whitespace-nowrap"
+            title="Add a place — hold Shift to open alongside, Alt for a new window"
+            onClick={openNew}
           >
-            <EyeOff className="size-4" aria-hidden />
-            <span className="hidden @2xl:inline">In use only</span>
-          </ToggleGroupItem>
-        </ToggleGroup>
-
-        <Button
-          color="module"
-          size="sm"
-          className="ml-auto shrink-0 whitespace-nowrap"
-          title="Add a place — hold Shift to open alongside, Alt for a new window"
-          onClick={openNew}
-        >
-          <Plus className="size-4" aria-hidden />
-          <span className="hidden @lg:inline">Add a place</span>
-        </Button>
-
-        <RefreshButton
-          isFetching={isFetching}
-          updatedAt={data ? dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void refetch();
-          }}
-        />
-      </PaneToolbar>
+            <Plus className="size-4" aria-hidden />
+            <span className="hidden @lg:inline">Add a place</span>
+          </Button>
+        }
+        controls={
+          <>
+            <ToggleGroup
+              size="sm"
+              color="module"
+              className="shrink-0"
+              value={activeOnly ? ['active'] : []}
+              onValueChange={(next: unknown[]) => {
+                setActiveOnly(next.includes('active'));
+              }}
+            >
+              <ToggleGroupItem
+                value="active"
+                aria-label="Hide switched-off ones"
+                title="Hide switched-off ones"
+              >
+                <EyeOff className="size-4" aria-hidden />
+                <span className="hidden @2xl:inline">In use only</span>
+              </ToggleGroupItem>
+            </ToggleGroup>
+          </>
+        }
+        refresh={
+          <RefreshButton
+            isFetching={isFetching}
+            updatedAt={data ? dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void refetch();
+            }}
+          />
+        }
+      />
 
       <Card className="mx-auto min-h-0 w-full max-w-4xl flex-1 overflow-y-auto">{body()}</Card>
 

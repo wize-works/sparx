@@ -43,6 +43,7 @@ import { PaneToolbar, PANE_SHELL } from '../../components/pane-toolbar';
 import { FormSection } from '../../components/form-section';
 import { SiteScopeField } from '../../components/site-scope-field';
 import type { SurfaceContext } from '../../lib/surfaces/registry';
+import { SaveFailure } from '@/components/save-failure';
 import {
   discountErrorMessage,
   discountState,
@@ -57,6 +58,7 @@ import {
   type DiscountInput,
   type DiscountType,
 } from './discounts-data';
+import { PaneLoadError } from '../../components/pane-load-error';
 
 const COLUMN = 'mx-auto flex w-full max-w-3xl flex-col gap-4';
 
@@ -207,31 +209,19 @@ export function DiscountDetailSurface({ ctx }: { ctx: SurfaceContext }) {
 }
 
 function DiscountLoader({ ctx, id }: { ctx: SurfaceContext; id: string }) {
-  const { data: discount, isPending, isError, refetch } = useDiscount(id);
+  const { data: discount, isPending, isError, error, refetch } = useDiscount(id);
 
   if (isError) {
     return (
-      <div className="flex h-full items-center justify-center p-8">
-        <Alert color="error" className="max-w-md">
-          <AlertContent>
-            <AlertTitle>Could not load this discount</AlertTitle>
-            <AlertDescription>
-              This is a problem reaching the server, or the discount has been retired. Nothing has
-              been changed.
-            </AlertDescription>
-          </AlertContent>
-          <Button
-            size="sm"
-            color="error"
-            variant="soft"
-            onClick={() => {
-              void refetch();
-            }}
-          >
-            Try again
-          </Button>
-        </Alert>
-      </div>
+      <PaneLoadError
+        error={error}
+        noun="discount"
+        title="Could not load this discount"
+        description="This is a problem reaching the server, or the discount has been retired. Nothing has been changed."
+        onRetry={() => {
+          void refetch();
+        }}
+      />
     );
   }
 
@@ -430,28 +420,35 @@ function DiscountEditor({
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Discount actions">
-        {state ? (
-          <Badge color={state.tone} variant="soft" size="sm">
-            {state.label}
-          </Badge>
-        ) : null}
-        {discount && discount.usageCount > 0 ? (
-          <Text as="span" className="hidden shrink-0 text-sm @md:inline">
-            Used {discount.usageCount === 1 ? 'once' : `${String(discount.usageCount)} times`}
-          </Text>
-        ) : null}
-        <Button
-          color="module"
-          size="sm"
-          className="ml-auto"
-          loading={saving}
-          disabled={Boolean(blocked) || (!isNew && !dirty)}
-          onClick={submit}
-        >
-          {isNew ? 'Create discount' : 'Save'}
-        </Button>
-      </PaneToolbar>
+      <PaneToolbar
+        label="Discount actions"
+        primary={
+          <Button
+            color="module"
+            size="sm"
+            className="ml-auto"
+            loading={saving}
+            disabled={Boolean(blocked) || (!isNew && !dirty)}
+            onClick={submit}
+          >
+            {isNew ? 'Create discount' : 'Save'}
+          </Button>
+        }
+        controls={
+          <>
+            {state ? (
+              <Badge color={state.tone} variant="soft" size="sm">
+                {state.label}
+              </Badge>
+            ) : null}
+            {discount && discount.usageCount > 0 ? (
+              <Text as="span" className="hidden shrink-0 text-sm @md:inline">
+                Used {discount.usageCount === 1 ? 'once' : `${String(discount.usageCount)} times`}
+              </Text>
+            ) : null}
+          </>
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className={COLUMN}>
@@ -467,14 +464,7 @@ function DiscountEditor({
             </div>
           ) : null}
 
-          {failure ? (
-            <Alert color="error">
-              <AlertContent>
-                <AlertTitle>Could not save this discount</AlertTitle>
-                <AlertDescription>{failure}</AlertDescription>
-              </AlertContent>
-            </Alert>
-          ) : null}
+          <SaveFailure title="Could not save this discount" message={failure} />
 
           {!canCreateType ? (
             <Alert color="info">

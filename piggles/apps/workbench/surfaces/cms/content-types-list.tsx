@@ -15,16 +15,7 @@
 
 import { useMemo, useState } from 'react';
 import { PaneWaiting } from '../../components/pane-waiting';
-import {
-  Badge,
-  Button,
-  Card,
-  EmptyState,
-  Heading,
-  SearchInput,
-  Text,
-} from '@wizeworks/silicaui-react';
-import { Table } from '../../components/table';
+import { Button, Card, EmptyState, SearchInput } from '@wizeworks/silicaui-react';
 import { faDatabase, faPlus } from '@fortawesome/pro-solid-svg-icons';
 import { Icon } from '@piggles/ui';
 import { PaneToolbar, PANE_SHELL } from '../../components/pane-toolbar';
@@ -32,6 +23,7 @@ import { ListEmptyState } from '../../components/list-empty-state';
 import { RefreshButton } from '../../components/refresh-button';
 import type { OpenTarget, SurfaceContext } from '../../lib/surfaces/registry';
 import { useContentTypeList, useEntryCountsByType, type ContentType } from './content-types-data';
+import { TypeGroup } from './content-types-list-table';
 import { productCopy } from '../../lib/product';
 import { RowOpenHint } from '../../components/row-open-hint';
 
@@ -52,12 +44,6 @@ function targetFor(event: { shiftKey: boolean; altKey: boolean }): OpenTarget {
   if (event.altKey) return 'window';
   if (event.shiftKey) return 'beside';
   return 'tab';
-}
-
-function usageLabel(count: number | undefined): string {
-  if (count === undefined) return '';
-  if (count === 0) return 'No entries yet';
-  return `${String(count)} ${count === 1 ? 'entry' : 'entries'}`;
 }
 
 export function ContentTypesListSurface({ ctx }: { ctx: SurfaceContext }) {
@@ -236,87 +222,3 @@ export function ContentTypesListSurface({ ctx }: { ctx: SurfaceContext }) {
 }
 
 /* ── One group of types ─────────────────────────────────────────────────── */
-
-interface TypeGroupProps {
-  title: string;
-  description: string;
-  types: ContentType[];
-  counts: Map<string, number> | undefined;
-  /** Shown instead of the rows when the group is empty; null hides the group. */
-  emptyHint: string | null;
-  onOpen: (type: ContentType, event: { shiftKey: boolean; altKey: boolean }) => void;
-}
-
-function TypeGroup({ title, description, types, counts, emptyHint, onOpen }: TypeGroupProps) {
-  if (types.length === 0 && emptyHint === null) return null;
-
-  return (
-    <section className="flex flex-col gap-2">
-      <div className="flex flex-col gap-0.5 px-1">
-        <Heading level={2} className="text-lg font-semibold">
-          {title}
-        </Heading>
-        <Text className="text-sm">{description}</Text>
-      </div>
-
-      {types.length === 0 ? (
-        <Text className="px-1 text-sm">{emptyHint}</Text>
-      ) : (
-        <Table size="sm" hover>
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th className="hidden @xl:table-cell">Key</th>
-              <th className="hidden @2xl:table-cell">Entries</th>
-            </tr>
-          </thead>
-          <tbody>
-            {types.map((type) => {
-              const count = counts?.get(type.key);
-              const usage = usageLabel(count);
-              return (
-                <tr
-                  key={type.id}
-                  className="cursor-pointer"
-                  tabIndex={0}
-                  role="button"
-                  onClick={(event) => {
-                    onOpen(type, event);
-                  }}
-                  onKeyDown={(event) => {
-                    if (event.key !== 'Enter' && event.key !== ' ') return;
-                    event.preventDefault();
-                    onOpen(type, event);
-                  }}
-                >
-                  <td>
-                    <span className="flex flex-wrap items-center gap-2">
-                      <span className="font-medium">{type.name}</span>
-                      {type.is_singleton ? (
-                        <Badge color="info" variant="soft" size="sm">
-                          Only one
-                        </Badge>
-                      ) : null}
-                      {type.is_built_in ? (
-                        <Badge color="info" variant="soft" size="sm">
-                          View only
-                        </Badge>
-                      ) : null}
-                    </span>
-                    {type.description ? (
-                      <span className="mt-0.5 block max-w-96 truncate text-sm">
-                        {type.description}
-                      </span>
-                    ) : null}
-                  </td>
-                  <td className="hidden font-mono text-sm @xl:table-cell">{type.key}</td>
-                  <td className="hidden text-sm whitespace-nowrap @2xl:table-cell">{usage}</td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </Table>
-      )}
-    </section>
-  );
-}

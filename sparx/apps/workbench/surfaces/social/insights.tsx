@@ -14,14 +14,7 @@
 // never a made-up zero. Nothing here is invented: it is whatever the platforms sent back.
 
 import { useMemo, useState } from 'react';
-import {
-  Button,
-  EmptyState,
-  Heading,
-  Text,
-  ToggleGroup,
-  ToggleGroupItem,
-} from '@wizeworks/silicaui-react';
+import { EmptyState, Heading, Text, ToggleGroup, ToggleGroupItem } from '@wizeworks/silicaui-react';
 import { BarChart3, Clock, ExternalLink, ServerCrash } from 'lucide-react';
 import { PaneToolbar, PANE_SHELL } from '../../components/pane-toolbar';
 import { RefreshButton } from '../../components/refresh-button';
@@ -40,6 +33,7 @@ import {
 import { PlatformMark } from '../../components/platform-mark';
 import { AccountAvatar, useAvatarByTargetId, formatWhen } from './post-visuals';
 import { formatMinuteOfDay, localTimezone, useBestTime, WEEKDAY_NAMES } from './planning-data';
+import { PaneLoadError } from '../../components/pane-load-error';
 
 /* ── The windows a business thinks in ─────────────────────────────────────── */
 
@@ -257,27 +251,17 @@ export function SocialInsightsSurface({ ctx }: { ctx: SurfaceContext }) {
   if (insights.isError) {
     return (
       <div className={PANE_SHELL}>
-        <div className="flex h-full items-center justify-center p-8">
-          <EmptyState
-            icon={<ServerCrash className="size-6" aria-hidden />}
-            title="Could not load your numbers"
-            description={socialErrorMessage(
-              insights.error,
-              'This is a problem reaching the server. Nothing about your posts has changed.'
-            )}
-            actions={
-              <Button
-                size="sm"
-                color="module"
-                onClick={() => {
-                  void insights.refetch();
-                }}
-              >
-                Try again
-              </Button>
-            }
-          />
-        </div>
+        <PaneLoadError
+          icon={<ServerCrash className="size-6" aria-hidden />}
+          title="Could not load your numbers"
+          description={socialErrorMessage(
+            insights.error,
+            'This is a problem reaching the server. Nothing about your posts has changed.'
+          )}
+          onRetry={() => {
+            void insights.refetch();
+          }}
+        />
       </div>
     );
   }
@@ -286,32 +270,39 @@ export function SocialInsightsSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Insights controls">
-        <ToggleGroup
-          color="module"
-          size="sm"
-          value={[String(windowDays)]}
-          aria-label="How far back to look"
-          onValueChange={(value: string[]) => {
-            const next = value[value.length - 1];
-            if (next) setWindowDays(Number(next));
-          }}
-        >
-          {WINDOWS.map((w) => (
-            <ToggleGroupItem key={w.value} value={w.value}>
-              {w.label}
-            </ToggleGroupItem>
-          ))}
-        </ToggleGroup>
-        <RefreshButton
-          className="ml-auto"
-          isFetching={insights.isFetching}
-          updatedAt={insights.data ? insights.dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void insights.refetch();
-          }}
-        />
-      </PaneToolbar>
+      <PaneToolbar
+        label="Insights controls"
+        controls={
+          <>
+            <ToggleGroup
+              color="module"
+              size="sm"
+              value={[String(windowDays)]}
+              aria-label="How far back to look"
+              onValueChange={(value: string[]) => {
+                const next = value[value.length - 1];
+                if (next) setWindowDays(Number(next));
+              }}
+            >
+              {WINDOWS.map((w) => (
+                <ToggleGroupItem key={w.value} value={w.value}>
+                  {w.label}
+                </ToggleGroupItem>
+              ))}
+            </ToggleGroup>
+          </>
+        }
+        refresh={
+          <RefreshButton
+            className="ml-auto"
+            isFetching={insights.isFetching}
+            updatedAt={insights.data ? insights.dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void insights.refetch();
+            }}
+          />
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         {insights.isPending ? (

@@ -55,6 +55,18 @@ export interface PersistedLayout {
 export interface NamedWorkspace extends PersistedLayout {
   id: string;
   name: string;
+  /**
+   * The presentation and zoom the arrangement was captured in.
+   *
+   * A grid is a set of pixel boxes, and those boxes were measured at whatever
+   * zoom was on screen at the time — so replaying a 50% arrangement at 100%
+   * brings every window back half size. Loosely typed on purpose: this file
+   * stores what it is handed and the dock validates on the way back out.
+   *
+   * Optional, because arrangements saved before this existed have neither.
+   */
+  zoom?: number;
+  mode?: string;
 }
 
 function readJson<T>(key: string): T | null {
@@ -173,7 +185,8 @@ export function listWorkspaces(): NamedWorkspace[] {
 export function saveWorkspace(
   name: string,
   grid: unknown,
-  panes: Record<string, PaneDescriptor>
+  panes: Record<string, PaneDescriptor>,
+  presentation?: { zoom?: number; mode?: string }
 ): NamedWorkspace {
   const workspace: NamedWorkspace = {
     id: `ws_${crypto.randomUUID().slice(0, 8)}`,
@@ -182,6 +195,8 @@ export function saveWorkspace(
     grid,
     panes,
     savedAt: Date.now(),
+    zoom: presentation?.zoom,
+    mode: presentation?.mode,
   };
   writeJson(WORKSPACES_KEY, [...listWorkspaces(), workspace]);
   return workspace;

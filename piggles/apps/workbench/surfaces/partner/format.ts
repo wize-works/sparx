@@ -218,7 +218,7 @@ export const TIERS: Record<PartnerTier, TierMeta> = {
       '20% commission on each referral’s first payment',
       'Access to the partner resources',
     ],
-    howToReach: 'Instant — join the programme and you’re in.',
+    howToReach: 'Instant — join the program and you’re in.',
   },
   registered: {
     tier: 'registered',
@@ -228,7 +228,7 @@ export const TIERS: Record<PartnerTier, TierMeta> = {
       'Everything in Informal',
       '30% commission on each referral’s first payment',
       productCopy('partner.perk.directory', 'A public listing in the sparx partner directory'),
-      'Draft bootcamps to build your training programme',
+      'Draft bootcamps to build your training program',
     ],
     howToReach: 'Apply for review — we confirm your practice within 3 business days.',
   },

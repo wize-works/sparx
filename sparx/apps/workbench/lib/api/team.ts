@@ -58,8 +58,7 @@ export interface TeamInvitation {
  * error rather than a silent `undefined` on screen.
  */
 export type RosterPerson =
-  | ({ kind: 'member' } & TeamMember)
-  | ({ kind: 'invitation' } & TeamInvitation);
+  ({ kind: 'member' } & TeamMember) | ({ kind: 'invitation' } & TeamInvitation);
 
 const MEMBERS_KEY = ['team', 'members'] as const;
 const INVITATIONS_KEY = ['team', 'invitations'] as const;

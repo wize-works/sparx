@@ -19,9 +19,7 @@ import {
   Card,
   SearchInput,
   Text,
-  useToast,
 } from '@wizeworks/silicaui-react';
-import { useConfirm } from '../../lib/confirm';
 import { faPlus, faUpRight, faUpload } from '@fortawesome/pro-solid-svg-icons';
 import { Icon } from '@piggles/ui';
 import { PaneToolbar, PANE_SHELL } from '../../components/pane-toolbar';
@@ -31,44 +29,24 @@ import { RefreshButton } from '../../components/refresh-button';
 import type { SurfaceContext } from '../../lib/surfaces/registry';
 import { AddRedirectDialog } from './redirects-add-dialog';
 import { RedirectsTable } from './redirects-table';
-import {
-  redirectErrorMessage,
-  useDeleteRedirect,
-  useRedirects,
-  type Redirect,
-  type RedirectStatusCode,
-} from './redirects-data';
+import { useRedirects, type Redirect } from './redirects-data';
+import { TYPE_FILTERS, useFilteredRedirects, type TypeFilterValue } from './redirects-filter';
+import { useRemoveRedirect } from './redirects-remove';
 
-/** Registry module for this surface, so the brand's empty-state artwork is this
- *  app's own picture rather than the generic one. */
+/** Brand artwork for the empty state; and the server's single-request ceiling,
+ *  which a config table sits well within. */
 const MODULE = 'cms';
-
-/** The server's single-request ceiling. A config table well within it. */
 const WINDOW = 250;
 
-/** "Permanent" folds 301+308, "Temporary" 302+307 — the same distinction the
- *  badge draws, so the filter matches what people see. */
-const TYPE_FILTERS = [
-  { value: 'all', label: 'All' },
-  { value: 'permanent', label: 'Permanent' },
-  { value: 'temporary', label: 'Temporary' },
-] as const;
-
-type TypeFilterValue = (typeof TYPE_FILTERS)[number]['value'];
-
-function isTemporary(code: RedirectStatusCode): boolean {
-  return code === 302 || code === 307;
-}
-
 export function RedirectsListSurface({ ctx }: { ctx: SurfaceContext }) {
-  const toast = useToast();
-  const confirm = useConfirm();
-  const remove = useDeleteRedirect();
+  const { onDelete, removingId, busy: removing } = useRemoveRedirect();
 
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState<TypeFilterValue>('all');
   const [adding, setAdding] = useState(false);
-  const [removingId, setRemovingId] = useState<string | null>(null);
+  // The rule the dialog is changing. Undefined means it is adding a new one — the
+  // same dialog, because the fields and the wording are the same question.
+  const [editing, setEditing] = useState<Redirect | undefined>(undefined);
 
   const { data, isLoading, isFetching, dataUpdatedAt, error, refetch } = useRedirects({
     take: WINDOW,
@@ -80,19 +58,7 @@ export function RedirectsListSurface({ ctx }: { ctx: SurfaceContext }) {
   const overWindow = typeof total === 'number' && total > rows.length;
   const staleAfterFailure = Boolean(error) && rows.length > 0;
 
-  const filtered = useMemo(() => {
-    const needle = search.trim().toLowerCase();
-    return rows.filter((row) => {
-      if (typeFilter === 'temporary' && !isTemporary(row.status_code)) return false;
-      if (typeFilter === 'permanent' && isTemporary(row.status_code)) return false;
-      if (needle === '') return true;
-      return (
-        row.from_path.toLowerCase().includes(needle) || row.to_path.toLowerCase().includes(needle)
-      );
-    });
-  }, [rows, search, typeFilter]);
-
-  const narrowed = search.trim() !== '' || typeFilter !== 'all';
+  const { filtered, narrowed } = useFilteredRedirects(rows, search, typeFilter);
 
   const openImport = (event: { shiftKey: boolean; altKey: boolean }) => {
     // Beside, not on top of, the list: keeping the existing rules in view while
@@ -100,33 +66,23 @@ export function RedirectsListSurface({ ctx }: { ctx: SurfaceContext }) {
     ctx.open('cms.redirects.import', {}, { target: event.altKey ? 'window' : 'beside' });
   };
 
-  const onDelete = (row: Redirect) => {
-    void (async () => {
-      const ok = await confirm({
-        title: 'Remove this redirect?',
-        description: `Anyone still using ${row.from_path} will hit a dead end again instead of being sent to ${row.to_path}. You can add it back later, but any search-engine standing it was passing on is lost.`,
-        confirmLabel: 'Remove it',
-        cancelLabel: 'Keep it',
-        color: 'danger',
-      });
-      if (!ok) return;
-      setRemovingId(row.id);
-      remove.mutate(row.id, {
-        onSuccess: () => {
-          toast.add({ title: 'Redirect removed', type: 'success' });
-        },
-        onError: (err) => {
-          toast.add({
-            title: 'Could not remove that redirect',
-            description: redirectErrorMessage(err, 'Nothing was changed.'),
-            type: 'error',
-          });
-        },
-        onSettled: () => {
-          setRemovingId(null);
-        },
-      });
-    })();
+  const onOpen = (row: Redirect) => {
+    setEditing(row);
+    setAdding(true);
+  };
+
+  /**
+   * The way out of a duplicate refusal.
+   *
+   * She typed an address that is already caught, so the rule she collided with
+   * is the rule she wants. Found in the rows already loaded rather than fetched:
+   * the refusal can only have come from a rule the list is showing, and asking
+   * the server again would put a spinner between her and the thing she just
+   * asked for.
+   */
+  const onOpenExisting = (fromPath: string) => {
+    const existing = rows.find((row) => row.from_path === fromPath);
+    if (existing) setEditing(existing);
   };
 
   return (
@@ -266,9 +222,10 @@ export function RedirectsListSurface({ ctx }: { ctx: SurfaceContext }) {
         ) : (
           <RedirectsTable
             rows={filtered}
+            onOpen={onOpen}
             onDelete={onDelete}
             removingId={removingId}
-            busy={remove.isPending}
+            busy={removing}
           />
         )}
       </Card>
@@ -279,7 +236,15 @@ export function RedirectsListSurface({ ctx }: { ctx: SurfaceContext }) {
           : `${filtered.length} of ${rows.length} shown`}
       </Text>
 
-      <AddRedirectDialog open={adding} onOpenChange={setAdding} />
+      <AddRedirectDialog
+        open={adding}
+        editing={editing}
+        onOpenChange={(next) => {
+          setAdding(next);
+          if (!next) setEditing(undefined);
+        }}
+        onOpenExisting={onOpenExisting}
+      />
     </div>
   );
 }

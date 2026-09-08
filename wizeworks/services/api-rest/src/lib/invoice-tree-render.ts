@@ -91,8 +91,17 @@ function buildScope(data: BillingRenderData, brand: BillingRenderBrand): Scope {
     seller: { name: b.businessName },
     billTo: data.billTo ? { name: data.billTo.name } : {},
     shipTo: data.shipTo ? { name: data.shipTo.name } : {},
+    // Enough rows that a hand-built chrome block can ADD UP. It offered
+    // subtotal, total and balance only, so a template author who laid out a
+    // totals table by hand had no way to show the tax, the delivery charge or a
+    // surcharge -- the gap between subtotal and total simply appeared, with
+    // nothing to point at. The data-aware totals node already prints them all;
+    // these bindings exist so chrome does not have to be wrong to be simple.
     totals: {
       subtotal: formatMoney(data.totals.subtotal, data.currency),
+      tax: formatMoney(data.totals.taxTotal, data.currency),
+      delivery: formatMoney(data.totals.shippingTotal, data.currency),
+      surcharge: formatMoney(data.totals.surchargeTotal, data.currency),
       total: formatMoney(data.totals.total, data.currency),
       balance: formatMoney(data.totals.balance, data.currency),
     },

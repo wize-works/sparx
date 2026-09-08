@@ -42,12 +42,7 @@ export type PickListKind = 'single' | 'batch' | 'wave';
 export type PickLineStatus = 'pending' | 'picked' | 'short' | 'skipped';
 export type AllocationStrategy = 'fifo' | 'fefo' | 'nearest_bin' | 'single_bin';
 export type ShortPickReason =
-  | 'not_found'
-  | 'damaged'
-  | 'wrong_item'
-  | 'insufficient'
-  | 'inaccessible'
-  | 'other';
+  'not_found' | 'damaged' | 'wrong_item' | 'insufficient' | 'inaccessible' | 'other';
 
 /** One "go to this shelf and take this many" instruction. */
 export interface PickLine {

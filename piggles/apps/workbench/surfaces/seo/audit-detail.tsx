@@ -1,12 +1,20 @@
 'use client';
 
-// One page's scorecard — how well it is set up to be found, and exactly what to
-// fix first.
+// One page's scorecard — how well it is set up to be found, exactly what to fix
+// first, and the way to go and fix it.
 //
 // A READ-ONLY detail pane, not a form: there is nothing to save here. The score
 // is recomputed fresh every time this opens (the live-audit endpoint re-scores
 // and re-stores), so the number is always current even when the list it was
 // opened from is a little stale — and "check again" is just a refetch.
+//
+// READ-ONLY IS NOT ACTIONLESS, which is what this pane got wrong. It listed
+// eight specific things to change and offered no way to change any of them: its
+// only two buttons were Refresh and Copy a link, and nothing in the body was
+// interactive. The person had to carry the page's address in her head to My Site
+// and find it again by hand (issue 392). The toolbar now carries ONE jump, to
+// the editor that owns whatever was scored, wearing that module's hue —
+// audit-fix-target.ts on the mapping and why the hue matters.
 //
 // It is a pane, not a modal, for the ordinary reasons: it is a durable thing you
 // return to and deep-link, comparing two pages' checks side by side is useful,
@@ -35,135 +43,19 @@ import { Icon } from '@piggles/ui';
 import { PaneToolbar, PANE_SHELL } from '../../components/pane-toolbar';
 import { RefreshButton } from '../../components/refresh-button';
 import type { SurfaceContext } from '../../lib/surfaces/registry';
-import {
-  checkStatusLabel,
-  checkTone,
-  entityLabel,
-  gradeLabel,
-  scoreTone,
-  type AuditCategory,
-  type AuditCheck,
-  type EntityType,
-  type Scorecard,
-  type Tone,
-  useAudit,
-} from './data';
+import { entityLabel, gradeLabel, scoreTone, type EntityType, useAudit } from './data';
+import { CategoryBar, CheckRow, ScoreCard } from './audit-detail-parts';
+import { useFixAction } from './audit-fix-target';
 
 const COLUMN = 'mx-auto flex w-full max-w-3xl flex-col gap-4';
 
 const VALID_TYPES: EntityType[] = ['builder_page', 'cms_page', 'product', 'collection'];
 
-/** A proportion as one of a fixed set of literal width classes — an inline
- *  `style={{ width }}` is banned, and on a short bar a 5% step is a pixel or two,
- *  below the threshold of noticing. */
-const BAR_WIDTH = [
-  'w-0',
-  'w-[5%]',
-  'w-[10%]',
-  'w-[15%]',
-  'w-[20%]',
-  'w-[25%]',
-  'w-[30%]',
-  'w-[35%]',
-  'w-[40%]',
-  'w-[45%]',
-  'w-[50%]',
-  'w-[55%]',
-  'w-[60%]',
-  'w-[65%]',
-  'w-[70%]',
-  'w-[75%]',
-  'w-[80%]',
-  'w-[85%]',
-  'w-[90%]',
-  'w-[95%]',
-  'w-full',
-];
-
-function barWidthClass(fraction: number): string {
-  if (!Number.isFinite(fraction) || fraction <= 0) return BAR_WIDTH[0]!;
-  const step = Math.round(Math.min(1, fraction) * 20);
-  return BAR_WIDTH[step] ?? BAR_WIDTH[BAR_WIDTH.length - 1]!;
-}
-
-/* ── Score header ────────────────────────────────────────────────────────── */
-
-// Literal per-tone ink classes — a `text-${tone}` template is invisible to the
-// Tailwind compiler, so the color is spelled out.
-const SCORE_INK: Record<Tone, string> = {
-  success: 'text-success',
-  warning: 'text-warning',
-  error: 'text-error',
-  info: 'text-info',
-};
-
-function ScoreCard({ card }: { card: Scorecard }) {
-  const tone = scoreTone(card.grade);
-  return (
-    <section className="card bg-base-100 flex flex-wrap items-center gap-4 p-4">
-      <div className="flex flex-col">
-        <span className={`text-5xl font-semibold tabular-nums ${SCORE_INK[tone]}`}>
-          {card.score}
-        </span>
-        <Text className="text-sm">out of 100</Text>
-      </div>
-      <div className="flex min-w-0 flex-1 flex-col gap-1">
-        <Badge color={tone} variant="soft" size="sm" className="self-start">
-          {gradeLabel(card.grade)}
-        </Badge>
-        <Text className="text-sm">
-          {card.grade === 'excellent'
-            ? 'This page is set up well for search. Keep it up.'
-            : card.grade === 'good'
-              ? 'This page is in good shape, with a little room to improve.'
-              : card.grade === 'needs-work'
-                ? 'A few changes here would make this page easier to find.'
-                : 'This page is missing several things that help people find it.'}
-        </Text>
-      </div>
-    </section>
-  );
-}
-
-/* ── Category breakdown ──────────────────────────────────────────────────── */
-
-function CategoryBar({ category }: { category: AuditCategory }) {
-  const fraction = category.max > 0 ? category.earned / category.max : 1;
-  const pct = Math.round(fraction * 100);
-  return (
-    <div className="flex flex-col gap-1">
-      <div className="flex items-baseline justify-between gap-2">
-        <Text className="text-sm font-medium">{category.label}</Text>
-        <Text className="text-sm tabular-nums">{pct}%</Text>
-      </div>
-      <div className="bg-base-200 h-2 w-full overflow-hidden rounded-full">
-        <div className={`bg-module h-full rounded-full ${barWidthClass(fraction)}`} />
-      </div>
-    </div>
-  );
-}
-
-/* ── One check row ───────────────────────────────────────────────────────── */
-
-function CheckRow({ check }: { check: AuditCheck }) {
-  return (
-    <li className="border-base-300 flex flex-col gap-1 border-b py-3 last:border-b-0">
-      <div className="flex flex-wrap items-center gap-2">
-        <Badge color={checkTone(check.status)} variant="soft" size="sm">
-          {checkStatusLabel(check.status)}
-        </Badge>
-        <Text className="min-w-0 flex-1 font-medium">{check.label}</Text>
-        {check.value ? <Text className="shrink-0 font-mono text-sm">{check.value}</Text> : null}
-      </div>
-      {check.tip ? <Text className="text-sm">{check.tip}</Text> : null}
-    </li>
-  );
-}
-
 /* ── The surface ─────────────────────────────────────────────────────────── */
 
 function AuditDetail({ ctx, type, id }: { ctx: SurfaceContext; type: EntityType; id: string }) {
   const { data: card, isPending, isError, isFetching, dataUpdatedAt, refetch } = useAudit(type, id);
+  const fixAction = useFixAction(ctx, type, id);
 
   const worthFixing = useMemo(
     () => (card?.checks ?? []).filter((c) => c.status === 'warn' || c.status === 'fail'),
@@ -194,6 +86,10 @@ function AuditDetail({ ctx, type, id }: { ctx: SurfaceContext; type: EntityType;
             </Badge>
           ) : null
         }
+        /* Not a commit and not a lifecycle change — a jump. It goes in
+           `primaryAction` because it is the ONE thing this pane offers, and as
+           values so the bar may drop to the bare icon on a narrow pane. */
+        primaryAction={fixAction}
         refresh={
           /* ALWAYS the last child — a fresh read here re-scores the page, so this
                       IS "check again". Carries ml-auto as the only right-hand control. */

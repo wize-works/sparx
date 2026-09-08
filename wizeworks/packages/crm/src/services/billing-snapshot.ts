@@ -52,6 +52,19 @@ export interface BillingSnapshotPayload {
     companyId: string | null;
     billTo: unknown;
     shipTo: unknown;
+    /**
+     * WHO ISSUED IT, frozen with everything else.
+     *
+     * `billTo` and `shipTo` were snapshotted here from the start and the seller
+     * was not, which left the immutable record of a document unable to say who
+     * sent it — so reprinting one went to the live business and reproduced the
+     * exact rewrite `issued_by` exists to prevent. A frozen record that names
+     * the customer but not the seller is only half a record.
+     *
+     * Null on a document that has not been finalized, and on anything issued
+     * before the column existed.
+     */
+    issuedBy: unknown;
   };
   lines: BillingSnapshotLine[];
 }
@@ -93,6 +106,7 @@ export function buildSnapshotPayload(
       companyId: document.companyId,
       billTo: document.billTo ?? null,
       shipTo: document.shipTo ?? null,
+      issuedBy: document.issuedBy ?? null,
     },
     lines: lines.map((l) => ({
       id: l.id,

@@ -236,32 +236,38 @@ export function BillsToPaySurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Bills list controls" wrap>
-        <Filter
-          color="module"
-          value={band}
-          onValueChange={(next) => {
-            setBand(typeof next === 'string' ? next : 'all');
-          }}
-          showReset={false}
-          aria-label="Filter by how late"
-        >
-          {FILTERS.map((filter) => (
-            <FilterItem key={filter.value} value={filter.value}>
-              {filter.label}
-            </FilterItem>
-          ))}
-        </Filter>
-
-        <RefreshButton
-          className="ml-auto"
-          isFetching={isFetching}
-          updatedAt={data ? dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void refetch();
-          }}
-        />
-      </PaneToolbar>
+      <PaneToolbar
+        label="Bills list controls"
+        controls={
+          <>
+            <Filter
+              color="module"
+              value={band}
+              onValueChange={(next) => {
+                setBand(typeof next === 'string' ? next : 'all');
+              }}
+              showReset={false}
+              aria-label="Filter by how late"
+            >
+              {FILTERS.map((filter) => (
+                <FilterItem key={filter.value} value={filter.value}>
+                  {filter.label}
+                </FilterItem>
+              ))}
+            </Filter>
+          </>
+        }
+        refresh={
+          <RefreshButton
+            className="ml-auto"
+            isFetching={isFetching}
+            updatedAt={data ? dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void refetch();
+            }}
+          />
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         {isError ? (

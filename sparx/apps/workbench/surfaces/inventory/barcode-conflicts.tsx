@@ -150,7 +150,7 @@ export function BarcodeConflictsSurface({ ctx }: { ctx: SurfaceContext }) {
                   color="neutral"
                   size="sm"
                   onClick={() => {
-                    ctx.open('commerce.products.detail', { id: row.productId }, { target: 'tab' });
+                    ctx.open('commerce.product.detail', { id: row.productId }, { target: 'tab' });
                   }}
                 >
                   Open the item
@@ -165,21 +165,26 @@ export function BarcodeConflictsSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Shared barcode controls">
-        <Text className="text-sm">
-          {rows.length > 0
-            ? `${plural(rows.length, 'code', 'codes')} claimed by more than one item`
-            : 'Nothing shared'}
-        </Text>
-        <RefreshButton
-          className="ml-auto"
-          isFetching={isFetching}
-          updatedAt={dataUpdatedAt}
-          onRefresh={() => {
-            void refetch();
-          }}
-        />
-      </PaneToolbar>
+      <PaneToolbar
+        label="Shared barcode controls"
+        status={
+          <Text className="text-sm">
+            {rows.length > 0
+              ? `${plural(rows.length, 'code', 'codes')} claimed by more than one item`
+              : 'Nothing shared'}
+          </Text>
+        }
+        refresh={
+          <RefreshButton
+            className="ml-auto"
+            isFetching={isFetching}
+            updatedAt={dataUpdatedAt}
+            onRefresh={() => {
+              void refetch();
+            }}
+          />
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">{body()}</div>
     </div>

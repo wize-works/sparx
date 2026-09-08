@@ -238,33 +238,44 @@ export function TemplatesListSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Email template actions">
-        <FileText className="size-4 shrink-0" aria-hidden />
-        <Text as="span" className="text-sm">
-          {/* "No templates YET" is only true the first time. Once something has
-              been put away it is a lie sitting directly above the thing it
-              says does not exist. */}
-          {live.length === 0
-            ? putAway.length === 0
-              ? 'No templates yet'
-              : 'None in use'
-            : live.length === 1
-              ? '1 template'
-              : `${String(live.length)} templates`}
-        </Text>
-        <Button color="module" size="sm" className="ml-auto shrink-0" onClick={startNew}>
-          <Plus className="size-4" aria-hidden />
-          New template
-        </Button>
-        <RefreshButton
-          isFetching={templates.isFetching}
-          updatedAt={templates.dataUpdatedAt}
-          onRefresh={() => {
-            void templates.refetch();
-            void performance.refetch();
-          }}
-        />
-      </PaneToolbar>
+      <PaneToolbar
+        label="Email template actions"
+        status={
+          <Text as="span" className="text-sm">
+            {/* "No templates YET" is only true the first time. Once something has
+          been put away it is a lie sitting directly above the thing it
+          says does not exist. */}
+            {live.length === 0
+              ? putAway.length === 0
+                ? 'No templates yet'
+                : 'None in use'
+              : live.length === 1
+                ? '1 template'
+                : `${String(live.length)} templates`}
+          </Text>
+        }
+        primary={
+          <Button color="module" size="sm" className="ml-auto shrink-0" onClick={startNew}>
+            <Plus className="size-4" aria-hidden />
+            New template
+          </Button>
+        }
+        controls={
+          <>
+            <FileText className="size-4 shrink-0" aria-hidden />
+          </>
+        }
+        refresh={
+          <RefreshButton
+            isFetching={templates.isFetching}
+            updatedAt={templates.dataUpdatedAt}
+            onRefresh={() => {
+              void templates.refetch();
+              void performance.refetch();
+            }}
+          />
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className={COLUMN}>

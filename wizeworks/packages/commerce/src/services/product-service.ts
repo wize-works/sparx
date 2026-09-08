@@ -215,6 +215,9 @@ export interface ProductDetail {
   optionCount: number;
   categoryIds: string[];
   collectionIds: string[];
+  /** The delivery group this product ships under, or null for the standard
+   *  way. At most one — see shipping-profile-match.ts. */
+  shippingProfileId: string | null;
   /**
    * WHY this product is in each collection it belongs to.
    *
@@ -260,6 +263,7 @@ export async function get(ctx: ServiceContext, productId: string): Promise<Produ
       include: {
         categoryLinks: { select: { categoryId: true } },
         collectionLinks: { select: { collectionId: true, addedBy: true } },
+        shippingProfileLinks: { select: { profileId: true } },
         propertyLinks: { select: { propertyId: true } },
         _count: { select: { variants: true, options: true } },
       },
@@ -286,6 +290,7 @@ export async function getByHandle(
       include: {
         categoryLinks: { select: { categoryId: true } },
         collectionLinks: { select: { collectionId: true, addedBy: true } },
+        shippingProfileLinks: { select: { profileId: true } },
         propertyLinks: { select: { propertyId: true } },
         _count: { select: { variants: true, options: true } },
       },
@@ -545,6 +550,7 @@ export async function update(
       include: {
         categoryLinks: { select: { categoryId: true } },
         collectionLinks: { select: { collectionId: true, addedBy: true } },
+        shippingProfileLinks: { select: { profileId: true } },
         propertyLinks: { select: { propertyId: true } },
         _count: { select: { variants: true, options: true } },
       },
@@ -633,6 +639,7 @@ export async function update(
       include: {
         categoryLinks: { select: { categoryId: true } },
         collectionLinks: { select: { collectionId: true, addedBy: true } },
+        shippingProfileLinks: { select: { profileId: true } },
         propertyLinks: { select: { propertyId: true } },
         _count: { select: { variants: true, options: true } },
       },
@@ -684,6 +691,29 @@ export async function update(
         });
       }
     }
+    // At most ONE delivery group per product. The join table allows several,
+    // and pricing cannot answer for a product in two groups — so this REPLACES
+    // rather than adds, which is also the only shape the product editor can
+    // show honestly. `null` clears it: the product ships the standard way.
+    if (input.shippingProfileId !== undefined) {
+      if (input.shippingProfileId) {
+        const known = await tx.shippingProfile.count({
+          where: { id: input.shippingProfileId },
+        });
+        if (known === 0) {
+          throw new CommerceValidationError('That delivery group no longer exists.', [
+            { field: 'shippingProfileId', message: 'Unknown delivery group' },
+          ]);
+        }
+      }
+      await tx.shippingProfileProduct.deleteMany({ where: { productId } });
+      if (input.shippingProfileId) {
+        await tx.shippingProfileProduct.create({
+          data: { profileId: input.shippingProfileId, productId },
+        });
+      }
+    }
+
     // Model B site scoping: full-replacement set. Empty array → no rows → visible
     // on all sites again.
     if (input.propertyIds !== undefined) {
@@ -1020,6 +1050,7 @@ export async function bulkTag(
 type ProductWithIncludes = Product & {
   categoryLinks: { categoryId: string }[];
   collectionLinks: { collectionId: string; addedBy: string }[];
+  shippingProfileLinks: { profileId: string }[];
   propertyLinks: { propertyId: string }[];
   _count: { variants: number; options: number };
 };
@@ -1061,6 +1092,10 @@ function toProductDetail(p: ProductWithIncludes): ProductDetail {
     optionCount: p._count.options,
     categoryIds: p.categoryLinks.map((c) => c.categoryId),
     collectionIds: p.collectionLinks.map((c) => c.collectionId),
+    // The join table can hold several; the product editor and the rate matcher
+    // both work in ONE, so the first is the answer and the write below is what
+    // keeps there from being a second.
+    shippingProfileId: p.shippingProfileLinks[0]?.profileId ?? null,
     collectionMemberships: p.collectionLinks.map((c) => ({
       collectionId: c.collectionId,
       // Anything the indexer did not stamp `rule` is a person's doing. Defaulting

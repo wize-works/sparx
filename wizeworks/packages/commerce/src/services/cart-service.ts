@@ -1227,6 +1227,14 @@ function isEmptyAttributes(value: unknown): boolean {
   return typeof value === 'object' && !Array.isArray(value) && Object.keys(value).length === 0;
 }
 
+/** The code of the gift card reserved against this basket, as a list because
+ *  `appliedDiscountCodes` beside it is one and the two read together. The cart
+ *  models a single card; pricingTrace is where its code is kept. */
+function giftCardCodesOnCart(pricingTrace: unknown): string[] {
+  const code = (pricingTrace as { giftCard?: { code?: unknown } } | null)?.giftCard?.code;
+  return typeof code === 'string' && code !== '' ? [code] : [];
+}
+
 function serializeCart(row: CartWithRelations, zone: string): CartSnapshot {
   // Made to order (issue 026) — read off the product rows already joined here,
   // so a basket of ordinary things costs no extra query and says nothing.
@@ -1281,7 +1289,11 @@ function serializeCart(row: CartWithRelations, zone: string): CartSnapshot {
     currency: row.currency,
     items,
     appliedDiscountCodes: row.discounts.map((d) => d.discount.code ?? '').filter(Boolean),
-    appliedGiftCardCodes: [],
+    // Read from pricingTrace, which is where the applied card's identity lives —
+    // the cart carries an amount and no name. This was hardcoded `[]`, so a
+    // basket with a gift card on it reported none, and every screen downstream
+    // showed a total that had been reduced by something it could not name.
+    appliedGiftCardCodes: giftCardCodesOnCart(row.pricingTrace),
     accountCreditAppliedCents: row.accountCreditAppliedCents,
     totals: {
       subtotalCents: row.subtotalCents,

@@ -40,6 +40,7 @@
 // and sends them back untouched. Editing a subset must never silently delete
 // the rest.
 
+import { shownInPlace } from '@wizeworks/query';
 import { useCallback, useMemo, useState } from 'react';
 import { PaneWaiting } from '../../components/pane-waiting';
 import {
@@ -86,7 +87,6 @@ import { afterPaneChange } from '../../lib/defer';
 import { FormSection } from '../../components/form-section';
 import { MoneyTextInput, moneyCents } from '../../components/money-input';
 import type { SurfaceContext } from '../../lib/surfaces/registry';
-import { ScrollStrip } from '../../components/scroll-strip';
 import {
   FollowingNotice,
   ProductScopeFallback,
@@ -650,6 +650,7 @@ function TryItPanel({
         onSuccess: (next) => {
           setResult(next);
         },
+        onError: shownInPlace,
       }
     );
   };
@@ -1337,15 +1338,13 @@ function ConfiguratorBody({
             }}
           >
             <div className="bg-base-300 shrink-0 rounded-full px-4 py-2">
-              <ScrollStrip label="steps">
-                <TabsList>
-                  {rows.map((row) => (
-                    <TabsTab key={row.id} value={row.id}>
-                      {row.name}
-                    </TabsTab>
-                  ))}
-                </TabsList>
-              </ScrollStrip>
+              <TabsList scrollable scrollLabel="steps">
+                {rows.map((row) => (
+                  <TabsTab key={row.id} value={row.id}>
+                    {row.name}
+                  </TabsTab>
+                ))}
+              </TabsList>
             </div>
           </Tabs>
         ) : null}

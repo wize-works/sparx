@@ -7,9 +7,7 @@
 
 /** How much of the price is taken up front. Three shapes, never four columns. */
 export type ProductDeposit =
-  | { type: 'none' }
-  | { type: 'amount'; amountCents: number }
-  | { type: 'percent'; percent: number };
+  { type: 'none' } | { type: 'amount'; amountCents: number } | { type: 'percent'; percent: number };
 
 export const NO_DEPOSIT: ProductDeposit = { type: 'none' };
 

@@ -267,46 +267,51 @@ function ManagePiece({
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Saved piece actions" wrap>
-        <Badge color={state.tone} variant="soft" size="sm">
-          {usage.isPending ? 'Checking reach…' : state.label}
-        </Badge>
-
-        <div className="ml-auto flex flex-wrap items-center gap-2">
-          {/* Offered ONLY when the editor can actually open it. A piece built in the
-              retired builder stores its design in a format nothing left can read, so
-              this button would open an empty canvas and leave the owner thinking
-              their piece had been lost. The alert below says what is true instead. */}
-          <Button
-            size="sm"
-            variant="outline"
-            color="module"
-            disabled={!piece.placeable}
-            onClick={editDesign}
-          >
-            <Pencil className="size-4" aria-hidden />
-            Edit design
-          </Button>
-          <Button
-            size="sm"
-            color="module"
-            disabled={!dirty || nameEmpty}
-            loading={update.isPending}
-            onClick={save}
-          >
-            Save
-          </Button>
-        </div>
-
-        <RefreshButton
-          isFetching={isFetching || usage.isFetching}
-          updatedAt={dataUpdatedAt}
-          onRefresh={() => {
-            refetch();
-            void usage.refetch();
-          }}
-        />
-      </PaneToolbar>
+      <PaneToolbar
+        label="Saved piece actions"
+        controls={
+          <>
+            <Badge color={state.tone} variant="soft" size="sm">
+              {usage.isPending ? 'Checking reach…' : state.label}
+            </Badge>
+            <div className="ml-auto flex flex-wrap items-center gap-2">
+              {/* Offered ONLY when the editor can actually open it. A piece built in the
+            retired builder stores its design in a format nothing left can read, so
+            this button would open an empty canvas and leave the owner thinking
+            their piece had been lost. The alert below says what is true instead. */}
+              <Button
+                size="sm"
+                variant="outline"
+                color="module"
+                disabled={!piece.placeable}
+                onClick={editDesign}
+              >
+                <Pencil className="size-4" aria-hidden />
+                Edit design
+              </Button>
+              <Button
+                size="sm"
+                color="module"
+                disabled={!dirty || nameEmpty}
+                loading={update.isPending}
+                onClick={save}
+              >
+                Save
+              </Button>
+            </div>
+          </>
+        }
+        refresh={
+          <RefreshButton
+            isFetching={isFetching || usage.isFetching}
+            updatedAt={dataUpdatedAt}
+            onRefresh={() => {
+              refetch();
+              void usage.refetch();
+            }}
+          />
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className={COLUMN}>

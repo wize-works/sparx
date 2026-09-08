@@ -44,6 +44,7 @@ import { afterPaneChange } from '../../lib/defer';
 import { PaneToolbar, PANE_SHELL } from '../../components/pane-toolbar';
 import { FormSection } from '../../components/form-section';
 import type { SurfaceContext } from '../../lib/surfaces/registry';
+import { SaveFailure } from '@/components/save-failure';
 import {
   emailDomainErrorMessage,
   recordPurpose,
@@ -59,6 +60,7 @@ import {
   type SendingDomain,
   type SendingRegion,
 } from './domains-data';
+import { PaneLoadError } from '../../components/pane-load-error';
 
 /** The one column everything in this pane sits in — centred and capped, because
  *  a pane torn onto a second monitor is otherwise 2000px of dead grey. */
@@ -151,19 +153,22 @@ function AddSendingAddress({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Add a sending address actions">
-        <Button
-          color="module"
-          size="sm"
-          className="ml-auto"
-          loading={provision.isPending}
-          disabled={trimmed === '' || !looksValid}
-          onClick={submit}
-        >
-          <Plus className="size-4" aria-hidden />
-          Add address
-        </Button>
-      </PaneToolbar>
+      <PaneToolbar
+        label="Add a sending address actions"
+        primary={
+          <Button
+            color="module"
+            size="sm"
+            className="ml-auto"
+            loading={provision.isPending}
+            disabled={trimmed === '' || !looksValid}
+            onClick={submit}
+          >
+            <Plus className="size-4" aria-hidden />
+            Add address
+          </Button>
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className={COLUMN}>
@@ -178,14 +183,7 @@ function AddSendingAddress({ ctx }: { ctx: SurfaceContext }) {
             </Text>
           </div>
 
-          {failure ? (
-            <Alert color="error">
-              <AlertContent>
-                <AlertTitle>Could not add that address</AlertTitle>
-                <AlertDescription>{failure}</AlertDescription>
-              </AlertContent>
-            </Alert>
-          ) : null}
+          <SaveFailure title="Could not add that address" message={failure} />
 
           <FormSection title="The address">
             <Field>
@@ -261,7 +259,7 @@ function AddSendingAddress({ ctx }: { ctx: SurfaceContext }) {
 function ManageSendingAddress({ ctx, id }: { ctx: SurfaceContext; id: string }) {
   const toast = useToast();
   const confirm = useConfirm();
-  const { data: domain, isPending, isError, refetch } = useSendingDomain(id);
+  const { data: domain, isPending, isError, error, refetch } = useSendingDomain(id);
   const { data: settings } = useEmailSettings();
 
   const verify = useVerifySendingDomain(id);
@@ -274,26 +272,15 @@ function ManageSendingAddress({ ctx, id }: { ctx: SurfaceContext; id: string }) 
 
   if (isError) {
     return (
-      <div className="flex h-full items-center justify-center p-8">
-        <Alert color="error" className="max-w-md">
-          <AlertContent>
-            <AlertTitle>Could not load this address</AlertTitle>
-            <AlertDescription>
-              This is a problem reaching the server. The address itself is unaffected.
-            </AlertDescription>
-          </AlertContent>
-          <Button
-            size="sm"
-            color="error"
-            variant="soft"
-            onClick={() => {
-              void refetch();
-            }}
-          >
-            Try again
-          </Button>
-        </Alert>
-      </div>
+      <PaneLoadError
+        error={error}
+        noun="address"
+        title="Could not load this address"
+        description="This is a problem reaching the server. The address itself is unaffected."
+        onRetry={() => {
+          void refetch();
+        }}
+      />
     );
   }
 
@@ -402,51 +389,54 @@ function ManageSendingAddress({ ctx, id }: { ctx: SurfaceContext; id: string }) 
       {/* `wrap` because this bar carries a variable set of lifecycle actions —
           which appear depends on the address's state — so there is no fixed set
           to reduce to one line. */}
-      <PaneToolbar label="Sending address actions" wrap>
-        <Badge color={state.tone} variant="soft" size="sm">
-          {state.label}
-        </Badge>
-        {isDefault ? (
-          <Badge color="module" variant="soft" size="sm">
-            Default here
-          </Badge>
-        ) : null}
-
-        <div className="flex-1" />
-
-        {isVerified ? null : (
-          <Button size="sm" color="module" loading={verify.isPending} onClick={onCheck}>
-            <RefreshCw className="size-4" aria-hidden />
-            Check now
-          </Button>
-        )}
-        {isVerified && !isDefault ? (
-          <Button
-            size="sm"
-            variant="outline"
-            color="neutral"
-            loading={setDefault.isPending}
-            onClick={onSetDefault}
-          >
-            <Star className="size-4" aria-hidden />
-            Use as default
-          </Button>
-        ) : null}
-        <Button
-          size="sm"
-          variant="ghost"
-          color="danger"
-          shape="square"
-          aria-label="Remove this address"
-          title="Remove this address"
-          loading={remove.isPending}
-          onClick={() => {
-            void onDelete();
-          }}
-        >
-          <Trash2 className="size-4" aria-hidden />
-        </Button>
-      </PaneToolbar>
+      <PaneToolbar
+        label="Sending address actions"
+        controls={
+          <>
+            <Badge color={state.tone} variant="soft" size="sm">
+              {state.label}
+            </Badge>
+            {isDefault ? (
+              <Badge color="module" variant="soft" size="sm">
+                Default here
+              </Badge>
+            ) : null}
+            <div className="flex-1" />
+            {isVerified ? null : (
+              <Button size="sm" color="module" loading={verify.isPending} onClick={onCheck}>
+                <RefreshCw className="size-4" aria-hidden />
+                Check now
+              </Button>
+            )}
+            {isVerified && !isDefault ? (
+              <Button
+                size="sm"
+                variant="outline"
+                color="neutral"
+                loading={setDefault.isPending}
+                onClick={onSetDefault}
+              >
+                <Star className="size-4" aria-hidden />
+                Use as default
+              </Button>
+            ) : null}
+            <Button
+              size="sm"
+              variant="ghost"
+              color="danger"
+              shape="square"
+              aria-label="Remove this address"
+              title="Remove this address"
+              loading={remove.isPending}
+              onClick={() => {
+                void onDelete();
+              }}
+            >
+              <Trash2 className="size-4" aria-hidden />
+            </Button>
+          </>
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className={COLUMN}>

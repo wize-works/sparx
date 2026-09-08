@@ -319,25 +319,32 @@ export function QaQueueSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Questions queue controls">
-        <HelpCircle className="size-4 shrink-0" aria-hidden />
-        <Heading level={2} className="min-w-0 truncate text-base font-semibold">
-          {LABEL}
-        </Heading>
-        {rows.length > 0 ? (
-          <Badge color="warning" variant="soft" size="sm">
-            {rows.length === 1 ? '1 waiting' : `${String(rows.length)} waiting`}
-          </Badge>
-        ) : null}
-        <RefreshButton
-          className="ml-auto"
-          isFetching={questions.isFetching}
-          updatedAt={questions.data ? questions.dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void questions.refetch();
-          }}
-        />
-      </PaneToolbar>
+      <PaneToolbar
+        label="Questions queue controls"
+        controls={
+          <>
+            <HelpCircle className="size-4 shrink-0" aria-hidden />
+            <Heading level={2} className="min-w-0 truncate text-base font-semibold">
+              {LABEL}
+            </Heading>
+            {rows.length > 0 ? (
+              <Badge color="warning" variant="soft" size="sm">
+                {rows.length === 1 ? '1 waiting' : `${String(rows.length)} waiting`}
+              </Badge>
+            ) : null}
+          </>
+        }
+        refresh={
+          <RefreshButton
+            className="ml-auto"
+            isFetching={questions.isFetching}
+            updatedAt={questions.data ? questions.dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void questions.refetch();
+            }}
+          />
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className="mx-auto flex w-full max-w-3xl flex-col gap-4">

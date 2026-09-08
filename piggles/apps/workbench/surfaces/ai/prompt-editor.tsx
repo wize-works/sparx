@@ -16,6 +16,7 @@
 // One centred column, not EditorLayout: this is a form with no running summary to
 // put in a rail.
 
+import { shownInPlace } from '@wizeworks/query';
 import { useEffect, useMemo, useState } from 'react';
 import { PaneWaiting } from '../../components/pane-waiting';
 import { PaneLoadError } from '../../components/pane-load-error';
@@ -65,6 +66,7 @@ import {
   type PromptVariable,
 } from './data';
 import { productCopy } from '../../lib/product';
+import { SaveFailure } from '@/components/save-failure';
 
 const COLUMN = 'mx-auto flex w-full max-w-3xl flex-col gap-4';
 
@@ -317,6 +319,7 @@ function InstructionEditor({
               toast.add({ title: `“${created.name}” saved`, type: 'success' });
             });
           },
+          onError: shownInPlace,
         }
       );
       return;
@@ -337,6 +340,7 @@ function InstructionEditor({
           setTouched(false);
           toast.add({ title: 'Instruction saved', type: 'success' });
         },
+        onError: shownInPlace,
       }
     );
   };
@@ -445,14 +449,7 @@ function InstructionEditor({
 
           {/* One message, the most specific one — the server names the exact field
               it rejected, which beats a generic banner. */}
-          {failure ? (
-            <Alert color="error">
-              <AlertContent>
-                <AlertTitle>Could not save this instruction</AlertTitle>
-                <AlertDescription>{failure}</AlertDescription>
-              </AlertContent>
-            </Alert>
-          ) : null}
+          <SaveFailure title="Could not save this instruction" message={failure} />
 
           <FormSection title="What it is for">
             <Field>
@@ -504,7 +501,7 @@ function InstructionEditor({
                 <FieldStatus status="error">{nameError}</FieldStatus>
               ) : (
                 <FieldDescription>
-                  How you will recognise it in the list — your customers never see this.
+                  How you will recognize it in the list — your customers never see this.
                 </FieldDescription>
               )}
             </Field>

@@ -23,10 +23,6 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import {
-  Alert,
-  AlertContent,
-  AlertDescription,
-  AlertTitle,
   Badge,
   Button,
   Field,
@@ -49,6 +45,7 @@ import { FormSection } from '../../components/form-section';
 import type { SurfaceContext } from '../../lib/surfaces/registry';
 import { FITMENT_ICONS, resolveFitmentIcon } from './fitment-icons';
 import { FitmentNodeManager } from './fitment-nodes';
+import { SaveFailure } from '@/components/save-failure';
 import {
   dimensionKeyFrom,
   fitmentErrorMessage,
@@ -63,6 +60,7 @@ import {
   type FitmentDimension,
   type FitmentDomain,
 } from './fitment-data';
+import { PaneLoadError } from '../../components/pane-load-error';
 
 const COLUMN = 'mx-auto flex w-full max-w-3xl flex-col gap-4';
 
@@ -151,31 +149,19 @@ export function FitmentDomainDetailSurface({ ctx }: { ctx: SurfaceContext }) {
 }
 
 function DomainLoader({ ctx, id }: { ctx: SurfaceContext; id: string }) {
-  const { data: domain, isPending, isError, refetch } = useFitmentDomain(id);
+  const { data: domain, isPending, isError, error, refetch } = useFitmentDomain(id);
 
   if (isError) {
     return (
-      <div className="flex h-full items-center justify-center p-8">
-        <Alert color="error" className="max-w-md">
-          <AlertContent>
-            <AlertTitle>Could not load this list</AlertTitle>
-            <AlertDescription>
-              This is a problem reaching the server. The list itself is unaffected — nothing has
-              been lost.
-            </AlertDescription>
-          </AlertContent>
-          <Button
-            size="sm"
-            color="error"
-            variant="soft"
-            onClick={() => {
-              void refetch();
-            }}
-          >
-            Try again
-          </Button>
-        </Alert>
-      </div>
+      <PaneLoadError
+        error={error}
+        noun="list"
+        title="Could not load this list"
+        description="This is a problem reaching the server. The list itself is unaffected — nothing has been lost."
+        onRetry={() => {
+          void refetch();
+        }}
+      />
     );
   }
 
@@ -335,24 +321,31 @@ function DomainEditor({
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Compatibility list actions">
-        <HeaderIcon className="size-4 shrink-0" aria-hidden />
-        {!isNew && domain ? (
-          <Badge color="neutral" variant="soft" size="sm">
-            {rootCountLabel(domain)}
-          </Badge>
-        ) : null}
-        <Button
-          color="module"
-          size="sm"
-          className="ml-auto"
-          loading={saving}
-          disabled={Boolean(nameError) || Boolean(levelError) || (!isNew && !dirty)}
-          onClick={submit}
-        >
-          {isNew ? 'Create list' : 'Save'}
-        </Button>
-      </PaneToolbar>
+      <PaneToolbar
+        label="Compatibility list actions"
+        primary={
+          <Button
+            color="module"
+            size="sm"
+            className="ml-auto"
+            loading={saving}
+            disabled={Boolean(nameError) || Boolean(levelError) || (!isNew && !dirty)}
+            onClick={submit}
+          >
+            {isNew ? 'Create list' : 'Save'}
+          </Button>
+        }
+        controls={
+          <>
+            <HeaderIcon className="size-4 shrink-0" aria-hidden />
+            {!isNew && domain ? (
+              <Badge color="neutral" variant="soft" size="sm">
+                {rootCountLabel(domain)}
+              </Badge>
+            ) : null}
+          </>
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className={COLUMN}>
@@ -369,14 +362,7 @@ function DomainEditor({
             </div>
           ) : null}
 
-          {failure ? (
-            <Alert color="error">
-              <AlertContent>
-                <AlertTitle>Could not save this list</AlertTitle>
-                <AlertDescription>{failure}</AlertDescription>
-              </AlertContent>
-            </Alert>
-          ) : null}
+          <SaveFailure title="Could not save this list" message={failure} />
 
           <FormSection title="Name and picture">
             <Field>

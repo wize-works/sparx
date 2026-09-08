@@ -485,36 +485,41 @@ export function MigrationRunSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Migration run controls">
-        {runId !== null ? (
-          <Button variant="ghost" size="sm" onClick={reset}>
-            <RotateCcw className="size-4" aria-hidden />
-            Move something else
-          </Button>
-        ) : null}
-        {staged && runId === null ? (
+      <PaneToolbar
+        label="Migration run controls"
+        controls={
           <>
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={importable.length === 0 || start.isPending}
-              onClick={() => void begin(true)}
-            >
-              <Play className="size-4" aria-hidden />
-              Practice run
-            </Button>
-            <Button
-              color="primary"
-              size="sm"
-              disabled={importable.length === 0 || start.isPending}
-              onClick={() => void begin(false)}
-            >
-              <Upload className="size-4" aria-hidden />
-              Bring in {totalReady.toLocaleString()}
-            </Button>
+            {runId !== null ? (
+              <Button variant="ghost" size="sm" onClick={reset}>
+                <RotateCcw className="size-4" aria-hidden />
+                Move something else
+              </Button>
+            ) : null}
+            {staged && runId === null ? (
+              <>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={importable.length === 0 || start.isPending}
+                  onClick={() => void begin(true)}
+                >
+                  <Play className="size-4" aria-hidden />
+                  Practice run
+                </Button>
+                <Button
+                  color="primary"
+                  size="sm"
+                  disabled={importable.length === 0 || start.isPending}
+                  onClick={() => void begin(false)}
+                >
+                  <Upload className="size-4" aria-hidden />
+                  Bring in {totalReady.toLocaleString()}
+                </Button>
+              </>
+            ) : null}
           </>
-        ) : null}
-      </PaneToolbar>
+        }
+      />
 
       <div className={COLUMN}>
         {runId !== null ? (

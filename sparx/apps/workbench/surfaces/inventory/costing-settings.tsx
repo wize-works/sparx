@@ -288,38 +288,48 @@ export function CostingSettingsSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Stock valuation actions">
-        <span className="inline-flex items-center gap-1.5">
-          <Scale className="size-4" aria-hidden />
-          <Text as="span" className="text-sm font-medium">
-            How stock is valued
-          </Text>
-        </span>
-        {policy.data ? (
-          <Badge color={policy.data.configured ? 'module' : 'neutral'} variant="soft" size="sm">
-            {methodLabel(policy.data.method)}
-          </Badge>
-        ) : null}
-
-        <Button
-          size="sm"
-          color="module"
-          className="ml-auto shrink-0"
-          disabled={!dirty}
-          loading={savePolicy.isPending}
-          onClick={save}
-        >
-          <Save className="size-4" aria-hidden />
-          Save
-        </Button>
-        <RefreshButton
-          isFetching={policy.isFetching}
-          updatedAt={policy.dataUpdatedAt}
-          onRefresh={() => {
-            void policy.refetch();
-          }}
-        />
-      </PaneToolbar>
+      <PaneToolbar
+        label="Stock valuation actions"
+        status={
+          <span className="inline-flex items-center gap-1.5">
+            <Scale className="size-4" aria-hidden />
+            <Text as="span" className="text-sm font-medium">
+              How stock is valued
+            </Text>
+          </span>
+        }
+        primary={
+          <Button
+            size="sm"
+            color="module"
+            className="ml-auto shrink-0"
+            disabled={!dirty}
+            loading={savePolicy.isPending}
+            onClick={save}
+          >
+            <Save className="size-4" aria-hidden />
+            Save
+          </Button>
+        }
+        controls={
+          <>
+            {policy.data ? (
+              <Badge color={policy.data.configured ? 'module' : 'neutral'} variant="soft" size="sm">
+                {methodLabel(policy.data.method)}
+              </Badge>
+            ) : null}
+          </>
+        }
+        refresh={
+          <RefreshButton
+            isFetching={policy.isFetching}
+            updatedAt={policy.dataUpdatedAt}
+            onRefresh={() => {
+              void policy.refetch();
+            }}
+          />
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">{body()}</div>
     </div>

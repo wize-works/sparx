@@ -81,8 +81,15 @@ export function CategoryBasics({
             />
           }
         />
+        {/* `/category/`, which is the address the shop actually serves
+            (`apps/site/app/category/[handle]`), what the sitemap publishes and
+            what the redirect table matches. It read `/c/` here, which 404s — so
+            an owner who copied this line into her Instagram bio sent every
+            follower to a Not Found page (issue 383). The three sibling screens
+            (pages, groups, products) all print their real address; only this one
+            printed one that does not exist. */}
         <FieldDescription>
-          The end of this category&apos;s page address — yoursite.com/c/
+          The end of this category&apos;s page address — yoursite.com/category/
           {effectiveHandle || '…'}.{' '}
           {isNew ? '' : 'Changing it breaks any link already shared to this page.'}
         </FieldDescription>
@@ -98,12 +105,12 @@ export function CategoryBasics({
       />
 
       <Field>
-        <FieldLabel>Order among its neighbours</FieldLabel>
+        <FieldLabel>Order among its neighbors</FieldLabel>
         <FieldControl
           render={
             <div className="max-w-40">
               <NumberField
-                label="Order among its neighbours"
+                label="Order among its neighbors"
                 min={0}
                 value={draft.position}
                 onValueChange={(value: number | null) => {
@@ -115,7 +122,7 @@ export function CategoryBasics({
         />
         <FieldDescription>
           Categories at the same level are shown lowest number first. Leave it at 0 unless you want
-          this one to jump ahead of its neighbours.
+          this one to jump ahead of its neighbors.
         </FieldDescription>
       </Field>
 

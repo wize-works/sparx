@@ -184,38 +184,45 @@ export function SupplierBillsListSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Supplier bill controls">
-        <NativeSelect
-          size="sm"
-          className="max-w-48 shrink"
-          aria-label="Show bills that are"
-          value={view}
-          onChange={(event) => {
-            setView(event.target.value as View);
-          }}
-        >
-          <option value="all">Everything</option>
-          <option value="open">Just entered</option>
-          <option value="overdue">Overdue</option>
-          <option value="disputed">Queried</option>
-          <option value="paid">Paid</option>
-        </NativeSelect>
-
-        <Text className="text-sm">
-          {outstandingCount === 0
-            ? 'Nothing owed'
-            : `${formatCents(outstanding)} owed across ${plural(outstandingCount, 'bill', 'bills')}`}
-        </Text>
-
-        <RefreshButton
-          className="ml-auto"
-          isFetching={report.isFetching}
-          updatedAt={report.data ? report.dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void report.refetch();
-          }}
-        />
-      </PaneToolbar>
+      <PaneToolbar
+        label="Supplier bill controls"
+        status={
+          <Text className="text-sm">
+            {outstandingCount === 0
+              ? 'Nothing owed'
+              : `${formatCents(outstanding)} owed across ${plural(outstandingCount, 'bill', 'bills')}`}
+          </Text>
+        }
+        controls={
+          <>
+            <NativeSelect
+              size="sm"
+              className="max-w-48 shrink"
+              aria-label="Show bills that are"
+              value={view}
+              onChange={(event) => {
+                setView(event.target.value as View);
+              }}
+            >
+              <option value="all">Everything</option>
+              <option value="open">Just entered</option>
+              <option value="overdue">Overdue</option>
+              <option value="disputed">Queried</option>
+              <option value="paid">Paid</option>
+            </NativeSelect>
+          </>
+        }
+        refresh={
+          <RefreshButton
+            className="ml-auto"
+            isFetching={report.isFetching}
+            updatedAt={report.data ? report.dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void report.refetch();
+            }}
+          />
+        }
+      />
 
       <Card className="min-h-0 flex-1 overflow-auto">{body()}</Card>
 

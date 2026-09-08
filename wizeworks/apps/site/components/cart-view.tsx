@@ -12,7 +12,7 @@ import { Button } from '@wizeworks/silicaui-react';
 import { formatMoney } from '@/lib/format';
 import { useCart } from './cart-provider';
 import { QuantityStepper } from './quantity-stepper';
-import { DiscountField } from './discount-field';
+import { CodeField } from './code-field';
 import { MadeToOrderSummary } from './made-to-order-summary';
 import type { StorefrontPaymentMode } from '@/lib/made-to-order-copy';
 
@@ -34,6 +34,8 @@ export function CartView({
     removeItem,
     appliedDiscountCodes,
     removeDiscount,
+    appliedGiftCardCodes,
+    removeGiftCard,
     madeToOrder,
   } = useCart();
 
@@ -199,7 +201,40 @@ export function CartView({
           </div>
         ) : null}
 
-        <DiscountField />
+        {/* A gift card is money already paid, not a saving, so it reads as its own
+            line. Leaving it out is what made the summary fail to add up: the rows
+            a shopper could see came to more than the total under them. */}
+        {totals.giftCardAppliedCents > 0 ? (
+          <div className="text-success flex justify-between text-sm">
+            <span>Gift card</span>
+            <span>−{formatMoney(totals.giftCardAppliedCents, currency)}</span>
+          </div>
+        ) : null}
+        {appliedGiftCardCodes.length > 0 ? (
+          <div className="flex flex-wrap gap-2">
+            {appliedGiftCardCodes.map((code) => (
+              <span key={code} className="badge inline-flex gap-2" style={{ position: 'static' }}>
+                {code}
+                <button
+                  type="button"
+                  aria-label={`Remove gift card ${code}`}
+                  onClick={() => void removeGiftCard()}
+                  className="cursor-pointer border-none bg-transparent text-inherit"
+                >
+                  ×
+                </button>
+              </span>
+            ))}
+          </div>
+        ) : null}
+        {totals.accountCreditAppliedCents > 0 ? (
+          <div className="text-success flex justify-between text-sm">
+            <span>Credit on your account</span>
+            <span>−{formatMoney(totals.accountCreditAppliedCents, currency)}</span>
+          </div>
+        ) : null}
+
+        <CodeField />
 
         <div className="border-base-300 text-base-content flex justify-between border-t pt-3 text-lg font-semibold">
           <span>Estimated total</span>

@@ -16,6 +16,22 @@ import { publishCrmEvent } from '../events';
 import type { ServiceContext } from '../errors';
 import { CrmNotFoundError } from '../errors';
 import { recomputeTotals, type DocumentWithLines } from './billing-document-service';
+import { recomputeOrderPaymentRollup } from './order-payments-service';
+
+/** How the money arrived, in the words the ORDER's payment record uses. The two
+ *  vocabularies overlap but are not the same list: an invoice can be settled with
+ *  account credit, which an order payment spells `gift_card`, and `cash` on an
+ *  invoice is money handed over, which an order calls `manual`. */
+const ORDER_PROCESSOR: Record<string, string> = {
+  cash: 'manual',
+  card: 'card',
+  check: 'check',
+  ach: 'wire',
+  wire: 'wire',
+  account_credit: 'gift_card',
+  store_credit: 'gift_card',
+  other: 'manual',
+};
 
 export async function listPayments(
   ctx: ServiceContext,
@@ -57,6 +73,40 @@ export async function recordPayment(
     });
     // Re-derive amountPaid / balance / status from the full payment set.
     const recomputed = await recomputeTotals(tx, ctx.tenantId, documentId);
+
+    // ── SETTLE THE ORDER THIS INVOICE BILLS ─────────────────────────────────
+    //
+    // Without this the link is decorative: the customer pays the invoice, the
+    // invoice reads Paid, and the ORDER still says "Not paid · $234.60 still
+    // owed" for ever. The owner would be reconciling two screens by memory,
+    // which is the whole thing an invoice was supposed to stop.
+    //
+    // A refund is not mirrored here — putting money back is its own lifecycle on
+    // the order (`order-refunds-service`), and writing a negative capture would
+    // corrupt the rollup that both paths share.
+    //
+    // Seeded deposits do not reach this code at all: `createInvoiceForOrder`
+    // writes the already-received money straight to the payment table rather
+    // than through here, precisely so the same dollars are not counted twice.
+    if (before.orderId && input.kind !== 'refund') {
+      await tx.orderPayment.create({
+        data: {
+          tenantId: ctx.tenantId,
+          orderId: before.orderId,
+          processor: ORDER_PROCESSOR[input.method] ?? 'manual',
+          processorRef: payment.id,
+          amount: input.amount,
+          currency: before.currency,
+          status: 'captured',
+          capturedAt: payment.receivedAt,
+          metadata: { billingDocumentId: documentId, billingDocumentNumber: before.number },
+        },
+      });
+      // The one place that knows how an order's paid/partly-paid/unpaid state is
+      // derived, so a payment arriving by invoice lands identically to one typed
+      // onto the order.
+      await recomputeOrderPaymentRollup(tx, ctx.tenantId, before.orderId);
+    }
     await writeAuditLog({
       tx,
       tenantId: ctx.tenantId,

@@ -15,6 +15,7 @@
 // One centred column, not EditorLayout — a short credentials form and some
 // facts, with no running summary to put in a rail.
 
+import { shownInPlace } from '@wizeworks/query';
 import { useEffect, useMemo, useState } from 'react';
 import { PaneWaiting } from '../../components/pane-waiting';
 import { PaneLoadError } from '../../components/pane-load-error';
@@ -53,6 +54,7 @@ import { RefreshButton } from '../../components/refresh-button';
 import { FormSection } from '../../components/form-section';
 import type { SurfaceContext } from '../../lib/surfaces/registry';
 import { providerKindIcon } from './kind-icon';
+import { SaveFailure } from '@/components/save-failure';
 import {
   installationState,
   integrationErrorMessage,
@@ -279,6 +281,7 @@ function ConnectIntegration({
             });
           });
         },
+        onError: shownInPlace,
       }
     );
   };
@@ -353,14 +356,7 @@ function ConnectIntegration({
             </div>
           </div>
 
-          {failure ? (
-            <Alert color="error">
-              <AlertContent>
-                <AlertTitle>Could not connect that service</AlertTitle>
-                <AlertDescription>{failure}</AlertDescription>
-              </AlertContent>
-            </Alert>
-          ) : null}
+          <SaveFailure title="Could not connect that service" message={failure} />
 
           <FormSection
             title="Its details"

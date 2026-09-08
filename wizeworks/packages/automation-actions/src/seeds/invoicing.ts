@@ -11,6 +11,11 @@
 // exact-day predicate (`daysUntilDue == 3`, `overdueDays == 7/14/30`) fires it once
 // per document as it crosses that day. The send is transactional — a dunning notice
 // is operational, not marketing, so a marketing opt-out never withholds it.
+//
+// EVERY dunning step also requires that the invoice was actually sent (`WAS_SENT`).
+// It did not, and the ladder chased bills the customer had never been given —
+// see the comment on that constant, which is the one to read before editing any
+// predicate in this file.
 
 import type { SystemAutomationSpec } from '@wizeworks/automation';
 
@@ -24,6 +29,28 @@ const USER_INVOICE = {
 } as const;
 const HAS_EMAIL = { field: 'customer.email', operator: 'is_set' } as const;
 
+/**
+ * NEVER CHASE A BILL THE CUSTOMER WAS NEVER GIVEN.
+ *
+ * Making an invoice and sending it are two acts, and this ladder was written as
+ * though they were one: every step below keyed on the due date alone. An owner
+ * who raised an invoice and had not yet emailed it — which is the normal state
+ * of an invoice for as long as it takes to set a deadline and check a line —
+ * had her customer sent a friendly reminder about a bill they had never seen,
+ * then an overdue notice, then a second, then a final one. Four escalating
+ * letters about a document that never left the building.
+ *
+ * `sentAt` is written by the send route (`POST /v1/invoicing/documents/:id/send`)
+ * and by nothing else, so requiring it here means the ladder starts only once
+ * the customer genuinely has the document.
+ *
+ * The consequence to hold on to: an invoice she never sends is now never
+ * chased AND never sent, silently. That is only safe because the receivables
+ * list marks an unsent invoice as unsent — see the "Not sent" state on
+ * Invoices. Take that marker away and this guard becomes a way to lose money.
+ */
+const WAS_SENT = { field: 'invoice.sentAt', operator: 'is_set' } as const;
+
 /** Build the predicate for a dunning step keyed on an exact overdue-day window. */
 function overduePredicate(overdueDays: number): { entity: string; where: ConditionGroup } {
   return {
@@ -35,6 +62,7 @@ function overduePredicate(overdueDays: number): { entity: string; where: Conditi
         { field: 'invoice.status', operator: 'in', value: ['unpaid', 'partial'] },
         USER_INVOICE,
         HAS_EMAIL,
+        WAS_SENT,
       ],
     },
   };
@@ -56,6 +84,7 @@ export const INVOICING_REMINDER_3D: SystemAutomationSpec = {
           { field: 'invoice.status', operator: 'eq', value: 'unpaid' },
           USER_INVOICE,
           HAS_EMAIL,
+          WAS_SENT,
         ],
       },
     },

@@ -78,49 +78,46 @@ export function createEntityListSurface<T>(config: EntityListConfig<T>) {
       // would quietly make every list built on it inconsistent with the
       // hand-written ones.
       <div className={PANE_SHELL}>
-        <PaneToolbar label="List controls">
-          {/* SearchInput ships the leading icon and a clear button, so every
-              list gets the same "how do I get back to everything?" affordance.
-              The width sits on a WRAPPER: SearchInput forwards className to its
-              inner <input>, so a sizing class aimed at the control never reaches
-              the element that actually lays out. */}
-          <div className="max-w-xs min-w-0 flex-1">
-            <SearchInput
-              size="sm"
-              aria-label={config.searchPlaceholder}
-              placeholder={config.searchPlaceholder}
-              value={search}
-              onValueChange={setSearch}
-            />
-          </div>
-          {/* `ml-auto` rather than a flex-1 spacer div: same result without a
-              phantom element sitting in the middle of the Toolbar's roving
-              arrow-key focus. It rides on whichever control comes first on the
-              right — the New button when there is one, otherwise refresh. */}
-          {config.createSurface ? (
-            <Button
-              color="module"
-              size="sm"
-              className="ml-auto"
-              title={`${config.createLabel ?? 'New'} — hold Shift to open alongside, Alt for a new window`}
-              onClick={(event) => {
-                ctx.open(config.createSurface!, { id: 'new' }, { target: targetFor(event) });
+        <PaneToolbar
+          label="List controls"
+          search={
+            <div className="max-w-xs min-w-0 flex-1">
+              <SearchInput
+                size="sm"
+                aria-label={config.searchPlaceholder}
+                placeholder={config.searchPlaceholder}
+                value={search}
+                onValueChange={setSearch}
+              />
+            </div>
+          }
+          primary={
+            config.createSurface ? (
+              <Button
+                color="module"
+                size="sm"
+                className="ml-auto shrink-0 whitespace-nowrap"
+                title={`${config.createLabel ?? 'New'} — hold Shift to open alongside, Alt for a new window`}
+                onClick={(event) => {
+                  ctx.open(config.createSurface!, { id: 'new' }, { target: targetFor(event) });
+                }}
+              >
+                <Plus className="size-4" aria-hidden />
+                {config.createLabel ?? 'New'}
+              </Button>
+            ) : undefined
+          }
+          refresh={
+            <RefreshButton
+              className={config.createSurface ? undefined : 'ml-auto'}
+              isFetching={isFetching}
+              updatedAt={data ? dataUpdatedAt : undefined}
+              onRefresh={() => {
+                void refetch();
               }}
-            >
-              <Plus className="size-4" aria-hidden />
-              {config.createLabel ?? 'New'}
-            </Button>
-          ) : null}
-          {/* ALWAYS the last child of a list toolbar — see RefreshButton. */}
-          <RefreshButton
-            className={config.createSurface ? undefined : 'ml-auto'}
-            isFetching={isFetching}
-            updatedAt={data ? dataUpdatedAt : undefined}
-            onRefresh={() => {
-              void refetch();
-            }}
-          />
-        </PaneToolbar>
+            />
+          }
+        />
 
         <Card className="min-h-0 flex-1 overflow-y-auto">
           {error ? (

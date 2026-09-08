@@ -643,34 +643,40 @@ export function SchedulingReportsSurface({ ctx: _ctx }: { ctx: SurfaceContext })
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Report controls">
-        <NativeSelect
-          size="sm"
-          className="max-w-44 shrink"
-          aria-label="Reporting period"
-          value={String(rangeDays)}
-          onChange={(event) => {
-            setRangeDays(Number(event.target.value));
-          }}
-        >
-          {RANGE_PRESETS.map((preset) => (
-            <option key={preset.days} value={preset.days}>
-              {preset.label}
-            </option>
-          ))}
-        </NativeSelect>
-
-        {/* ALWAYS the last child of a toolbar. No primary action here, so it
+      <PaneToolbar
+        label="Report controls"
+        controls={
+          <>
+            <NativeSelect
+              size="sm"
+              className="max-w-44 shrink"
+              aria-label="Reporting period"
+              value={String(rangeDays)}
+              onChange={(event) => {
+                setRangeDays(Number(event.target.value));
+              }}
+            >
+              {RANGE_PRESETS.map((preset) => (
+                <option key={preset.days} value={preset.days}>
+                  {preset.label}
+                </option>
+              ))}
+            </NativeSelect>
+            {/* ALWAYS the last child of a toolbar. No primary action here, so it
             carries the ml-auto that pushes the right-hand group over. */}
-        <RefreshButton
-          className="ml-auto"
-          isFetching={report.isFetching}
-          updatedAt={report.data ? report.dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void report.refetch();
-          }}
-        />
-      </PaneToolbar>
+          </>
+        }
+        refresh={
+          <RefreshButton
+            className="ml-auto"
+            isFetching={report.isFetching}
+            updatedAt={report.data ? report.dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void report.refetch();
+            }}
+          />
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">{body()}</div>
     </div>

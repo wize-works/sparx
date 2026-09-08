@@ -204,10 +204,27 @@ export class WorkbenchController {
     // surface has to know what it is running inside.
     if (target === 'beside' && !host.capabilities.split) target = 'tab';
 
+    // BESIDE WHAT? The pane you were looking at. A surface answers this itself
+    // (context.tsx passes its own id), but CHROME — the launcher, the app panel,
+    // a favourite — has no pane to name, and `positionFor` treats a missing one
+    // as "no opinion". So every ⇧-click from outside a surface silently became a
+    // tab, in a palette whose own footer advertises "⇧↵ alongside".
+    //
+    // `host.has` for the same reason the dedupe loop above needs it: the
+    // controller outlives the host across remounts, so the active id can name a
+    // pane that only existed on a previous one. dockview THROWS on an unknown
+    // referencePanel rather than ignoring it, and that throw takes down the whole
+    // shell tree — an unguarded read here crashed the console on every boot.
+    //
+    // NOT extended to `replace`: retargeting is destructive, and a caller that
+    // named no pane must never be answered with "the active one, then".
+    const active = this.activePaneId;
+    const anchor = options?.fromPaneId ?? (active && host.has(active) ? active : undefined);
+
     this.descriptors.set(descriptor.id, descriptor);
     host.add(descriptor, titleFor(descriptor), {
       target,
-      fromPaneId: options?.fromPaneId,
+      fromPaneId: anchor,
       focus: options?.focus !== false,
     });
 

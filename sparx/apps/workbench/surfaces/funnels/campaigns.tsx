@@ -40,6 +40,7 @@ import {
   type Funnel,
   type FunnelStatus,
 } from './data';
+import { PaneLoadError } from '../../components/pane-load-error';
 
 function targetFor(event: { shiftKey: boolean; altKey: boolean }): OpenTarget {
   if (event.altKey) return 'window';
@@ -152,81 +153,80 @@ export function CampaignsSurface({ ctx }: { ctx: SurfaceContext }) {
   if (funnels.isError) {
     return (
       <div className={PANE_SHELL}>
-        <div className="flex h-full items-center justify-center p-8">
-          <EmptyState
-            icon={<ServerCrash className="size-6" aria-hidden />}
-            title="Could not load your campaigns"
-            description={funnelErrorMessage(
-              funnels.error,
-              'This is a problem reaching the server. Nothing about your campaigns has changed.'
-            )}
-            actions={
-              <Button
-                size="sm"
-                color="module"
-                onClick={() => {
-                  void funnels.refetch();
-                }}
-              >
-                Try again
-              </Button>
-            }
-          />
-        </div>
+        <PaneLoadError
+          icon={<ServerCrash className="size-6" aria-hidden />}
+          title="Could not load your campaigns"
+          description={funnelErrorMessage(
+            funnels.error,
+            'This is a problem reaching the server. Nothing about your campaigns has changed.'
+          )}
+          onRetry={() => {
+            void funnels.refetch();
+          }}
+        />
       </div>
     );
   }
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Campaign list controls" wrap>
-        <div className="max-w-xs min-w-0 flex-1">
-          <SearchInput
-            size="sm"
-            aria-label="Search campaigns"
-            placeholder="Search campaigns…"
-            value={search}
-            onValueChange={setSearch}
-          />
-        </div>
-        <Select
-          size="sm"
-          aria-label="Filter by status"
-          value={status}
-          onValueChange={(value) => {
-            setStatus(value as FunnelStatus | 'all');
-          }}
-          items={[
-            { value: 'all', label: 'Every campaign' },
-            { value: 'active', label: 'Running' },
-            { value: 'draft', label: 'Drafts' },
-            { value: 'paused', label: 'Paused' },
-            { value: 'archived', label: 'Archived' },
-          ]}
-        />
-        {canEdit ? (
-          <Button
-            color="module"
-            size="sm"
-            className="ml-auto shrink-0 whitespace-nowrap"
-            title="Start a new campaign — hold Shift to open alongside, Alt for a new window"
-            onClick={(event) => {
-              openCampaign('new', event);
+      <PaneToolbar
+        label="Campaign list controls"
+        search={
+          <div className="max-w-xs min-w-0 flex-1">
+            <SearchInput
+              size="sm"
+              aria-label="Search campaigns"
+              placeholder="Search campaigns…"
+              value={search}
+              onValueChange={setSearch}
+            />
+          </div>
+        }
+        controls={
+          <>
+            <Select
+              size="sm"
+              aria-label="Filter by status"
+              value={status}
+              onValueChange={(value) => {
+                setStatus(value as FunnelStatus | 'all');
+              }}
+              items={[
+                { value: 'all', label: 'Every campaign' },
+                { value: 'active', label: 'Running' },
+                { value: 'draft', label: 'Drafts' },
+                { value: 'paused', label: 'Paused' },
+                { value: 'archived', label: 'Archived' },
+              ]}
+            />
+            {canEdit ? (
+              <Button
+                color="module"
+                size="sm"
+                className="ml-auto shrink-0 whitespace-nowrap"
+                title="Start a new campaign — hold Shift to open alongside, Alt for a new window"
+                onClick={(event) => {
+                  openCampaign('new', event);
+                }}
+              >
+                <Plus className="size-4" aria-hidden />
+                New campaign
+              </Button>
+            ) : null}
+          </>
+        }
+        refresh={
+          <RefreshButton
+            className={canEdit ? undefined : 'ml-auto'}
+            isFetching={funnels.isFetching}
+            updatedAt={funnels.data ? funnels.dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void funnels.refetch();
             }}
-          >
-            <Plus className="size-4" aria-hidden />
-            New campaign
-          </Button>
-        ) : null}
-        <RefreshButton
-          className={canEdit ? undefined : 'ml-auto'}
-          isFetching={funnels.isFetching}
-          updatedAt={funnels.data ? funnels.dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void funnels.refetch();
-          }}
-        />
-      </PaneToolbar>
+          />
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         {funnels.isPending ? (

@@ -26,9 +26,7 @@ const SITE_ZONE = PRODUCT.tenantSites.suffix;
 
 /** The live availability of the typed slug, owned + debounced by the orchestrator. */
 export type SlugCheck =
-  | { status: 'idle' }
-  | { status: 'checking' }
-  | { status: 'done'; result: SlugAvailability };
+  { status: 'idle' } | { status: 'checking' } | { status: 'done'; result: SlugAvailability };
 
 const REASON_COPY: Record<string, string> = {
   invalid: 'Use lowercase letters, numbers, and hyphens (3–63 characters).',

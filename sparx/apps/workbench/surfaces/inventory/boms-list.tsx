@@ -162,54 +162,64 @@ export function BomsListSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Recipe list controls">
-        <SearchInput
-          value={q}
-          placeholder="Search recipes"
-          onValueChange={(value) => {
-            setQ(value);
-            setSkip(0);
-          }}
-        />
-        <NativeSelect
-          size="sm"
-          className="max-w-36 shrink"
-          aria-label="Status"
-          value={status}
-          onChange={(event) => {
-            setStatus(event.target.value);
-            setSkip(0);
-          }}
-        >
-          <option value="">Any status</option>
-          <option value="active">In use</option>
-          <option value="draft">Draft</option>
-          <option value="archived">Retired</option>
-        </NativeSelect>
-
-        <Button
-          size="sm"
-          color="module"
-          className="ml-auto shrink-0"
-          onClick={(event) => {
-            ctx.open(
-              'inventory.boms.detail',
-              { id: 'new' },
-              { target: event.shiftKey ? 'beside' : 'tab' }
-            );
-          }}
-        >
-          <Plus className="size-4" aria-hidden />
-          <span className="hidden @lg:inline">Write a recipe</span>
-        </Button>
-        <RefreshButton
-          isFetching={boms.isFetching}
-          updatedAt={boms.dataUpdatedAt}
-          onRefresh={() => {
-            void boms.refetch();
-          }}
-        />
-      </PaneToolbar>
+      <PaneToolbar
+        label="Recipe list controls"
+        search={
+          <SearchInput
+            value={q}
+            placeholder="Search recipes"
+            onValueChange={(value) => {
+              setQ(value);
+              setSkip(0);
+            }}
+          />
+        }
+        primary={
+          <Button
+            size="sm"
+            color="module"
+            className="ml-auto shrink-0"
+            onClick={(event) => {
+              ctx.open(
+                'inventory.boms.detail',
+                { id: 'new' },
+                { target: event.shiftKey ? 'beside' : 'tab' }
+              );
+            }}
+          >
+            <Plus className="size-4" aria-hidden />
+            <span className="hidden @lg:inline">Write a recipe</span>
+          </Button>
+        }
+        controls={
+          <>
+            <NativeSelect
+              size="sm"
+              className="max-w-36 shrink"
+              aria-label="Status"
+              value={status}
+              onChange={(event) => {
+                setStatus(event.target.value);
+                setSkip(0);
+              }}
+            >
+              <option value="">Any status</option>
+              <option value="active">In use</option>
+              <option value="draft">Draft</option>
+              <option value="archived">Retired</option>
+            </NativeSelect>
+          </>
+        }
+        refresh={
+          <RefreshButton
+            isFetching={boms.isFetching}
+            updatedAt={boms.dataUpdatedAt}
+            onRefresh={() => {
+              void boms.refetch();
+            }}
+          />
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">{body()}</div>
 

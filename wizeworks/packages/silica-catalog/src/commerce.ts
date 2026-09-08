@@ -492,6 +492,33 @@ export function featuredCarousel(): Node {
   return productsBlock({ source: 'commerce.featured', layout: 'carousel', heading: 'Featured' });
 }
 
+/** A CAROUSEL of RELATED products — the cross-sell a PRODUCT page ships.
+ *
+ *  Same shape as `featuredCarousel`, different source, and the difference is the point.
+ *  "Featured" means the ones the merchant TAGGED `featured`, and nothing else (see
+ *  `commerce.featured`'s note in the storefront resolver — the fallback to the whole
+ *  catalog was removed because it put the catalog on the page twice under a heading
+ *  claiming a curation nobody had made). That is a fine thing to put on a HOME page,
+ *  where a merchant is choosing what to lead with.
+ *
+ *  On a PRODUCT page it is the wrong idea twice over. A shopper reading one garment
+ *  wants others LIKE IT, not the shop's window display; and a brand-new shop has tagged
+ *  nothing, so the rail correctly hides itself and the product page ships with no
+ *  cross-sell at all — silently, with nothing on the page or in the studio to say a rail
+ *  was ever there. A clothing label with eight products and a customer at the bottom of
+ *  one of them was offered nothing else, for exactly this reason.
+ *
+ *  `commerce.related` is bounded, excludes the product being viewed, and is never empty
+ *  for a shop with more than one thing in it. The author can still repoint it at
+ *  Featured, a category, or the whole catalog from the block's own source picker. */
+export function relatedCarousel(): Node {
+  return productsBlock({
+    source: 'commerce.related',
+    layout: 'carousel',
+    heading: 'You might also like',
+  });
+}
+
 /** The Add-to-cart FORM — the buy box's interactive half.
  *
  *  It is a real `<form>` because silica's `form` behavior is the ONLY thing that
@@ -993,10 +1020,15 @@ export function productDetailPage(): Node {
       // `buyBox()` is a self-contained section now (its own padding + `max-w-5xl`), so the
       // page simply stacks it above the cross-sell strip — no extra wrapper.
       buyBox(),
-      // A carousel rather than the scroll rail (issue 187), and it now removes itself
-      // when there is nothing to cross-sell — which on a one-product shop is ALWAYS,
-      // because the strip excludes the product being looked at.
-      featuredCarousel(),
+      // A carousel rather than the scroll rail (issue 187), and it removes itself when
+      // there is nothing to cross-sell — which on a one-product shop is ALWAYS, because
+      // the strip excludes the product being looked at.
+      //
+      // Bound to RELATED, not featured (issue 412). "Featured" is the merchant's window
+      // display and belongs on a home page; a shopper at the bottom of one garment wants
+      // others like it. It also made the rail empty for every shop that had not
+      // discovered the `featured` tag, which is every new shop.
+      relatedCarousel(),
     ],
   });
 }

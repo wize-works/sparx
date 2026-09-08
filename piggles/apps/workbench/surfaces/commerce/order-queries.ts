@@ -101,3 +101,42 @@ export function useOrderRefunds(id: string) {
         .then((rows) => rows.map((row) => ({ ...row, amount: num(row.amount) }))),
   });
 }
+
+/** One invoice raised for this order, as the pane shows it. */
+export interface OrderInvoice {
+  id: string;
+  number: string | null;
+  status: string;
+  total: number;
+  amountPaid: number;
+  balance: number;
+  currency: string;
+  dueAt: string | null;
+  createdAt: string;
+  /** When the invoice was actually emailed, and where to. Null while it has only
+   *  been raised — making an invoice and sending it are two different acts. */
+  sentAt: string | null;
+  sentTo: string | null;
+}
+
+/**
+ * The invoices raised to ask for the money on this order.
+ *
+ * Empty is the ordinary answer for a shop that takes card at checkout — nobody
+ * needs to be asked. It is the shops that take NO payment at checkout for which
+ * this is the whole second half of the sale.
+ */
+export function useOrderInvoices(id: string) {
+  return useQuery({
+    queryKey: [...ORDERS_KEY, id, 'invoices'],
+    queryFn: () =>
+      api.get<OrderInvoice[]>(`/v1/orders/${id}/invoices`).then((rows) =>
+        rows.map((row) => ({
+          ...row,
+          total: num(row.total),
+          amountPaid: num(row.amountPaid),
+          balance: num(row.balance),
+        }))
+      ),
+  });
+}

@@ -294,6 +294,113 @@ export async function listInventory(
   });
 }
 
+// ─── Never counted (GET /v1/inventory/uncounted) ──────────────────────
+
+/**
+ * A version somebody sells that has NO level row anywhere.
+ *
+ * This is not a stock position, which is why it cannot come out of the list
+ * above: that query starts `FROM inventory_levels`, so a version nobody has
+ * counted is not a row it can return, no matter how it is filtered. It comes
+ * from the catalog side instead.
+ *
+ * It has to be askable because the absence is INVISIBLE and it changes what the
+ * shop does. A version becomes stock-managed by being COUNTED, not by existing
+ * (availability.ts), so an uncounted one sells WITHOUT LIMIT however its
+ * "when you run out" setting reads. The stock list said `Showing 1-15 of 15`
+ * about a shirt with twenty versions and nothing anywhere named the other five
+ * (issue 444).
+ */
+export interface UncountedVariantRow {
+  variantId: string;
+  sku: string;
+  variantTitle: string | null;
+  productId: string;
+  productTitle: string;
+  /**
+   * What the version says should happen when it runs out.
+   *
+   * Reported because it is the setting that is NOT being honoured: `deny` means
+   * "stop selling it", and while nothing is counted there is nothing to run out
+   * of, so it never fires. `continue` versions are uncounted on purpose all the
+   * time — that policy means unbounded anyway — and telling those apart is the
+   * difference between a warning worth reading and thirty lines of noise.
+   */
+  inventoryPolicy: string;
+}
+
+export interface ListUncountedFilter {
+  /** Case-insensitive match on variant SKU OR product title — the same needle
+   *  the level list takes, so one search box can ask both. */
+  q?: string;
+  productId?: string;
+  take?: number;
+  skip?: number;
+}
+
+export async function listUncounted(
+  ctx: ServiceContext,
+  filter: ListUncountedFilter = {}
+): Promise<{ items: UncountedVariantRow[]; total: number }> {
+  const take = Math.min(filter.take ?? 50, 200);
+  const skip = filter.skip ?? 0;
+  const needle = filter.q?.trim();
+
+  const where: Prisma.ProductVariantWhereInput = {
+    tenantId: ctx.tenantId,
+    deletedAt: null,
+    // ON SALE only. A draft product is not being sold, so an uncounted version
+    // of one is not a promise anybody can take up — listing it would bury the
+    // versions that are.
+    product: { deletedAt: null, status: 'active' },
+    // The whole definition: no level row, at any location.
+    inventoryLevels: { none: {} },
+    ...(filter.productId ? { productId: filter.productId } : {}),
+    ...(needle
+      ? {
+          OR: [
+            { sku: { contains: needle, mode: 'insensitive' as const } },
+            { product: { title: { contains: needle, mode: 'insensitive' as const } } },
+          ],
+        }
+      : {}),
+  };
+
+  return withTenant(ctx, async (tx) => {
+    const [rows, total] = await Promise.all([
+      tx.productVariant.findMany({
+        where,
+        select: {
+          id: true,
+          sku: true,
+          title: true,
+          inventoryPolicy: true,
+          product: { select: { id: true, title: true } },
+        },
+        // Alphabetical by code, with the id as the tiebreaker that makes paging
+        // stable — two versions can share a null-ish code and one would
+        // otherwise never be seen.
+        orderBy: [{ sku: 'asc' }, { id: 'asc' }],
+        take,
+        skip,
+      }),
+      tx.productVariant.count({ where }),
+    ]);
+
+    return {
+      items: rows.map((r) => ({
+        variantId: r.id,
+        sku: r.sku,
+        variantTitle: r.title,
+        productId: r.product.id,
+        productTitle: r.product.title,
+        inventoryPolicy: r.inventoryPolicy,
+      })),
+      total,
+    };
+  });
+}
+
 // ─── Count update (PATCH) + bulk adjustment (POST) ────────────────────
 
 interface LevelChange {

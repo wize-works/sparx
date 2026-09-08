@@ -20,15 +20,15 @@
 
 import { useMemo, useState } from 'react';
 import { PaneWaiting } from '../../components/pane-waiting';
-import { Badge, Card, EmptyState, SearchInput } from '@wizeworks/silicaui-react';
-import { Table } from '../../components/table';
-import { faArrowDown, faArrowUp, faPlus, faTags } from '@fortawesome/pro-solid-svg-icons';
+import { Card, EmptyState, SearchInput } from '@wizeworks/silicaui-react';
+import { faPlus, faTags } from '@fortawesome/pro-solid-svg-icons';
 import { Icon } from '@piggles/ui';
 import type { OpenTarget, SurfaceContext } from '../../lib/surfaces/registry';
 import { PaneToolbar, PANE_SHELL } from '../../components/pane-toolbar';
 import { ListEmptyState } from '../../components/list-empty-state';
 import { RefreshButton } from '../../components/refresh-button';
 import { flattenCategories, useCategoryTree, type CategoryChoice } from './categories-data';
+import { CategoriesTable, type CatSortKey, type Sort } from './categories-list-table';
 import { RowOpenHint } from '../../components/row-open-hint';
 
 /** Registry module for this surface, so the brand's empty-state artwork is this
@@ -37,9 +37,8 @@ const MODULE = 'commerce';
 
 // Sorting is CLIENT-SIDE over the full tree (see the file header). `null` is the
 // natural tree order — depth-first, parents before children — which is the
-// meaningful default and cannot be expressed as a single column.
-type CatSortKey = 'name' | 'productCount';
-type SortDir = 'asc' | 'desc';
+// meaningful default and cannot be expressed as a single column. The keys live
+// with the table that renders the headers.
 
 function targetFor(event: { shiftKey: boolean; altKey: boolean }): OpenTarget {
   if (event.altKey) return 'window';
@@ -49,7 +48,7 @@ function targetFor(event: { shiftKey: boolean; altKey: boolean }): OpenTarget {
 
 export function CategoriesListSurface({ ctx }: { ctx: SurfaceContext }) {
   const [search, setSearch] = useState('');
-  const [sort, setSort] = useState<{ key: CatSortKey; dir: SortDir } | null>(null);
+  const [sort, setSort] = useState<Sort | null>(null);
   const { data, isPending, isError, isFetching, dataUpdatedAt, refetch } = useCategoryTree();
 
   const all = useMemo(() => flattenCategories(data), [data]);
@@ -84,30 +83,6 @@ export function CategoriesListSurface({ ctx }: { ctx: SurfaceContext }) {
         : { key, dir: key === 'productCount' ? 'desc' : 'asc' }
     );
   };
-
-  const header = (key: CatSortKey, label: string, extra = '') => (
-    <th
-      className={extra}
-      aria-sort={sort?.key === key ? (sort.dir === 'asc' ? 'ascending' : 'descending') : 'none'}
-    >
-      <button
-        type="button"
-        className="link link-hover inline-flex items-center gap-1"
-        onClick={() => {
-          toggleSort(key);
-        }}
-      >
-        {label}
-        {sort?.key === key ? (
-          sort.dir === 'asc' ? (
-            <Icon glyph={faArrowUp} className="size-3" aria-hidden />
-          ) : (
-            <Icon glyph={faArrowDown} className="size-3" aria-hidden />
-          )
-        ) : null}
-      </button>
-    </th>
-  );
 
   const open = (category: CategoryChoice, event: { shiftKey: boolean; altKey: boolean }) => {
     ctx.open('commerce.category.detail', { id: category.id }, { target: targetFor(event) });
@@ -184,50 +159,7 @@ export function CategoriesListSurface({ ctx }: { ctx: SurfaceContext }) {
             }}
           />
         ) : (
-          <Table size="sm" hover>
-            <thead>
-              <tr>
-                {header('name', 'Category')}
-                <th className="hidden @lg:table-cell">Featured</th>
-                {header('productCount', 'Products', 'text-right')}
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((category) => (
-                <tr
-                  key={category.id}
-                  className="cursor-pointer"
-                  tabIndex={0}
-                  role="button"
-                  onClick={(event) => {
-                    open(category, event);
-                  }}
-                  onKeyDown={(event) => {
-                    if (event.key !== 'Enter' && event.key !== ' ') return;
-                    event.preventDefault();
-                    open(category, event);
-                  }}
-                >
-                  <td>
-                    <span className="min-w-0">
-                      {category.trail.slice(0, -1).map((ancestor, index) => (
-                        <span key={`${category.id}:${String(index)}`}>{ancestor} › </span>
-                      ))}
-                      <span className="font-semibold">{category.name}</span>
-                    </span>
-                  </td>
-                  <td className="hidden @lg:table-cell">
-                    {category.featured ? (
-                      <Badge color="warning" variant="soft" size="sm">
-                        Featured
-                      </Badge>
-                    ) : null}
-                  </td>
-                  <td className="text-right tabular-nums">{String(category.productCount)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </Table>
+          <CategoriesTable rows={rows} sort={sort} onToggleSort={toggleSort} onOpen={open} />
         )}
       </Card>
 

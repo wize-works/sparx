@@ -58,6 +58,7 @@ export type EventType =
   | 'email.domain.verified'
   // Webhooks / redirects
   | 'redirect.added'
+  | 'redirect.changed'
   | 'redirect.removed'
   // ─── Site builder ───────────────────────────────────────────────────
   // A site's DRAFT became what visitors are served — a publish, or a rollback to

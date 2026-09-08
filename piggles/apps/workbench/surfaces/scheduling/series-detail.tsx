@@ -16,6 +16,7 @@
 // they are a simple list of rows, each opening the real booking, not a second
 // grid duplicating the Bookings surface.
 
+import { shownInPlace } from '@wizeworks/query';
 import { useEffect, useMemo, useState } from 'react';
 import { PaneWaiting } from '../../components/pane-waiting';
 import { PaneLoadError } from '../../components/pane-load-error';
@@ -46,6 +47,7 @@ import { useDirtySource } from '../../lib/workbench/dirty';
 import { afterPaneChange } from '../../lib/defer';
 import type { SurfaceContext } from '../../lib/surfaces/registry';
 import { CustomerPicker } from './bookings-customer-picker';
+import { SaveFailure } from '@/components/save-failure';
 import {
   buildRrule,
   bookingStateMeta,
@@ -324,6 +326,7 @@ function SeriesCreate({ ctx }: { ctx: SurfaceContext }) {
             });
           });
         },
+        onError: shownInPlace,
       }
     );
   };
@@ -349,14 +352,7 @@ function SeriesCreate({ ctx }: { ctx: SurfaceContext }) {
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className={COLUMN}>
-          {saveError ? (
-            <Alert color="error">
-              <AlertContent>
-                <AlertTitle>Could not set this up</AlertTitle>
-                <AlertDescription>{saveError}</AlertDescription>
-              </AlertContent>
-            </Alert>
-          ) : null}
+          <SaveFailure title="Could not set this up" message={saveError} />
 
           {noServices ? (
             <Alert color="info">

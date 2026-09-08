@@ -28,6 +28,8 @@
 //   GET    /v1/orders/:id/fulfillments/:fId/track       → live tracking status
 //   GET    /v1/orders/:id/refunds           → list refunds
 //   POST   /v1/orders/:id/refunds           → record a refund
+//   GET    /v1/orders/:id/invoices          → the invoices raised for this order
+//   POST   /v1/orders/:id/invoices          → raise one, copied from the order
 //
 // The carrier-label endpoints additionally require Commerce (requireCommerceModule)
 // on top of the shared gate — buying and voiding labels is commerce machinery a
@@ -40,6 +42,7 @@ import {
   orderPaymentsService,
   orderFulfillmentsService,
   orderRefundsService,
+  billingFromOrderService,
 } from '@wizeworks/crm';
 import { listFulfillmentLabels, quoteOutboundRates, shippingService } from '@wizeworks/commerce';
 import { inventoryService } from '@wizeworks/inventory';
@@ -348,6 +351,38 @@ const orderRoutes: FastifyPluginAsync = (app) => {
         });
     reply.code(201);
     return ok(refund);
+  });
+
+  // ── invoices raised FOR this order ────────────────────────────────────────
+  //
+  // Asking the customer for the money. A shop with no payment provider takes
+  // none at checkout, so the sale is complete and unpaid until somebody bills
+  // it. Nested under the ORDER rather than under invoicing because that is where
+  // the question is asked — the owner is looking at an unpaid order, not
+  // browsing a document list.
+
+  app.get('/v1/orders/:id/invoices', async (request) => {
+    requireRole(request, 'viewer');
+    await requireOrderAccess(request);
+    const { id } = PathId.parse(request.params);
+    const invoices = await billingFromOrderService.listInvoicesForOrder(
+      toOrderContext(request),
+      id
+    );
+    return ok(invoices);
+  });
+
+  app.post('/v1/orders/:id/invoices', async (request, reply) => {
+    requireRole(request, 'editor');
+    await requireOrderAccess(request);
+    const { id } = PathId.parse(request.params);
+    const body = (request.body ?? {}) as Record<string, unknown>;
+    const result = await billingFromOrderService.createInvoiceForOrder(toOrderContext(request), {
+      orderId: id,
+      ...(typeof body.dueAt === 'string' ? { dueAt: body.dueAt } : {}),
+    });
+    reply.code(201);
+    return ok(result);
   });
 
   return Promise.resolve();

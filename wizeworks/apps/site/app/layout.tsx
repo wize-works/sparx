@@ -57,6 +57,8 @@ import { ChunkReloadGuard } from '@wizeworks/app-kit';
 import { mediaUrl } from '@/lib/media';
 import { ogImageUrl } from '@/lib/og';
 import { resolveActivePropertySlug, resolveSite } from '@/lib/site-context';
+import { languageEndonym, resolveReaderLocale } from '@/lib/locale';
+import { LanguageChoice } from '@/components/language-choice';
 import { getPublishedSite } from '@/lib/site';
 
 // MUST be first: declares the cascade-layer order, so the site's own
@@ -206,10 +208,11 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   // Three independent resolutions, awaited together (docs/127 §9). `resolveSite` and
   // `resolveActivePropertySlug` share a request-cached `resolveSiteRoute()` underneath,
   // so overlapping them costs one round-trip, not two.
-  const [site, activePropertySlug, hdrs] = await Promise.all([
+  const [site, activePropertySlug, hdrs, readerLocale] = await Promise.all([
     resolveSite(),
     resolveActivePropertySlug(),
     headers(),
+    resolveReaderLocale(),
   ]);
 
   // Billing suspended (docs/17 §6): serve the "site unavailable" overlay as the
@@ -466,9 +469,18 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         }
       : null;
 
+  // The language the page is actually WRITTEN in, which is the whole job of this
+  // attribute: it tells a screen reader which voice to use and a browser whether
+  // to offer a translation. It was hardcoded `en` while the catalogue could be
+  // served in another language (piggles issue 401).
+  const pageLanguage = readerLocale ?? site?.commerce.defaultLocale ?? 'en';
+  // The shop's own language, named in itself, so the way back out of a
+  // translation is as readable as the way in.
+  const ownLanguageLabel = languageEndonym(site?.commerce.defaultLocale ?? 'en');
+
   return (
     <html
-      lang="en"
+      lang={pageLanguage}
       data-theme={initialTheme}
       suppressHydrationWarning
       className={`${GeistSans.variable} ${GeistMono.variable}`}
@@ -594,6 +606,16 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                       </main>
                     )}
                   </div>
+                  {/* Reading this shop in another language. Renders nothing at
+                      all for the shops that have translated nothing, which is
+                      almost all of them — so no site gains a bar it has no use
+                      for. In normal flow under the merchant's own footer, which
+                      is where a language choice belongs and is expected. */}
+                  <LanguageChoice
+                    languages={site.languages}
+                    current={readerLocale}
+                    ownLanguageLabel={ownLanguageLabel}
+                  />
                   <MiniCart />
                   {/* The silica behavior runtime (docs/118 Stage 6b): hydrates the
                       data-sui-* markers a published silica page/frame renders, and

@@ -51,6 +51,11 @@ export interface CheckoutTotals {
   taxTotalCents: number;
   // Disclosed document surcharge (docs/48 §6) — e.g. a card processing fee.
   surchargeTotalCents?: number;
+  // Money already paid, already subtracted inside totalCents. api-rest has
+  // always sent both; naming them here is what lets the summary show the rows
+  // that make the total add up. Defaulted on read for an older api-rest.
+  giftCardAppliedCents: number;
+  accountCreditAppliedCents: number;
   totalCents: number;
 }
 

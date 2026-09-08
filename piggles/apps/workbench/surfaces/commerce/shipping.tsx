@@ -104,11 +104,17 @@ function ProfileRow({ profile, onOpen }: { profile: ShippingProfile; onOpen: Row
         ) : null}
       </span>
       <Text as="span" className="shrink-0 text-sm tabular-nums">
-        {count === 0
+        {/* "All other products" belongs to the DEFAULT group and to nothing
+            else. It used to be shown for any group with no members, which made
+            a brand-new empty group claim the whole catalog on the one screen an
+            owner checks her delivery prices on. */}
+        {profile.isDefault
           ? 'All other products'
-          : count === 1
-            ? '1 product'
-            : `${String(count)} products`}
+          : count === 0
+            ? 'Nothing in it yet'
+            : count === 1
+              ? '1 product'
+              : `${String(count)} products`}
       </Text>
     </button>
   );

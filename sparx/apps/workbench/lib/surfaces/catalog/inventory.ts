@@ -99,6 +99,7 @@ import { PlanningSurface } from '../../../surfaces/inventory/planning';
 import { PlanningClassesSurface } from '../../../surfaces/inventory/planning-classes';
 import { PlanningIdleSurface } from '../../../surfaces/inventory/planning-idle';
 import { PlanningHoldingSurface } from '../../../surfaces/inventory/planning-holding';
+import { UncostedStockSurface } from '../../../surfaces/inventory/uncosted-stock';
 import { PlanningSettingsSurface } from '../../../surfaces/inventory/planning-settings';
 import { PlanningExplainSurface } from '../../../surfaces/inventory/planning-explain';
 import { CountSchedulesListSurface } from '../../../surfaces/inventory/count-schedules-list';
@@ -816,6 +817,29 @@ export const INVENTORY_SURFACES: SurfaceDefinition[] = [
       'not moving',
     ],
     component: PlanningIdleSurface,
+  },
+  {
+    // The opening balance. Cost is optional and the product form never asks for
+    // it, so every value-of-stock figure reads $0.00 until this is filled in —
+    // and $0.00 is indistinguishable from owning nothing. Listed, because the
+    // person who needs it will not know to look for it: it is reached from the
+    // figures that admit the gap AND from the launcher.
+    key: 'inventory.costing.uncosted',
+    title: 'What your stock cost you',
+    module: 'inventory',
+    icon: Coins,
+    section: 'Planning',
+    order: 5,
+    keywords: [
+      'cost',
+      'what i paid',
+      'opening balance',
+      'no cost yet',
+      'not costed',
+      'value of stock',
+      'margin',
+    ],
+    component: UncostedStockSurface,
   },
   {
     key: 'inventory.planning.holding',

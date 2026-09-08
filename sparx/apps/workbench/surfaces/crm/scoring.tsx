@@ -137,8 +137,7 @@ function RuleRow({
   // condition builder for a job that does not need one, and the sum-of-rules
   // design already covers "several things matter" by writing several rules.
   const leaf = rule.condition.conditions[0] as
-    | { field: string; operator: string; value?: unknown }
-    | undefined;
+    { field: string; operator: string; value?: unknown } | undefined;
   const field = leaf?.field ?? '';
   const operator = leaf?.operator ?? 'eq';
   const value = leaf?.value;
@@ -409,47 +408,52 @@ export function ScoringSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Scoring controls">
-        <Gauge className="size-4 shrink-0" aria-hidden />
-        <Heading level={2} className="min-w-0 truncate text-base font-semibold">
-          Scoring
-        </Heading>
-
-        <div className="ml-auto flex shrink-0 items-center gap-1">
-          {SCOREABLE.map((s) => (
+      <PaneToolbar
+        label="Scoring controls"
+        primary={
+          <Button size="sm" color="module" disabled={!dirty || saving} onClick={onSave}>
+            {saving ? 'Saving…' : 'Save'}
+          </Button>
+        }
+        controls={
+          <>
+            <Gauge className="size-4 shrink-0" aria-hidden />
+            <Heading level={2} className="min-w-0 truncate text-base font-semibold">
+              Scoring
+            </Heading>
+            <div className="ml-auto flex shrink-0 items-center gap-1">
+              {SCOREABLE.map((s) => (
+                <Button
+                  key={s.objectKey}
+                  size="sm"
+                  variant={objectKey === s.objectKey ? 'soft' : 'ghost'}
+                  color={objectKey === s.objectKey ? 'module' : 'neutral'}
+                  onClick={() => {
+                    setObjectKey(s.objectKey);
+                  }}
+                >
+                  {s.label}
+                </Button>
+              ))}
+            </div>
             <Button
-              key={s.objectKey}
               size="sm"
-              variant={objectKey === s.objectKey ? 'soft' : 'ghost'}
-              color={objectKey === s.objectKey ? 'module' : 'neutral'}
+              variant="outline"
+              color="neutral"
+              disabled={recompute.isPending || rules.length === 0}
               onClick={() => {
-                setObjectKey(s.objectKey);
+                void onRecompute();
               }}
             >
-              {s.label}
+              <RefreshCw
+                className={`size-4 ${recompute.isPending ? 'animate-spin' : ''}`}
+                aria-hidden
+              />
+              Re-score everyone
             </Button>
-          ))}
-        </div>
-
-        <Button
-          size="sm"
-          variant="outline"
-          color="neutral"
-          disabled={recompute.isPending || rules.length === 0}
-          onClick={() => {
-            void onRecompute();
-          }}
-        >
-          <RefreshCw
-            className={`size-4 ${recompute.isPending ? 'animate-spin' : ''}`}
-            aria-hidden
-          />
-          Re-score everyone
-        </Button>
-        <Button size="sm" color="module" disabled={!dirty || saving} onClick={onSave}>
-          {saving ? 'Saving…' : 'Save'}
-        </Button>
-      </PaneToolbar>
+          </>
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto p-1">
         <div className={COLUMN}>

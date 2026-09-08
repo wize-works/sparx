@@ -51,6 +51,7 @@ import { RefreshButton } from '../../components/refresh-button';
 import { PaneScope } from '../../lib/dock/window-boundary';
 import { afterPaneChange } from '../../lib/defer';
 import type { SurfaceContext } from '../../lib/surfaces/registry';
+import { SaveFailure } from '@/components/save-failure';
 import {
   formatDate,
   normalizePath,
@@ -157,14 +158,7 @@ function AddRedirectDialog({
           <DialogTitle>Add a redirect</DialogTitle>
 
           <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-1 py-2">
-            {failure ? (
-              <Alert color="error">
-                <AlertContent>
-                  <AlertTitle>Could not add that redirect</AlertTitle>
-                  <AlertDescription>{failure}</AlertDescription>
-                </AlertContent>
-              </Alert>
-            ) : null}
+            <SaveFailure title="Could not add that redirect" message={failure} />
 
             <Field>
               <FieldLabel required>Old address</FieldLabel>
@@ -328,65 +322,72 @@ export function RedirectsListSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Redirects list controls" wrap>
-        <div className="max-w-xs min-w-0 flex-1">
-          <SearchInput
+      <PaneToolbar
+        label="Redirects list controls"
+        search={
+          <div className="max-w-xs min-w-0 flex-1">
+            <SearchInput
+              size="sm"
+              aria-label="Search redirects"
+              placeholder="Old or new address…"
+              value={search}
+              onValueChange={setSearch}
+            />
+          </div>
+        }
+        primary={
+          <Button
+            color="module"
             size="sm"
-            aria-label="Search redirects"
-            placeholder="Old or new address…"
-            value={search}
-            onValueChange={setSearch}
+            className="ml-auto shrink-0 whitespace-nowrap"
+            onClick={() => {
+              setAdding(true);
+            }}
+          >
+            <Plus className="size-4" aria-hidden />
+            <span className="hidden @xl:inline">Add redirect</span>
+          </Button>
+        }
+        controls={
+          <>
+            <Filter
+              color="module"
+              value={typeFilter}
+              onValueChange={(next) => {
+                setTypeFilter((next as TypeFilterValue | null) ?? 'all');
+              }}
+              showReset={false}
+              aria-label="Filter by type"
+            >
+              {TYPE_FILTERS.map((entry) => (
+                <FilterItem key={entry.value} value={entry.value}>
+                  {entry.label}
+                </FilterItem>
+              ))}
+            </Filter>
+            <Button
+              color="module"
+              variant="soft"
+              size="sm"
+              className="shrink-0 whitespace-nowrap"
+              title="Import a list of redirects — hold Alt to open in a new window"
+              onClick={openImport}
+            >
+              <Upload className="size-4" aria-hidden />
+              <span className="hidden @2xl:inline">Bulk import</span>
+            </Button>
+          </>
+        }
+        refresh={
+          <RefreshButton
+            isFetching={isFetching}
+            updatedAt={data ? dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void refetch();
+            }}
           />
-        </div>
-
-        <Filter
-          color="module"
-          value={typeFilter}
-          onValueChange={(next) => {
-            setTypeFilter((next as TypeFilterValue | null) ?? 'all');
-          }}
-          showReset={false}
-          aria-label="Filter by type"
-        >
-          {TYPE_FILTERS.map((entry) => (
-            <FilterItem key={entry.value} value={entry.value}>
-              {entry.label}
-            </FilterItem>
-          ))}
-        </Filter>
-
-        <Button
-          color="module"
-          size="sm"
-          className="ml-auto shrink-0 whitespace-nowrap"
-          onClick={() => {
-            setAdding(true);
-          }}
-        >
-          <Plus className="size-4" aria-hidden />
-          <span className="hidden @xl:inline">Add redirect</span>
-        </Button>
-
-        <Button
-          color="module"
-          variant="soft"
-          size="sm"
-          className="shrink-0 whitespace-nowrap"
-          title="Import a list of redirects — hold Alt to open in a new window"
-          onClick={openImport}
-        >
-          <Upload className="size-4" aria-hidden />
-          <span className="hidden @2xl:inline">Bulk import</span>
-        </Button>
-
-        <RefreshButton
-          isFetching={isFetching}
-          updatedAt={data ? dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void refetch();
-          }}
-        />
-      </PaneToolbar>
+        }
+      />
 
       {overWindow ? (
         <Alert color="info">

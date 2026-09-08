@@ -411,86 +411,91 @@ export function DashboardsSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Dashboard controls">
-        <DropdownMenu>
-          <DropdownMenuTrigger>
-            <Button color="module" variant="soft" size="sm" className="min-w-0 gap-1.5">
-              <LayoutDashboard className="size-4 shrink-0" aria-hidden />
-              <span className="truncate">{board?.name ?? 'Dashboards'}</span>
-              <ChevronDown className="size-3 shrink-0" aria-hidden />
+      <PaneToolbar
+        label="Dashboard controls"
+        controls={
+          <>
+            <DropdownMenu>
+              <DropdownMenuTrigger>
+                <Button color="module" variant="soft" size="sm" className="min-w-0 gap-1.5">
+                  <LayoutDashboard className="size-4 shrink-0" aria-hidden />
+                  <span className="truncate">{board?.name ?? 'Dashboards'}</span>
+                  <ChevronDown className="size-3 shrink-0" aria-hidden />
+                </Button>
+              </DropdownMenuTrigger>
+
+              <DropdownMenuContent align="start">
+                <DropdownMenuGroup>
+                  <DropdownMenuLabel>Boards</DropdownMenuLabel>
+                  {all.map((option) => (
+                    <DropdownMenuItem
+                      key={option.id}
+                      onClick={() => {
+                        setActiveId(option.id);
+                      }}
+                    >
+                      <span className="flex w-full items-center gap-2">
+                        <span className="min-w-0 flex-1 truncate">{option.name}</span>
+                        {option.isDefault ? (
+                          <Star className="size-3.5 shrink-0" aria-label="Opens first" />
+                        ) : null}
+                        {option.id === activeId ? (
+                          <Check className="size-4 shrink-0" aria-hidden />
+                        ) : null}
+                      </span>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuGroup>
+
+                <DropdownMenuSeparator />
+
+                <DropdownMenuGroup>
+                  <DropdownMenuItem onClick={startNewBoard}>
+                    <span className="flex w-full items-center gap-2">
+                      <Plus className="size-4 shrink-0" aria-hidden />
+                      <span className="flex-1">Another board</span>
+                    </span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={startEditBoard}>
+                    <span className="flex w-full items-center gap-2">
+                      <Pencil className="size-4 shrink-0" aria-hidden />
+                      <span className="flex-1">Rename or share this one</span>
+                    </span>
+                  </DropdownMenuItem>
+                  {board ? (
+                    <DropdownMenuItem
+                      onClick={() => {
+                        void deleteBoard(board);
+                      }}
+                    >
+                      <span className="flex w-full items-center gap-2">
+                        <Trash2 className="size-4 shrink-0" aria-hidden />
+                        <span className="flex-1">Delete “{board.name}”</span>
+                      </span>
+                    </DropdownMenuItem>
+                  ) : null}
+                </DropdownMenuGroup>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            {board?.description ? (
+              <Text className="hidden min-w-0 truncate md:block">{board.description}</Text>
+            ) : null}
+          </>
+        }
+        refresh={
+          <div className="ml-auto flex items-center gap-2">
+            <Button
+              color="module"
+              onClick={() => {
+                setWidgetDraft({ mode: 'add', reportId: '', title: '' });
+              }}
+            >
+              <Plus className="size-4" aria-hidden /> Add a report
             </Button>
-          </DropdownMenuTrigger>
-
-          <DropdownMenuContent align="start">
-            <DropdownMenuGroup>
-              <DropdownMenuLabel>Boards</DropdownMenuLabel>
-              {all.map((option) => (
-                <DropdownMenuItem
-                  key={option.id}
-                  onClick={() => {
-                    setActiveId(option.id);
-                  }}
-                >
-                  <span className="flex w-full items-center gap-2">
-                    <span className="min-w-0 flex-1 truncate">{option.name}</span>
-                    {option.isDefault ? (
-                      <Star className="size-3.5 shrink-0" aria-label="Opens first" />
-                    ) : null}
-                    {option.id === activeId ? (
-                      <Check className="size-4 shrink-0" aria-hidden />
-                    ) : null}
-                  </span>
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuGroup>
-
-            <DropdownMenuSeparator />
-
-            <DropdownMenuGroup>
-              <DropdownMenuItem onClick={startNewBoard}>
-                <span className="flex w-full items-center gap-2">
-                  <Plus className="size-4 shrink-0" aria-hidden />
-                  <span className="flex-1">Another board</span>
-                </span>
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={startEditBoard}>
-                <span className="flex w-full items-center gap-2">
-                  <Pencil className="size-4 shrink-0" aria-hidden />
-                  <span className="flex-1">Rename or share this one</span>
-                </span>
-              </DropdownMenuItem>
-              {board ? (
-                <DropdownMenuItem
-                  onClick={() => {
-                    void deleteBoard(board);
-                  }}
-                >
-                  <span className="flex w-full items-center gap-2">
-                    <Trash2 className="size-4 shrink-0" aria-hidden />
-                    <span className="flex-1">Delete “{board.name}”</span>
-                  </span>
-                </DropdownMenuItem>
-              ) : null}
-            </DropdownMenuGroup>
-          </DropdownMenuContent>
-        </DropdownMenu>
-
-        {board?.description ? (
-          <Text className="hidden min-w-0 truncate md:block">{board.description}</Text>
-        ) : null}
-
-        <div className="ml-auto flex items-center gap-2">
-          <Button
-            color="module"
-            onClick={() => {
-              setWidgetDraft({ mode: 'add', reportId: '', title: '' });
-            }}
-          >
-            <Plus className="size-4" aria-hidden /> Add a report
-          </Button>
-          <RefreshButton isFetching={isFetching} onRefresh={() => void refetch()} />
-        </div>
-      </PaneToolbar>
+            <RefreshButton isFetching={isFetching} onRefresh={() => void refetch()} />
+          </div>
+        }
+      />
 
       <div className="overflow-auto p-6">
         {widgets.length === 0 ? (

@@ -387,6 +387,7 @@ module "pubsub" {
 
     # Redirects (Phase 4 — edge cache invalidation workers)
     "redirect.added"   = []
+    "redirect.changed" = []
     "redirect.removed" = []
 
     # Site publish (api-rest publishes on publish + rollback). The intended

@@ -467,74 +467,76 @@ export function ChatThreadSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Conversation actions" wrap>
-        <Badge color={statusTone(data.status)} variant="soft" size="sm">
-          {statusLabel(data.status)}
-        </Badge>
-
-        <div className="flex-1" />
-
-        {isResolved ? (
-          <Button
-            size="sm"
-            variant="outline"
-            color="neutral"
-            loading={update.isPending}
-            onClick={onReopen}
-          >
-            <RotateCcw className="size-4" aria-hidden />
-            Reopen
-          </Button>
-        ) : isSpam ? (
-          <Button
-            size="sm"
-            variant="outline"
-            color="neutral"
-            loading={update.isPending}
-            onClick={onReopen}
-          >
-            <RotateCcw className="size-4" aria-hidden />
-            Not spam
-          </Button>
-        ) : (
-          <Button size="sm" color="module" loading={update.isPending} onClick={onResolve}>
-            <CheckCircle2 className="size-4" aria-hidden />
-            Resolve
-          </Button>
-        )}
-
-        <DropdownMenu>
-          <DropdownMenuTrigger>
-            <Button
-              size="sm"
-              variant="ghost"
-              color="neutral"
-              shape="square"
-              aria-label="More actions"
-            >
-              <MoreHorizontal className="size-4" aria-hidden />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent>
-            {viewer?.userId && data.assignedToId !== viewer.userId ? (
-              <DropdownMenuItem onClick={onAssignToMe}>
-                <UserCheck className="size-4" aria-hidden />
-                Assign to me
-              </DropdownMenuItem>
-            ) : null}
-            {!isSpam ? (
-              <DropdownMenuItem
-                onClick={() => {
-                  void onMarkSpam();
-                }}
+      <PaneToolbar
+        label="Conversation actions"
+        controls={
+          <>
+            <Badge color={statusTone(data.status)} variant="soft" size="sm">
+              {statusLabel(data.status)}
+            </Badge>
+            <div className="flex-1" />
+            {isResolved ? (
+              <Button
+                size="sm"
+                variant="outline"
+                color="neutral"
+                loading={update.isPending}
+                onClick={onReopen}
               >
-                <Ban className="size-4" aria-hidden />
-                Mark as spam
-              </DropdownMenuItem>
-            ) : null}
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </PaneToolbar>
+                <RotateCcw className="size-4" aria-hidden />
+                Reopen
+              </Button>
+            ) : isSpam ? (
+              <Button
+                size="sm"
+                variant="outline"
+                color="neutral"
+                loading={update.isPending}
+                onClick={onReopen}
+              >
+                <RotateCcw className="size-4" aria-hidden />
+                Not spam
+              </Button>
+            ) : (
+              <Button size="sm" color="module" loading={update.isPending} onClick={onResolve}>
+                <CheckCircle2 className="size-4" aria-hidden />
+                Resolve
+              </Button>
+            )}
+            <DropdownMenu>
+              <DropdownMenuTrigger>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  color="neutral"
+                  shape="square"
+                  aria-label="More actions"
+                >
+                  <MoreHorizontal className="size-4" aria-hidden />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                {viewer?.userId && data.assignedToId !== viewer.userId ? (
+                  <DropdownMenuItem onClick={onAssignToMe}>
+                    <UserCheck className="size-4" aria-hidden />
+                    Assign to me
+                  </DropdownMenuItem>
+                ) : null}
+                {!isSpam ? (
+                  <DropdownMenuItem
+                    onClick={() => {
+                      void onMarkSpam();
+                    }}
+                  >
+                    <Ban className="size-4" aria-hidden />
+                    Mark as spam
+                  </DropdownMenuItem>
+                ) : null}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </>
+        }
+      />
 
       <div className="flex min-h-0 flex-1 flex-col gap-2">
         <ContextCard conversation={data} siteName={siteName} />

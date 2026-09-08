@@ -48,7 +48,7 @@ import {
   assetStatusState,
   dimensionsLabel,
   durationLabel,
-  formatBytes,
+  sizeLabel,
   formatDateTime,
   mediaErrorMessage,
   useDeleteAsset,
@@ -57,6 +57,7 @@ import {
   type MediaAsset,
   type MediaKind,
 } from './media-admin';
+import { PaneLoadError } from '../../components/pane-load-error';
 
 const COLUMN = 'mx-auto flex w-full max-w-3xl flex-col gap-4';
 
@@ -70,7 +71,15 @@ const KIND_NOUN: Record<MediaKind, string> = {
 
 export function MediaDetailSurface({ ctx }: { ctx: SurfaceContext }) {
   const id = typeof ctx.params.id === 'string' ? ctx.params.id : '';
-  const { data: asset, isPending, isError, isFetching, dataUpdatedAt, refetch } = useMediaAsset(id);
+  const {
+    data: asset,
+    isPending,
+    isError,
+    error,
+    isFetching,
+    dataUpdatedAt,
+    refetch,
+  } = useMediaAsset(id);
 
   useEffect(() => {
     if (asset) ctx.setTitle(asset.filename);
@@ -79,26 +88,15 @@ export function MediaDetailSurface({ ctx }: { ctx: SurfaceContext }) {
   if (isError) {
     return (
       <div className={PANE_SHELL}>
-        <div className="flex h-full items-center justify-center p-8">
-          <Alert color="error" className="max-w-md">
-            <AlertContent>
-              <AlertTitle>Could not load this file</AlertTitle>
-              <AlertDescription>
-                This is a problem reaching the server. The file itself is unaffected.
-              </AlertDescription>
-            </AlertContent>
-            <Button
-              size="sm"
-              color="error"
-              variant="soft"
-              onClick={() => {
-                void refetch();
-              }}
-            >
-              Try again
-            </Button>
-          </Alert>
-        </div>
+        <PaneLoadError
+          error={error}
+          noun="file"
+          title="Could not load this file"
+          description="This is a problem reaching the server. The file itself is unaffected."
+          onRetry={() => {
+            void refetch();
+          }}
+        />
       </div>
     );
   }
@@ -317,24 +315,31 @@ function ManageAsset({
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="File actions">
-        <Badge color={state.tone} variant="soft" size="sm">
-          {state.label}
-        </Badge>
-
-        <Button
-          color="module"
-          size="sm"
-          className="ml-auto"
-          disabled={!dirty}
-          loading={update.isPending}
-          onClick={save}
-        >
-          Save
-        </Button>
-
-        <RefreshButton isFetching={isFetching} updatedAt={dataUpdatedAt} onRefresh={refetch} />
-      </PaneToolbar>
+      <PaneToolbar
+        label="File actions"
+        primary={
+          <Button
+            color="module"
+            size="sm"
+            className="ml-auto"
+            disabled={!dirty}
+            loading={update.isPending}
+            onClick={save}
+          >
+            Save
+          </Button>
+        }
+        controls={
+          <>
+            <Badge color={state.tone} variant="soft" size="sm">
+              {state.label}
+            </Badge>
+          </>
+        }
+        refresh={
+          <RefreshButton isFetching={isFetching} updatedAt={dataUpdatedAt} onRefresh={refetch} />
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className={COLUMN}>
@@ -343,7 +348,7 @@ function ManageAsset({
               {asset.filename}
             </Heading>
             <Text>
-              {KIND_NOUN[asset.kind]} · {formatBytes(asset.byteSize)}
+              {KIND_NOUN[asset.kind]} · {sizeLabel(asset)}
               {dimensions ? ` · ${dimensions}` : ''}
             </Text>
           </div>
@@ -421,7 +426,7 @@ function ManageAsset({
               <Fact label="File type">
                 <span className="font-mono">{asset.mimeType}</span>
               </Fact>
-              <Fact label="Size">{formatBytes(asset.byteSize)}</Fact>
+              <Fact label="Size">{sizeLabel(asset)}</Fact>
               {dimensions ? <Fact label="Dimensions">{dimensions}</Fact> : null}
               {duration ? <Fact label="Length">{duration}</Fact> : null}
               <Fact label="Uploaded">{formatDateTime(asset.createdAt)}</Fact>

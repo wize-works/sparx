@@ -92,57 +92,68 @@ export function CompaniesListSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Company list controls">
-        <div className="max-w-xs min-w-0 flex-1">
-          <SearchInput
+      <PaneToolbar
+        label="Company list controls"
+        search={
+          <div className="max-w-xs min-w-0 flex-1">
+            <SearchInput
+              color="module"
+              size="sm"
+              aria-label="Search companies"
+              placeholder="Search by company…"
+              value={search}
+              onValueChange={setSearch}
+            />
+          </div>
+        }
+        primary={
+          <Button
             color="module"
             size="sm"
-            aria-label="Search companies"
-            placeholder="Search by company…"
-            value={search}
-            onValueChange={setSearch}
-          />
-        </div>
-        <div className="hidden w-40 shrink-0 @lg:block">
-          <Select
-            color="module"
-            size="sm"
-            aria-label="Show which companies"
-            value={status}
-            items={statusItems}
-            onValueChange={(next) => {
-              setStatus(next as 'all' | CompanyStatus);
+            className="ml-auto shrink-0"
+            title="Add a company — hold Shift to open alongside, Alt for a new window"
+            onClick={(event) => {
+              ctx.open('crm.account.detail', { id: 'new' }, { target: targetFor(event) });
+            }}
+          >
+            <Plus className="size-4" aria-hidden />
+            Add a company
+          </Button>
+        }
+        controls={
+          <>
+            <div className="hidden w-40 shrink-0 @lg:block">
+              <Select
+                color="module"
+                size="sm"
+                aria-label="Show which companies"
+                value={status}
+                items={statusItems}
+                onValueChange={(next) => {
+                  setStatus(next as 'all' | CompanyStatus);
+                }}
+              />
+            </div>
+            <SavedViewsMenu
+              objectKey="company"
+              current={currentFilters}
+              baseline={viewFilters([])}
+              nameHint="On hold"
+              selectedId={viewId}
+              onApply={applyView}
+            />
+          </>
+        }
+        refresh={
+          <RefreshButton
+            isFetching={isFetching}
+            updatedAt={data ? dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void refetch();
             }}
           />
-        </div>
-        <Button
-          color="module"
-          size="sm"
-          className="ml-auto shrink-0"
-          title="Add a company — hold Shift to open alongside, Alt for a new window"
-          onClick={(event) => {
-            ctx.open('crm.account.detail', { id: 'new' }, { target: targetFor(event) });
-          }}
-        >
-          <Plus className="size-4" aria-hidden />
-          Add a company
-        </Button>
-        <SavedViewsMenu
-          objectKey="company"
-          current={currentFilters}
-          baseline={viewFilters([])}
-          nameHint="On hold"
-          selectedId={viewId}
-          onApply={applyView}
-        />
-        <RefreshButton
-          isFetching={isFetching}
-          updatedAt={data ? dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void refetch();
-          }}
-        />
-      </PaneToolbar>
+        }
+      />
 
       <Card className="min-h-0 flex-1 overflow-y-auto">
         {isError ? (

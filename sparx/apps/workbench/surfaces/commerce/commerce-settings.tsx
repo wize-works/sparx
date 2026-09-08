@@ -31,6 +31,7 @@ import { PaneToolbar, PANE_SHELL } from '../../components/pane-toolbar';
 import { FormSection } from '../../components/form-section';
 import { useDirtySource } from '../../lib/workbench/dirty';
 import type { SurfaceContext } from '../../lib/surfaces/registry';
+import { SaveFailure } from '@/components/save-failure';
 import {
   CURRENCY_OPTIONS,
   describeDunningPolicy,
@@ -44,6 +45,7 @@ import {
   type CommerceSettings,
   type DunningPolicy,
 } from './commerce-settings-data';
+import { PaneLoadError } from '../../components/pane-load-error';
 
 const COLUMN = 'mx-auto flex w-full max-w-3xl flex-col gap-4';
 
@@ -91,29 +93,16 @@ export function CommerceSettingsSurface({ ctx }: { ctx: SurfaceContext }) {
   if (isError) {
     return (
       <div className={PANE_SHELL}>
-        <div className="flex h-full items-center justify-center p-8">
-          <Alert color="error" className="max-w-md">
-            <AlertContent>
-              <AlertTitle>Could not load your selling settings</AlertTitle>
-              <AlertDescription>
-                {settingsErrorMessage(
-                  error,
-                  'This is a problem reaching the server. Your settings are unaffected.'
-                )}
-              </AlertDescription>
-            </AlertContent>
-            <Button
-              size="sm"
-              color="error"
-              variant="soft"
-              onClick={() => {
-                void refetch();
-              }}
-            >
-              Try again
-            </Button>
-          </Alert>
-        </div>
+        <PaneLoadError
+          title="Could not load your selling settings"
+          description={settingsErrorMessage(
+            error,
+            'This is a problem reaching the server. Your settings are unaffected.'
+          )}
+          onRetry={() => {
+            void refetch();
+          }}
+        />
       </div>
     );
   }
@@ -192,18 +181,21 @@ function SettingsForm({ settings }: { settings: CommerceSettings }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Selling settings actions">
-        <Button
-          color="module"
-          size="sm"
-          className="ml-auto"
-          loading={update.isPending}
-          disabled={!dirty}
-          onClick={submit}
-        >
-          Save
-        </Button>
-      </PaneToolbar>
+      <PaneToolbar
+        label="Selling settings actions"
+        primary={
+          <Button
+            color="module"
+            size="sm"
+            className="ml-auto"
+            loading={update.isPending}
+            disabled={!dirty}
+            onClick={submit}
+          >
+            Save
+          </Button>
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className={COLUMN}>
@@ -217,14 +209,7 @@ function SettingsForm({ settings }: { settings: CommerceSettings }) {
             </Text>
           </div>
 
-          {failure ? (
-            <Alert color="error">
-              <AlertContent>
-                <AlertTitle>Could not save your settings</AlertTitle>
-                <AlertDescription>{failure}</AlertDescription>
-              </AlertContent>
-            </Alert>
-          ) : null}
+          <SaveFailure title="Could not save your settings" message={failure} />
 
           <FormSection
             title="Currency and language"

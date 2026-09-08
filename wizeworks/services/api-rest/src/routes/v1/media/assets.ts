@@ -20,6 +20,12 @@ import { publish } from '@wizeworks/api-core/pubsub';
 import { getStorage } from '../../../lib/storage.js';
 import { mediaSiteVisibilityWhere, resolveListScope } from '../../../lib/property.js';
 import { conflict, notFound } from '@wizeworks/api-core/errors';
+import {
+  countAssetUsage,
+  countOneAssetUsage,
+  describeUsage,
+  type AssetUsage,
+} from '@wizeworks/media';
 
 const ListQuery = z.object({
   q: z.string().max(255).optional(),
@@ -114,7 +120,7 @@ interface VariantRow {
   aspect: string | null;
 }
 
-function serializeAsset(row: AssetRow, variants: VariantRow[] = []) {
+function serializeAsset(row: AssetRow, variants: VariantRow[] = [], usage?: AssetUsage) {
   const storage = getStorage();
   return {
     id: row.id,
@@ -133,7 +139,22 @@ function serializeAsset(row: AssetRow, variants: VariantRow[] = []) {
     status: row.status,
     source: row.source,
     processing_error: row.processingError,
-    usage_count: row.usageCount,
+    // COUNTED, not read off `row.usageCount` — that column has never been written
+    // by anything, so it reported "not used anywhere" about 2,406 pictures that
+    // were on live product pages (issue 381). A caller that did not ask for the
+    // count gets the column, which is the old behaviour and only reaches paths
+    // where nothing renders it.
+    usage_count: usage ? usage.total : row.usageCount,
+    usage_breakdown: usage
+      ? {
+          products: usage.products,
+          content: usage.content,
+          customers: usage.customers,
+          authors: usage.authors,
+          staff_documents: usage.staffDocuments,
+          expenses: usage.expenses,
+        }
+      : null,
     // Originals are private — the dashboard fetches them via a separate
     // signed-GET flow once we add it (Phase 3.7). Variants are public.
     //
@@ -237,8 +258,19 @@ const mediaAssetRoutes: FastifyPluginAsync = (app) => {
       }
     }
 
+    // One grouped count for the whole page, beside the variants query above and
+    // for the same reason: the alternative is a query per row.
+    const usageByAsset = await withRequestTenant(request, (tx) =>
+      countAssetUsage(
+        tx,
+        page.map((r) => r.id)
+      )
+    );
+
     return paged(
-      page.map((row) => serializeAsset(row, variantsByAsset.get(row.id) ?? [])),
+      page.map((row) =>
+        serializeAsset(row, variantsByAsset.get(row.id) ?? [], usageByAsset.get(row.id))
+      ),
       { total, per_page: take }
     );
   });
@@ -251,17 +283,17 @@ const mediaAssetRoutes: FastifyPluginAsync = (app) => {
     requireRole(request, 'viewer');
     const { id } = PathId.parse(request.params);
 
-    const { asset, variants } = await withRequestTenant(request, async (tx) => {
+    const { asset, variants, usage } = await withRequestTenant(request, async (tx) => {
       const row = await tx.mediaAsset.findFirst({ where: { id, deletedAt: null } });
       if (!row) throw notFound('MediaAsset', id);
       const vs = await tx.mediaVariant.findMany({
         where: { assetId: id },
         orderBy: [{ format: 'asc' }, { width: 'asc' }],
       });
-      return { asset: row, variants: vs };
+      return { asset: row, variants: vs, usage: await countOneAssetUsage(tx, id) };
     });
 
-    return ok(serializeAsset(asset, variants));
+    return ok(serializeAsset(asset, variants, usage));
   });
 
   // ──────────────────────────────────────────────────────────────────────
@@ -344,13 +376,17 @@ const mediaAssetRoutes: FastifyPluginAsync = (app) => {
 
       // Refuse delete-while-referenced — entries that still link to this
       // asset would 404 their images. Caller has to detach first.
-      // usage_count is denormalised but reflects the same data the
-      // dashboard's "used by" list shows.
-      if (existing.usageCount > 0) {
-        throw conflict(
-          `Asset is still referenced by ${existing.usageCount} entr${existing.usageCount === 1 ? 'y' : 'ies'}.`,
-          { usage_count: existing.usageCount }
-        );
+      //
+      // COUNTED. This read `existing.usageCount`, a column nothing has ever
+      // written, so the guard could not fire and the console would let an owner
+      // delete a photograph that is on a live product page (issue 381). The
+      // refusal now names the KINDS, because "still referenced by 4 entries"
+      // tells somebody nothing about which screen to go and fix.
+      const usage = await countOneAssetUsage(tx, id);
+      if (usage.total > 0) {
+        throw conflict(`This file is still used by ${describeUsage(usage)}. Detach it first.`, {
+          usage_count: usage.total,
+        });
       }
 
       await tx.mediaAsset.update({

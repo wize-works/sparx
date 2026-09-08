@@ -125,24 +125,31 @@ export function GlReconciliationSurface(_props: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Reconciliation controls">
-        <DateInput
-          color="module"
-          value={asOf}
-          aria-label="Reconcile as at this date"
-          onValueChange={(date) => {
-            setAsOf(date);
-          }}
-        />
-        <RefreshButton
-          className="ml-auto"
-          isFetching={report.isFetching}
-          updatedAt={report.data ? report.dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void report.refetch();
-          }}
-        />
-      </PaneToolbar>
+      <PaneToolbar
+        label="Reconciliation controls"
+        controls={
+          <>
+            <DateInput
+              color="module"
+              value={asOf}
+              aria-label="Reconcile as at this date"
+              onValueChange={(date) => {
+                setAsOf(date);
+              }}
+            />
+          </>
+        }
+        refresh={
+          <RefreshButton
+            className="ml-auto"
+            isFetching={report.isFetching}
+            updatedAt={report.data ? report.dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void report.refetch();
+            }}
+          />
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className="mx-auto flex w-full max-w-3xl flex-col gap-4">

@@ -12,6 +12,7 @@
 // customer's Save draft), which is why Save/Cancel live on the address form
 // itself here, not on the pane toolbar.
 
+import { shownInPlace } from '@wizeworks/query';
 import { useState } from 'react';
 import {
   Badge,
@@ -219,9 +220,9 @@ function AddressForm({
     }
     const input = buildAddressInput(draft);
     if (isNew) {
-      add.mutate(input, { onSuccess: onDone });
+      add.mutate(input, { onSuccess: onDone, onError: shownInPlace });
     } else {
-      update.mutate({ addressId: address.id, input }, { onSuccess: onDone });
+      update.mutate({ addressId: address.id, input }, { onSuccess: onDone, onError: shownInPlace });
     }
   };
 

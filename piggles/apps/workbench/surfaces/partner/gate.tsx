@@ -94,7 +94,7 @@ export function PartnerLoadError({
         title={`${section.charAt(0).toUpperCase()}${section.slice(1)} isn’t available on this account`}
         description={
           reason ??
-          'This part of the partner programme is open to owners, admins and members with partner access.'
+          'This part of the partner program is open to owners, admins and members with partner access.'
         }
       />
     );

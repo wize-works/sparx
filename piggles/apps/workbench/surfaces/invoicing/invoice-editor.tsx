@@ -409,6 +409,8 @@ export function InvoiceEditorSurface({ ctx }: { ctx: SurfaceContext }) {
                   onTaxRateChange={(taxRate) => {
                     update({ taxRate });
                   }}
+                  shippingTotal={doc?.shippingTotal ?? 0}
+                  surchargeTotal={doc?.surchargeTotal ?? 0}
                   {...(doc
                     ? {
                         saved: {

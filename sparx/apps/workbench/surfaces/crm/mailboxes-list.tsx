@@ -101,25 +101,32 @@ export function MailboxesListSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Mailbox controls">
-        <Button
-          color="module"
-          size="sm"
-          title="Connect a mailbox — hold Shift to open alongside, Alt for a new window"
-          onClick={connectMailbox}
-        >
-          <Plus className="size-4" aria-hidden />
-          Connect a mailbox
-        </Button>
-        <RefreshButton
-          className="ml-auto"
-          isFetching={isFetching}
-          updatedAt={data ? dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void refetch();
-          }}
-        />
-      </PaneToolbar>
+      <PaneToolbar
+        label="Mailbox controls"
+        controls={
+          <>
+            <Button
+              color="module"
+              size="sm"
+              title="Connect a mailbox — hold Shift to open alongside, Alt for a new window"
+              onClick={connectMailbox}
+            >
+              <Plus className="size-4" aria-hidden />
+              Connect a mailbox
+            </Button>
+          </>
+        }
+        refresh={
+          <RefreshButton
+            className="ml-auto"
+            isFetching={isFetching}
+            updatedAt={data ? dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void refetch();
+            }}
+          />
+        }
+      />
 
       <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto">
         <Card className="min-h-0 flex-1">

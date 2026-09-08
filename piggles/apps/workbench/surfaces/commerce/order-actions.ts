@@ -114,6 +114,43 @@ export function useRecordFulfillment(id: string) {
   });
 }
 
+/**
+ * Putting a tracking number on a parcel that already went.
+ *
+ * The other half of the gap the comment above describes. `PATCH
+ * /v1/orders/:id/fulfillments/:fulfillmentId` has always existed and, like the
+ * POST before it, nothing in either console called it — so the moment a shipment
+ * was recorded its details were frozen forever.
+ *
+ * That is not an edge case for a shop that posts its own parcels. The tracking
+ * number is optional at the counter and usually not known yet: the goods are
+ * boxed and marked sent, and the number comes back from the post office
+ * afterwards. There was nowhere to put it. The customer had already been emailed
+ * "your order is on its way" with no way to follow it, and no later mail would
+ * ever carry one.
+ */
+export function useUpdateTracking(id: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      fulfillmentId,
+      trackingNumber,
+    }: {
+      fulfillmentId: string;
+      trackingNumber: string;
+    }) =>
+      api.patch<OrderFulfillment>(`/v1/orders/${id}/fulfillments/${fulfillmentId}`, {
+        // Empty clears it. `null` is what the schema takes for "there is no
+        // number", and it is a real answer — a number typed by mistake should be
+        // removable, not merely replaceable.
+        trackingNumber: trackingNumber.trim() || null,
+      }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ORDERS_KEY });
+    },
+  });
+}
+
 /** The server refuses to cancel a delivered or refunded order with a sentence
  *  saying so — which is worth showing verbatim rather than replacing with a
  *  guess. */
@@ -165,4 +202,35 @@ export function useRefundOrder(id: string) {
  */
 export function orderErrorMessage(error: unknown, fallback: string): string {
   return apiErrorMessage(error, fallback);
+}
+
+/**
+ * Raising the invoice that asks for the money on this order.
+ *
+ * The order is copied onto it — every line, the delivery charge, the addresses
+ * as they were frozen at checkout, and the order's own tax. Nothing is
+ * re-priced: the order is the record of what was agreed, and an invoice quietly
+ * charging a different number would be a second opinion about a sale that has
+ * already happened.
+ *
+ * The server refuses, in a sentence worth showing verbatim, when there is
+ * nothing to ask for: an order paid in full, one that was called off, or one
+ * that has already been invoiced.
+ */
+export function useCreateInvoiceForOrder(id: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { dueAt?: string } = {}) =>
+      api.post<{ document: { id: string; number: string | null }; balance: number }>(
+        `/v1/orders/${id}/invoices`,
+        input.dueAt ? { dueAt: input.dueAt } : {}
+      ),
+    onSuccess: () => {
+      // The order's own paid/unpaid state does not move yet — raising an invoice
+      // asks for money, it does not receive any — but the invoice list on this
+      // pane does, and so does the Invoices screen.
+      void queryClient.invalidateQueries({ queryKey: ORDERS_KEY });
+      void queryClient.invalidateQueries({ queryKey: ['invoicing'] });
+    },
+  });
 }

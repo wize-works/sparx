@@ -1,13 +1,12 @@
 # 172 — Fourteen of her fifteen codes were not the one she typed
 
-**Status:** open
+**Status:** fixed
 **Severity:** minor
 **Found by:** P03 · Juniper Row · act 3
 **Surface:** mypiggles › Sell › Products › one product › Variants — "Give them all the same price"
 **Filed:** 2026-08-23
-**Fixed:** —
-**Confirmed by:** —
-**Blocked on:** decision — which stem a generated code should take, and whether existing codes may be renamed
+**Fixed:** 2026-09-08
+**Confirmed by:** P03 · Juniper Row · act 107
 
 ## What happened
 
@@ -98,27 +97,96 @@ having it to hand — which is a fair part of why it reached for the title inste
 
 ## The fix
 
-Not made. `Blocked on: decision`, and there are two real questions in it.
+Made. It was not a decision to defer: the answer to "which stem" was already
+sitting in the file, and the second half turned out not to be a preference at
+all.
 
-**Which stem?** Extending the parent's code is the obvious answer for a product
-whose code was typed by hand. It is less obvious when the parent's code was
-itself auto-suggested — then both schemes come from the same place and it
-changes nothing.
+**Which stem.** The code the product already carries. Concretely that is the
+default variant's — the version shown first, which is what the Add a product form
+writes and what Devi typed. The bulk fill already reads that same version for the
+PRICE it copies, so the generator was reading the web address while its own
+caller three lines up was reading the code.
 
-**What about the odd one out?** The variant that already exists keeps its code,
-by design and correctly ("keeping its price and code" is what the confirm
-promises). So even with the stem fixed, XS · Clay stays `ASH-OVERSHIRT` while
-its fourteen siblings become `ASH-OVERSHIRT-…`. Making it consistent means
-RENAMING a code that may already be printed on something, which is not a thing
-to do quietly.
+Its own choices come back off the end first. A version created BY this generator
+carries its combination (`ASH-OVERSHIRT-XS-CLAY`), and anyone may make that one
+the version shown first; hanging the next code off it whole would compound into
+`ASH-OVERSHIRT-XS-CLAY-S-BONE`.
 
-An honest third option: leave the codes alone and let her rename them in bulk —
-which the platform does not currently offer, and which is the same missing
-selection model as [166].
+**The odd one out stays.** `ASH-OVERSHIRT` on XS · Clay keeps its code, and the
+fourteen siblings now read `ASH-OVERSHIRT-<size>-<color>`. That is one family
+with one member unsuffixed, rather than fourteen against one, and renaming a code
+that may already be printed on a swing tag is not a thing to do quietly. The
+original argument for leaving it stands; what changed is that leaving it is no
+longer conspicuous.
+
+**The quiet half was not hypothetical, and it was the more serious one.** The
+12-character truncation was applied to the STEM, which is the only part that
+makes a code unique across products. Asking the database how many products share
+a truncated stem inside one tenant:
+
+```
+     tenant      |     stem     | products
+-----------------+--------------+----------
+ Threadline      | SAMPLE-BRUSH |       12
+ Threadline      | SAMPLE-LINEN |       12
+ Threadline      | SAMPLE-SLUB- |       12
+ … four more twelves, then a long tail of twos and threes
+```
+
+Twelve products, one stem, the same size and color axes. The second one filled
+in asks the server for a code the first already holds, the server refuses it, and
+the bulk fill stops partway with "Created 3, then stopped" and no way out — there
+is no bulk rename. So the stem is no longer shortened at all; only the choice
+tokens are, where a long color name is the only thing at risk.
+
+**A new test caught the fix leaving its own neighbour behind.** `skuStem` falls
+back to the product's web address when there is no version yet, and that fallback
+was still slicing to twelve — one line below the truncation I had just argued
+against. The test naming two products called "The Linen Shirtdress" and "The
+Linen Shirt" went red on my own code.
+
+Both consoles. The sparx twin's copy lived inside a 1,200-line `.tsx`, where the
+console's test seat (pure functions, no React) could not reach it, so the slot
+rules moved to `product-variant-slots.ts` beside a test file that mirrors the
+Piggles one.
+
+Guards run red both ways, and they are independent: dropping the stem fix reddens
+the two stem tests and leaves the truncation pair green; restoring the truncation
+reddens the truncation pair and leaves the stem tests green.
+
+### Where the code changed
+
+- `piggles/apps/workbench/surfaces/commerce/product-variants/slots.ts` —
+  `normalize`, `token`, new `skuStem`, `suggestSlotSku(stem, …)`
+- `…/product-variants/use-variants-tab.ts` — derives `stem` and `taken` ONCE and
+  hands them down; three places offer a code and a stem derived three times is a
+  stem that drifts
+- `…/product-variants/{variant-actions.ts, slot-rows.tsx, grouped-grid.tsx,
+no-price-yet.tsx}` and `product-variants.tsx` — the call sites
+- `sparx/apps/workbench/surfaces/commerce/product-variant-slots.ts` (new, split
+  out of `product-variants.tsx`) + `product-variant-slots.test.ts`
+- `piggles/…/product-variants/slots.test.ts` (new, 6 tests)
 
 ## Confirmed by
 
-—
+P03 · Juniper Row · act 107, on her screen with her data.
+
+Devi added **Moss** (`#6E7B4F`) as a fourth colorway to The Ash Overshirt for the
+autumn drop — Options → Add a color → Change how it is sold — which left five
+combinations without a price. The single **Set a price** on XS · Moss pre-filled
+`ASH-OVERSHIRT-XS-MOSS`. **Give them all the same price** → **Create them** wrote
+all five:
+
+```
+ ASH-OVERSHIRT-L-MOSS
+ ASH-OVERSHIRT-M-MOSS
+ ASH-OVERSHIRT-S-MOSS
+ ASH-OVERSHIRT-XL-MOSS
+ ASH-OVERSHIRT-XS-MOSS
+```
+
+Read off the Product code field on the Variants tab, then confirmed in the
+database. Her scheme, extended.
 
 ## Rating effect
 

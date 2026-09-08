@@ -1263,22 +1263,27 @@ export function AccountingSurface() {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Accounting controls">
-        <span className="inline-flex items-center gap-1.5">
-          <Plug className="size-4" aria-hidden />
-          <Text as="span" className="text-sm font-medium">
-            Your accounting package
-          </Text>
-        </span>
-        <RefreshButton
-          className="ml-auto"
-          isFetching={isFetching}
-          updatedAt={data ? dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void refetch();
-          }}
-        />
-      </PaneToolbar>
+      <PaneToolbar
+        label="Accounting controls"
+        status={
+          <span className="inline-flex items-center gap-1.5">
+            <Plug className="size-4" aria-hidden />
+            <Text as="span" className="text-sm font-medium">
+              Your accounting package
+            </Text>
+          </span>
+        }
+        refresh={
+          <RefreshButton
+            className="ml-auto"
+            isFetching={isFetching}
+            updatedAt={data ? dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void refetch();
+            }}
+          />
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         {isError ? (

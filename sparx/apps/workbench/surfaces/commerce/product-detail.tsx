@@ -71,7 +71,6 @@ import { PaneToolbar, PANE_SHELL } from '../../components/pane-toolbar';
 import { FormSection } from '../../components/form-section';
 import { MoneyInput } from '@/components/money-input';
 import type { SurfaceContext } from '../../lib/surfaces/registry';
-import { ScrollStrip } from '../../components/scroll-strip';
 import { useDomains } from '../domains/data';
 import { useAnnounceProduct } from './product-scope';
 import { ProductOverviewTab } from './product-overview';
@@ -92,6 +91,7 @@ import {
   usePublishProduct,
   VariantAfterCreateError,
 } from './products-data';
+import { PaneLoadError } from '../../components/pane-load-error';
 
 /** The one column everything in this pane sits in. Centred and capped, because a
  *  pane torn onto a second monitor is otherwise 2000px of dead grey. */
@@ -180,18 +180,21 @@ function AddProduct({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="New product actions">
-        <Button
-          color="module"
-          size="sm"
-          className="ml-auto"
-          loading={create.isPending}
-          disabled={Boolean(titleError) || Boolean(skuError)}
-          onClick={submit}
-        >
-          Add product
-        </Button>
-      </PaneToolbar>
+      <PaneToolbar
+        label="New product actions"
+        primary={
+          <Button
+            color="module"
+            size="sm"
+            className="ml-auto"
+            loading={create.isPending}
+            disabled={Boolean(titleError) || Boolean(skuError)}
+            onClick={submit}
+          >
+            Add product
+          </Button>
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className={COLUMN}>
@@ -388,7 +391,7 @@ const TABS: { value: string; label: string; what: string; plan: string }[] = [
 function ManageProduct({ ctx, id }: { ctx: SurfaceContext; id: string }) {
   const toast = useToast();
   const confirm = useConfirm();
-  const { data: product, isPending, isError, refetch } = useProduct(id);
+  const { data: product, isPending, isError, error, refetch } = useProduct(id);
   const { data: domains } = useDomains();
   const { data: activeSite } = useActiveSiteId();
   const publish = usePublishProduct(id);
@@ -417,27 +420,15 @@ function ManageProduct({ ctx, id }: { ctx: SurfaceContext; id: string }) {
     // A failed load REPLACES the shell. Rendering empty tabs beside a dead Save
     // invites someone to retype a description over the top of nothing.
     return (
-      <div className="flex h-full items-center justify-center p-8">
-        <Alert color="error" className="max-w-md">
-          <AlertContent>
-            <AlertTitle>Could not load this product</AlertTitle>
-            <AlertDescription>
-              This is a problem reaching the server. The product itself is unaffected — nothing has
-              been lost.
-            </AlertDescription>
-          </AlertContent>
-          <Button
-            size="sm"
-            color="error"
-            variant="soft"
-            onClick={() => {
-              void refetch();
-            }}
-          >
-            Try again
-          </Button>
-        </Alert>
-      </div>
+      <PaneLoadError
+        error={error}
+        noun="product"
+        title="Could not load this product"
+        description="This is a problem reaching the server. The product itself is unaffected — nothing has been lost."
+        onRetry={() => {
+          void refetch();
+        }}
+      />
     );
   }
 
@@ -511,89 +502,90 @@ function ManageProduct({ ctx, id }: { ctx: SurfaceContext; id: string }) {
 
   return tabSaveProvider(
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Product actions" wrap>
-        <Badge color={state.tone} variant="soft" size="sm">
-          {state.label}
-        </Badge>
-
-        {onSale && productUrl ? (
-          <Button
-            size="sm"
-            variant="outline"
-            color="neutral"
-            className="ml-auto"
-            title="Open this product on your website"
-            // Empty here, not at runtime — silica's `render` moves this Button's
-            // children onto the anchor, which the a11y rule cannot see.
-            // eslint-disable-next-line jsx-a11y/anchor-has-content -- children arrive via `render`
-            render={<a href={productUrl} target="_blank" rel="noreferrer" />}
-          >
-            <span className="hidden @2xl:inline">View</span>
-            <ExternalLink className="size-4" aria-hidden />
-          </Button>
-        ) : null}
-
-        {/* Tell people about it. The moment someone is most likely to want a social
+      <PaneToolbar
+        label="Product actions"
+        controls={
+          <>
+            <Badge color={state.tone} variant="soft" size="sm">
+              {state.label}
+            </Badge>
+            {onSale && productUrl ? (
+              <Button
+                size="sm"
+                variant="outline"
+                color="neutral"
+                className="ml-auto"
+                title="Open this product on your website"
+                // Empty here, not at runtime — silica's `render` moves this Button's
+                // children onto the anchor, which the a11y rule cannot see.
+                // eslint-disable-next-line jsx-a11y/anchor-has-content -- children arrive via `render`
+                render={<a href={productUrl} target="_blank" rel="noreferrer" />}
+              >
+                <span className="hidden @2xl:inline">View</span>
+                <ExternalLink className="size-4" aria-hidden />
+              </Button>
+            ) : null}
+            {/* Tell people about it. The moment someone is most likely to want a social
             post is right after putting something on sale — and until this existed the
             composer opened blank and they retyped the title by hand. Wears the SOCIAL
             module's hue via a nested provider, because it surfaces that module's
             functionality on a commerce page. */}
-        {onSale ? (
-          <ModuleScope module="social">
-            <Button
-              size="sm"
-              variant="outline"
-              color="module"
-              title="Write a social post about this product"
-              onClick={() => {
-                ctx.open(
-                  'social.composer',
-                  { id: 'new', seedType: 'product', seedId: product.id },
-                  { target: 'beside' }
-                );
-              }}
-            >
-              <Share2 className="size-4" aria-hidden />
-              <span className="hidden @2xl:inline">Share</span>
-            </Button>
-          </ModuleScope>
-        ) : null}
-
-        {retired ? null : (
-          <Button
-            size="sm"
-            variant="outline"
-            color={onSale ? 'neutral' : 'module'}
-            className={onSale && productUrl ? undefined : 'ml-auto'}
-            loading={publish.isPending}
-            onClick={() => {
-              void togglePublished();
-            }}
-          >
-            {onSale ? 'Take off sale' : 'Put on sale'}
-          </Button>
-        )}
-
-        {/* Save is the surface's primary action, so it sits where a primary
+            {onSale ? (
+              <ModuleScope module="social">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  color="module"
+                  title="Write a social post about this product"
+                  onClick={() => {
+                    ctx.open(
+                      'social.composer',
+                      { id: 'new', seedType: 'product', seedId: product.id },
+                      { target: 'beside' }
+                    );
+                  }}
+                >
+                  <Share2 className="size-4" aria-hidden />
+                  <span className="hidden @2xl:inline">Share</span>
+                </Button>
+              </ModuleScope>
+            ) : null}
+            {retired ? null : (
+              <Button
+                size="sm"
+                variant="outline"
+                color={onSale ? 'neutral' : 'module'}
+                className={onSale && productUrl ? undefined : 'ml-auto'}
+                loading={publish.isPending}
+                onClick={() => {
+                  void togglePublished();
+                }}
+              >
+                {onSale ? 'Take off sale' : 'Put on sale'}
+              </Button>
+            )}
+            {/* Save is the surface's primary action, so it sits where a primary
             action belongs — last in the toolbar, filled, next to the lifecycle
             controls. It commits the ACTIVE tab only; the dots on the tab strip
             are what say which other tabs still have work pending. A tab with
             nothing to save never registers, and Save is simply absent there
             rather than present-but-dead, which would be a worse lie. */}
-        {tabSave.active ? (
-          <Button
-            size="sm"
-            color="module"
-            loading={tabSave.active.saving}
-            disabled={!tabSave.active.dirty}
-            onClick={() => {
-              void saveActiveTab();
-            }}
-          >
-            Save
-          </Button>
-        ) : null}
-      </PaneToolbar>
+            {tabSave.active ? (
+              <Button
+                size="sm"
+                color="module"
+                loading={tabSave.active.saving}
+                disabled={!tabSave.active.dirty}
+                onClick={() => {
+                  void saveActiveTab();
+                }}
+              >
+                Save
+              </Button>
+            ) : null}
+          </>
+        }
+      />
 
       {/* ── Why PILLS, and why `module` rather than `module-commerce` ────────
           This app is a tabbed dock, so there are two tab strips within ~40px of
@@ -653,51 +645,45 @@ function ManageProduct({ ctx, id }: { ctx: SurfaceContext; id: string }) {
             outside the thing that moves. Do not merge these back into one
             element, and do not reduce `px-4` without re-checking a narrow pane. */}
         <div className="bg-base-300 shrink-0 rounded-full px-4 py-2">
-          <ScrollStrip label="tabs">
-            <TabsList>
-              {TABS.map((entry) => (
-                // `text-base-content` is not decoration — it is a correction.
-                // Silica's own `.tabs-tab` ships its resting ink at 65% alpha, which
-                // is a faded token on text a person is meant to READ. Tab labels are
-                // navigation: they have to be legible before you click them, and
-                // "which section am I not in" is the question the strip exists to
-                // answer. The selected tab is already distinguished by a filled
-                // pill, so the fade buys no hierarchy it was not already getting for
-                // free. Full ink on every label; the pill carries the state.
-                <TabsTab
-                  key={entry.value}
-                  value={entry.value}
-                  className="flex items-center gap-1.5"
-                >
-                  {entry.label}
-                  {/* The dot is what makes a toolbar Save honest. Save commits the
+          <TabsList scrollable>
+            {TABS.map((entry) => (
+              // `text-base-content` is not decoration — it is a correction.
+              // Silica's own `.tabs-tab` ships its resting ink at 65% alpha, which
+              // is a faded token on text a person is meant to READ. Tab labels are
+              // navigation: they have to be legible before you click them, and
+              // "which section am I not in" is the question the strip exists to
+              // answer. The selected tab is already distinguished by a filled
+              // pill, so the fade buys no hierarchy it was not already getting for
+              // free. Full ink on every label; the pill carries the state.
+              <TabsTab key={entry.value} value={entry.value} className="flex items-center gap-1.5">
+                {entry.label}
+                {/* The dot is what makes a toolbar Save honest. Save commits the
                       tab you are standing on, so something has to say "Pricing
                       still has unsaved work" while you are on Media — placement
                       was never going to carry that. Same device the dock uses on a
                       pane tab, one level down. Announced as well as drawn: a
                       color-only signal is not a signal for everyone. */}
-                  {tabSave.dirtyTabs.has(entry.value) ? (
-                    <>
-                      <span
-                        // The selected pill is already a solid module fill, so a
-                        // `bg-module` dot would vanish into it — invisible on the
-                        // one tab you are actually standing on. On the selected
-                        // pill the dot wears the pill's own ink; everywhere else
-                        // it wears the module hue against the plain strip.
-                        className={
-                          entry.value === tab
-                            ? 'bg-module-content size-1.5 shrink-0 rounded-full'
-                            : 'bg-module size-1.5 shrink-0 rounded-full'
-                        }
-                        aria-hidden
-                      />
-                      <span className="sr-only">(unsaved changes)</span>
-                    </>
-                  ) : null}
-                </TabsTab>
-              ))}
-            </TabsList>
-          </ScrollStrip>
+                {tabSave.dirtyTabs.has(entry.value) ? (
+                  <>
+                    <span
+                      // The selected pill is already a solid module fill, so a
+                      // `bg-module` dot would vanish into it — invisible on the
+                      // one tab you are actually standing on. On the selected
+                      // pill the dot wears the pill's own ink; everywhere else
+                      // it wears the module hue against the plain strip.
+                      className={
+                        entry.value === tab
+                          ? 'bg-module-content size-1.5 shrink-0 rounded-full'
+                          : 'bg-module size-1.5 shrink-0 rounded-full'
+                      }
+                      aria-hidden
+                    />
+                    <span className="sr-only">(unsaved changes)</span>
+                  </>
+                ) : null}
+              </TabsTab>
+            ))}
+          </TabsList>
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto">

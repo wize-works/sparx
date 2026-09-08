@@ -63,8 +63,7 @@ export interface PartnerInvitation {
  *  `kind` tag narrows the union so a field that exists on only one of them is a
  *  type error rather than a silent `undefined`. */
 export type PartnerPerson =
-  | ({ kind: 'member' } & PartnerMember)
-  | ({ kind: 'invitation' } & PartnerInvitation);
+  ({ kind: 'member' } & PartnerMember) | ({ kind: 'invitation' } & PartnerInvitation);
 
 // Shared with the Team surface on purpose: both read the same two endpoints, so
 // an invite or a revoke here invalidates the roster the Team pane shows, and the

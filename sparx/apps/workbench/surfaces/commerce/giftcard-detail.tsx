@@ -30,7 +30,7 @@ import {
   useToast,
 } from '@wizeworks/silicaui-react';
 import { useConfirm } from '../../lib/confirm';
-import { Minus, Plus } from 'lucide-react';
+import { Check, Copy, Minus, Plus } from 'lucide-react';
 import { useDirtySource } from '../../lib/workbench/dirty';
 import { afterPaneChange } from '../../lib/defer';
 import { PaneToolbar, PANE_SHELL } from '../../components/pane-toolbar';
@@ -38,6 +38,7 @@ import { FormSection } from '../../components/form-section';
 import { RefreshButton } from '../../components/refresh-button';
 import type { SurfaceContext } from '../../lib/surfaces/registry';
 import { formatCents } from './products-data';
+import { SaveFailure } from '@/components/save-failure';
 import {
   giftCardErrorMessage,
   giftCardState,
@@ -70,6 +71,48 @@ function formatDate(iso: string): string {
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) return iso;
   return date.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+/**
+ * Copy the card's code.
+ *
+ * Not `CopyValue`: that one REPLACES the value with its own code box, and here
+ * the code is already the heading. This is the button on its own, beside it.
+ */
+function CopyCode({ value }: { value: string }) {
+  const toast = useToast();
+  const [copied, setCopied] = useState(false);
+  return (
+    <Button
+      size="sm"
+      variant="ghost"
+      shape="square"
+      aria-label="Copy the gift card code"
+      title="Copy the gift card code"
+      onClick={() => {
+        void (async () => {
+          try {
+            await navigator.clipboard.writeText(value);
+            setCopied(true);
+            setTimeout(() => {
+              setCopied(false);
+            }, 1600);
+          } catch {
+            // Clipboard access can be refused (permissions, an insecure context).
+            // Saying so beats a button that silently does nothing — the code is
+            // on screen and can still be selected by hand.
+            toast.add({
+              title: 'Could not copy that',
+              description: 'Select the code and copy it manually.',
+              type: 'error',
+            });
+          }
+        })();
+      }}
+    >
+      {copied ? <Check className="size-4" aria-hidden /> : <Copy className="size-4" aria-hidden />}
+    </Button>
+  );
 }
 
 export function GiftCardDetailSurface({ ctx }: { ctx: SurfaceContext }) {
@@ -140,18 +183,21 @@ function IssueGiftCard({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Gift card actions">
-        <Button
-          color="module"
-          size="sm"
-          className="ml-auto"
-          loading={issue.isPending}
-          disabled={Boolean(amountError)}
-          onClick={submit}
-        >
-          Issue gift card
-        </Button>
-      </PaneToolbar>
+      <PaneToolbar
+        label="Gift card actions"
+        primary={
+          <Button
+            color="module"
+            size="sm"
+            className="ml-auto"
+            loading={issue.isPending}
+            disabled={Boolean(amountError)}
+            onClick={submit}
+          >
+            Issue gift card
+          </Button>
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className={COLUMN}>
@@ -161,18 +207,11 @@ function IssueGiftCard({ ctx }: { ctx: SurfaceContext }) {
             </Heading>
             <Text>
               Load an amount onto a new card and, if you like, say who it is for. A unique code is
-              created for you — share it with the recipient so they can spend it at checkout.
+              created for you. Share it with the recipient so they can spend it at checkout.
             </Text>
           </div>
 
-          {failure ? (
-            <Alert color="error">
-              <AlertContent>
-                <AlertTitle>Could not issue this gift card</AlertTitle>
-                <AlertDescription>{failure}</AlertDescription>
-              </AlertContent>
-            </Alert>
-          ) : null}
+          <SaveFailure title="Could not issue this gift card" message={failure} />
 
           <FormSection title="Amount">
             <div className="grid gap-3 @md:grid-cols-2">
@@ -313,21 +352,28 @@ function ManageGiftCard({ ctx, id }: { ctx: SurfaceContext; id: string }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Gift card actions">
-        {card ? (
-          <Badge color={giftCardState(card.status).tone} variant="soft" size="sm">
-            {giftCardState(card.status).label}
-          </Badge>
-        ) : null}
-        <RefreshButton
-          className="ml-auto"
-          isFetching={isFetching}
-          updatedAt={card ? dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void refetch();
-          }}
-        />
-      </PaneToolbar>
+      <PaneToolbar
+        label="Gift card actions"
+        controls={
+          <>
+            {card ? (
+              <Badge color={giftCardState(card.status).tone} variant="soft" size="sm">
+                {giftCardState(card.status).label}
+              </Badge>
+            ) : null}
+          </>
+        }
+        refresh={
+          <RefreshButton
+            className="ml-auto"
+            isFetching={isFetching}
+            updatedAt={card ? dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void refetch();
+            }}
+          />
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className={COLUMN}>
@@ -417,10 +463,18 @@ function GiftCardBody({ card }: { card: GiftCardDetail }) {
 
   return (
     <>
+      {/* The code IS the card. It is the only thing on this pane that has to get
+          to another person, and it has to arrive character-perfect — so it is
+          both the identity heading and a copy button. Piggles showed it nowhere
+          at all: the toast that announced it faded, the tab truncated it, and
+          the pane she opens to give a customer their code did not contain it. */}
       <div className="flex flex-col gap-1">
-        <Heading level={1} className="font-mono text-2xl font-semibold">
-          {card.code}
-        </Heading>
+        <div className="flex flex-wrap items-center gap-2">
+          <Heading level={1} className="font-mono text-2xl font-semibold">
+            {card.code}
+          </Heading>
+          <CopyCode value={card.code} />
+        </div>
         <Text>{state.detail}</Text>
       </div>
 

@@ -233,30 +233,37 @@ export function ProductSubscriptionsSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label={`${LABEL} actions`}>
-        <Repeat2 className="size-4 shrink-0" aria-hidden />
-        <Heading level={2} className="min-w-0 truncate text-base font-semibold">
-          {scope.product.title}
-        </Heading>
-        {scope.isFollowing ? (
-          <Badge color="info" variant="soft" size="sm">
-            Following
-          </Badge>
-        ) : null}
-        {active > 0 ? (
-          <Badge color="success" variant="soft" size="sm">
-            {active === 1 ? '1 on repeat' : `${String(active)} on repeat`}
-          </Badge>
-        ) : null}
-        <RefreshButton
-          className="ml-auto"
-          isFetching={subscriptions.isFetching}
-          updatedAt={subscriptions.dataUpdatedAt}
-          onRefresh={() => {
-            void subscriptions.refetch();
-          }}
-        />
-      </PaneToolbar>
+      <PaneToolbar
+        label={`${LABEL} actions`}
+        controls={
+          <>
+            <Repeat2 className="size-4 shrink-0" aria-hidden />
+            <Heading level={2} className="min-w-0 truncate text-base font-semibold">
+              {scope.product.title}
+            </Heading>
+            {scope.isFollowing ? (
+              <Badge color="info" variant="soft" size="sm">
+                Following
+              </Badge>
+            ) : null}
+            {active > 0 ? (
+              <Badge color="success" variant="soft" size="sm">
+                {active === 1 ? '1 on repeat' : `${String(active)} on repeat`}
+              </Badge>
+            ) : null}
+          </>
+        }
+        refresh={
+          <RefreshButton
+            className="ml-auto"
+            isFetching={subscriptions.isFetching}
+            updatedAt={subscriptions.dataUpdatedAt}
+            onRefresh={() => {
+              void subscriptions.refetch();
+            }}
+          />
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className="mx-auto flex w-full max-w-3xl flex-col gap-4">

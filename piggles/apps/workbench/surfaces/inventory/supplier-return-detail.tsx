@@ -174,7 +174,7 @@ function NewReturn({ ctx }: { ctx: SurfaceContext }) {
         afterCommit(() => {
           toast.add({
             title: 'No item with that code',
-            description: `Nothing in your catalogue is coded “${sku}”. Check the code and try again.`,
+            description: `Nothing in your catalog is coded “${sku}”. Check the code and try again.`,
             type: 'error',
           });
         });

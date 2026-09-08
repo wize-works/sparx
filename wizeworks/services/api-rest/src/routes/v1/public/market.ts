@@ -597,7 +597,7 @@ const publicMarketRoutes: FastifyPluginAsync = async (app) => {
             select: {
               quantity: true,
               subtotalCents: true,
-              variant: { select: { weightGrams: true } },
+              variant: { select: { id: true, weightGrams: true } },
             },
           },
         },
@@ -612,27 +612,37 @@ const publicMarketRoutes: FastifyPluginAsync = async (app) => {
     const totalValue = cart.items.reduce((sum, it) => sum + it.subtotalCents, 0);
 
     const placeholderAddress = { line1: '—', city: '—', country: 'US' };
-    const rates = await shippingService.rateShipment(ctx, {
-      fromAddress: placeholderAddress,
-      toAddress: {
-        line1: '—',
-        city: '—',
-        country: body.destinationCountry ?? 'US',
-        ...(body.destinationPostal ? { postalCode: body.destinationPostal } : {}),
-      },
-      currency: cart.currency,
-      signatureRequired: false,
-      saturdayDelivery: false,
-      packages: [
-        {
-          weight: totalWeight,
-          dimensions: { lengthMm: 0, widthMm: 0, heightMm: 0 },
-          containsHazmat: false,
-          hazmatClass: 'none' as const,
-          declaredValueCents: totalValue,
+    // Which product groups the basket is in. Without it every group's delivery
+    // options are offered to every basket — see shipping-profile-match.ts.
+    const contents = await shippingService.shipmentContents(
+      ctx,
+      cart.items.map((it) => it.variant.id)
+    );
+    const rates = await shippingService.rateShipment(
+      ctx,
+      {
+        fromAddress: placeholderAddress,
+        toAddress: {
+          line1: '—',
+          city: '—',
+          country: body.destinationCountry ?? 'US',
+          ...(body.destinationPostal ? { postalCode: body.destinationPostal } : {}),
         },
-      ],
-    });
+        currency: cart.currency,
+        signatureRequired: false,
+        saturdayDelivery: false,
+        packages: [
+          {
+            weight: totalWeight,
+            dimensions: { lengthMm: 0, widthMm: 0, heightMm: 0 },
+            containsHazmat: false,
+            hazmatClass: 'none' as const,
+            declaredValueCents: totalValue,
+          },
+        ],
+      },
+      contents
+    );
 
     return ok(
       rates.map((r) => ({

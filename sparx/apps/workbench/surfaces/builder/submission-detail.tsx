@@ -51,12 +51,13 @@ import {
   type FormSubmission,
   type SubmissionAttachment,
 } from './form-submissions-data';
+import { PaneLoadError } from '../../components/pane-load-error';
 
 const COLUMN = 'mx-auto flex w-full max-w-3xl flex-col gap-4';
 
 export function SubmissionDetailSurface({ ctx }: { ctx: SurfaceContext }) {
   const id = typeof ctx.params.id === 'string' ? ctx.params.id : '';
-  const { data, isPending, isError, isFetching, dataUpdatedAt, refetch } = useSubmission(id);
+  const { data, isPending, isError, error, isFetching, dataUpdatedAt, refetch } = useSubmission(id);
 
   useEffect(() => {
     if (data) ctx.setTitle(submitterLabel(data));
@@ -64,27 +65,15 @@ export function SubmissionDetailSurface({ ctx }: { ctx: SurfaceContext }) {
 
   if (isError) {
     return (
-      <div className="flex h-full items-center justify-center p-8">
-        <Alert color="error" className="max-w-md">
-          <AlertContent>
-            <AlertTitle>Could not load this submission</AlertTitle>
-            <AlertDescription>
-              This is a problem reaching the server. The submission itself is unaffected — nothing
-              has been lost.
-            </AlertDescription>
-          </AlertContent>
-          <Button
-            size="sm"
-            color="error"
-            variant="soft"
-            onClick={() => {
-              void refetch();
-            }}
-          >
-            Try again
-          </Button>
-        </Alert>
-      </div>
+      <PaneLoadError
+        error={error}
+        noun="submission"
+        title="Could not load this submission"
+        description="This is a problem reaching the server. The submission itself is unaffected — nothing has been lost."
+        onRetry={() => {
+          void refetch();
+        }}
+      />
     );
   }
 
@@ -214,80 +203,85 @@ function SubmissionBody({
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Submission actions" wrap>
-        <Badge color={state.tone} variant="soft" size="sm">
-          {state.label}
-        </Badge>
+      <PaneToolbar
+        label="Submission actions"
+        controls={
+          <>
+            <Badge color={state.tone} variant="soft" size="sm">
+              {state.label}
+            </Badge>
+            <div className="ml-auto flex flex-wrap items-center gap-2">
+              {isArchived ? (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  color="neutral"
+                  disabled={busy}
+                  onClick={() => {
+                    changeStatus('read', 'Moved back to your inbox');
+                  }}
+                >
+                  <Undo2 className="size-4" aria-hidden />
+                  Back to inbox
+                </Button>
+              ) : (
+                <Button
+                  size="sm"
+                  color="module"
+                  disabled={busy}
+                  onClick={() => {
+                    changeStatus('archived', 'Marked as handled');
+                  }}
+                >
+                  <Archive className="size-4" aria-hidden />
+                  Mark as handled
+                </Button>
+              )}
 
-        <div className="ml-auto flex flex-wrap items-center gap-2">
-          {isArchived ? (
-            <Button
-              size="sm"
-              variant="outline"
-              color="neutral"
-              disabled={busy}
-              onClick={() => {
-                changeStatus('read', 'Moved back to your inbox');
-              }}
-            >
-              <Undo2 className="size-4" aria-hidden />
-              Back to inbox
-            </Button>
-          ) : (
-            <Button
-              size="sm"
-              color="module"
-              disabled={busy}
-              onClick={() => {
-                changeStatus('archived', 'Marked as handled');
-              }}
-            >
-              <Archive className="size-4" aria-hidden />
-              Mark as handled
-            </Button>
-          )}
+              {isSpam ? (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  color="neutral"
+                  disabled={busy}
+                  onClick={() => {
+                    changeStatus('read', 'No longer marked as spam');
+                  }}
+                >
+                  Not spam
+                </Button>
+              ) : (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  color="neutral"
+                  disabled={busy}
+                  onClick={() => {
+                    changeStatus('spam', 'Marked as spam');
+                  }}
+                >
+                  <Ban className="size-4" aria-hidden />
+                  Spam
+                </Button>
+              )}
 
-          {isSpam ? (
-            <Button
-              size="sm"
-              variant="outline"
-              color="neutral"
-              disabled={busy}
-              onClick={() => {
-                changeStatus('read', 'No longer marked as spam');
-              }}
-            >
-              Not spam
-            </Button>
-          ) : (
-            <Button
-              size="sm"
-              variant="outline"
-              color="neutral"
-              disabled={busy}
-              onClick={() => {
-                changeStatus('spam', 'Marked as spam');
-              }}
-            >
-              <Ban className="size-4" aria-hidden />
-              Spam
-            </Button>
-          )}
-
-          <Button
-            size="sm"
-            variant="outline"
-            color="neutral"
-            title="Download this as a spreadsheet"
-            onClick={onExport}
-          >
-            <Download className="size-4" aria-hidden />
-            Export
-          </Button>
-        </div>
-
-        <RefreshButton isFetching={isFetching} updatedAt={dataUpdatedAt} onRefresh={refetch} />
-      </PaneToolbar>
+              <Button
+                size="sm"
+                variant="outline"
+                color="neutral"
+                title="Download this as a spreadsheet"
+                onClick={onExport}
+              >
+                <Download className="size-4" aria-hidden />
+                Export
+              </Button>
+            </div>
+          </>
+        }
+        refresh={
+          <RefreshButton isFetching={isFetching} updatedAt={dataUpdatedAt} onRefresh={refetch} />
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className={COLUMN}>

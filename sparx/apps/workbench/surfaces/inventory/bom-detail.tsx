@@ -72,6 +72,7 @@ import {
   type BomComponentInput,
   type BomStatus,
 } from './assembly-data';
+import { PaneLoadError } from '../../components/pane-load-error';
 
 const COLUMN = 'mx-auto flex w-full max-w-4xl flex-col gap-4';
 
@@ -366,18 +367,18 @@ export function BomDetailSurface({ ctx }: { ctx: SurfaceContext }) {
     const gone = isNotFound(bom.error);
     return (
       <div className={PANE_SHELL}>
-        <div className="flex h-full items-center justify-center p-8">
-          <Alert color={gone ? 'warning' : 'danger'} variant="soft" className="max-w-md">
-            <AlertContent>
-              <AlertTitle>{gone ? 'This recipe no longer exists' : 'Could not load it'}</AlertTitle>
-              <AlertDescription>
-                {gone
-                  ? 'It may have been deleted.'
-                  : 'This is a problem reaching the server. The recipe is unaffected.'}
-              </AlertDescription>
-            </AlertContent>
-          </Alert>
-        </div>
+        <PaneLoadError
+          reason={gone ? 'missing' : 'unreachable'}
+          title={gone ? 'This recipe no longer exists' : 'Could not load this recipe'}
+          description={
+            gone
+              ? 'It may have been deleted. Anything already built from it is unaffected.'
+              : 'This is a problem reaching the server. The recipe is unaffected — it just could not be read just now.'
+          }
+          onRetry={() => {
+            void bom.refetch();
+          }}
+        />
       </div>
     );
   }
@@ -397,83 +398,92 @@ export function BomDetailSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Recipe actions">
-        <span className="inline-flex items-center gap-1.5">
-          <CookingPot className="size-4" aria-hidden />
-          <Text as="span" className="text-sm font-medium">
-            {isNew ? 'New recipe' : (bom.data?.name ?? 'Recipe')}
-          </Text>
-        </span>
-        {isNew ? null : (
-          <Badge color={state.tone} variant="soft" size="sm">
-            {state.label}
-          </Badge>
-        )}
-
-        <Button
-          size="sm"
-          color="module"
-          className="ml-auto shrink-0"
-          disabled={!canSave || !dirty}
-          loading={saveBom.isPending}
-          onClick={save}
-        >
-          <Save className="size-4" aria-hidden />
-          Save
-        </Button>
-
-        {!isNew && status === 'draft' ? (
+      <PaneToolbar
+        label="Recipe actions"
+        status={
+          <span className="inline-flex items-center gap-1.5">
+            <CookingPot className="size-4" aria-hidden />
+            <Text as="span" className="text-sm font-medium">
+              {isNew ? 'New recipe' : (bom.data?.name ?? 'Recipe')}
+            </Text>
+          </span>
+        }
+        primary={
           <Button
             size="sm"
-            variant="outline"
-            color="success"
-            className="shrink-0"
-            loading={setStatus.isPending}
-            onClick={() => {
-              changeStatus('active');
-            }}
+            color="module"
+            className="ml-auto shrink-0"
+            disabled={!canSave || !dirty}
+            loading={saveBom.isPending}
+            onClick={save}
           >
-            Start using it
+            <Save className="size-4" aria-hidden />
+            Save
           </Button>
-        ) : null}
-        {!isNew && status === 'active' ? (
-          <Button
-            size="sm"
-            variant="outline"
-            color="neutral"
-            className="shrink-0"
-            loading={setStatus.isPending}
-            onClick={() => {
-              changeStatus('archived');
-            }}
-          >
-            Retire it
-          </Button>
-        ) : null}
-        {!isNew ? (
-          <Button
-            size="sm"
-            variant="ghost"
-            color="danger"
-            shape="square"
-            aria-label="Delete this recipe"
-            onClick={() => {
-              void remove();
-            }}
-          >
-            <Trash2 className="size-4" aria-hidden />
-          </Button>
-        ) : null}
-        {isNew ? null : (
-          <RefreshButton
-            isFetching={bom.isFetching}
-            updatedAt={bom.dataUpdatedAt}
-            onRefresh={() => {
-              void bom.refetch();
-            }}
-          />
-        )}
-      </PaneToolbar>
+        }
+        controls={
+          <>
+            {isNew ? null : (
+              <Badge color={state.tone} variant="soft" size="sm">
+                {state.label}
+              </Badge>
+            )}
+            {!isNew && status === 'draft' ? (
+              <Button
+                size="sm"
+                variant="outline"
+                color="success"
+                className="shrink-0"
+                loading={setStatus.isPending}
+                onClick={() => {
+                  changeStatus('active');
+                }}
+              >
+                Start using it
+              </Button>
+            ) : null}
+            {!isNew && status === 'active' ? (
+              <Button
+                size="sm"
+                variant="outline"
+                color="neutral"
+                className="shrink-0"
+                loading={setStatus.isPending}
+                onClick={() => {
+                  changeStatus('archived');
+                }}
+              >
+                Retire it
+              </Button>
+            ) : null}
+            {!isNew ? (
+              <Button
+                size="sm"
+                variant="ghost"
+                color="danger"
+                shape="square"
+                aria-label="Delete this recipe"
+                onClick={() => {
+                  void remove();
+                }}
+              >
+                <Trash2 className="size-4" aria-hidden />
+              </Button>
+            ) : null}
+          </>
+        }
+        refresh={
+          isNew ? null : (
+            <RefreshButton
+              isFetching={bom.isFetching}
+              updatedAt={bom.dataUpdatedAt}
+              onRefresh={() => {
+                void bom.refetch();
+              }}
+            />
+          )
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className={COLUMN}>

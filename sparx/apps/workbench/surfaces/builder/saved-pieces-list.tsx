@@ -18,7 +18,7 @@
 // nothing to do.
 
 import { useMemo, useState } from 'react';
-import { Badge, Button, EmptyState, Heading, SearchInput, Text } from '@wizeworks/silicaui-react';
+import { Badge, Button, Heading, SearchInput, Text } from '@wizeworks/silicaui-react';
 import { Component, Pencil } from 'lucide-react';
 import { PaneToolbar, PANE_SHELL } from '../../components/pane-toolbar';
 import { ListEmptyState } from '../../components/list-empty-state';
@@ -33,6 +33,7 @@ import {
   type PieceSummary,
 } from './saved-pieces-data';
 import { RowOpenHint } from '../../components/row-open-hint';
+import { PaneLoadError } from '../../components/pane-load-error';
 
 /** Same modifier contract as every other list in the app. */
 function targetFor(event: { shiftKey: boolean; altKey: boolean }): OpenTarget {
@@ -115,24 +116,14 @@ export function SavedPiecesListSurface({ ctx }: { ctx: SurfaceContext }) {
 
   if (isError) {
     return (
-      <div className="flex h-full items-center justify-center p-8">
-        <EmptyState
-          icon={<Component className="size-6" aria-hidden />}
-          title="Could not load your saved pieces"
-          description="This is a problem reaching the server. None of your pieces are affected — nothing has been lost."
-          actions={
-            <Button
-              size="sm"
-              color="module"
-              onClick={() => {
-                void refetch();
-              }}
-            >
-              Try again
-            </Button>
-          }
-        />
-      </div>
+      <PaneLoadError
+        icon={<Component className="size-6" aria-hidden />}
+        title="Could not load your saved pieces"
+        description="This is a problem reaching the server. None of your pieces are affected — nothing has been lost."
+        onRetry={() => {
+          void refetch();
+        }}
+      />
     );
   }
 
@@ -141,43 +132,51 @@ export function SavedPiecesListSurface({ ctx }: { ctx: SurfaceContext }) {
       {/* No primary "New" — pieces are made in the editor — so the right-hand
           group is "Open the editor" then refresh, and the count gives way first
           as the pane narrows. This bar does not wrap. */}
-      <PaneToolbar label="Saved pieces list controls">
-        <div className="max-w-xs min-w-0 flex-1">
-          <SearchInput
+      <PaneToolbar
+        label="Saved pieces list controls"
+        search={
+          <div className="max-w-xs min-w-0 flex-1">
+            <SearchInput
+              size="sm"
+              aria-label="Search saved pieces"
+              placeholder="Search pieces…"
+              value={search}
+              onValueChange={setSearch}
+            />
+          </div>
+        }
+        status={
+          <p className="hidden shrink-0 text-sm whitespace-nowrap @xl:block">
+            {needle
+              ? `${String(matches.length)} of ${String(all.length)}`
+              : all.length === 1
+                ? '1 piece'
+                : `${String(all.length)} pieces`}
+          </p>
+        }
+        primary={
+          <Button
             size="sm"
-            aria-label="Search saved pieces"
-            placeholder="Search pieces…"
-            value={search}
-            onValueChange={setSearch}
+            variant="outline"
+            color="neutral"
+            className="ml-auto shrink-0 whitespace-nowrap"
+            title="Open the editor — hold Shift to open alongside, Alt for a new window"
+            onClick={openEditor}
+          >
+            <Pencil className="size-4" aria-hidden />
+            <span className="hidden @2xl:inline">Open the editor</span>
+          </Button>
+        }
+        refresh={
+          <RefreshButton
+            isFetching={isFetching}
+            updatedAt={pieces ? dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void refetch();
+            }}
           />
-        </div>
-        <p className="hidden shrink-0 text-sm whitespace-nowrap @xl:block">
-          {needle
-            ? `${String(matches.length)} of ${String(all.length)}`
-            : all.length === 1
-              ? '1 piece'
-              : `${String(all.length)} pieces`}
-        </p>
-        <Button
-          size="sm"
-          variant="outline"
-          color="neutral"
-          className="ml-auto shrink-0 whitespace-nowrap"
-          title="Open the editor — hold Shift to open alongside, Alt for a new window"
-          onClick={openEditor}
-        >
-          <Pencil className="size-4" aria-hidden />
-          <span className="hidden @2xl:inline">Open the editor</span>
-        </Button>
-        {/* ALWAYS the last child of a list toolbar — see RefreshButton. */}
-        <RefreshButton
-          isFetching={isFetching}
-          updatedAt={pieces ? dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void refetch();
-          }}
-        />
-      </PaneToolbar>
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         {isPending ? (

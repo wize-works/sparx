@@ -11,7 +11,16 @@ model TaxZone {
   nexusType          String    @map("nexus_type") @db.VarChar(20) // physical | economic | voluntary
   registrationNumber String?   @map("registration_number") @db.VarChar(63)
   registeredAt       DateTime? @map("registered_at") @db.Timestamptz
-  isActive           Boolean   @default(true) @map("is_active")
+  isActive           Boolean   @default(false) @map("is_active")
+  // WHEN A PERSON SWITCHED COLLECTION ON. Not the same fact as `registeredAt`,
+  // which is when the business registered with the tax authority out in the
+  // world. This one says a human being, signed in, decided this shop should
+  // start charging here -- and a `tax_zones_active_needs_a_person` CHECK makes
+  // it impossible for a row to be active without it. An industry starter set
+  // three states collecting for a Denver studio that had never traded outside
+  // Colorado (issue 429); `isActive` alone could not tell that apart from a
+  // decision the owner had actually made. This column can.
+  activatedAt        DateTime? @map("activated_at") @db.Timestamptz
 
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz

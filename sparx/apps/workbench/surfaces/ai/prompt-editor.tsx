@@ -46,6 +46,7 @@ import { PaneToolbar, PANE_SHELL } from '../../components/pane-toolbar';
 import { FormSection } from '../../components/form-section';
 import { RefreshButton } from '../../components/refresh-button';
 import type { SurfaceContext } from '../../lib/surfaces/registry';
+import { SaveFailure } from '@/components/save-failure';
 import {
   aiErrorMessage,
   canEditPrompts,
@@ -368,46 +369,53 @@ function InstructionEditor({
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Instruction actions" wrap>
-        {dirty ? (
-          <Badge color="warning" variant="soft" size="sm">
-            Unsaved changes
-          </Badge>
-        ) : !isNew && prompt && !prompt.enabled ? (
-          <Badge color="neutral" variant="outline" size="sm">
-            Turned off
-          </Badge>
-        ) : null}
-
-        <Button
-          color="module"
-          size="sm"
-          className="ml-auto shrink-0"
-          loading={saving}
-          disabled={!canEdit || Boolean(blocked) || (!isNew && !dirty)}
-          onClick={submit}
-        >
-          {isNew ? (
-            <>
-              <Save className="size-4" aria-hidden />
-              Save instruction
-            </>
-          ) : (
-            <>
-              <Save className="size-4" aria-hidden />
-              Save
-            </>
-          )}
-        </Button>
-
-        {!isNew && onRefresh ? (
-          <RefreshButton
-            isFetching={isFetching ?? false}
-            updatedAt={updatedAt}
-            onRefresh={onRefresh}
-          />
-        ) : null}
-      </PaneToolbar>
+      <PaneToolbar
+        label="Instruction actions"
+        primary={
+          <Button
+            color="module"
+            size="sm"
+            className="ml-auto shrink-0"
+            loading={saving}
+            disabled={!canEdit || Boolean(blocked) || (!isNew && !dirty)}
+            onClick={submit}
+          >
+            {isNew ? (
+              <>
+                <Save className="size-4" aria-hidden />
+                Save instruction
+              </>
+            ) : (
+              <>
+                <Save className="size-4" aria-hidden />
+                Save
+              </>
+            )}
+          </Button>
+        }
+        controls={
+          <>
+            {dirty ? (
+              <Badge color="warning" variant="soft" size="sm">
+                Unsaved changes
+              </Badge>
+            ) : !isNew && prompt && !prompt.enabled ? (
+              <Badge color="neutral" variant="outline" size="sm">
+                Turned off
+              </Badge>
+            ) : null}
+          </>
+        }
+        refresh={
+          !isNew && onRefresh ? (
+            <RefreshButton
+              isFetching={isFetching ?? false}
+              updatedAt={updatedAt}
+              onRefresh={onRefresh}
+            />
+          ) : null
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className={COLUMN}>
@@ -438,14 +446,7 @@ function InstructionEditor({
 
           {/* One message, the most specific one — the server names the exact field
               it rejected, which beats a generic banner. */}
-          {failure ? (
-            <Alert color="error">
-              <AlertContent>
-                <AlertTitle>Could not save this instruction</AlertTitle>
-                <AlertDescription>{failure}</AlertDescription>
-              </AlertContent>
-            </Alert>
-          ) : null}
+          <SaveFailure title="Could not save this instruction" message={failure} />
 
           <FormSection title="What it is for">
             <Field>

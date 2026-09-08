@@ -61,6 +61,7 @@ import {
 } from './data';
 import { bootcampState, BOOTCAMP_FORMATS } from './format';
 import { PartnerLoading } from './gate';
+import { PaneLoadError } from '../../components/pane-load-error';
 
 const COLUMN = 'mx-auto flex w-full max-w-3xl flex-col gap-4';
 
@@ -345,32 +346,18 @@ export function BootcampDetailSurface({ ctx }: { ctx: SurfaceContext }) {
     const gone = isNotFound(bootcamp.error);
     return (
       <div className={PANE_SHELL}>
-        <div className="flex h-full items-center justify-center p-8">
-          <Alert color={gone ? 'warning' : 'error'} variant="soft" className="max-w-md">
-            <AlertContent>
-              <AlertTitle>
-                {gone ? 'This bootcamp no longer exists' : 'Could not load this bootcamp'}
-              </AlertTitle>
-              <AlertDescription>
-                {gone
-                  ? 'It may have been deleted.'
-                  : 'This is a problem reaching the server. The bootcamp itself is unaffected.'}
-              </AlertDescription>
-            </AlertContent>
-            {gone ? null : (
-              <Button
-                size="sm"
-                color="error"
-                variant="soft"
-                onClick={() => {
-                  void bootcamp.refetch();
-                }}
-              >
-                Try again
-              </Button>
-            )}
-          </Alert>
-        </div>
+        <PaneLoadError
+          reason={gone ? 'missing' : 'unreachable'}
+          title={gone ? 'This bootcamp no longer exists' : 'Could not load this bootcamp'}
+          description={
+            gone
+              ? 'It may have been deleted.'
+              : 'This is a problem reaching the server. The bootcamp itself is unaffected.'
+          }
+          onRetry={() => {
+            void bootcamp.refetch();
+          }}
+        />
       </div>
     );
   }
@@ -388,72 +375,77 @@ export function BootcampDetailSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Bootcamp actions" wrap>
-        {state ? (
-          <Badge color={state.tone} variant="soft" size="sm">
-            {state.label}
-          </Badge>
-        ) : (
-          <span className="inline-flex items-center gap-1.5">
-            <GraduationCap className="size-4" aria-hidden />
-            <Text as="span" className="text-sm font-medium">
-              New bootcamp
-            </Text>
-          </span>
-        )}
-
-        <Button
-          size="sm"
-          color="module"
-          className="ml-auto shrink-0"
-          disabled={!canSave}
-          loading={saving}
-          onClick={save}
-        >
-          <Save className="size-4" aria-hidden />
-          {isNew ? 'Save draft' : 'Save'}
-        </Button>
-
-        {!isNew && status === 'draft' && isCertified ? (
+      <PaneToolbar
+        label="Bootcamp actions"
+        primary={
           <Button
             size="sm"
-            variant="outline"
             color="module"
-            loading={setStatus.isPending}
-            onClick={() => {
-              void onPublish();
-            }}
+            className="ml-auto shrink-0"
+            disabled={!canSave}
+            loading={saving}
+            onClick={save}
           >
-            <Rocket className="size-4" aria-hidden />
-            Publish
+            <Save className="size-4" aria-hidden />
+            {isNew ? 'Save draft' : 'Save'}
           </Button>
-        ) : null}
-
-        {!isNew && status === 'published' ? (
-          <Button
-            size="sm"
-            variant="outline"
-            color="danger"
-            loading={setStatus.isPending}
-            onClick={() => {
-              void onCancel();
-            }}
-          >
-            <XCircle className="size-4" aria-hidden />
-            Cancel
-          </Button>
-        ) : null}
-
-        {isNew ? null : (
-          <RefreshButton
-            isFetching={bootcamp.isFetching}
-            updatedAt={bootcamp.data ? bootcamp.dataUpdatedAt : undefined}
-            onRefresh={() => {
-              void bootcamp.refetch();
-            }}
-          />
-        )}
-      </PaneToolbar>
+        }
+        controls={
+          <>
+            {state ? (
+              <Badge color={state.tone} variant="soft" size="sm">
+                {state.label}
+              </Badge>
+            ) : (
+              <span className="inline-flex items-center gap-1.5">
+                <GraduationCap className="size-4" aria-hidden />
+                <Text as="span" className="text-sm font-medium">
+                  New bootcamp
+                </Text>
+              </span>
+            )}
+            {!isNew && status === 'draft' && isCertified ? (
+              <Button
+                size="sm"
+                variant="outline"
+                color="module"
+                loading={setStatus.isPending}
+                onClick={() => {
+                  void onPublish();
+                }}
+              >
+                <Rocket className="size-4" aria-hidden />
+                Publish
+              </Button>
+            ) : null}
+            {!isNew && status === 'published' ? (
+              <Button
+                size="sm"
+                variant="outline"
+                color="danger"
+                loading={setStatus.isPending}
+                onClick={() => {
+                  void onCancel();
+                }}
+              >
+                <XCircle className="size-4" aria-hidden />
+                Cancel
+              </Button>
+            ) : null}
+          </>
+        }
+        refresh={
+          isNew ? null : (
+            <RefreshButton
+              isFetching={bootcamp.isFetching}
+              updatedAt={bootcamp.data ? bootcamp.dataUpdatedAt : undefined}
+              onRefresh={() => {
+                void bootcamp.refetch();
+              }}
+            />
+          )
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className={COLUMN}>

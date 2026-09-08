@@ -33,6 +33,7 @@ import {
   useQuote,
   type QuoteRow,
 } from './quotes-data';
+import { PaneLoadError } from '../../components/pane-load-error';
 
 const COLUMN = 'mx-auto flex w-full max-w-3xl flex-col gap-4';
 
@@ -55,27 +56,15 @@ export function QuoteDetailSurface({ ctx }: { ctx: SurfaceContext }) {
   if (quoteQuery.isError) {
     return (
       <div className={PANE_SHELL}>
-        <div className="flex h-full items-center justify-center p-8">
-          <Alert color="error" className="max-w-md">
-            <AlertContent>
-              <AlertTitle>Could not load this quote</AlertTitle>
-              <AlertDescription>
-                This is a problem reaching the server. The quote itself is unaffected — nothing has
-                been lost.
-              </AlertDescription>
-            </AlertContent>
-            <Button
-              size="sm"
-              color="error"
-              variant="soft"
-              onClick={() => {
-                void quoteQuery.refetch();
-              }}
-            >
-              Try again
-            </Button>
-          </Alert>
-        </div>
+        <PaneLoadError
+          error={quoteQuery.error}
+          noun="quote"
+          title="Could not load this quote"
+          description="This is a problem reaching the server. The quote itself is unaffected — nothing has been lost."
+          onRetry={() => {
+            void quoteQuery.refetch();
+          }}
+        />
       </div>
     );
   }
@@ -123,23 +112,30 @@ function QuoteView({ ctx, quote }: { ctx: SurfaceContext; quote: QuoteRow }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Quote actions">
-        <Badge color={tone} variant="soft" size="sm">
-          {stageLabel}
-        </Badge>
-        <Button
-          color="module"
-          size="sm"
-          className="ml-auto"
-          title="Open this quote to price its lines and accept or decline it"
-          onClick={(event) => {
-            ctx.open('invoicing.invoice.edit', { id: quote.id }, { target: targetFor(event) });
-          }}
-        >
-          <ExternalLink className="size-4" aria-hidden />
-          Price &amp; respond
-        </Button>
-      </PaneToolbar>
+      <PaneToolbar
+        label="Quote actions"
+        primary={
+          <Button
+            color="module"
+            size="sm"
+            className="ml-auto"
+            title="Open this quote to price its lines and accept or decline it"
+            onClick={(event) => {
+              ctx.open('invoicing.invoice.edit', { id: quote.id }, { target: targetFor(event) });
+            }}
+          >
+            <ExternalLink className="size-4" aria-hidden />
+            Price &amp; respond
+          </Button>
+        }
+        controls={
+          <>
+            <Badge color={tone} variant="soft" size="sm">
+              {stageLabel}
+            </Badge>
+          </>
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className={COLUMN}>

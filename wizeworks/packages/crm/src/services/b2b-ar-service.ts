@@ -30,6 +30,7 @@ import type { ServiceContext } from '../errors';
 import { CrmNotFoundError, CrmValidationError } from '../errors';
 import { recomputeTotals, type DocumentWithLines } from './billing-document-service';
 import { buildSnapshotPayload } from './billing-snapshot';
+import { snapshotIssuer } from './billing-document-stage-service';
 import { formatBillingNumber, nextBillingDocumentSeq } from './record-numbers';
 
 export interface NetTermsArStages {
@@ -166,6 +167,14 @@ export async function createOrderArDocument(
         numberSeq: seq,
         dueAt: input.dueAt,
         finalizedAt: now,
+        // This document is finalized the moment it is written, so its issuer is
+        // frozen here for the same reason `applyStageEntryEffects` freezes one:
+        // renaming a site, or editing the legal entity address, would otherwise
+        // rewrite the letterhead on AR invoices already in accounts' hands.
+        // This path constructs directly rather than going through that helper,
+        // which is exactly how it came to be the one finalized document with no
+        // issuer on it at all.
+        issuedBy: await snapshotIssuer(tx, ctx.tenantId, input.propertyId),
         notes: input.notes ?? null,
         billTo: input.billTo ?? { name: account.companyName },
         metadata: input.orderId

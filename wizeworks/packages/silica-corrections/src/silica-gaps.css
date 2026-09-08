@@ -52,3 +52,34 @@
   background-position: center;
   background-repeat: no-repeat;
 }
+
+/* ── Alert: the action beside the message on a phone ─── unfixed as of 0.55 ───
+   `.alert` is a flex ROW that never wraps, and `.alert-actions` is
+   `flex-shrink: 0`. So a wide action does not give: it keeps its width and the
+   message column is squeezed to whatever is left. Measured in a 360px pane: a
+   194px button in a 253px alert left the message SEVEN pixels — one word per
+   line, running underneath the button.
+
+   `flex-wrap` alone is not the fix, and finding that out is the point of the
+   second rule. A flex line breaks on each item’s HYPOTHETICAL size, which for
+   `flex: 1 1 auto` is the message’s whole sentence — 416px in a 417px alert — so
+   wrapping alone ALSO drops the action below the message on a full-width desktop
+   alert, where nothing was wrong. Changing how every Alert on both brands looks
+   is not a correction, it is a redesign, and not ours to make.
+
+   So the basis is restated as the width the message actually needs to stay
+   readable. This is the one rule in this file that redeclares a property silica
+   sets, and that is its reason: `auto` is what makes the line break in the wrong
+   place. Nothing else changes — `flex-grow: 1` still fills the row, and silica’s
+   `min-width: 0` still lets a long word wrap rather than overflow.
+
+   Measured either side of it: desktop 417px, 192 + 194 fits, still one row with
+   the message at 211px exactly as before; phone 253px, it cannot, so the action
+   takes its own line and the message goes 7px → 213px. Delete both the day
+   silicaui wraps its own alert. */
+.alert {
+  flex-wrap: wrap;
+}
+.alert-content {
+  flex-basis: 12rem;
+}

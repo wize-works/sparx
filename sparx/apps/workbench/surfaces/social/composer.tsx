@@ -100,6 +100,8 @@ import {
   type SocialPlatform,
 } from './data';
 import { tagsToText, useComposeSeed, useHashtagSets, type HashtagSet } from './planning-data';
+import { SaveFailure } from '@/components/save-failure';
+import { PaneLoadError } from '../../components/pane-load-error';
 
 /** A chooseable destination, flattened from the connected accounts. */
 interface Destination {
@@ -994,21 +996,24 @@ function ComposeNew({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="New post actions">
-        <Button
-          color="module"
-          size="sm"
-          className="ml-auto shrink-0"
-          loading={compose.isPending && compose.variables?.action === 'draft'}
-          disabled={!canSaveDraft}
-          onClick={() => {
-            run('draft');
-          }}
-        >
-          <Save className="size-4" aria-hidden />
-          Save draft
-        </Button>
-      </PaneToolbar>
+      <PaneToolbar
+        label="New post actions"
+        primary={
+          <Button
+            color="module"
+            size="sm"
+            className="ml-auto shrink-0"
+            loading={compose.isPending && compose.variables?.action === 'draft'}
+            disabled={!canSaveDraft}
+            onClick={() => {
+              run('draft');
+            }}
+          >
+            <Save className="size-4" aria-hidden />
+            Save draft
+          </Button>
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         {/* Split studio: compose on the left, what it will ACTUALLY look like on the
@@ -1025,14 +1030,7 @@ function ComposeNew({ ctx }: { ctx: SurfaceContext }) {
               </Text>
             </div>
 
-            {failure ? (
-              <Alert color="error">
-                <AlertContent>
-                  <AlertTitle>Could not save this post</AlertTitle>
-                  <AlertDescription>{failure}</AlertDescription>
-                </AlertContent>
-              </Alert>
-            ) : null}
+            <SaveFailure title="Could not save this post" message={failure} />
 
             {/* MEDIA FIRST. Most of these platforms are pictures-and-video first, and four
               of them refuse a post without one — so this leads, and its label reflects
@@ -1570,56 +1568,61 @@ function ComposeManage({ ctx, post }: { ctx: SurfaceContext; post: Post }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Post actions" wrap>
-        <Badge color={meta.tone} variant="soft" size="sm">
-          {meta.label}
-        </Badge>
-        <div className="flex-1" />
-        {/* Post it again — the cheapest real leverage in the module. Available on
+      <PaneToolbar
+        label="Post actions"
+        controls={
+          <>
+            <Badge color={meta.tone} variant="soft" size="sm">
+              {meta.label}
+            </Badge>
+            <div className="flex-1" />
+            {/* Post it again — the cheapest real leverage in the module. Available on
             anything that has actually gone out. */}
-        {canWrite && (post.status === 'published' || post.status === 'partially_published') ? (
-          <Button
-            size="sm"
-            variant="outline"
-            color="module"
-            loading={duplicate.isPending}
-            onClick={doDuplicate}
-          >
-            <CopyPlus className="size-4" aria-hidden />
-            Post this again
-          </Button>
-        ) : null}
-        {editable && canWrite ? (
-          <Button
-            color="module"
-            size="sm"
-            disabled={!changed || update.isPending}
-            loading={update.isPending}
-            onClick={saveChanges}
-          >
-            <Save className="size-4" aria-hidden />
-            Save changes
-          </Button>
-        ) : null}
-        {/* Delete is a lifecycle action on the whole post, so it rides the frame
+            {canWrite && (post.status === 'published' || post.status === 'partially_published') ? (
+              <Button
+                size="sm"
+                variant="outline"
+                color="module"
+                loading={duplicate.isPending}
+                onClick={doDuplicate}
+              >
+                <CopyPlus className="size-4" aria-hidden />
+                Post this again
+              </Button>
+            ) : null}
+            {editable && canWrite ? (
+              <Button
+                color="module"
+                size="sm"
+                disabled={!changed || update.isPending}
+                loading={update.isPending}
+                onClick={saveChanges}
+              >
+                <Save className="size-4" aria-hidden />
+                Save changes
+              </Button>
+            ) : null}
+            {/* Delete is a lifecycle action on the whole post, so it rides the frame
             header with the rest of them — icon-only, because a destructive verb
             spelled out next to Save is the one pair worth keeping visually
             unalike. The confirm names what is lost before anything happens. */}
-        {isAdmin && post.status !== 'publishing' ? (
-          <Button
-            size="sm"
-            variant="ghost"
-            color="danger"
-            shape="square"
-            aria-label="Delete this post"
-            title="Delete this post"
-            loading={remove.isPending}
-            onClick={doDelete}
-          >
-            <Trash2 className="size-4" aria-hidden />
-          </Button>
-        ) : null}
-      </PaneToolbar>
+            {isAdmin && post.status !== 'publishing' ? (
+              <Button
+                size="sm"
+                variant="ghost"
+                color="danger"
+                shape="square"
+                aria-label="Delete this post"
+                title="Delete this post"
+                loading={remove.isPending}
+                onClick={doDelete}
+              >
+                <Trash2 className="size-4" aria-hidden />
+              </Button>
+            ) : null}
+          </>
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         {/* Same split studio as writing a new post: the post on the left, the real
@@ -1634,14 +1637,7 @@ function ComposeManage({ ctx, post }: { ctx: SurfaceContext; post: Post }) {
               <Text className="text-sm">{meta.detail}</Text>
             </div>
 
-            {actionError ? (
-              <Alert color="error">
-                <AlertContent>
-                  <AlertTitle>That did not go through</AlertTitle>
-                  <AlertDescription>{actionError}</AlertDescription>
-                </AlertContent>
-              </Alert>
-            ) : null}
+            <SaveFailure title="That did not go through" message={actionError} />
 
             {/* Why it came back. Without this a rejection is a silent state change and
                 the author has to go and ask what was wrong with it. */}
@@ -1976,32 +1972,18 @@ function ComposerInner({ ctx }: { ctx: SurfaceContext }) {
     const gone = post.error instanceof Error && 'status' in post.error && post.error.status === 404;
     return (
       <div className={PANE_SHELL}>
-        <div className="flex h-full items-center justify-center p-8">
-          <Alert color={gone ? 'warning' : 'error'} variant="soft" className="max-w-md">
-            <AlertContent>
-              <AlertTitle>
-                {gone ? 'This post no longer exists' : 'Could not load this post'}
-              </AlertTitle>
-              <AlertDescription>
-                {gone
-                  ? 'It may have been deleted. Nothing else is affected.'
-                  : 'This is a problem reaching the server. Nothing about the post has changed.'}
-              </AlertDescription>
-            </AlertContent>
-            {gone ? null : (
-              <Button
-                size="sm"
-                color="error"
-                variant="soft"
-                onClick={() => {
-                  void post.refetch();
-                }}
-              >
-                Try again
-              </Button>
-            )}
-          </Alert>
-        </div>
+        <PaneLoadError
+          reason={gone ? 'missing' : 'unreachable'}
+          title={gone ? 'This post no longer exists' : 'Could not load this post'}
+          description={
+            gone
+              ? 'It may have been deleted. Nothing else is affected.'
+              : 'This is a problem reaching the server. Nothing about the post has changed.'
+          }
+          onRetry={() => {
+            void post.refetch();
+          }}
+        />
       </div>
     );
   }

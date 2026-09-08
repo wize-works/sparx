@@ -61,7 +61,6 @@ import {
   SearchInput,
   Table,
   Text,
-  ToolbarSeparator,
   useToast,
 } from '@wizeworks/silicaui-react';
 import { useConfirm } from '../../lib/confirm';
@@ -472,94 +471,82 @@ export function ReorderListSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Reorder controls">
-        {/* Width sits on a WRAPPER: SearchInput forwards className to its inner
-            <input>, so a size aimed at the control never reaches what lays out. */}
-        <div className="max-w-xs min-w-0 flex-1">
-          <SearchInput
-            size="sm"
-            aria-label="Search what needs reordering"
-            placeholder="Product name or code…"
-            value={search}
-            onValueChange={(next) => {
-              setSearch(next);
+      <PaneToolbar
+        label="Reorder controls"
+        search={
+          <div className="max-w-xs min-w-0 flex-1">
+            <SearchInput
+              size="sm"
+              aria-label="Search what needs reordering"
+              placeholder="Product name or code…"
+              value={search}
+              onValueChange={(next) => {
+                setSearch(next);
+                onNarrow();
+              }}
+            />
+          </div>
+        }
+        filters={[
+          {
+            label: 'Kept at',
+            key: 'location',
+            value: locationId,
+            onValueChange: (next) => {
+              setLocationId(next);
               onNarrow();
+            },
+            options: [
+              { value: '', label: 'Every location' },
+              ...activeLocations.map((location) => ({ value: location.id, label: location.name })),
+            ],
+            neutralValue: '',
+            present: 'select',
+          },
+          {
+            label: 'Bought from',
+            key: 'supplier',
+            value: supplierId,
+            onValueChange: (next) => {
+              setSupplierId(next);
+              onNarrow();
+            },
+            options: [
+              { value: '', label: 'Every supplier' },
+              ...activeSuppliers.map((s) => ({ value: s.id, label: s.name })),
+            ],
+            neutralValue: '',
+            present: 'select',
+          },
+        ]}
+        controls={
+          <NativeSelect
+            size="sm"
+            className="max-w-40 shrink"
+            aria-label="Order the list by"
+            value={sort}
+            onChange={(event) => {
+              setSort(event.target.value as ReorderSort);
+              resetWindow();
+            }}
+          >
+            <option value="risk">Costs the most to miss</option>
+            <option value="cover">Runs out soonest</option>
+            <option value="urgency">Least in stock first</option>
+            <option value="shortfall">Furthest below target</option>
+          </NativeSelect>
+        }
+        refresh={
+          <RefreshButton
+            className="ml-auto"
+            isFetching={isFetching}
+            updatedAt={data ? dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void refetch();
             }}
           />
-        </div>
-
-        <ToolbarSeparator className="hidden @xl:block" />
-
-        <NativeSelect
-          size="sm"
-          className="max-w-40 shrink"
-          aria-label="Show items kept at"
-          value={locationId}
-          onChange={(event) => {
-            setLocationId(event.target.value);
-            onNarrow();
-          }}
-        >
-          <option value="">Every location</option>
-          {activeLocations.map((location) => (
-            <option key={location.id} value={location.id}>
-              {location.name}
-            </option>
-          ))}
-        </NativeSelect>
-
-        <NativeSelect
-          size="sm"
-          className="max-w-40 shrink"
-          aria-label="Show items bought from"
-          value={supplierId}
-          onChange={(event) => {
-            setSupplierId(event.target.value);
-            onNarrow();
-          }}
-        >
-          <option value="">Every supplier</option>
-          {activeSuppliers.map((supplier) => (
-            <option key={supplier.id} value={supplier.id}>
-              {supplier.name}
-            </option>
-          ))}
-        </NativeSelect>
-
-        {/* Default order is the one that spends an hour best — most money at
-            risk first. The others are lenses on the same set: "least in stock"
-            for a walk round the shelves, "runs out soonest" for a deadline, and
-            "furthest below target" for finding rules that are mis-set rather
-            than stock that needs buying. Wide-pane refinements, so they shed
-            below @2xl rather than crowd the filters that matter more. */}
-        <NativeSelect
-          size="sm"
-          className="hidden max-w-48 shrink @2xl:block"
-          aria-label="Order the list by"
-          value={sort}
-          onChange={(event) => {
-            setSort(event.target.value as ReorderSort);
-            resetWindow();
-          }}
-        >
-          <option value="risk">Costs the most to miss</option>
-          <option value="cover">Runs out soonest</option>
-          <option value="urgency">Least in stock first</option>
-          <option value="shortfall">Furthest below target</option>
-        </NativeSelect>
-
-        {/* ALWAYS the last child of a list toolbar. No permanent primary action
-            here — drafting appears in its own bar once lines are chosen — so
-            Refresh carries the `ml-auto` that a primary normally would. */}
-        <RefreshButton
-          className="ml-auto"
-          isFetching={isFetching}
-          updatedAt={data ? dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void refetch();
-          }}
-        />
-      </PaneToolbar>
+        }
+      />
 
       {/* The action bar only exists while there is something chosen, so it costs
           no permanent height. It is a base-100 card lifted onto the pane, matching

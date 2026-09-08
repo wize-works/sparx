@@ -43,7 +43,14 @@ export function piecesGroup(session: StudioSession, kind: DocumentKind): Palette
       key: `piece:${symbol.id}`,
       label: symbol.name,
       icon: 'shared' as const,
-      hint: 'Your saved piece — edit it once and every copy follows',
+      // HER note first. The manage screen asks "What it's for" and then promises
+      // that answer shows up here, which it did not: every piece read the same
+      // generic sentence, so the one place a shop owner could tell two of her own
+      // pieces apart said the same thing about both. The sentence stays as the
+      // fallback, because a piece she has not annotated still needs the one fact a
+      // first-timer is missing.
+      hint:
+        session.pieceNote(symbol.id) ?? 'Your saved piece — edit it once and every copy follows',
       // Id-free by contract: the palette stamps ids on the way in, and minting one
       // here would hand the same id to every insert.
       make: (): Node => ({ kind: 'element', tag: 'div', instanceOf: symbol.id, children: [] }),

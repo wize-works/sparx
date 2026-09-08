@@ -117,25 +117,30 @@ export function DuplicatesSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Duplicate controls">
-        <Text as="span" className="shrink-0 text-sm">
-          {isPending
-            ? 'Checking…'
-            : clusters.length === 0
-              ? 'None found'
-              : clusters.length === 1
-                ? '1 possible duplicate'
-                : `${String(clusters.length)} possible duplicates`}
-        </Text>
-        <RefreshButton
-          className="ml-auto"
-          isFetching={isFetching}
-          updatedAt={groups ? dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void refetch();
-          }}
-        />
-      </PaneToolbar>
+      <PaneToolbar
+        label="Duplicate controls"
+        status={
+          <Text as="span" className="shrink-0 text-sm">
+            {isPending
+              ? 'Checking…'
+              : clusters.length === 0
+                ? 'None found'
+                : clusters.length === 1
+                  ? '1 possible duplicate'
+                  : `${String(clusters.length)} possible duplicates`}
+          </Text>
+        }
+        refresh={
+          <RefreshButton
+            className="ml-auto"
+            isFetching={isFetching}
+            updatedAt={groups ? dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void refetch();
+            }}
+          />
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         {isError ? (

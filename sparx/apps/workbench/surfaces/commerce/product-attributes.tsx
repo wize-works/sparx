@@ -42,6 +42,7 @@ import type { SurfaceContext } from '../../lib/surfaces/registry';
 import { MediaPickerProvider, AssetField, useMediaPicker } from '../cms/media-picker';
 import { useTabSave } from './product-tab-save';
 import { useUpdateProduct, type Product, type ProductPatch } from './products-data';
+import { useShippingProfiles } from './shipping-data';
 import {
   useProductTypeList,
   type FieldDef,
@@ -123,12 +124,16 @@ function pruneAttributes(bag: Record<string, unknown>): Record<string, unknown> 
 
 export function ProductAttributesTab({ ctx, product }: { ctx: SurfaceContext; product: Product }) {
   const { data: types, isPending, isError, refetch } = useProductTypeList();
+  const { data: profiles } = useShippingProfiles();
   const update = useUpdateProduct(product.id);
 
   const savedTypeKey = product.productTypeKey ?? '';
   const savedAttributes = useMemo(() => product.attributes ?? {}, [product]);
 
+  const savedProfileId = product.shippingProfileId ?? '';
+
   const [typeKey, setTypeKey] = useState(savedTypeKey);
+  const [profileId, setProfileId] = useState(savedProfileId);
   const [attributes, setAttributes] = useState<Record<string, unknown>>(savedAttributes);
   const [touched, setTouched] = useState(false);
   // Track the server's copy when it changes underneath a CLEAN form — a refetch
@@ -137,28 +142,39 @@ export function ProductAttributesTab({ ctx, product }: { ctx: SurfaceContext; pr
     if (!touched) {
       setTypeKey(savedTypeKey);
       setAttributes(savedAttributes);
+      setProfileId(savedProfileId);
     }
-  }, [savedTypeKey, savedAttributes, touched]);
+  }, [savedTypeKey, savedAttributes, savedProfileId, touched]);
 
   const selectedType = (types ?? []).find((t) => t.key === typeKey) ?? null;
   const typeMissing = typeKey !== '' && !isPending && !isError && !selectedType;
 
   const prunedAttrs = pruneAttributes(attributes);
   const dirty =
-    JSON.stringify({ typeKey, attrs: prunedAttrs }) !==
-    JSON.stringify({ typeKey: savedTypeKey, attrs: pruneAttributes(savedAttributes) });
+    JSON.stringify({ typeKey, attrs: prunedAttrs, profileId }) !==
+    JSON.stringify({
+      typeKey: savedTypeKey,
+      attrs: pruneAttributes(savedAttributes),
+      profileId: savedProfileId,
+    });
 
   useTabSave({
     dirty,
     saving: update.isPending,
     save: async () => {
-      const patch: ProductPatch = typeKey
-        ? { productTypeKey: typeKey, attributes: prunedAttrs }
-        : { productTypeKey: null };
+      const patch: ProductPatch = {
+        ...(typeKey
+          ? { productTypeKey: typeKey, attributes: prunedAttrs }
+          : { productTypeKey: null }),
+        // Empty string is the "standard way" option, and the API clears the
+        // group on null — an empty string would be an unknown id.
+        shippingProfileId: profileId === '' ? null : profileId,
+      };
       const next = await update.mutateAsync(patch);
       setTouched(false);
       setTypeKey(next.productTypeKey ?? '');
       setAttributes(next.attributes ?? {});
+      setProfileId(next.shippingProfileId ?? '');
     },
   });
 
@@ -191,7 +207,6 @@ export function ProductAttributesTab({ ctx, product }: { ctx: SurfaceContext; pr
               <Button
                 size="sm"
                 variant="outline"
-                color="neutral"
                 onClick={() => {
                   void refetch();
                 }}
@@ -265,6 +280,43 @@ export function ProductAttributesTab({ ctx, product }: { ctx: SurfaceContext; pr
             </Alert>
           ) : null}
         </FormSection>
+
+        {/* Where a product is FILED for delivery. It lives on this tab because
+            the tab is the product's "anything else about it" home, and because
+            the group screen promises in as many words that a product joins its
+            group "from each product later" — a promise nothing in the console
+            kept until this control existed (issue 427). Hidden when the shop
+            has only its standard group, which is nearly every shop: a picker
+            with one option is a question with one answer. */}
+        {(profiles?.items ?? []).length > 1 ? (
+          <FormSection
+            title="How this one is delivered"
+            description="Most products go the standard way. Put this one in a group only if it ships differently — a bigger box, freight, or something that needs a signature — and it will be priced by that group's delivery options."
+          >
+            <Field className="max-w-sm">
+              <FieldLabel>Delivery group</FieldLabel>
+              <NativeSelect
+                color="module"
+                value={profileId}
+                aria-label="Delivery group"
+                onChange={(event) => {
+                  setTouched(true);
+                  setProfileId(event.target.value);
+                }}
+              >
+                <option value="">The standard way</option>
+                {(profiles?.items ?? []).map((profile) => (
+                  <option key={profile.id} value={profile.id}>
+                    {profile.name}
+                  </option>
+                ))}
+              </NativeSelect>
+              <FieldDescription>
+                Set delivery prices for each group under Sell &rsaquo; Postage and delivery.
+              </FieldDescription>
+            </Field>
+          </FormSection>
+        ) : null}
 
         {selectedType ? (
           <AttributeForm type={selectedType} value={attributes} onFieldChange={setField} />
@@ -563,7 +615,7 @@ function ChipMultiSelect({
             type="button"
             size="sm"
             variant={on ? 'soft' : 'outline'}
-            color={on ? 'module' : 'neutral'}
+            {...(on ? { color: 'module' as const } : {})}
             disabled={disabled}
             aria-pressed={on}
             onClick={() => {

@@ -63,7 +63,6 @@ import { RefreshButton } from '../../components/refresh-button';
 import { FormSection } from '../../components/form-section';
 import { useDirtySource } from '../../lib/workbench/dirty';
 import type { SurfaceContext } from '../../lib/surfaces/registry';
-import { ScrollStrip } from '../../components/scroll-strip';
 import { FollowingNotice, ProductScopeFallback, useProductScope } from './product-scope';
 import {
   canonicalLocale,
@@ -373,20 +372,18 @@ function TranslationEditor({
           className="flex flex-col gap-3"
         >
           <div className="bg-base-300 shrink-0 rounded-full px-4 py-2">
-            <ScrollStrip label="languages">
-              <TabsList>
-                {locales.map((locale) => (
-                  <TabsTab key={locale} value={locale}>
-                    {localeName(locale)}
-                    {/* A dot rather than the word "unsaved": the strip has to stay
+            <TabsList scrollable scrollLabel="languages">
+              {locales.map((locale) => (
+                <TabsTab key={locale} value={locale}>
+                  {localeName(locale)}
+                  {/* A dot rather than the word "unsaved": the strip has to stay
                         readable at four languages in a narrow docked pane. */}
-                    {dirtyLocales.includes(locale) ? (
-                      <span aria-label="has unsaved changes"> •</span>
-                    ) : null}
-                  </TabsTab>
-                ))}
-              </TabsList>
-            </ScrollStrip>
+                  {dirtyLocales.includes(locale) ? (
+                    <span aria-label="has unsaved changes"> •</span>
+                  ) : null}
+                </TabsTab>
+              ))}
+            </TabsList>
           </div>
 
           {/* One panel, re-keyed per language, rather than a TabsPanel each: the
@@ -538,38 +535,45 @@ export function ProductTranslationsSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label={`${LABEL} actions`}>
-        <Languages className="size-4 shrink-0" aria-hidden />
-        <Heading level={2} className="min-w-0 truncate text-base font-semibold">
-          {scope.product.title}
-        </Heading>
-        {scope.isFollowing ? (
-          <Badge color="info" variant="soft" size="sm">
-            Following
-          </Badge>
-        ) : null}
-        {saveState.save ? (
-          <Button
-            size="sm"
-            color="module"
-            className="ml-auto"
-            disabled={!saveState.dirty}
-            loading={saveState.saving}
-            onClick={saveState.save}
-          >
-            <Save className="size-4" aria-hidden />
-            {saveState.label}
-          </Button>
-        ) : null}
-        <RefreshButton
-          className={saveState.save ? undefined : 'ml-auto'}
-          isFetching={translations.isFetching}
-          updatedAt={translations.dataUpdatedAt}
-          onRefresh={() => {
-            void translations.refetch();
-          }}
-        />
-      </PaneToolbar>
+      <PaneToolbar
+        label={`${LABEL} actions`}
+        controls={
+          <>
+            <Languages className="size-4 shrink-0" aria-hidden />
+            <Heading level={2} className="min-w-0 truncate text-base font-semibold">
+              {scope.product.title}
+            </Heading>
+            {scope.isFollowing ? (
+              <Badge color="info" variant="soft" size="sm">
+                Following
+              </Badge>
+            ) : null}
+            {saveState.save ? (
+              <Button
+                size="sm"
+                color="module"
+                className="ml-auto"
+                disabled={!saveState.dirty}
+                loading={saveState.saving}
+                onClick={saveState.save}
+              >
+                <Save className="size-4" aria-hidden />
+                {saveState.label}
+              </Button>
+            ) : null}
+          </>
+        }
+        refresh={
+          <RefreshButton
+            className={saveState.save ? undefined : 'ml-auto'}
+            isFetching={translations.isFetching}
+            updatedAt={translations.dataUpdatedAt}
+            onRefresh={() => {
+              void translations.refetch();
+            }}
+          />
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className="mx-auto flex w-full max-w-3xl flex-col gap-4">

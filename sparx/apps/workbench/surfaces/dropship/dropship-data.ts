@@ -463,12 +463,7 @@ export function importState(product: CatalogProduct): { label: string; tone: Ton
 /* ── Supplier orders ────────────────────────────────────────────────────── */
 
 export type DropshipOrderStatus =
-  | 'pending'
-  | 'submitted'
-  | 'shipped'
-  | 'delivered'
-  | 'failed'
-  | 'cancelled';
+  'pending' | 'submitted' | 'shipped' | 'delivered' | 'failed' | 'cancelled';
 
 export interface DropshipOrderLineItem {
   sku?: string;

@@ -49,6 +49,7 @@ import type { SurfaceContext } from '../../lib/surfaces/registry';
 import { MoneyInput } from '@/components/money-input';
 import { VariantPicker } from './variant-picker';
 import type { VariantChoice } from './bundles-data';
+import { SaveFailure } from '@/components/save-failure';
 import {
   priceListErrorMessage,
   priceListState,
@@ -66,6 +67,7 @@ import {
   type PriceListRow,
   type PriceListWriteInput,
 } from './price-lists-data';
+import { PaneLoadError } from '../../components/pane-load-error';
 
 const COLUMN = 'mx-auto flex w-full max-w-3xl flex-col gap-4';
 
@@ -231,27 +233,15 @@ function PriceListLoader({ ctx, id }: { ctx: SurfaceContext; id: string }) {
 
   if (listQuery.isError) {
     return (
-      <div className="flex h-full items-center justify-center p-8">
-        <Alert color="error" className="max-w-md">
-          <AlertContent>
-            <AlertTitle>Could not load this price list</AlertTitle>
-            <AlertDescription>
-              This is a problem reaching the server. The price list itself is unaffected — nothing
-              has been lost.
-            </AlertDescription>
-          </AlertContent>
-          <Button
-            size="sm"
-            color="error"
-            variant="soft"
-            onClick={() => {
-              void listQuery.refetch();
-            }}
-          >
-            Try again
-          </Button>
-        </Alert>
-      </div>
+      <PaneLoadError
+        error={listQuery.error}
+        noun="price list"
+        title="Could not load this price list"
+        description="This is a problem reaching the server. The price list itself is unaffected — nothing has been lost."
+        onRetry={() => {
+          void listQuery.refetch();
+        }}
+      />
     );
   }
 
@@ -554,23 +544,30 @@ function PriceListEditor({
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Price list actions">
-        {!isNew && list ? (
-          <Badge color={priceListState(list).tone} variant="soft" size="sm">
-            {priceListState(list).label}
-          </Badge>
-        ) : null}
-        <Button
-          color="module"
-          size="sm"
-          className="ml-auto"
-          loading={saving}
-          disabled={Boolean(nameError) || (!isNew && !dirty)}
-          onClick={submit}
-        >
-          {isNew ? 'Create price list' : 'Save'}
-        </Button>
-      </PaneToolbar>
+      <PaneToolbar
+        label="Price list actions"
+        primary={
+          <Button
+            color="module"
+            size="sm"
+            className="ml-auto"
+            loading={saving}
+            disabled={Boolean(nameError) || (!isNew && !dirty)}
+            onClick={submit}
+          >
+            {isNew ? 'Create price list' : 'Save'}
+          </Button>
+        }
+        controls={
+          <>
+            {!isNew && list ? (
+              <Badge color={priceListState(list).tone} variant="soft" size="sm">
+                {priceListState(list).label}
+              </Badge>
+            ) : null}
+          </>
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className={COLUMN}>
@@ -587,14 +584,7 @@ function PriceListEditor({
             </div>
           ) : null}
 
-          {failure ? (
-            <Alert color="error">
-              <AlertContent>
-                <AlertTitle>Could not save this price list</AlertTitle>
-                <AlertDescription>{failure}</AlertDescription>
-              </AlertContent>
-            </Alert>
-          ) : null}
+          <SaveFailure title="Could not save this price list" message={failure} />
 
           {/* 1 — What it is */}
           <FormSection title="Name">

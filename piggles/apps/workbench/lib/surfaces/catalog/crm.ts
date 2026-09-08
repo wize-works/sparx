@@ -144,7 +144,7 @@ export const CRM_SURFACES: SurfaceDefinition[] = [
     icon: faBuilding,
     section: 'People',
     order: 11,
-    keywords: ['companies', 'organisations', 'b2b', 'trade', 'accounts', 'firms'],
+    keywords: ['companies', 'organizations', 'organisations', 'b2b', 'trade', 'accounts', 'firms'],
     component: CompaniesListSurface,
     createSurface: 'crm.account.detail',
     createLabel: 'Add a company',

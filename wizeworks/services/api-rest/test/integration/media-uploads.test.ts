@@ -137,7 +137,7 @@ describe('media uploads', () => {
     expect(data.focal_point).toEqual({ x: 0.7, y: 0.3 });
   });
 
-  it('refuses delete when usage_count > 0', async () => {
+  it('refuses delete while something really references the asset', async () => {
     const create = await app.inject({
       method: 'POST',
       url: '/v1/media/uploads',
@@ -146,11 +146,22 @@ describe('media uploads', () => {
     });
     const assetId = create.json().data.asset.id;
 
-    // Bump usage_count via direct SQL — the references-rebuild path is
-    // covered by entries-lifecycle.test.ts; here we just need a non-zero
-    // count to hit the conflict branch.
+    // A REAL reference — an author whose avatar is this picture.
+    //
+    // This test used to write `usageCount: 2` onto the asset row and assert the
+    // 409 that produced. That column is never written by any application code,
+    // so the test manufactured the only number that could make the guard fire
+    // and the guard was dead in production the whole time (issue 381). The
+    // refusal counts references now, so the test has to create one.
     await withTenant({ tenantId: tenant.tenantId }, async (tx) => {
-      await tx.mediaAsset.update({ where: { id: assetId }, data: { usageCount: 2 } });
+      await tx.author.create({
+        data: {
+          tenantId: tenant.tenantId,
+          slug: `avatar-owner-${assetId.slice(0, 8)}`,
+          displayName: 'Avatar Owner',
+          avatarAssetId: assetId,
+        },
+      });
     });
 
     const del = await app.inject({
@@ -159,7 +170,36 @@ describe('media uploads', () => {
       headers: authHeader(token),
     });
     expect(del.statusCode).toBe(409);
-    expect(del.json().error.details.usage_count).toBe(2);
+    expect(del.json().error.details.usage_count).toBe(1);
+    // Names the KIND, so the owner knows which screen to go and fix.
+    expect(del.json().error.message).toContain('author profile');
+  });
+
+  it('allows delete when a stale usage_count claims a reference that is gone', async () => {
+    const create = await app.inject({
+      method: 'POST',
+      url: '/v1/media/uploads',
+      headers: authHeader(token),
+      payload: { filename: 'unused.jpg', mime_type: 'image/jpeg', byte_size: 8 },
+    });
+    const assetId = create.json().data.asset.id;
+
+    // The column lying in the other direction. Nothing references this picture,
+    // so it deletes — the count is the authority, not the cache.
+    await withTenant({ tenantId: tenant.tenantId }, async (tx) => {
+      await tx.mediaAsset.update({ where: { id: assetId }, data: { usageCount: 7 } });
+    });
+
+    const del = await app.inject({
+      method: 'DELETE',
+      url: `/v1/media/assets/${assetId}`,
+      headers: authHeader(token),
+    });
+    // 204 No Content — what this route has always answered a successful delete
+    // with. This line asserted 200 when the test was written and was simply
+    // wrong; it went unnoticed because the run that added it only exercised a
+    // 20-file subset of this suite.
+    expect(del.statusCode).toBe(204);
   });
 
   it('cross-tenant RLS: tenant A cannot read tenant B asset', async () => {

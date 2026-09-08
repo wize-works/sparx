@@ -7,6 +7,7 @@
 // it. A handle that is only ever explained is how a business ends up living at
 // an address nobody chose (issue #010).
 
+import { shownInPlace } from '@wizeworks/query';
 import { useEffect, useState } from 'react';
 import {
   Alert,
@@ -83,6 +84,7 @@ export function CreateSite({ ctx }: { ctx: SurfaceContext }) {
             toast.add({ title: `${site.name} created`, type: 'success' });
           });
         },
+        onError: shownInPlace,
       }
     );
   };

@@ -12,10 +12,6 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import {
-  Alert,
-  AlertContent,
-  AlertDescription,
-  AlertTitle,
   Button,
   Checkbox,
   Field,
@@ -36,6 +32,7 @@ import { FormSection } from '../../components/form-section';
 import { useDirtySource } from '../../lib/workbench/dirty';
 import { afterPaneChange } from '../../lib/defer';
 import type { SurfaceContext } from '../../lib/surfaces/registry';
+import { SaveFailure } from '@/components/save-failure';
 import {
   DEPOSIT_TYPES,
   REMINDER_OFFSETS,
@@ -50,6 +47,7 @@ import {
   type FeeType,
   type PolicyInput,
 } from './setup-data';
+import { PaneLoadError } from '../../components/pane-load-error';
 
 const COLUMN = 'mx-auto flex w-full max-w-2xl flex-col gap-4';
 
@@ -358,19 +356,22 @@ function PolicyEditor({
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label={isNew ? 'New rule set actions' : 'Rule set actions'}>
-        <Button
-          color="module"
-          size="sm"
-          className="ml-auto shrink-0"
-          disabled={!canSave}
-          loading={busy}
-          onClick={submit}
-        >
-          <Save className="size-4" aria-hidden />
-          {isNew ? 'Create rule set' : 'Save'}
-        </Button>
-      </PaneToolbar>
+      <PaneToolbar
+        label={isNew ? 'New rule set actions' : 'Rule set actions'}
+        primary={
+          <Button
+            color="module"
+            size="sm"
+            className="ml-auto shrink-0"
+            disabled={!canSave}
+            loading={busy}
+            onClick={submit}
+          >
+            <Save className="size-4" aria-hidden />
+            {isNew ? 'Create rule set' : 'Save'}
+          </Button>
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className={COLUMN}>
@@ -383,14 +384,7 @@ function PolicyEditor({
             </div>
           ) : null}
 
-          {saveError ? (
-            <Alert color="error">
-              <AlertContent>
-                <AlertTitle>Could not save this rule set</AlertTitle>
-                <AlertDescription>{saveError}</AlertDescription>
-              </AlertContent>
-            </Alert>
-          ) : null}
+          <SaveFailure title="Could not save this rule set" message={saveError} />
 
           <FormSection
             title={isNew ? 'New rule set' : 'Name'}
@@ -633,32 +627,18 @@ export function PolicyDetailSurface({ ctx }: { ctx: SurfaceContext }) {
     const gone = isNotFound(policy.error);
     return (
       <div className={PANE_SHELL}>
-        <div className="flex h-full items-center justify-center p-8">
-          <Alert color={gone ? 'warning' : 'error'} variant="soft" className="max-w-md">
-            <AlertContent>
-              <AlertTitle>
-                {gone ? 'This rule set no longer exists' : 'Could not load this rule set'}
-              </AlertTitle>
-              <AlertDescription>
-                {gone
-                  ? 'It has been deleted. Any service that used it now has no deposit or cancellation terms.'
-                  : 'This is a problem reaching the server. Nothing about the rule set has changed.'}
-              </AlertDescription>
-            </AlertContent>
-            {gone ? null : (
-              <Button
-                size="sm"
-                color="error"
-                variant="soft"
-                onClick={() => {
-                  void policy.refetch();
-                }}
-              >
-                Try again
-              </Button>
-            )}
-          </Alert>
-        </div>
+        <PaneLoadError
+          reason={gone ? 'missing' : 'unreachable'}
+          title={gone ? 'This rule set no longer exists' : 'Could not load this rule set'}
+          description={
+            gone
+              ? 'It has been deleted. Any service that used it now has no deposit or cancellation terms.'
+              : 'This is a problem reaching the server. Nothing about the rule set has changed.'
+          }
+          onRetry={() => {
+            void policy.refetch();
+          }}
+        />
       </div>
     );
   }

@@ -47,6 +47,7 @@ import type { SurfaceContext } from '../../lib/surfaces/registry';
 import { useTeamRoster } from '../../lib/api/team';
 import { customerName, useCustomers } from './customers-data';
 import { usePipelines, stageTypeMeta, type Pipeline } from './pipelines-data';
+import { SaveFailure } from '@/components/save-failure';
 import {
   dealErrorMessage,
   useCreateDeal,
@@ -57,6 +58,7 @@ import {
   type Deal,
   type DealInput,
 } from './deals-data';
+import { PaneLoadError } from '../../components/pane-load-error';
 
 const COLUMN = 'mx-auto flex w-full max-w-3xl flex-col gap-4';
 
@@ -126,31 +128,19 @@ export function DealDetailSurface({ ctx }: { ctx: SurfaceContext }) {
 }
 
 function DealLoader({ ctx, id }: { ctx: SurfaceContext; id: string }) {
-  const { data: deal, isPending, isError, refetch } = useDeal(id);
+  const { data: deal, isPending, isError, error, refetch } = useDeal(id);
 
   if (isError) {
     return (
-      <div className="flex h-full items-center justify-center p-8">
-        <Alert color="error" className="max-w-md">
-          <AlertContent>
-            <AlertTitle>Could not load this deal</AlertTitle>
-            <AlertDescription>
-              This is a problem reaching the server, or the deal has been removed. Nothing has been
-              changed.
-            </AlertDescription>
-          </AlertContent>
-          <Button
-            size="sm"
-            color="error"
-            variant="soft"
-            onClick={() => {
-              void refetch();
-            }}
-          >
-            Try again
-          </Button>
-        </Alert>
-      </div>
+      <PaneLoadError
+        error={error}
+        noun="deal"
+        title="Could not load this deal"
+        description="This is a problem reaching the server, or the deal has been removed. Nothing has been changed."
+        onRetry={() => {
+          void refetch();
+        }}
+      />
     );
   }
 
@@ -381,21 +371,28 @@ function DealEditor({ ctx, id, deal }: { ctx: SurfaceContext; id: string; deal?:
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Deal actions">
-        <Badge color={stageMeta.tone} variant="soft" size="sm">
-          {currentStage?.name ?? stageMeta.label}
-        </Badge>
-        <Button
-          color="module"
-          size="sm"
-          className="ml-auto shrink-0"
-          loading={saving}
-          disabled={Boolean(blocked) || (!isNew && !dirty)}
-          onClick={submit}
-        >
-          {isNew ? 'Create deal' : 'Save'}
-        </Button>
-      </PaneToolbar>
+      <PaneToolbar
+        label="Deal actions"
+        primary={
+          <Button
+            color="module"
+            size="sm"
+            className="ml-auto shrink-0"
+            loading={saving}
+            disabled={Boolean(blocked) || (!isNew && !dirty)}
+            onClick={submit}
+          >
+            {isNew ? 'Create deal' : 'Save'}
+          </Button>
+        }
+        controls={
+          <>
+            <Badge color={stageMeta.tone} variant="soft" size="sm">
+              {currentStage?.name ?? stageMeta.label}
+            </Badge>
+          </>
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className={COLUMN}>
@@ -411,14 +408,7 @@ function DealEditor({ ctx, id, deal }: { ctx: SurfaceContext; id: string; deal?:
             </div>
           ) : null}
 
-          {failure ? (
-            <Alert color="error">
-              <AlertContent>
-                <AlertTitle>Could not save this deal</AlertTitle>
-                <AlertDescription>{failure}</AlertDescription>
-              </AlertContent>
-            </Alert>
-          ) : null}
+          <SaveFailure title="Could not save this deal" message={failure} />
 
           {pipelineList.length === 0 ? (
             <Alert color="warning">

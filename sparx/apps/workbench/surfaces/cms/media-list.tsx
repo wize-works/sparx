@@ -39,7 +39,7 @@ import type { OpenTarget, SurfaceContext } from '../../lib/surfaces/registry';
 import { useUploadMedia } from './media';
 import {
   assetStatusState,
-  formatBytes,
+  sizeLabel,
   useMediaAssetsList,
   useRefreshMediaLibrary,
   type MediaAsset,
@@ -180,90 +180,97 @@ export function MediaListSurface({ ctx }: { ctx: SurfaceContext }) {
       {/* `wrap` after reducing what can reduce: below @xl the status filter is
           hidden (kind + search answer most questions) and the upload label sheds
           to its icon. At a normal width this is one line. */}
-      <PaneToolbar label="Media library controls" wrap>
-        <div className="max-w-xs min-w-0 flex-1">
-          <SearchInput
+      <PaneToolbar
+        label="Media library controls"
+        search={
+          <div className="max-w-xs min-w-0 flex-1">
+            <SearchInput
+              size="sm"
+              aria-label="Search your files"
+              placeholder="Filename or alt text…"
+              value={search}
+              onValueChange={(next) => {
+                setSearch(next);
+                resetWindow();
+              }}
+            />
+          </div>
+        }
+        primary={
+          <Button
+            color="module"
             size="sm"
-            aria-label="Search your files"
-            placeholder="Filename or alt text…"
-            value={search}
-            onValueChange={(next) => {
-              setSearch(next);
-              resetWindow();
+            className="ml-auto shrink-0 whitespace-nowrap"
+            loading={upload.isPending}
+            title="Upload a file from your computer"
+            onClick={() => {
+              fileRef.current?.click();
+            }}
+          >
+            <Upload className="size-4" aria-hidden />
+            <span className="hidden @xl:inline">Upload</span>
+          </Button>
+        }
+        controls={
+          <>
+            <Filter
+              color="module"
+              value={kind}
+              onValueChange={(next) => {
+                setKind((next as MediaKind | 'all' | null) ?? 'all');
+                resetWindow();
+              }}
+              showReset={false}
+              aria-label="Filter by kind of file"
+            >
+              {KIND_FILTERS.map((entry) => (
+                <FilterItem key={entry.value} value={entry.value}>
+                  {entry.label}
+                </FilterItem>
+              ))}
+            </Filter>
+            {/* The least-used control here: search + kind answer most questions, so
+            it steps aside first on a narrow pane. */}
+            <Filter
+              color="module"
+              className="hidden @xl:flex"
+              value={status}
+              onValueChange={(next) => {
+                setStatus((next as StatusFilter | null) ?? 'all');
+                resetWindow();
+              }}
+              showReset={false}
+              aria-label="Filter by state"
+            >
+              {STATUS_FILTERS.map((entry) => (
+                <FilterItem key={entry.value} value={entry.value}>
+                  {entry.label}
+                </FilterItem>
+              ))}
+            </Filter>
+            <input
+              ref={fileRef}
+              type="file"
+              multiple
+              accept="image/*,video/*,audio/*,application/pdf"
+              className="hidden"
+              onChange={(event) => {
+                onFiles(event.target.files);
+                event.target.value = '';
+              }}
+            />
+          </>
+        }
+        refresh={
+          <RefreshButton
+            isFetching={isFetching}
+            updatedAt={data ? dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void refetch();
             }}
           />
-        </div>
-
-        <Filter
-          color="module"
-          value={kind}
-          onValueChange={(next) => {
-            setKind((next as MediaKind | 'all' | null) ?? 'all');
-            resetWindow();
-          }}
-          showReset={false}
-          aria-label="Filter by kind of file"
-        >
-          {KIND_FILTERS.map((entry) => (
-            <FilterItem key={entry.value} value={entry.value}>
-              {entry.label}
-            </FilterItem>
-          ))}
-        </Filter>
-
-        {/* The least-used control here: search + kind answer most questions, so
-            it steps aside first on a narrow pane. */}
-        <Filter
-          color="module"
-          className="hidden @xl:flex"
-          value={status}
-          onValueChange={(next) => {
-            setStatus((next as StatusFilter | null) ?? 'all');
-            resetWindow();
-          }}
-          showReset={false}
-          aria-label="Filter by state"
-        >
-          {STATUS_FILTERS.map((entry) => (
-            <FilterItem key={entry.value} value={entry.value}>
-              {entry.label}
-            </FilterItem>
-          ))}
-        </Filter>
-
-        <input
-          ref={fileRef}
-          type="file"
-          multiple
-          accept="image/*,video/*,audio/*,application/pdf"
-          className="hidden"
-          onChange={(event) => {
-            onFiles(event.target.files);
-            event.target.value = '';
-          }}
-        />
-        <Button
-          color="module"
-          size="sm"
-          className="ml-auto shrink-0 whitespace-nowrap"
-          loading={upload.isPending}
-          title="Upload a file from your computer"
-          onClick={() => {
-            fileRef.current?.click();
-          }}
-        >
-          <Upload className="size-4" aria-hidden />
-          <span className="hidden @xl:inline">Upload</span>
-        </Button>
-
-        <RefreshButton
-          isFetching={isFetching}
-          updatedAt={data ? dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void refetch();
-          }}
-        />
-      </PaneToolbar>
+        }
+      />
 
       <Card className="min-h-0 flex-1 overflow-y-auto p-3">
         {staleAfterFailure ? (
@@ -391,7 +398,7 @@ export function MediaListSurface({ ctx }: { ctx: SurfaceContext }) {
                       </span>
                       <span className="flex items-center gap-1 text-sm">
                         {kindIcon(asset.kind, 'size-3.5 shrink-0')}
-                        {formatBytes(asset.byteSize)}
+                        {sizeLabel(asset)}
                       </span>
                     </span>
                   </button>

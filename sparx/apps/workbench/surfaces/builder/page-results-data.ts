@@ -59,6 +59,12 @@ export interface UnownedPathRow {
   revenueCents: number;
 }
 
+/** Sales in this window, and how many of them could be tied to a page. */
+export interface AttributionCoverage {
+  placed: number;
+  traced: number;
+}
+
 export interface PageResultsReport {
   range: { from: string; to: string };
   pages: PageResultRow[];
@@ -66,7 +72,22 @@ export interface PageResultsReport {
   /** False when Commerce is off — the money columns are hidden rather than shown
    *  permanently empty. */
   commerce: boolean;
+  attribution: AttributionCoverage;
   totals: { views: number; visitors: number; orders: number; revenueCents: number };
+}
+
+/**
+ * Sales happened, and not one of them could be tied to a page.
+ *
+ * A row's Bought column counts orders whose buyer's first pageview THAT DAY was on
+ * that page, so when nothing was traceable every row reads `0 (0%)` — and an owner
+ * who took fourteen orders is told that not one page she built sold anything. That
+ * is the difference between a measurement and an absence, and it must not be
+ * rendered as the former. Same rule the conversion rate already follows: a page with
+ * no visitors gets no percentage rather than 0%.
+ */
+export function salesUntraced(report: PageResultsReport): boolean {
+  return report.commerce && report.attribution.placed > 0 && report.attribution.traced === 0;
 }
 
 /* ── Reading ────────────────────────────────────────────────────────────── */

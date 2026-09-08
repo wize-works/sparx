@@ -65,6 +65,8 @@ import {
   type SegmentRule,
 } from './segment-rules';
 import { RuleGroupEditor } from './segment-rule-builder';
+import { SaveFailure } from '@/components/save-failure';
+import { PaneLoadError } from '../../components/pane-load-error';
 
 const COLUMN = 'mx-auto flex w-full max-w-3xl flex-col gap-4';
 
@@ -82,31 +84,19 @@ export function SegmentDetailSurface({ ctx }: { ctx: SurfaceContext }) {
 }
 
 function SegmentLoader({ ctx, id }: { ctx: SurfaceContext; id: string }) {
-  const { data: segment, isPending, isError, refetch } = useSegment(id);
+  const { data: segment, isPending, isError, error, refetch } = useSegment(id);
 
   if (isError) {
     return (
-      <div className="flex h-full items-center justify-center p-8">
-        <Alert color="error" className="max-w-md">
-          <AlertContent>
-            <AlertTitle>Could not load this segment</AlertTitle>
-            <AlertDescription>
-              This is a problem reaching the server, or the segment has been removed. Nothing has
-              been changed.
-            </AlertDescription>
-          </AlertContent>
-          <Button
-            size="sm"
-            color="error"
-            variant="soft"
-            onClick={() => {
-              void refetch();
-            }}
-          >
-            Try again
-          </Button>
-        </Alert>
-      </div>
+      <PaneLoadError
+        error={error}
+        noun="segment"
+        title="Could not load this segment"
+        description="This is a problem reaching the server, or the segment has been removed. Nothing has been changed."
+        onRetry={() => {
+          void refetch();
+        }}
+      />
     );
   }
 
@@ -357,72 +347,79 @@ function SegmentEditor({
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Segment actions">
-        {segment?.isBuiltIn ? (
-          <Badge color="module" variant="soft" size="sm">
-            Built-in
-          </Badge>
-        ) : null}
-        {isArchived ? (
-          <Badge color="neutral" variant="soft" size="sm">
-            Archived
-          </Badge>
-        ) : null}
-        <PreviewLabel
-          loading={preview.isFetching}
-          matches={preview.data?.matches}
-          sampled={preview.data?.sampled}
-          total={preview.data?.total}
-          invalid={!serialized.ok}
-        />
-        {/* Only once it exists, and only for rule-driven groups — a hand-picked
+      <PaneToolbar
+        label="Segment actions"
+        primary={
+          <Button
+            color="module"
+            size="sm"
+            className={!isNew && segment?.kind === 'dynamic' ? 'shrink-0' : 'ml-auto shrink-0'}
+            loading={saving}
+            disabled={Boolean(blocked) || (!isNew && !dirty)}
+            onClick={submit}
+          >
+            {isNew ? 'Create segment' : 'Save'}
+          </Button>
+        }
+        controls={
+          <>
+            {segment?.isBuiltIn ? (
+              <Badge color="module" variant="soft" size="sm">
+                Built-in
+              </Badge>
+            ) : null}
+            {isArchived ? (
+              <Badge color="neutral" variant="soft" size="sm">
+                Archived
+              </Badge>
+            ) : null}
+            <PreviewLabel
+              loading={preview.isFetching}
+              matches={preview.data?.matches}
+              sampled={preview.data?.sampled}
+              total={preview.data?.total}
+              invalid={!serialized.ok}
+            />
+            {/* Only once it exists, and only for rule-driven groups — a hand-picked
             list has no rules to re-derive membership from, and re-cutting one
             would empty something somebody built by hand. */}
-        {!isNew && segment?.kind === 'dynamic' ? (
-          <Tooltip content="Re-check every customer against these rules. Membership normally keeps itself up to date; use this if a group looks out of date.">
-            <Button
-              color="module"
-              variant="soft"
-              size="sm"
-              className="ml-auto shrink-0"
-              loading={recompute.isPending}
-              onClick={() => {
-                recompute.mutate(segment.id, {
-                  onSuccess: (result) => {
-                    toast.add({
-                      title:
-                        result.changed === 0
-                          ? 'Already up to date'
-                          : `${result.changed.toLocaleString()} ${result.changed === 1 ? 'person' : 'people'} moved in or out`,
-                      description: `Checked ${result.scanned.toLocaleString()} customers.`,
-                      type: 'success',
+            {!isNew && segment?.kind === 'dynamic' ? (
+              <Tooltip content="Re-check every customer against these rules. Membership normally keeps itself up to date; use this if a group looks out of date.">
+                <Button
+                  color="module"
+                  variant="soft"
+                  size="sm"
+                  className="ml-auto shrink-0"
+                  loading={recompute.isPending}
+                  onClick={() => {
+                    recompute.mutate(segment.id, {
+                      onSuccess: (result) => {
+                        toast.add({
+                          title:
+                            result.changed === 0
+                              ? 'Already up to date'
+                              : `${result.changed.toLocaleString()} ${result.changed === 1 ? 'person' : 'people'} moved in or out`,
+                          description: `Checked ${result.scanned.toLocaleString()} customers.`,
+                          type: 'success',
+                        });
+                      },
+                      onError: () => {
+                        toast.add({
+                          title: 'Could not update the membership',
+                          description: 'Nothing was changed — try again in a moment.',
+                          type: 'error',
+                        });
+                      },
                     });
-                  },
-                  onError: () => {
-                    toast.add({
-                      title: 'Could not update the membership',
-                      description: 'Nothing was changed — try again in a moment.',
-                      type: 'error',
-                    });
-                  },
-                });
-              }}
-            >
-              Update membership
-            </Button>
-          </Tooltip>
-        ) : null}
-        <Button
-          color="module"
-          size="sm"
-          className={!isNew && segment?.kind === 'dynamic' ? 'shrink-0' : 'ml-auto shrink-0'}
-          loading={saving}
-          disabled={Boolean(blocked) || (!isNew && !dirty)}
-          onClick={submit}
-        >
-          {isNew ? 'Create segment' : 'Save'}
-        </Button>
-      </PaneToolbar>
+                  }}
+                >
+                  Update membership
+                </Button>
+              </Tooltip>
+            ) : null}
+          </>
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className={COLUMN}>
@@ -439,14 +436,7 @@ function SegmentEditor({
             </div>
           ) : null}
 
-          {failure ? (
-            <Alert color="error">
-              <AlertContent>
-                <AlertTitle>Could not save this segment</AlertTitle>
-                <AlertDescription>{failure}</AlertDescription>
-              </AlertContent>
-            </Alert>
-          ) : null}
+          <SaveFailure title="Could not save this segment" message={failure} />
 
           {isArchived ? (
             <Alert color="info">

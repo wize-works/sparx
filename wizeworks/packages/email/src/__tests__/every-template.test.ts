@@ -76,7 +76,13 @@ describe('every coded template renders', () => {
     // no product: what it can state is the OPERATOR, which is WizeWorks under
     // either brand and is the one identity that does not vary. The
     // brand-specific rendering is asserted below, where a brand is supplied.
-    expect(out.html, 'shared frame').toContain('WizeWorks');
+    if (TENANT_TO_THEIR_CUSTOMER.has(template)) {
+      // Not this reader's company. They bought from a shop.
+      expect(out.html, 'operator named to a stranger').not.toContain('WizeWorks');
+      expect(out.html, 'the quiet credit still signs it').toContain('Sent with');
+    } else {
+      expect(out.html, 'shared frame').toContain('WizeWorks');
+    }
     // …except in the six templates that are ABOUT sparx (see SPARX_OWN_PRODUCTS
     // below), where the name is the subject matter rather than the chrome.
     if (!SPARX_OWN_PRODUCTS.has(template)) {
@@ -129,6 +135,32 @@ describe('every coded template renders', () => {
  * sparx partner and correctly for anyone else, and the two assertions below are
  * what keeps it that way (piggles/docs/personas/issues/128).
  */
+/**
+ * THE TENANT IS WRITING, AND WE ARE THE POST.
+ *
+ * These four reach somebody who has never heard of us: the customer being
+ * billed, the visitor who swapped an email address for a download, the visitor
+ * who filled in a contact form, the customer asked to put their name to a
+ * document. They get the SHOP's identity and, at the very bottom, "Sent with
+ * <product>" — the same quiet credit `silica/frame.ts` has always given.
+ *
+ * Everything else here is written to somebody who holds an account with us (an
+ * owner, their staff, an applicant, a visitor to our own marketing site), and
+ * for those the fine print naming the operator is right.
+ *
+ * The assertion below used to require `WizeWorks` on EVERY template, which is
+ * the same mistake this file already records one paragraph up: an assertion can
+ * pin a leak in place. It did — `WizeWorks · sparx.works` sat under a clothes
+ * shop's invoice, and a check written to catch a brand leak was holding it
+ * there.
+ */
+const TENANT_TO_THEIR_CUSTOMER = new Set<TemplateId>([
+  'invoice-sent',
+  'gated-delivery',
+  'form-submission-confirmation',
+  'document-signature-request',
+]);
+
 const SPARX_OWN_PRODUCTS = new Set<TemplateId>([
   'market-settlement-report',
   'job-application-received',

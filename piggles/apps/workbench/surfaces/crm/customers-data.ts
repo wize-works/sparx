@@ -107,12 +107,7 @@ export interface CustomerAddress {
 }
 
 export type CustomerSort =
-  | 'score'
-  | 'lastOrderAt'
-  | 'totalSpent'
-  | 'totalOrdered'
-  | 'updatedAt'
-  | 'createdAt';
+  'score' | 'lastOrderAt' | 'totalSpent' | 'totalOrdered' | 'updatedAt' | 'createdAt';
 
 export interface CustomerListParams {
   q?: string;

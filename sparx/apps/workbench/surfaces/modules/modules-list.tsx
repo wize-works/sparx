@@ -23,7 +23,6 @@ import {
   AlertDescription,
   AlertTitle,
   Badge,
-  Button,
   Card,
   CardBody,
   CardTitle,
@@ -50,6 +49,7 @@ import {
   type ModuleMeta,
   type ModuleRow,
 } from './data';
+import { PaneLoadError } from '../../components/pane-load-error';
 
 const COLUMN = 'mx-auto flex w-full max-w-6xl flex-col gap-3 @lg:gap-4';
 
@@ -261,23 +261,14 @@ export function ModulesSurface({ ctx: _ctx }: { ctx: SurfaceContext }) {
 
   if (isError) {
     return (
-      <div className="flex h-full items-center justify-center p-8">
-        <EmptyState
-          icon={<Layers className="size-6" aria-hidden />}
-          title="Could not load your modules"
-          description="This is a problem reaching the server. Whatever you have switched on is unaffected and still working."
-          actions={
-            <Button
-              size="sm"
-              onClick={() => {
-                void refetch();
-              }}
-            >
-              Try again
-            </Button>
-          }
-        />
-      </div>
+      <PaneLoadError
+        icon={<Layers className="size-6" aria-hidden />}
+        title="Could not load your modules"
+        description="This is a problem reaching the server. Whatever you have switched on is unaffected and still working."
+        onRetry={() => {
+          void refetch();
+        }}
+      />
     );
   }
 
@@ -285,28 +276,35 @@ export function ModulesSurface({ ctx: _ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Module list controls">
-        <div className="max-w-xs min-w-0 flex-1">
-          <SearchInput
-            size="sm"
-            aria-label="Search modules"
-            placeholder="Search modules…"
-            value={search}
-            onValueChange={setSearch}
+      <PaneToolbar
+        label="Module list controls"
+        search={
+          <div className="max-w-xs min-w-0 flex-1">
+            <SearchInput
+              size="sm"
+              aria-label="Search modules"
+              placeholder="Search modules…"
+              value={search}
+              onValueChange={setSearch}
+            />
+          </div>
+        }
+        status={
+          <p className="ml-auto hidden shrink-0 text-sm whitespace-nowrap @xl:block">
+            {needle ? `${String(visible.length)} of ${String(MODULE_META.length)}` : ''}
+          </p>
+        }
+        refresh={
+          <RefreshButton
+            className={needle ? undefined : 'ml-auto'}
+            isFetching={isFetching}
+            updatedAt={rows ? dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void refetch();
+            }}
           />
-        </div>
-        <p className="ml-auto hidden shrink-0 text-sm whitespace-nowrap @xl:block">
-          {needle ? `${String(visible.length)} of ${String(MODULE_META.length)}` : ''}
-        </p>
-        <RefreshButton
-          className={needle ? undefined : 'ml-auto'}
-          isFetching={isFetching}
-          updatedAt={rows ? dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void refetch();
-          }}
-        />
-      </PaneToolbar>
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className={COLUMN}>

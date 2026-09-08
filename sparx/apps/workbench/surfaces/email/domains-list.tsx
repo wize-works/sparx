@@ -11,7 +11,7 @@
 // sends from it by default).
 
 import { useMemo, useState } from 'react';
-import { Badge, Button, EmptyState, Heading, SearchInput, Text } from '@wizeworks/silicaui-react';
+import { Badge, Button, Heading, SearchInput, Text } from '@wizeworks/silicaui-react';
 import { MailWarning, Plus, Send } from 'lucide-react';
 import { RefreshButton } from '../../components/refresh-button';
 import { PaneToolbar, PANE_SHELL } from '../../components/pane-toolbar';
@@ -24,6 +24,7 @@ import {
   type SendingDomain,
 } from './domains-data';
 import { RowOpenHint } from '../../components/row-open-hint';
+import { PaneLoadError } from '../../components/pane-load-error';
 
 /** Same modifier contract as every other list in the app. */
 function targetFor(event: { shiftKey: boolean; altKey: boolean }): OpenTarget {
@@ -86,70 +87,65 @@ export function SendingDomainsListSurface({ ctx }: { ctx: SurfaceContext }) {
 
   if (isError) {
     return (
-      <div className="flex h-full items-center justify-center p-8">
-        <EmptyState
-          icon={<MailWarning className="size-6" aria-hidden />}
-          title="Could not load your sending addresses"
-          description="This is a problem reaching the server. Your addresses are unaffected — nothing has been lost."
-          actions={
-            <Button
-              size="sm"
-              color="module"
-              onClick={() => {
-                void refetch();
-              }}
-            >
-              Try again
-            </Button>
-          }
-        />
-      </div>
+      <PaneLoadError
+        icon={<MailWarning className="size-6" aria-hidden />}
+        title="Could not load your sending addresses"
+        description="This is a problem reaching the server. Your addresses are unaffected — nothing has been lost."
+        onRetry={() => {
+          void refetch();
+        }}
+      />
     );
   }
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Sending address list controls">
-        {/* The width sits on a WRAPPER: SearchInput forwards className to its
-            inner <input>, so a class aimed at the control never reaches the
-            element that lays out. */}
-        <div className="max-w-xs min-w-0 flex-1">
-          <SearchInput
+      <PaneToolbar
+        label="Sending address list controls"
+        search={
+          <div className="max-w-xs min-w-0 flex-1">
+            <SearchInput
+              size="sm"
+              aria-label="Search sending addresses"
+              placeholder="Search addresses…"
+              value={search}
+              onValueChange={setSearch}
+            />
+          </div>
+        }
+        status={
+          <p className="hidden shrink-0 text-sm whitespace-nowrap @xl:block">
+            {needle
+              ? `${String(matches.length)} of ${String(all.length)}`
+              : all.length === 1
+                ? '1 address'
+                : `${String(all.length)} addresses`}
+          </p>
+        }
+        primary={
+          <Button
+            color="module"
             size="sm"
-            aria-label="Search sending addresses"
-            placeholder="Search addresses…"
-            value={search}
-            onValueChange={setSearch}
+            className="ml-auto shrink-0 whitespace-nowrap"
+            title="Add a sending address — hold Shift to open alongside, Alt for a new window"
+            onClick={(event) => {
+              ctx.open('email.domains.detail', { id: 'new' }, { target: targetFor(event) });
+            }}
+          >
+            <Plus className="size-4" aria-hidden />
+            Add a sending address
+          </Button>
+        }
+        refresh={
+          <RefreshButton
+            isFetching={isFetching}
+            updatedAt={data ? dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void refetch();
+            }}
           />
-        </div>
-        <p className="hidden shrink-0 text-sm whitespace-nowrap @xl:block">
-          {needle
-            ? `${String(matches.length)} of ${String(all.length)}`
-            : all.length === 1
-              ? '1 address'
-              : `${String(all.length)} addresses`}
-        </p>
-        <Button
-          color="module"
-          size="sm"
-          className="ml-auto shrink-0 whitespace-nowrap"
-          title="Add a sending address — hold Shift to open alongside, Alt for a new window"
-          onClick={(event) => {
-            ctx.open('email.domains.detail', { id: 'new' }, { target: targetFor(event) });
-          }}
-        >
-          <Plus className="size-4" aria-hidden />
-          Add a sending address
-        </Button>
-        {/* ALWAYS the last child of a list toolbar — see RefreshButton. */}
-        <RefreshButton
-          isFetching={isFetching}
-          updatedAt={data ? dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void refetch();
-          }}
-        />
-      </PaneToolbar>
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         {isPending ? (

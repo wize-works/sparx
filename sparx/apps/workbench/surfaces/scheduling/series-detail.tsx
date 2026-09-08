@@ -42,6 +42,7 @@ import { useDirtySource } from '../../lib/workbench/dirty';
 import { afterPaneChange } from '../../lib/defer';
 import type { SurfaceContext } from '../../lib/surfaces/registry';
 import { CustomerPicker } from './bookings-customer-picker';
+import { SaveFailure } from '@/components/save-failure';
 import {
   buildRrule,
   bookingStateMeta,
@@ -63,6 +64,7 @@ import {
   type Frequency,
   type RecurrenceDraft,
 } from './bookings-data';
+import { PaneLoadError } from '../../components/pane-load-error';
 
 const COLUMN = 'mx-auto flex w-full max-w-3xl flex-col gap-4';
 
@@ -326,30 +328,26 @@ function SeriesCreate({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="New repeating booking actions">
-        <Button
-          color="module"
-          size="sm"
-          className="ml-auto shrink-0"
-          disabled={!canSave}
-          loading={create.isPending}
-          onClick={submit}
-        >
-          <Save className="size-4" aria-hidden />
-          Set it up
-        </Button>
-      </PaneToolbar>
+      <PaneToolbar
+        label="New repeating booking actions"
+        primary={
+          <Button
+            color="module"
+            size="sm"
+            className="ml-auto shrink-0"
+            disabled={!canSave}
+            loading={create.isPending}
+            onClick={submit}
+          >
+            <Save className="size-4" aria-hidden />
+            Set it up
+          </Button>
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className={COLUMN}>
-          {saveError ? (
-            <Alert color="error">
-              <AlertContent>
-                <AlertTitle>Could not set this up</AlertTitle>
-                <AlertDescription>{saveError}</AlertDescription>
-              </AlertContent>
-            </Alert>
-          ) : null}
+          <SaveFailure title="Could not set this up" message={saveError} />
 
           {noServices ? (
             <Alert color="info">
@@ -631,32 +629,18 @@ export function SeriesDetailSurface({ ctx }: { ctx: SurfaceContext }) {
     const gone = isNotFound(series.error);
     return (
       <div className={PANE_SHELL}>
-        <div className="flex h-full items-center justify-center p-8">
-          <Alert color={gone ? 'warning' : 'error'} variant="soft" className="max-w-md">
-            <AlertContent>
-              <AlertTitle>
-                {gone ? 'This repeating booking no longer exists' : 'Could not load this'}
-              </AlertTitle>
-              <AlertDescription>
-                {gone
-                  ? 'It may have been removed. Any bookings it already made are unaffected.'
-                  : 'This is a problem reaching the server. Nothing has changed.'}
-              </AlertDescription>
-            </AlertContent>
-            {gone ? null : (
-              <Button
-                size="sm"
-                color="error"
-                variant="soft"
-                onClick={() => {
-                  void series.refetch();
-                }}
-              >
-                Try again
-              </Button>
-            )}
-          </Alert>
-        </div>
+        <PaneLoadError
+          reason={gone ? 'missing' : 'unreachable'}
+          title={gone ? 'This repeating booking no longer exists' : 'Could not load this'}
+          description={
+            gone
+              ? 'It may have been removed. Any bookings it already made are unaffected.'
+              : 'This is a problem reaching the server. Nothing has changed.'
+          }
+          onRetry={() => {
+            void series.refetch();
+          }}
+        />
       </div>
     );
   }

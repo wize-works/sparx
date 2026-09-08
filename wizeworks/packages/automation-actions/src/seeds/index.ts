@@ -41,6 +41,8 @@ import {
   COMMERCE_HIGH_VALUE_ORDER_ALERT,
   COMMERCE_LOW_INVENTORY_ALERT,
   COMMERCE_ORDER_CANCELLED_EMAIL,
+  COMMERCE_ORDER_CONFIRMATION_EMAIL,
+  COMMERCE_SHIPPING_CONFIRMATION_EMAIL,
   COMMERCE_ORDER_DELIVERED_EMAIL,
   COMMERCE_ORDER_REFUNDED_EMAIL,
   COMMERCE_PAYMENT_FAILED_EMAIL,
@@ -114,6 +116,9 @@ export const SYSTEM_AUTOMATIONS: readonly SystemAutomationSeed[] = [
   { module: 'commerce', spec: COMMERCE_RETURN_REQUESTED_ALERT },
   { module: 'commerce', spec: COMMERCE_ABANDONED_CART_NUDGE },
   { module: 'commerce', spec: COMMERCE_POST_PURCHASE_REVIEW },
+  // First in the order's life, so first in the list.
+  { module: 'commerce', spec: COMMERCE_ORDER_CONFIRMATION_EMAIL },
+  { module: 'commerce', spec: COMMERCE_SHIPPING_CONFIRMATION_EMAIL },
   { module: 'commerce', spec: COMMERCE_ORDER_DELIVERED_EMAIL },
   { module: 'commerce', spec: COMMERCE_ORDER_CANCELLED_EMAIL },
   { module: 'commerce', spec: COMMERCE_ORDER_REFUNDED_EMAIL },

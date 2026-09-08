@@ -29,6 +29,7 @@ import { postStatusMeta, socialErrorMessage, type CatalogEntry, type Post } from
 import { DestinationAvatars, PostCover, excerpt, whenLine } from './post-visuals';
 import { GROUPS, useSocialBoard } from './board';
 import { RowOpenHint } from '../../components/row-open-hint';
+import { PaneLoadError } from '../../components/pane-load-error';
 
 /* ── One post, as a preview tile ──────────────────────────────────────────── */
 
@@ -183,66 +184,65 @@ export function SocialQueueSurface({ ctx }: { ctx: SurfaceContext }) {
   if (posts.isError) {
     return (
       <div className={PANE_SHELL}>
-        <div className="flex h-full items-center justify-center p-8">
-          <EmptyState
-            icon={<ServerCrash className="size-6" aria-hidden />}
-            title="Could not load your posts"
-            description={socialErrorMessage(
-              posts.error,
-              'This is a problem reaching the server. Nothing about your posts has changed.'
-            )}
-            actions={
-              <Button
-                size="sm"
-                color="module"
-                onClick={() => {
-                  void posts.refetch();
-                }}
-              >
-                Try again
-              </Button>
-            }
-          />
-        </div>
+        <PaneLoadError
+          icon={<ServerCrash className="size-6" aria-hidden />}
+          title="Could not load your posts"
+          description={socialErrorMessage(
+            posts.error,
+            'This is a problem reaching the server. Nothing about your posts has changed.'
+          )}
+          onRetry={() => {
+            void posts.refetch();
+          }}
+        />
       </div>
     );
   }
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Posts list controls" wrap>
-        <div className="max-w-xs min-w-0 flex-1">
-          <SearchInput
-            size="sm"
-            aria-label="Search posts"
-            placeholder="Search posts…"
-            value={search}
-            onValueChange={setSearch}
-          />
-        </div>
-        {canWrite ? (
-          <Button
-            color="module"
-            size="sm"
-            className="ml-auto shrink-0 whitespace-nowrap"
-            title="Write a new post — hold Shift to open alongside, Alt for a new window"
-            onClick={(event) => {
-              board.openNew(event);
+      <PaneToolbar
+        label="Posts list controls"
+        search={
+          <div className="max-w-xs min-w-0 flex-1">
+            <SearchInput
+              size="sm"
+              aria-label="Search posts"
+              placeholder="Search posts…"
+              value={search}
+              onValueChange={setSearch}
+            />
+          </div>
+        }
+        controls={
+          <>
+            {canWrite ? (
+              <Button
+                color="module"
+                size="sm"
+                className="ml-auto shrink-0 whitespace-nowrap"
+                title="Write a new post — hold Shift to open alongside, Alt for a new window"
+                onClick={(event) => {
+                  board.openNew(event);
+                }}
+              >
+                <Plus className="size-4" aria-hidden />
+                New post
+              </Button>
+            ) : null}
+          </>
+        }
+        refresh={
+          <RefreshButton
+            className={canWrite ? undefined : 'ml-auto'}
+            isFetching={posts.isFetching}
+            updatedAt={posts.data ? posts.dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void posts.refetch();
             }}
-          >
-            <Plus className="size-4" aria-hidden />
-            New post
-          </Button>
-        ) : null}
-        <RefreshButton
-          className={canWrite ? undefined : 'ml-auto'}
-          isFetching={posts.isFetching}
-          updatedAt={posts.data ? posts.dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void posts.refetch();
-          }}
-        />
-      </PaneToolbar>
+          />
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         {posts.isPending ? (

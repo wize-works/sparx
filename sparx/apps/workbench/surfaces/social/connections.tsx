@@ -39,6 +39,7 @@ import { RefreshButton } from '../../components/refresh-button';
 import { FormSection } from '../../components/form-section';
 import { useViewer } from '../../lib/api/shell-data';
 import type { SurfaceContext } from '../../lib/surfaces/registry';
+import { SaveFailure } from '@/components/save-failure';
 import {
   canApprove,
   catalogByPlatform,
@@ -588,25 +589,34 @@ export function SocialConnectionsSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Connections controls">
-        <Share2 className="size-4 shrink-0" aria-hidden />
-        <Heading level={2} className="min-w-0 truncate text-base font-semibold">
-          Connections
-        </Heading>
-        {connections.length > 0 ? (
-          <Badge color="success" variant="soft" size="sm">
-            {connections.length === 1 ? '1 connected' : `${String(connections.length)} connected`}
-          </Badge>
-        ) : null}
-        <RefreshButton
-          className="ml-auto"
-          isFetching={overview.isFetching}
-          updatedAt={data ? overview.dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void overview.refetch();
-          }}
-        />
-      </PaneToolbar>
+      <PaneToolbar
+        label="Connections controls"
+        controls={
+          <>
+            <Share2 className="size-4 shrink-0" aria-hidden />
+            <Heading level={2} className="min-w-0 truncate text-base font-semibold">
+              Connections
+            </Heading>
+            {connections.length > 0 ? (
+              <Badge color="success" variant="soft" size="sm">
+                {connections.length === 1
+                  ? '1 connected'
+                  : `${String(connections.length)} connected`}
+              </Badge>
+            ) : null}
+          </>
+        }
+        refresh={
+          <RefreshButton
+            className="ml-auto"
+            isFetching={overview.isFetching}
+            updatedAt={data ? overview.dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void overview.refetch();
+            }}
+          />
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className={COLUMN}>
@@ -646,14 +656,7 @@ export function SocialConnectionsSurface({ ctx }: { ctx: SurfaceContext }) {
                 </Text>
               </div>
 
-              {connectFailure ? (
-                <Alert color="error">
-                  <AlertContent>
-                    <AlertTitle>Could not connect</AlertTitle>
-                    <AlertDescription>{connectFailure}</AlertDescription>
-                  </AlertContent>
-                </Alert>
-              ) : null}
+              <SaveFailure title="Could not connect" message={connectFailure} />
 
               {/* Before posts go live — the approval gate. Admin-only to change;
                   everyone else sees where it stands. */}

@@ -109,6 +109,7 @@ import redirectRoutes from './routes/v1/redirects/index.js';
 import authorRoutes from './routes/v1/authors/index.js';
 import taxonomyRoutes from './routes/v1/taxonomies/index.js';
 import webhookRoutes from './routes/v1/webhooks/subscriptions.js';
+import webhookDeliveryRoutes from './routes/v1/webhooks/deliveries.js';
 import stripeBillingWebhookRoutes from './routes/v1/webhooks/stripe-billing.js';
 import providerWebhookRoutes from './routes/v1/webhooks/providers.js';
 import paymentWebhookRoutes from './routes/v1/webhooks/payments.js';
@@ -952,6 +953,7 @@ export async function createApp(): Promise<FastifyInstance> {
   await app.register(authorRoutes);
   await app.register(taxonomyRoutes);
   await app.register(webhookRoutes);
+  await app.register(webhookDeliveryRoutes);
   await app.register(stripeBillingWebhookRoutes);
   await app.register(providerWebhookRoutes);
   await app.register(paymentWebhookRoutes);

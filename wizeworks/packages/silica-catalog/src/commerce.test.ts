@@ -15,6 +15,7 @@ import {
   featuredProducts,
   productCard,
   productDetailPage,
+  relatedCarousel,
   productGrid,
   productsBlock,
 } from './commerce';
@@ -76,6 +77,8 @@ const COLLECTION = {
 const ROOT_SOURCES: Record<string, unknown[]> = {
   'commerce.product': PRODUCTS,
   'commerce.featured': PRODUCTS,
+  // The composed PDP body's cross-sell rail binds RELATED, not featured (issue 412).
+  'commerce.related': PRODUCTS,
 };
 
 const host: ResolveHost = {
@@ -89,6 +92,7 @@ const host: ResolveHost = {
   resolveCollection(ref: string, scope: DataScope) {
     if (ref === 'commerce.product') return PRODUCTS;
     if (ref === 'commerce.featured') return PRODUCTS; // bounded rail — host fills a slice
+    if (ref === 'commerce.related') return PRODUCTS; // the PDP's cross-sell, same shape
     if (ref === 'product') return [PRODUCT]; // object source → collection-of-one
     if (ref === 'collection') return [COLLECTION];
     // ANY array field on the in-scope item, which is what the real resolver does
@@ -637,6 +641,21 @@ describe('featured_carousel — a rail with real controls', () => {
   it('carries no pager — a carousel already has its own way forward', () => {
     const html = toHtml(resolveTree(featuredCarousel(), host));
     expect(html).not.toContain('site.pagination');
+  });
+
+  it('cross-sells on a PRODUCT page from RELATED, never from featured', () => {
+    // Issue 412. "Featured" is the ones the merchant TAGGED `featured` and nothing else,
+    // which is the shop's window display — a home-page idea. On a product page a shopper
+    // wants others LIKE THIS ONE, and a shop that has tagged nothing (every new shop) got
+    // a rail that correctly hid itself, so the product page shipped with no cross-sell at
+    // all and nothing anywhere said a rail had been there.
+    expect(collectionRef(relatedCarousel())).toBe('commerce.related');
+    expect(toHtml(resolveTree(relatedCarousel(), host))).toContain('You might also like');
+    // On the composed page, asserted through the UNRESOLVED tree: `collectionRef` reads
+    // the first collection in it, which on a PDP is the buy box's own `product` scope.
+    const pdp = toHtml(productDetailPage());
+    expect(pdp).toContain('data-sui-repeat="commerce.related"');
+    expect(pdp).not.toContain('commerce.featured');
   });
 });
 

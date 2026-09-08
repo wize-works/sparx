@@ -13,6 +13,7 @@
 //   • By weight / value / item count — a set of price steps ("bands"), each with
 //     a range and its own price. The unit of the range changes with the choice.
 
+import { shownInPlace } from '@wizeworks/query';
 import { useState } from 'react';
 import {
   Alert,
@@ -36,6 +37,7 @@ import { faPlus, faTrashCan, faXmark } from '@fortawesome/pro-solid-svg-icons';
 import { Icon } from '@piggles/ui';
 import type { CreateShippingRateInput } from '@wizeworks/commerce-schemas';
 import { MoneyInput } from '../../components/money-input';
+import { SaveFailure } from '@/components/save-failure';
 import {
   rateTypeLabel,
   shippingErrorMessage,
@@ -196,6 +198,7 @@ function RateComposer({
         toast.add({ title: `${draft.name.trim()} added`, type: 'success' });
         onDone();
       },
+      onError: shownInPlace,
     });
   };
 
@@ -219,14 +222,7 @@ function RateComposer({
         </Button>
       </div>
 
-      {failure ? (
-        <Alert color="error">
-          <AlertContent>
-            <AlertTitle>Could not add this option</AlertTitle>
-            <AlertDescription>{failure}</AlertDescription>
-          </AlertContent>
-        </Alert>
-      ) : null}
+      <SaveFailure title="Could not add this option" message={failure} />
 
       <Field>
         <FieldLabel>What shoppers see</FieldLabel>

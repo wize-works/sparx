@@ -287,25 +287,32 @@ export function SocialApprovalsSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Approvals controls">
-        <Inbox className="size-4 shrink-0" aria-hidden />
-        <Heading level={2} className="min-w-0 truncate text-base font-semibold">
-          Approvals
-        </Heading>
-        {pending.length > 0 ? (
-          <Badge color="warning" variant="soft" size="sm">
-            {pending.length === 1 ? '1 waiting' : `${String(pending.length)} waiting`}
-          </Badge>
-        ) : null}
-        <RefreshButton
-          className="ml-auto"
-          isFetching={posts.isFetching}
-          updatedAt={posts.data ? posts.dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void posts.refetch();
-          }}
-        />
-      </PaneToolbar>
+      <PaneToolbar
+        label="Approvals controls"
+        controls={
+          <>
+            <Inbox className="size-4 shrink-0" aria-hidden />
+            <Heading level={2} className="min-w-0 truncate text-base font-semibold">
+              Approvals
+            </Heading>
+            {pending.length > 0 ? (
+              <Badge color="warning" variant="soft" size="sm">
+                {pending.length === 1 ? '1 waiting' : `${String(pending.length)} waiting`}
+              </Badge>
+            ) : null}
+          </>
+        }
+        refresh={
+          <RefreshButton
+            className="ml-auto"
+            isFetching={posts.isFetching}
+            updatedAt={posts.data ? posts.dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void posts.refetch();
+            }}
+          />
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className="mx-auto flex w-full max-w-3xl flex-col gap-4">

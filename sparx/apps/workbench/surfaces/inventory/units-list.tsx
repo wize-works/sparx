@@ -410,35 +410,41 @@ export function UnitsListSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Unit actions">
-        <span className="inline-flex items-center gap-1.5">
-          <Ruler className="size-4" aria-hidden />
-          <Text as="span" className="text-sm font-medium">
-            Units
-          </Text>
-        </span>
-
-        <Button
-          size="sm"
-          color="module"
-          className="ml-auto shrink-0"
-          disabled={adding}
-          onClick={() => {
-            setAdding(true);
-            ctx.setTitle('Units');
-          }}
-        >
-          <Plus className="size-4" aria-hidden />
-          Add a unit
-        </Button>
-        <RefreshButton
-          isFetching={units.isFetching}
-          updatedAt={units.dataUpdatedAt}
-          onRefresh={() => {
-            void units.refetch();
-          }}
-        />
-      </PaneToolbar>
+      <PaneToolbar
+        label="Unit actions"
+        status={
+          <span className="inline-flex items-center gap-1.5">
+            <Ruler className="size-4" aria-hidden />
+            <Text as="span" className="text-sm font-medium">
+              Units
+            </Text>
+          </span>
+        }
+        primary={
+          <Button
+            size="sm"
+            color="module"
+            className="ml-auto shrink-0"
+            disabled={adding}
+            onClick={() => {
+              setAdding(true);
+              ctx.setTitle('Units');
+            }}
+          >
+            <Plus className="size-4" aria-hidden />
+            Add a unit
+          </Button>
+        }
+        refresh={
+          <RefreshButton
+            isFetching={units.isFetching}
+            updatedAt={units.dataUpdatedAt}
+            onRefresh={() => {
+              void units.refetch();
+            }}
+          />
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">{body()}</div>
     </div>

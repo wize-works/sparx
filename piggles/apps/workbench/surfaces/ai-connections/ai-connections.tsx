@@ -64,7 +64,7 @@ import {
   faTrashCan,
 } from '@fortawesome/pro-solid-svg-icons';
 import { Icon } from '@piggles/ui';
-import { useQueryClient } from '@wizeworks/query';
+import { useQueryClient, shownInPlace } from '@wizeworks/query';
 import { useConfirm } from '../../lib/confirm';
 import { useDirtySource } from '../../lib/workbench/dirty';
 import { afterPaneChange } from '../../lib/defer';
@@ -73,6 +73,7 @@ import { RefreshButton } from '../../components/refresh-button';
 import { FormSection } from '../../components/form-section';
 import { useViewer, useModuleStates } from '../../lib/api/shell-data';
 import type { OpenTarget, SurfaceContext } from '../../lib/surfaces/registry';
+import { SaveFailure } from '@/components/save-failure';
 import {
   aiCredentialErrorMessage,
   apiKeyState,
@@ -249,14 +250,7 @@ function KeyForm({
 
   return (
     <div className="flex flex-col gap-4">
-      {failure ? (
-        <Alert color="error">
-          <AlertContent>
-            <AlertTitle>That key could not be used</AlertTitle>
-            <AlertDescription>{failure}</AlertDescription>
-          </AlertContent>
-        </Alert>
-      ) : null}
+      <SaveFailure title="That key could not be used" message={failure} />
 
       <Field>
         <FieldLabel>Which AI service is it?</FieldLabel>
@@ -927,6 +921,7 @@ function ApiKeysSection({
         onSuccess: (result) => {
           setIssued(result);
         },
+        onError: shownInPlace,
       }
     );
   };
@@ -1000,14 +995,7 @@ function ApiKeysSection({
           <Heading level={3} className="text-base font-semibold">
             Create an API key
           </Heading>
-          {issueFailure ? (
-            <Alert color="error">
-              <AlertContent>
-                <AlertTitle>That key could not be created</AlertTitle>
-                <AlertDescription>{issueFailure}</AlertDescription>
-              </AlertContent>
-            </Alert>
-          ) : null}
+          <SaveFailure title="That key could not be created" message={issueFailure} />
 
           <Field>
             <FieldLabel>What is it for?</FieldLabel>
@@ -1024,7 +1012,7 @@ function ApiKeysSection({
               }
             />
             <FieldDescription>
-              A name only you see, so you can recognise this key later and revoke the right one.
+              A name only you see, so you can recognize this key later and revoke the right one.
             </FieldDescription>
           </Field>
 

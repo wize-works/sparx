@@ -29,6 +29,7 @@
 // stand on Overview. Removing a customer is rare and irreversible, so it sits in
 // a quiet row at the end of the Details form.
 
+import { shownInPlace } from '@wizeworks/query';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { PaneWaiting } from '../../components/pane-waiting';
 import { PaneLoadError } from '../../components/pane-load-error';
@@ -74,7 +75,6 @@ import { afterPaneChange } from '../../lib/defer';
 import { PaneToolbar, PANE_SHELL } from '../../components/pane-toolbar';
 import { RefreshButton } from '../../components/refresh-button';
 import { FormSection } from '../../components/form-section';
-import { ScrollStrip } from '../../components/scroll-strip';
 import { CustomPropertiesPanel } from './custom-properties-panel';
 import { AssociationsPanel } from './associations-panel';
 import type { SurfaceContext } from '../../lib/surfaces/registry';
@@ -421,6 +421,7 @@ function CustomerEditor({
             toast.add({ title: `${customerName(created)} added`, type: 'success' });
           });
         },
+        onError: shownInPlace,
       });
       return;
     }
@@ -430,6 +431,7 @@ function CustomerEditor({
         setTouched(false);
         toast.add({ title: 'Customer saved', type: 'success' });
       },
+      onError: shownInPlace,
     });
   };
 
@@ -928,36 +930,34 @@ function CustomerEditor({
                     alone hid Documents and Details behind an edge with nothing
                     to say they were there. */}
                 <div className="bg-base-300 shrink-0 rounded-full px-2 py-2">
-                  <ScrollStrip label="tabs">
-                    <TabsList>
-                      {TABS.map((entry) => (
-                        <TabsTab
-                          key={entry.value}
-                          value={entry.value}
-                          className="flex items-center gap-1.5"
-                        >
-                          {entry.label}
-                          {/* The dirty dot makes a toolbar Save honest: it says
+                  <TabsList scrollable>
+                    {TABS.map((entry) => (
+                      <TabsTab
+                        key={entry.value}
+                        value={entry.value}
+                        className="flex items-center gap-1.5"
+                      >
+                        {entry.label}
+                        {/* The dirty dot makes a toolbar Save honest: it says
                             "Details has unsaved work" while you stand on Overview.
                             On the selected pill it wears the pill's own ink so it
                             stays visible against the fill. */}
-                          {entry.value === 'details' && dirty ? (
-                            <>
-                              <span
-                                className={
-                                  entry.value === tab
-                                    ? 'bg-module-content size-1.5 shrink-0 rounded-full'
-                                    : 'bg-module size-1.5 shrink-0 rounded-full'
-                                }
-                                aria-hidden
-                              />
-                              <span className="sr-only">(unsaved changes)</span>
-                            </>
-                          ) : null}
-                        </TabsTab>
-                      ))}
-                    </TabsList>
-                  </ScrollStrip>
+                        {entry.value === 'details' && dirty ? (
+                          <>
+                            <span
+                              className={
+                                entry.value === tab
+                                  ? 'bg-module-content size-1.5 shrink-0 rounded-full'
+                                  : 'bg-module size-1.5 shrink-0 rounded-full'
+                              }
+                              aria-hidden
+                            />
+                            <span className="sr-only">(unsaved changes)</span>
+                          </>
+                        ) : null}
+                      </TabsTab>
+                    ))}
+                  </TabsList>
                 </div>
 
                 <TabsPanel value="overview">

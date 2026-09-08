@@ -278,70 +278,76 @@ export function TimesheetsSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Timesheet controls" wrap>
-        <div className="flex items-center gap-1">
+      <PaneToolbar
+        label="Timesheet controls"
+        primary={
           <Button
             size="sm"
-            variant="ghost"
-            color="neutral"
-            aria-label="Previous month"
-            onClick={() => {
-              setSelected(new Set());
-              setRange((current) => monthShift(current, -1));
-            }}
+            color="module"
+            className="ml-auto"
+            disabled={!anySelected}
+            loading={approve.isPending}
+            onClick={doApprove}
           >
-            <ChevronLeft className="size-4" aria-hidden />
+            {anySelected
+              ? `Approve ${String(selected.size)} ${selected.size === 1 ? 'person' : 'people'}`
+              : 'Approve'}
           </Button>
-          <Text as="span" className="min-w-32 text-center text-sm font-medium">
-            {periodLabel(range.from, range.to)}
-          </Text>
-          <Button
-            size="sm"
-            variant="ghost"
-            color="neutral"
-            aria-label="Next month"
-            onClick={() => {
-              setSelected(new Set());
-              setRange((current) => monthShift(current, 1));
+        }
+        controls={
+          <>
+            <div className="flex items-center gap-1">
+              <Button
+                size="sm"
+                variant="ghost"
+                color="neutral"
+                aria-label="Previous month"
+                onClick={() => {
+                  setSelected(new Set());
+                  setRange((current) => monthShift(current, -1));
+                }}
+              >
+                <ChevronLeft className="size-4" aria-hidden />
+              </Button>
+              <Text as="span" className="min-w-32 text-center text-sm font-medium">
+                {periodLabel(range.from, range.to)}
+              </Text>
+              <Button
+                size="sm"
+                variant="ghost"
+                color="neutral"
+                aria-label="Next month"
+                onClick={() => {
+                  setSelected(new Set());
+                  setRange((current) => monthShift(current, 1));
+                }}
+              >
+                <ChevronRight className="size-4" aria-hidden />
+              </Button>
+            </div>
+            <Button
+              size="sm"
+              variant="ghost"
+              color="neutral"
+              onClick={() => {
+                setSelected(new Set());
+                setRange(monthRange(new Date()));
+              }}
+            >
+              This month
+            </Button>
+          </>
+        }
+        refresh={
+          <RefreshButton
+            isFetching={timesheet.isFetching}
+            updatedAt={data ? timesheet.dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void timesheet.refetch();
             }}
-          >
-            <ChevronRight className="size-4" aria-hidden />
-          </Button>
-        </div>
-
-        <Button
-          size="sm"
-          variant="ghost"
-          color="neutral"
-          onClick={() => {
-            setSelected(new Set());
-            setRange(monthRange(new Date()));
-          }}
-        >
-          This month
-        </Button>
-
-        <Button
-          size="sm"
-          color="module"
-          className="ml-auto"
-          disabled={!anySelected}
-          loading={approve.isPending}
-          onClick={doApprove}
-        >
-          {anySelected
-            ? `Approve ${String(selected.size)} ${selected.size === 1 ? 'person' : 'people'}`
-            : 'Approve'}
-        </Button>
-
-        <RefreshButton
-          isFetching={timesheet.isFetching}
-          updatedAt={data ? timesheet.dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void timesheet.refetch();
-          }}
-        />
-      </PaneToolbar>
+          />
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         {timesheet.isError ? (

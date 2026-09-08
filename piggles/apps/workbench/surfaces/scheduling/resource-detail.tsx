@@ -13,14 +13,11 @@
 // bookings side by side. Only the controls that make sense for the chosen kind
 // are shown, so nobody sets a party size on a hairdresser.
 
+import { shownInPlace } from '@wizeworks/query';
 import { useEffect, useMemo, useState } from 'react';
 import { PaneWaiting } from '../../components/pane-waiting';
 import { PaneLoadError } from '../../components/pane-load-error';
 import {
-  Alert,
-  AlertContent,
-  AlertDescription,
-  AlertTitle,
   Badge,
   Button,
   Card,
@@ -47,6 +44,7 @@ import { useBusinessTimezone } from '../../lib/business-timezone';
 import { timezoneOptions } from '../../lib/timezones';
 import { afterPaneChange } from '../../lib/defer';
 import type { SurfaceContext } from '../../lib/surfaces/registry';
+import { SaveFailure } from '@/components/save-failure';
 import {
   RESOURCE_KINDS,
   isNotFound,
@@ -240,6 +238,7 @@ function ResourceEditor({
             toast.add({ title: `${body.name ?? 'Entry'} added`, type: 'success' });
           });
         },
+        onError: shownInPlace,
       });
       return;
     }
@@ -316,20 +315,13 @@ function ResourceEditor({
         <div className={COLUMN}>
           {existing ? <Text className="text-sm">{resourceKindLabel(existing.kind)}</Text> : null}
 
-          {saveError ? (
-            <Alert color="error">
-              <AlertContent>
-                <AlertTitle>Could not save this</AlertTitle>
-                <AlertDescription>{saveError}</AlertDescription>
-              </AlertContent>
-            </Alert>
-          ) : null}
+          <SaveFailure title="Could not save this" message={saveError} />
 
           <FormSection
             title={isNew ? 'New person or thing' : 'What it is'}
             description={
               isNew
-                ? 'Say what kind of thing this is and give it a name your team will recognise.'
+                ? 'Say what kind of thing this is and give it a name your team will recognize.'
                 : undefined
             }
           >

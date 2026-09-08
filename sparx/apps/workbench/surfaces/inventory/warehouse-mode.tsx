@@ -253,7 +253,7 @@ function MatchCard({ match, ctx }: { match: ScanMatch; ctx: SurfaceContext }) {
   const open = () => {
     switch (match.kind) {
       case 'variant':
-        if (match.productId) ctx.open('commerce.products.detail', { id: match.productId });
+        if (match.productId) ctx.open('commerce.product.detail', { id: match.productId });
         break;
       case 'bin':
         ctx.open('inventory.bins.detail', { id: match.id });

@@ -149,52 +149,42 @@ export function SuppressionsListSurface(_props: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Do-not-email list controls">
-        {/* The width sits on a WRAPPER: SearchInput forwards className to its inner
-            <input>, so a sizing class aimed at the control never reaches the
-            element that lays out. */}
-        <div className="max-w-xs min-w-0 flex-1">
-          <SearchInput
+      <PaneToolbar
+        label="Do-not-email list controls"
+        search={
+          <div className="max-w-xs min-w-0 flex-1">
+            <SearchInput
+              size="sm"
+              aria-label="Search the do-not-email list by address"
+              placeholder="Search addresses…"
+              value={search}
+              onValueChange={changeSearch}
+            />
+          </div>
+        }
+        primary={
+          <Button
+            color="module"
             size="sm"
-            aria-label="Search the do-not-email list by address"
-            placeholder="Search addresses…"
-            value={search}
-            onValueChange={changeSearch}
+            className="ml-auto shrink-0 whitespace-nowrap"
+            onClick={() => {
+              setAdding(true);
+            }}
+          >
+            <Plus className="size-4" aria-hidden />
+            Add an address
+          </Button>
+        }
+        refresh={
+          <RefreshButton
+            isFetching={isFetching}
+            updatedAt={data ? dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void refetch();
+            }}
           />
-        </div>
-        {/* Hidden below @lg so the search box keeps its width on a narrow pane;
-            the pager below carries the authoritative count anyway. */}
-        {typeof total === 'number' ? (
-          <p className="hidden shrink-0 text-sm whitespace-nowrap @lg:block">
-            {searching
-              ? `${String(total)} matching`
-              : total === 1
-                ? '1 address'
-                : `${String(total)} addresses`}
-          </p>
-        ) : null}
-        {/* ml-auto pushes the action group over — never a spacer div, which is a
-            phantom stop in the toolbar's roving focus. */}
-        <Button
-          color="module"
-          size="sm"
-          className="ml-auto shrink-0 whitespace-nowrap"
-          onClick={() => {
-            setAdding(true);
-          }}
-        >
-          <Plus className="size-4" aria-hidden />
-          Add an address
-        </Button>
-        {/* ALWAYS the last child of a list toolbar. */}
-        <RefreshButton
-          isFetching={isFetching}
-          updatedAt={data ? dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void refetch();
-          }}
-        />
-      </PaneToolbar>
+        }
+      />
 
       {/* Mounted for the whole life of the surface, so the list refetching behind
           it can never take a half-typed address with it. */}

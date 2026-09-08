@@ -138,74 +138,79 @@ export function BackorderDetailSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Commitment controls">
-        <Badge color={backorderStatusTone(data.status)} variant="soft">
-          {data.isOverdue ? 'Past the date' : data.status}
-        </Badge>
-        {data.position !== null ? (
-          <Text className="text-sm">
-            Number {data.position} in the queue for this item at{' '}
-            {data.warehouseName ?? 'this location'}
-          </Text>
-        ) : null}
-
-        <Button
-          color="primary"
-          variant="soft"
-          size="sm"
-          className="ml-auto"
-          disabled={notify.isPending || data.promisedAt === null}
-          onClick={() => {
-            notify.mutate(undefined, {
-              onSuccess: () => {
-                afterCommit(() => {
-                  toast.add({
-                    title: 'Marked as told',
-                    description:
-                      'If the date moves from here, this commitment will show up as worth a second call.',
-                    type: 'success',
-                  });
-                });
-              },
-              onError: fail('Could not record that'),
-            });
-          }}
-        >
-          <MailCheck className="size-4" aria-hidden />
-          Mark as told
-        </Button>
-
-        {isLive ? (
+      <PaneToolbar
+        label="Commitment controls"
+        primary={
           <Button
-            color="danger"
+            color="primary"
             variant="soft"
             size="sm"
-            disabled={cancel.isPending}
+            className="ml-auto"
+            disabled={notify.isPending || data.promisedAt === null}
             onClick={() => {
-              void confirm({
-                title: 'Drop this commitment?',
-                description: `${plural(data.outstanding, 'unit', 'units')} owed to ${data.customerName ?? 'a guest'} will stop being tracked. The order itself is untouched — do this only when the customer no longer wants it.`,
-                confirmLabel: 'Drop it',
-                cancelLabel: 'Keep it',
-                color: 'danger',
-              }).then((confirmed) => {
-                if (!confirmed) return;
-                cancel.mutate('Dropped from the queue by hand.', {
-                  onSuccess: () => {
-                    afterCommit(() => {
-                      toast.add({ title: 'Commitment dropped', type: 'info' });
+              notify.mutate(undefined, {
+                onSuccess: () => {
+                  afterCommit(() => {
+                    toast.add({
+                      title: 'Marked as told',
+                      description:
+                        'If the date moves from here, this commitment will show up as worth a second call.',
+                      type: 'success',
                     });
-                  },
-                  onError: fail('Could not drop it'),
-                });
+                  });
+                },
+                onError: fail('Could not record that'),
               });
             }}
           >
-            <Trash2 className="size-4" aria-hidden />
-            Drop
+            <MailCheck className="size-4" aria-hidden />
+            Mark as told
           </Button>
-        ) : null}
-      </PaneToolbar>
+        }
+        controls={
+          <>
+            <Badge color={backorderStatusTone(data.status)} variant="soft">
+              {data.isOverdue ? 'Past the date' : data.status}
+            </Badge>
+            {data.position !== null ? (
+              <Text className="text-sm">
+                Number {data.position} in the queue for this item at{' '}
+                {data.warehouseName ?? 'this location'}
+              </Text>
+            ) : null}
+            {isLive ? (
+              <Button
+                color="danger"
+                variant="soft"
+                size="sm"
+                disabled={cancel.isPending}
+                onClick={() => {
+                  void confirm({
+                    title: 'Drop this commitment?',
+                    description: `${plural(data.outstanding, 'unit', 'units')} owed to ${data.customerName ?? 'a guest'} will stop being tracked. The order itself is untouched — do this only when the customer no longer wants it.`,
+                    confirmLabel: 'Drop it',
+                    cancelLabel: 'Keep it',
+                    color: 'danger',
+                  }).then((confirmed) => {
+                    if (!confirmed) return;
+                    cancel.mutate('Dropped from the queue by hand.', {
+                      onSuccess: () => {
+                        afterCommit(() => {
+                          toast.add({ title: 'Commitment dropped', type: 'info' });
+                        });
+                      },
+                      onError: fail('Could not drop it'),
+                    });
+                  });
+                }}
+              >
+                <Trash2 className="size-4" aria-hidden />
+                Drop
+              </Button>
+            ) : null}
+          </>
+        }
+      />
 
       <div className="grid min-h-0 flex-1 gap-3 overflow-auto @3xl:grid-cols-2">
         {/* ── Who and what ─────────────────────────────────────────────── */}

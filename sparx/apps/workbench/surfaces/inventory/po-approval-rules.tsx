@@ -138,26 +138,31 @@ export function PoApprovalRulesSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Spending limit controls">
-        <Button
-          className="ml-auto"
-          size="sm"
-          color="module"
-          onClick={() => {
-            ctx.open('inventory.purchase-orders.approval-rules.detail', { id: 'new' });
-          }}
-        >
-          <PlusCircle className="size-4" aria-hidden />
-          New limit
-        </Button>
-        <RefreshButton
-          isFetching={rules.isFetching}
-          updatedAt={rules.data ? rules.dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void rules.refetch();
-          }}
-        />
-      </PaneToolbar>
+      <PaneToolbar
+        label="Spending limit controls"
+        primary={
+          <Button
+            className="ml-auto"
+            size="sm"
+            color="module"
+            onClick={() => {
+              ctx.open('inventory.purchase-orders.approval-rules.detail', { id: 'new' });
+            }}
+          >
+            <PlusCircle className="size-4" aria-hidden />
+            New limit
+          </Button>
+        }
+        refresh={
+          <RefreshButton
+            isFetching={rules.isFetching}
+            updatedAt={rules.data ? rules.dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void rules.refetch();
+            }}
+          />
+        }
+      />
 
       {rows.length > 1 ? (
         <Alert color="info">

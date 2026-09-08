@@ -319,14 +319,7 @@ export function useStartOpeningBalance() {
 export type CustomFieldEntity = 'variant' | 'level' | 'supplier' | 'purchase_order';
 
 export type CustomFieldType =
-  | 'text'
-  | 'number'
-  | 'money'
-  | 'date'
-  | 'boolean'
-  | 'select'
-  | 'multi_select'
-  | 'url';
+  'text' | 'number' | 'money' | 'date' | 'boolean' | 'select' | 'multi_select' | 'url';
 
 export interface CustomField {
   id: string;

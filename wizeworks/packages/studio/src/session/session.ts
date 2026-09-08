@@ -163,16 +163,14 @@ export class StudioSession {
   themeStore(): DocumentStore<ThemeDoc> | undefined {
     if (!this.context.themeId) return undefined;
     return this.stores.get(docKey({ kind: 'theme', id: this.context.themeId })) as
-      | DocumentStore<ThemeDoc>
-      | undefined;
+      DocumentStore<ThemeDoc> | undefined;
   }
 
   /** The site's chrome, when it is open. */
   layoutStore(): DocumentStore<LayoutDoc> | undefined {
     if (!this.context.layoutId) return undefined;
     return this.stores.get(docKey({ kind: 'layout', id: this.context.layoutId })) as
-      | DocumentStore<LayoutDoc>
-      | undefined;
+      DocumentStore<LayoutDoc> | undefined;
   }
 
   /**
@@ -197,6 +195,24 @@ export class StudioSession {
       out[id] = { id, name: source.name, root: source.root };
     }
     return out;
+  }
+
+  /**
+   * One saved piece's note, in the author's words.
+   *
+   * `symbols()` deliberately narrows a piece to what the canvas needs — an id, a
+   * name and a tree — so the note has no way through it. The Insert rail is the
+   * other reader, and what it needs is the sentence the author wrote to recognize
+   * her own piece by. Same live-first rule as `symbols()`: an open component pane
+   * wins over the loaded library, so an edit shows up without a round trip.
+   */
+  pieceNote(id: string): string | undefined {
+    const live = this.stores.get(docKey({ kind: 'component', id }));
+    const source = (live?.current as ComponentDoc | undefined) ?? this.library.get(id);
+    const note = source?.note?.trim();
+    // Whitespace is not a note: an author who clears the box has written nothing,
+    // and the rail must fall back rather than print a blank second line.
+    return note === undefined || note === '' ? undefined : note;
   }
 
   get openRefs(): DocumentRef[] {

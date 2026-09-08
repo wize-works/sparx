@@ -16,21 +16,12 @@
 // columns in 300px.
 
 import { useState } from 'react';
-import { useQuery } from '@wizeworks/query';
-import {
-  Badge,
-  Button,
-  Card,
-  EmptyState,
-  Filter,
-  FilterItem,
-  SearchInput,
-  Table,
-  ToolbarSeparator,
-} from '@wizeworks/silicaui-react';
+import { useQuery, useQueryClient } from '@wizeworks/query';
+import { Badge, Button, Card, EmptyState, SearchInput, Table } from '@wizeworks/silicaui-react';
 import { ArrowDown, ArrowUp, FileText, Plus } from 'lucide-react';
 import { ListPagination, MAX_TAKE, type PageSize } from '../../components/list-pagination';
 import { PaneToolbar, PANE_SHELL } from '../../components/pane-toolbar';
+import { ArSummary } from './ar-summary';
 import { ListEmptyState } from '../../components/list-empty-state';
 import { RefreshButton } from '../../components/refresh-button';
 import { api } from '../../lib/api/client';
@@ -69,6 +60,22 @@ const STATUS_FILTERS = [
   { value: 'paid', label: invoiceState('paid').label },
 ] as const;
 
+/**
+ * Whether the customer was actually given the bill.
+ *
+ * A separate question from status, and one nobody could ask before. An invoice
+ * unpaid because nobody sent it and an invoice unpaid three weeks after it
+ * landed read identically here, and only one of them is the customer's fault.
+ * It also has to be askable now that the reminder and overdue emails skip an
+ * unsent invoice — a bill nobody sends is no longer chased, so this is where it
+ * has to be findable instead.
+ */
+const SENT_FILTERS = [
+  { value: 'all', label: 'All' },
+  { value: 'false', label: 'Not sent' },
+  { value: 'true', label: 'Sent' },
+] as const;
+
 function targetFor(event: { shiftKey: boolean; altKey: boolean }): OpenTarget {
   if (event.altKey) return 'window';
   if (event.shiftKey) return 'beside';
@@ -78,6 +85,7 @@ function targetFor(event: { shiftKey: boolean; altKey: boolean }): OpenTarget {
 export function InvoiceListSurface({ ctx }: { ctx: SurfaceContext }) {
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('all');
+  const [sent, setSent] = useState('all');
   // Due soonest first — the question a receivables list exists to answer, and
   // the reason the endpoint needed a real `order` param rather than the
   // platform's usual hardcoded 'desc'.
@@ -103,17 +111,19 @@ export function InvoiceListSurface({ ctx }: { ctx: SurfaceContext }) {
    * database. Refetching 100 rows to add 50 is a few KB of JSON against a
    * correctness guarantee, which is a trade worth making every time.
    */
+  const queryClient = useQueryClient();
   const { data, isLoading, isFetching, dataUpdatedAt, error, refetch } = useQuery({
     queryKey: [
       'invoicing',
       'documents',
-      { q: search, status: activeStatus, sort: sort.key, dir: sort.dir, take, skip },
+      { q: search, status: activeStatus, sent, sort: sort.key, dir: sort.dir, take, skip },
     ],
     queryFn: () =>
       api
         .list<BillingDocument>('/v1/invoicing/documents', {
           ...(search ? { q: search } : {}),
           ...(activeStatus === 'all' ? {} : { status: activeStatus }),
+          ...(sent === 'all' ? {} : { sent }),
           sort_by: sort.key,
           order: sort.dir,
           take,
@@ -196,78 +206,79 @@ export function InvoiceListSurface({ ctx }: { ctx: SurfaceContext }) {
           the .input-group element that actually lays out — which is why search
           swallowed the entire row (measured: 1208px) and pushed everything else
           onto a second line. */}
-      <PaneToolbar label="Invoice list controls" wrap>
-        <div className="max-w-xs min-w-0 flex-1">
-          <SearchInput
-            size="sm"
-            aria-label="Search invoices"
-            placeholder="Search invoices…"
-            value={search}
-            onValueChange={(next) => {
-              setSearch(next);
+      <PaneToolbar
+        label="Invoice list controls"
+        search={
+          <div className="max-w-xs min-w-0 flex-1">
+            <SearchInput
+              size="sm"
+              aria-label="Search invoices"
+              placeholder="Search invoices…"
+              value={search}
+              onValueChange={(next) => {
+                setSearch(next);
+                resetWindow();
+              }}
+            />
+          </div>
+        }
+        filters={[
+          {
+            label: 'Show',
+            key: 'status',
+            value: status,
+            onValueChange: (next) => {
+              setStatus(next ?? 'all');
               resetWindow();
+            },
+            options: STATUS_FILTERS.map((f) => ({ value: f.value, label: f.label })),
+            neutralValue: 'all',
+          },
+          {
+            label: 'Sent',
+            key: 'sent',
+            value: sent,
+            onValueChange: (next) => {
+              setSent(next ?? 'all');
+              resetWindow();
+            },
+            options: SENT_FILTERS.map((f) => ({ value: f.value, label: f.label })),
+            neutralValue: 'all',
+          },
+        ]}
+        primary={
+          <Button
+            color="module"
+            size="sm"
+            className="ml-auto"
+            title="New invoice — hold Shift to open alongside, Alt for a new window"
+            onClick={(event) => {
+              ctx.open('invoicing.invoice.edit', { id: 'new' }, { target: targetFor(event) });
+            }}
+          >
+            <Plus className="size-4" aria-hidden />
+            <span className="hidden @lg:inline">New invoice</span>
+          </Button>
+        }
+        refresh={
+          <RefreshButton
+            isFetching={isFetching}
+            updatedAt={data ? dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void refetch();
+              void queryClient.invalidateQueries({ queryKey: ['invoicing', 'aging'] });
             }}
           />
-        </div>
+        }
+      />
 
-        <ToolbarSeparator className="hidden @xl:block" />
-
-        {/* Filter, not ToggleGroup. Both would work the control, but this IS a
-            faceted filter — single-select chips with radio semantics — and the
-            component says so, which buys the module accent on the chosen chip
-            and drops the `string[]` juggling a multi-select control forced on a
-            question that only ever has one answer.
-            `showReset={false}` because "All" already IS the reset; a × beside it
-            would be two controls for one idea. */}
-        <Filter
-          color="module"
-          value={status}
-          onValueChange={(next) => {
-            setStatus(next ?? 'all');
-            resetWindow();
-          }}
-          showReset={false}
-          aria-label="Filter by status"
-        >
-          {STATUS_FILTERS.map((filter) => (
-            <FilterItem key={filter.value} value={filter.value}>
-              {filter.label}
-            </FilterItem>
-          ))}
-        </Filter>
-
-        {/* ml-auto, not a flex-1 spacer div — the same result without a phantom
-            element in the middle of the bar's focus order. */}
-        <Button
-          color="module"
-          size="sm"
-          className="ml-auto"
-          title="New invoice — hold Shift to open alongside, Alt for a new window"
-          onClick={(event) => {
-            ctx.open('invoicing.invoice.edit', { id: 'new' }, { target: targetFor(event) });
-          }}
-        >
-          <Plus className="size-4" aria-hidden />
-          <span className="hidden @lg:inline">New invoice</span>
-        </Button>
-
-        {/* ALWAYS the last child of a list toolbar — see RefreshButton. Inside
-            the Toolbar rather than beside it, so it joins the roving arrow-key
-            focus instead of becoming a stray extra tab stop.
-
-            If the receivables band (./ar-summary.tsx) is ever mounted here — it
-            is written to ride alongside this list, but nothing imports it today
-            — this must also invalidate ['invoicing','aging']. Refreshing the
-            rows while "Outstanding" kept an older figure would be the pane
-            disagreeing with itself. */}
-        <RefreshButton
-          isFetching={isFetching}
-          updatedAt={data ? dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void refetch();
-          }}
-        />
-      </PaneToolbar>
+      {/* HOW MUCH AM I OWED, AND HOW MUCH OF IT IS LATE.
+          The list answers "what invoices exist"; nobody opens this pane to ask
+          that. It reads /v1/invoicing/aging over ALL open documents rather than
+          summing the page on screen, and it hides itself entirely when there is
+          nothing open, so an empty pane stays empty. It was written to ride here
+          and nothing had ever mounted it. */}
+      <ArSummary />
 
       <Card className="min-h-0 flex-1 overflow-y-auto">
         {error ? (
@@ -281,7 +292,7 @@ export function InvoiceListSurface({ ctx }: { ctx: SurfaceContext }) {
           </p>
         ) : rows.length === 0 ? (
           <ListEmptyState
-            filtered={Boolean(search) || activeStatus !== 'all'}
+            filtered={Boolean(search) || activeStatus !== 'all' || sent !== 'all'}
             noResults={{
               icon: <FileText className="size-6" aria-hidden />,
               title: 'Nothing matches those filters',
@@ -351,9 +362,21 @@ export function InvoiceListSurface({ ctx }: { ctx: SurfaceContext }) {
                       {due.label}
                     </td>
                     <td>
-                      <Badge color={state.tone} variant={state.tone && 'soft'} size="sm">
-                        {state.label}
-                      </Badge>
+                      <div className="flex flex-wrap items-center gap-1">
+                        <Badge color={state.tone} variant={state.tone && 'soft'} size="sm">
+                          {state.label}
+                        </Badge>
+                        {/* An unpaid invoice nobody sent is not late, it is not
+                            started — and the two read identically without this.
+                            The reminder and overdue emails now skip an unsent
+                            invoice, so this row is the only thing that says the
+                            bill is still sitting here. */}
+                        {doc.sentAt === null && doc.status !== 'paid' && doc.status !== 'void' ? (
+                          <Badge color="warning" variant="outline" size="sm">
+                            Not sent
+                          </Badge>
+                        ) : null}
+                      </div>
                     </td>
                     <td className="hidden text-right tabular-nums @3xl:table-cell">
                       {formatMoney(doc.total, doc.currency)}

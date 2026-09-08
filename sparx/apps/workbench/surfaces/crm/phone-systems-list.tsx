@@ -83,26 +83,33 @@ export function PhoneSystemsListSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Phone system controls">
-        <Button
-          color="module"
-          size="sm"
-          disabled={forbidden || moduleOff}
-          title="Connect a phone system — hold Shift to open alongside, Alt for a new window"
-          onClick={connectPhoneSystem}
-        >
-          <Plus className="size-4" aria-hidden />
-          Connect a phone system
-        </Button>
-        <RefreshButton
-          className="ml-auto"
-          isFetching={isFetching}
-          updatedAt={data ? dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void refetch();
-          }}
-        />
-      </PaneToolbar>
+      <PaneToolbar
+        label="Phone system controls"
+        controls={
+          <>
+            <Button
+              color="module"
+              size="sm"
+              disabled={forbidden || moduleOff}
+              title="Connect a phone system — hold Shift to open alongside, Alt for a new window"
+              onClick={connectPhoneSystem}
+            >
+              <Plus className="size-4" aria-hidden />
+              Connect a phone system
+            </Button>
+          </>
+        }
+        refresh={
+          <RefreshButton
+            className="ml-auto"
+            isFetching={isFetching}
+            updatedAt={data ? dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void refetch();
+            }}
+          />
+        }
+      />
 
       <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto">
         <Card className="min-h-0 flex-1">

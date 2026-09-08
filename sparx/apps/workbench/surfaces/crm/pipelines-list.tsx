@@ -54,49 +54,60 @@ export function PipelinesListSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Pipeline list controls">
-        <div className="max-w-xs min-w-0 flex-1">
-          <SearchInput
+      <PaneToolbar
+        label="Pipeline list controls"
+        search={
+          <div className="max-w-xs min-w-0 flex-1">
+            <SearchInput
+              color="module"
+              size="sm"
+              aria-label="Search pipelines"
+              placeholder="Search pipelines…"
+              value={search}
+              onValueChange={setSearch}
+            />
+          </div>
+        }
+        primary={
+          <Button
             color="module"
             size="sm"
-            aria-label="Search pipelines"
-            placeholder="Search pipelines…"
-            value={search}
-            onValueChange={setSearch}
-          />
-        </div>
-        <div className="hidden w-44 shrink-0 @lg:block">
-          <Select
-            color="module"
-            size="sm"
-            aria-label="Which pipelines to show"
-            value={scope}
-            items={{ active: 'Active pipelines', all: 'Including archived' }}
-            onValueChange={(next) => {
-              setScope(next as 'active' | 'all');
+            className="ml-auto shrink-0"
+            title="New pipeline — hold Shift to open alongside, Alt for a new window"
+            onClick={(event) => {
+              ctx.open('crm.pipeline.detail', { id: 'new' }, { target: targetFor(event) });
+            }}
+          >
+            <Plus className="size-4" aria-hidden />
+            New pipeline
+          </Button>
+        }
+        controls={
+          <>
+            <div className="hidden w-44 shrink-0 @lg:block">
+              <Select
+                color="module"
+                size="sm"
+                aria-label="Which pipelines to show"
+                value={scope}
+                items={{ active: 'Active pipelines', all: 'Including archived' }}
+                onValueChange={(next) => {
+                  setScope(next as 'active' | 'all');
+                }}
+              />
+            </div>
+          </>
+        }
+        refresh={
+          <RefreshButton
+            isFetching={isFetching}
+            updatedAt={data ? dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void refetch();
             }}
           />
-        </div>
-        <Button
-          color="module"
-          size="sm"
-          className="ml-auto shrink-0"
-          title="New pipeline — hold Shift to open alongside, Alt for a new window"
-          onClick={(event) => {
-            ctx.open('crm.pipeline.detail', { id: 'new' }, { target: targetFor(event) });
-          }}
-        >
-          <Plus className="size-4" aria-hidden />
-          New pipeline
-        </Button>
-        <RefreshButton
-          isFetching={isFetching}
-          updatedAt={data ? dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void refetch();
-          }}
-        />
-      </PaneToolbar>
+        }
+      />
 
       <Card className="min-h-0 flex-1 overflow-y-auto">
         {isError ? (

@@ -20,7 +20,6 @@ import {
   Alert,
   AlertContent,
   AlertDescription,
-  AlertTitle,
   Badge,
   Button,
   Card,
@@ -50,6 +49,7 @@ import { RefreshButton } from '../../components/refresh-button';
 import { FormSection } from '../../components/form-section';
 import type { SurfaceContext } from '../../lib/surfaces/registry';
 import { SLUG_RE, slugify } from './segment-rules';
+import { SaveFailure } from '@/components/save-failure';
 import {
   stageTypesFor,
   pipelineErrorMessage,
@@ -355,14 +355,7 @@ function PipelineEditor({
             </Text>
           ) : null}
 
-          {failure ? (
-            <Alert color="error">
-              <AlertContent>
-                <AlertTitle>Could not save this pipeline</AlertTitle>
-                <AlertDescription>{failure}</AlertDescription>
-              </AlertContent>
-            </Alert>
-          ) : null}
+          <SaveFailure title="Could not save this pipeline" message={failure} />
 
           <FormSection title="Name">
             <Field>

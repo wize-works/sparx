@@ -28,6 +28,7 @@ import {
 import type { SilicaNode } from '@wizeworks/builder-schemas';
 import {
   parseTypeSchema,
+  publishTimestamp,
   resolveType,
   validateAndNormalizeBody,
   recordRevision,
@@ -324,9 +325,9 @@ const brandHandler: KindHandler = {
     for (const [k, col] of BRAND_COLORS) {
       if (ov[col] != null) colors[k] = ov[col];
     }
+    // NEITHER `businessName` NOR `tagline` is extracted, so neither can be
+    // merged, so neither can be written back. See the note on `writeMerged`.
     return compact({
-      businessName: ov.businessName,
-      tagline: ov.tagline ?? undefined,
       colors,
       fonts: { heading: ov.fontHeading, body: ov.fontBody },
       // `logoMediaId` is the legacy single-logo key; an override written before the
@@ -336,12 +337,28 @@ const brandHandler: KindHandler = {
       favicon: ov.faviconMediaId ?? undefined,
     });
   },
+  // A template gives you a LOOK. The NAME and the WORDS are the merchant's.
+  //
+  // The INSTALLER has refused to carry `businessName` and `tagline` since issue
+  // 210 — the whole reasoning is written at that spot, including how a shop came
+  // to be listed to the public under another shop's name. The UPDATER, its twin,
+  // was never given the same rule: it read both fields out of the site's brand
+  // override, merged them, and wrote them back.
+  //
+  // That is worse than it sounds, because of how the merge decides. An automatic
+  // resolution always takes THEIRS: if a blueprint's next version changes its
+  // sample business name and the merchant never edited hers, "The design your
+  // site was built from has been refreshed" RENAMES HER BUSINESS, silently, with
+  // no conflict raised for her to see. The tagline does the same, and a sample
+  // caterer's slogan on a clothing shop is simply a false statement about it.
+  //
+  // Neither field is read above and neither is written here, so no path through
+  // this handler can carry them. Colors, fonts and the logo are the look, and
+  // they are what an update is for.
   async writeMerged(env, _artifact, merged) {
     const colors = (merged.colors ?? {}) as Json;
     const fonts = (merged.fonts ?? {}) as Json;
     const override: Json = {};
-    if (typeof merged.businessName === 'string') override.businessName = merged.businessName;
-    if (merged.tagline !== undefined) override.tagline = merged.tagline;
     for (const [k, col] of BRAND_COLORS) {
       if (colors[k] != null) override[col] = colors[k];
     }
@@ -692,12 +709,21 @@ const contentHandler: KindHandler = {
       const body = validateAndNormalizeBody(schema, merged.body ?? {});
       const seo = (merged.seo ?? {}) as Record<string, unknown>;
       const status = (merged.status as string) ?? 'draft';
+      // An update can carry a draft → published transition, and a published row needs a
+      // date (issue 376). Reading the current one first keeps the ORIGINAL publish date
+      // on an entry that was already live: a blueprint update is an edit to the words,
+      // not a republish, so it must not re-date the post.
+      const current = await tx.contentEntry.findFirst({
+        where: { id: entryId },
+        select: { publishedAt: true },
+      });
       await tx.contentEntry.update({
         where: { id: entryId },
         data: {
           body: body as Prisma.InputJsonValue,
           seoJson: seo as Prisma.InputJsonValue,
           status,
+          publishedAt: publishTimestamp(status, current?.publishedAt),
         },
       });
       await syncReferences(tx, env.tenantId, entryId, schema, body);

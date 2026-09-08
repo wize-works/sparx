@@ -986,7 +986,8 @@ export async function renderTemplate(
         replyTo: input.replyTo,
         subject: documentSignatureRequestSubject(
           input.props.documentLabel,
-          input.props.documentNumber
+          input.props.documentNumber,
+          input.props.fromName
         ),
         html,
         text,
@@ -1280,7 +1281,11 @@ export async function renderAuthoredEmail(
 ): Promise<SendableEmail> {
   const element = (
     <BrandProvider brand={opts.brand}>
-      <EmailLayout preview={input.preheader ?? input.subject}>
+      {/* A tenant writing to their OWN mailing list -- the largest visitor-facing
+          surface in the product. It carried our wordmark over the shop's
+          newsletter and our operating company under it, to readers who had never
+          heard of us. */}
+      <EmailLayout audience="visitor" preview={input.preheader ?? input.subject}>
         <div dangerouslySetInnerHTML={{ __html: input.bodyHtml }} />
       </EmailLayout>
     </BrandProvider>

@@ -148,37 +148,46 @@ function targetFor(event: { shiftKey: boolean; altKey: boolean }): OpenTarget {
 export function ResourcesSurface({ ctx }: { ctx: SurfaceContext }) {
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Resources actions">
-        <span className="inline-flex items-center gap-1.5">
-          <Text as="span" className="text-sm font-medium">
-            Partner resources
-          </Text>
-        </span>
-        <Button
-          size="sm"
-          variant="outline"
-          color="neutral"
-          className="ml-auto shrink-0"
-          onClick={(event) => {
-            ctx.open('partner.referrals.list', undefined, { target: targetFor(event) });
-          }}
-        >
-          <Share2 className="size-4" aria-hidden />
-          Your referral link
-        </Button>
-        <Button
-          size="sm"
-          variant="outline"
-          color="neutral"
-          className="shrink-0"
-          onClick={(event) => {
-            ctx.open('partner.profile', undefined, { target: targetFor(event) });
-          }}
-        >
-          <UserRound className="size-4" aria-hidden />
-          Your listing
-        </Button>
-      </PaneToolbar>
+      <PaneToolbar
+        label="Resources actions"
+        status={
+          <span className="inline-flex items-center gap-1.5">
+            <Text as="span" className="text-sm font-medium">
+              Partner resources
+            </Text>
+          </span>
+        }
+        primary={
+          <Button
+            size="sm"
+            variant="outline"
+            color="neutral"
+            className="ml-auto shrink-0"
+            onClick={(event) => {
+              ctx.open('partner.referrals.list', undefined, { target: targetFor(event) });
+            }}
+          >
+            <Share2 className="size-4" aria-hidden />
+            Your referral link
+          </Button>
+        }
+        controls={
+          <>
+            <Button
+              size="sm"
+              variant="outline"
+              color="neutral"
+              className="shrink-0"
+              onClick={(event) => {
+                ctx.open('partner.profile', undefined, { target: targetFor(event) });
+              }}
+            >
+              <UserRound className="size-4" aria-hidden />
+              Your listing
+            </Button>
+          </>
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className={COLUMN}>

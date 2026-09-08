@@ -178,3 +178,134 @@ describe('suppression scope follows emailType', () => {
     expect(await ownerDb.scheduledSend.count({ where: { tenantId } })).toBe(1);
   });
 });
+
+// The shipping confirmation, and the parcel it is about. Both halves were broken
+// together: the `shipping-confirmation` tree was provisioned and published on every
+// shop with NO automation naming it (the only listener on `order.fulfilled` was the
+// review request, which waits three days and then asks how they liked a parcel they
+// were never told about), and the order events dropped `fulfillmentId` on the floor,
+// so even a correct send would have resolved its tracking details from "the latest
+// parcel on this order" — the wrong box the moment an order ships in two.
+describe('shipping confirmation seed — the parcel, not just the order', () => {
+  it('sends on order.fulfilled and names the parcel that shipped', async () => {
+    const tenantId = await seedTenant(['commerce', 'email']);
+    await seedSystemAutomations({ tenantId }, { module: 'commerce' });
+    const { id: customerId, email } = await makeCustomer(tenantId, 'shipped@sparx.test');
+
+    const order = await ownerDb.order.create({
+      data: {
+        tenantId,
+        customerId,
+        orderNumber: 'SO-900',
+        status: 'placed',
+        total: 140,
+        subtotal: 140,
+        placedAt: new Date(),
+      },
+      select: { id: true },
+    });
+    // TWO parcels, the second one newest. A send that reads "latest fulfillment on
+    // the order" would report this one's tracking number for both emails.
+    await ownerDb.orderFulfillment.create({
+      data: {
+        tenantId,
+        orderId: order.id,
+        status: 'shipped',
+        carrier: 'USPS',
+        trackingNumber: 'FIRST-BOX',
+        shippedAt: new Date(Date.now() - 60_000),
+      },
+    });
+    const second = await ownerDb.orderFulfillment.create({
+      data: {
+        tenantId,
+        orderId: order.id,
+        status: 'shipped',
+        carrier: 'USPS',
+        trackingNumber: 'SECOND-BOX',
+        shippedAt: new Date(),
+      },
+      select: { id: true },
+    });
+
+    await handleTrigger(
+      evt('order.fulfilled', tenantId, { orderId: order.id, fulfillmentId: second.id }),
+      deps,
+      appDb
+    );
+    await runAutomationTick(deps, appDb);
+
+    // TWO sends leave on this one event, and picking them apart is the point: the
+    // review request has always fired here, which is exactly how the missing
+    // confirmation stayed hidden — something did go out, just never the one that
+    // says the parcel is on its way.
+    const sends = await ownerDb.scheduledSend.findMany({ where: { tenantId } });
+    const keyOf = (s: (typeof sends)[number]): string | undefined =>
+      (s.payload as { defer?: { builderEmailKey?: string } } | null)?.defer?.builderEmailKey;
+    expect(sends.map(keyOf).sort()).toEqual(['post-purchase-review', 'shipping-confirmation']);
+
+    const shipping = sends.find((s) => keyOf(s) === 'shipping-confirmation');
+    expect(shipping?.recipient).toBe(email);
+
+    // The refs carry the FIRING parcel, so the dispatch render reads that box's
+    // tracking number rather than falling back to whichever shipped most recently.
+    const refs = shipping?.entityRefs as { orderId?: string; fulfillmentId?: string } | null;
+    expect(refs?.orderId).toBe(order.id);
+    expect(refs?.fulfillmentId).toBe(second.id);
+  });
+});
+
+// A COLLECTION is not a despatch, and the difference is invisible from the
+// event. Walking out of the shop with your order is recorded as a fulfillment
+// carried by `pickup`, and it publishes `order.fulfilled` exactly like a posted
+// parcel — deliberately, so the activity feed and the review request see the sale
+// complete. The shipping confirmation must not ride along with them: "Your order
+// is on its way — track your package" is plainly false to somebody already
+// holding the goods.
+describe('shipping confirmation seed — a collection is not a despatch', () => {
+  it('sends no shipping confirmation when the customer collected it', async () => {
+    const tenantId = await seedTenant(['commerce', 'email']);
+    await seedSystemAutomations({ tenantId }, { module: 'commerce' });
+    const { id: customerId } = await makeCustomer(tenantId, 'collector@sparx.test');
+
+    const order = await ownerDb.order.create({
+      data: {
+        tenantId,
+        customerId,
+        orderNumber: 'SO-COLLECT',
+        status: 'fulfilled',
+        total: 96,
+        subtotal: 96,
+        placedAt: new Date(),
+      },
+      select: { id: true },
+    });
+    const collected = await ownerDb.orderFulfillment.create({
+      data: {
+        tenantId,
+        orderId: order.id,
+        status: 'delivered',
+        carrier: 'pickup',
+        service: 'Collect in person',
+        deliveredAt: new Date(),
+      },
+      select: { id: true },
+    });
+
+    await handleTrigger(
+      evt('order.fulfilled', tenantId, { orderId: order.id, fulfillmentId: collected.id }),
+      deps,
+      appDb
+    );
+    await runAutomationTick(deps, appDb);
+
+    const sends = await ownerDb.scheduledSend.findMany({ where: { tenantId } });
+    const keys = sends.map(
+      (s) => (s.payload as { defer?: { builderEmailKey?: string } } | null)?.defer?.builderEmailKey
+    );
+    expect(keys).not.toContain('shipping-confirmation');
+    // The review request still goes: the sale IS complete, and asking how it was
+    // is right whether they collected it or it arrived by post.
+    expect(keys).toContain('post-purchase-review');
+  });
+});

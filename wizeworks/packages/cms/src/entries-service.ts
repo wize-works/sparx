@@ -19,6 +19,32 @@ type Json = Prisma.InputJsonValue;
 
 export type EntryStatus = 'draft' | 'scheduled' | 'published' | 'archived';
 
+/** The publish-date invariant: a row that says `published` MUST carry a
+ *  `published_at`, because everything downstream reads the DATE and not the
+ *  status. The public listing orders by `publishedAt desc` — and Postgres sorts
+ *  NULLs FIRST on a descending order, so a dateless post outranks every real one
+ *  a shop ever writes; the storefront's card binds a pre-formatted `date` and
+ *  renders an empty line when there isn't one. Both failures are silent, and the
+ *  console shows the same green **Published** either way (issue 376).
+ *
+ *  `existing` keeps a row's original publish date when a write is only touching
+ *  its status or body — the date a post went live is a fact about the post, not
+ *  about the last edit. Pass nothing on a create. The deliberate re-dating on an
+ *  explicit publish action stays in `publishEntryTx`, which is a person choosing
+ *  to publish rather than a write that happens to carry a status.
+ *
+ *  The database enforces the same rule (`content_entries_published_has_date`), so
+ *  a future write path that forgets this fails loudly instead of quietly
+ *  shipping an undated post. */
+export function publishTimestamp(
+  status: string,
+  existing?: Date | null,
+  now: Date = new Date()
+): Date | null {
+  if (status !== 'published') return existing ?? null;
+  return existing ?? now;
+}
+
 export interface CreateEntryInput {
   typeKey: string;
   slug?: string;
@@ -104,7 +130,7 @@ export async function createEntryTx(
       // — a status set directly at create time needs the same real timestamp,
       // not a null that public listing's `orderBy publishedAt desc` and any
       // "published on" display would otherwise mishandle.
-      publishedAt: status === 'published' ? new Date() : null,
+      publishedAt: publishTimestamp(status),
       body: body as Json,
       seoJson: seo as Json,
       authorId: input.authorId ?? null,

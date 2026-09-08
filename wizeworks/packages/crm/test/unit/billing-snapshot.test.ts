@@ -114,6 +114,9 @@ describe('buildSnapshotPayload', () => {
       companyId: null,
       billTo: { name: 'Acme Diesel' },
       shipTo: null,
+      // Null here because this fixture has no issuer, which is the honest
+      // answer for a document that never froze one.
+      issuedBy: null,
     });
     expect(payload.stage).toEqual({
       id: 'stage-final',
@@ -121,6 +124,25 @@ describe('buildSnapshotPayload', () => {
       customerLabel: 'Invoice',
       stageType: 'final',
     });
+  });
+
+  it('freezes WHO ISSUED it, not only who was billed', () => {
+    // `billTo` and `shipTo` were snapshotted from the start and the seller was
+    // not, so the immutable record of a document could not say who sent it —
+    // and reprinting one went to the LIVE business, reproducing the exact
+    // rewrite `issued_by` exists to prevent. A frozen record that names the
+    // customer but not the seller is only half a record.
+    const issuer = {
+      siteName: 'Juniper Row',
+      legalName: 'Juniper Row Textiles LLC',
+      address: { line1: '1184 SE Ash St', city: 'Portland', region: 'OR' },
+    };
+    const payload = buildSnapshotPayload(
+      makeDoc({ issuedBy: issuer }),
+      [],
+      makeStage({ stageType: 'final' })
+    );
+    expect(payload.party.issuedBy).toEqual(issuer);
   });
 
   it('freezes each line with its markup snapshot and numeric values', () => {

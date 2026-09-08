@@ -956,7 +956,7 @@ function ExpenseDetail({ ctx }: { ctx: SurfaceContext }) {
                       color="module"
                       value={form.reference}
                       disabled={readOnly}
-                      placeholder="Invoice number, cheque number…"
+                      placeholder="Invoice number, check number…"
                       spellCheck={false}
                       onChange={(event) => {
                         set('reference', event.target.value);
@@ -1022,7 +1022,7 @@ function ExpenseDetail({ ctx }: { ctx: SurfaceContext }) {
                     rows={3}
                     value={form.notes}
                     disabled={readOnly}
-                    placeholder="Warranty period, who authorised it, what it replaced…"
+                    placeholder="Warranty period, who authorized it, what it replaced…"
                     onChange={(event) => {
                       set('notes', event.target.value);
                     }}

@@ -110,19 +110,24 @@ export function ReferralsListSurface(_props: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Referrals list controls">
-        <Text className="text-sm whitespace-nowrap">
-          {referrals.length === 1 ? '1 referral' : `${String(referrals.length)} referrals`}
-        </Text>
-        <RefreshButton
-          className="ml-auto"
-          isFetching={isFetching}
-          updatedAt={data ? dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void refetch();
-          }}
-        />
-      </PaneToolbar>
+      <PaneToolbar
+        label="Referrals list controls"
+        status={
+          <Text className="text-sm whitespace-nowrap">
+            {referrals.length === 1 ? '1 referral' : `${String(referrals.length)} referrals`}
+          </Text>
+        }
+        refresh={
+          <RefreshButton
+            className="ml-auto"
+            isFetching={isFetching}
+            updatedAt={data ? dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void refetch();
+            }}
+          />
+        }
+      />
 
       {isError ? (
         <PartnerLoadError

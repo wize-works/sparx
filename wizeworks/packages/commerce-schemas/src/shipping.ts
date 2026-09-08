@@ -184,3 +184,42 @@ export const RateOption = z.object({
   isFreight: z.boolean().default(false),
 });
 export type RateOption = z.infer<typeof RateOption>;
+
+// ── carrier vocabulary ───────────────────────────────────────────────────────
+//
+// `carrier` is stored as a lowercase code (`usps`, `fedex`, `dropship`) and must
+// never be shown to anybody in that form. It was: the shipping-confirmation
+// email bound `{{shipping.carrier}}` straight to the column, so a customer was
+// told their parcel went by "usps" — while the same fact, on the same shop, read
+// "USPS" in the owner's console and on the shopper's own order page.
+//
+// It lived as three separate maps that had already drifted apart: the two
+// consoles said "Sent by the supplier" where the shopper's website said
+// "Drop-ship", and the website had no entry for `other` at all, so its
+// `toUpperCase()` fallback showed a customer the word "OTHER". One map, so the
+// next carrier added is added once.
+
+/** The stored carrier code in the words a person uses. `pickup` is deliberately
+ *  absent — a collection is not a delivery by a courier called "pickup", and the
+ *  surfaces that can show one say so in their own words. */
+const CARRIER_LABELS: Record<string, string> = {
+  ups: 'UPS',
+  usps: 'USPS',
+  fedex: 'FedEx',
+  dhl: 'DHL',
+  digital: 'Sent electronically',
+  dropship: 'Sent by the supplier',
+  other: 'Another courier',
+};
+
+/**
+ * A carrier code as a person should read it.
+ *
+ * An unknown code is returned unchanged rather than upper-cased: a code nobody
+ * has named is a gap in the map above, and shouting it does not make it mean
+ * anything. Empty/absent returns '' so a caller can drop the line entirely.
+ */
+export function carrierLabel(carrier: string | null | undefined): string {
+  if (!carrier) return '';
+  return CARRIER_LABELS[carrier] ?? carrier;
+}

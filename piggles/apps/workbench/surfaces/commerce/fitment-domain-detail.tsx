@@ -21,14 +21,11 @@
 // list the entries manager appears only after the first Save lands the pane on
 // the real record.
 
+import { shownInPlace } from '@wizeworks/query';
 import { useEffect, useMemo, useState } from 'react';
 import { PaneWaiting } from '../../components/pane-waiting';
 import { PaneLoadError } from '../../components/pane-load-error';
 import {
-  Alert,
-  AlertContent,
-  AlertDescription,
-  AlertTitle,
   Badge,
   Button,
   Card,
@@ -53,6 +50,7 @@ import { RefreshButton } from '../../components/refresh-button';
 import type { SurfaceContext } from '../../lib/surfaces/registry';
 import { FITMENT_ICONS, resolveFitmentIcon } from './fitment-icons';
 import { FitmentNodeManager } from './fitment-nodes';
+import { SaveFailure } from '@/components/save-failure';
 import {
   dimensionKeyFrom,
   fitmentErrorMessage,
@@ -300,6 +298,7 @@ function DomainEditor({
               toast.add({ title: `${draft.displayName.trim()} created`, type: 'success' });
             });
           },
+          onError: shownInPlace,
         }
       );
       return;
@@ -307,12 +306,15 @@ function DomainEditor({
 
     void (async () => {
       try {
-        await update.mutateAsync({
-          displayName: draft.displayName.trim(),
-          description: description === '' ? null : description,
-          iconKey: draft.iconKey,
-          dimensions,
-        });
+        await update.mutateAsync(
+          {
+            displayName: draft.displayName.trim(),
+            description: description === '' ? null : description,
+            iconKey: draft.iconKey,
+            dimensions,
+          },
+          { onError: shownInPlace }
+        );
         setTouched(false);
         toast.add({ title: 'List saved', type: 'success' });
       } catch {
@@ -398,14 +400,7 @@ function DomainEditor({
             </Text>
           ) : null}
 
-          {failure ? (
-            <Alert color="error">
-              <AlertContent>
-                <AlertTitle>Could not save this list</AlertTitle>
-                <AlertDescription>{failure}</AlertDescription>
-              </AlertContent>
-            </Alert>
-          ) : null}
+          <SaveFailure title="Could not save this list" message={failure} />
 
           <FormSection title="Name and picture">
             <Field>

@@ -23,8 +23,17 @@ alias, and no path in `piggles/` climbs out into `sparx/`.
 | Layer                                                   | Owner           | Piggles may                          |
 | ------------------------------------------------------- | --------------- | ------------------------------------ |
 | `wizeworks/**` (packages, services, admin, site)        | shared platform | import — libraries, not an app       |
-| `sparx/**` (its brand package + web, market, workbench) | sparx           | **nothing. Never read, never edit.** |
+| `sparx/**` (its brand package + web, market, workbench) | sparx           | read and edit — but **never import** |
 | `piggles/**`                                            | Piggles         | own outright                         |
+
+**The rule is the IMPORT, not the edit.** A correction found in one console is
+usually owed to the other — `check:console-parity` exists to say so — and making
+it twice is the point. What must never happen is one tree reaching into the
+other: no import, no path alias, no shared module living under a brand.
+`check:deletability` and `check:boundaries` are what prove it, and they are the
+things to run after touching both. (This row read "nothing. Never read, never
+edit." until 2026-09-05, which turned every shared correction into a blocked
+issue — see the persona register, 407.)
 
 Both brands run on **one database and one tenant pool**. A tenant belongs to the
 brand it signed up under, recorded on **`Tenant.platformBrand`** (a `String`,

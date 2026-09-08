@@ -10,12 +10,7 @@ import { useQuery } from '@wizeworks/query';
 import { api } from '../../lib/api/client';
 
 export type Meter =
-  | 'seats'
-  | 'sites'
-  | 'locations'
-  | 'contacts'
-  | 'storageBytes'
-  | 'emailSendsPerMonth';
+  'seats' | 'sites' | 'locations' | 'contacts' | 'storageBytes' | 'emailSendsPerMonth';
 
 /** `unmetered` — no ceiling is set. `unknown` — nobody has counted it. Neither is
  *  `ok`, which is a claim, and a surface must render all three differently. */

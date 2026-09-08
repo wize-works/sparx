@@ -354,6 +354,12 @@ export const UpdateProductInput = CreateProductInput.partial()
       .nullish(),
     hsCode: z.string().max(15).nullish(),
     ogImageId: Uuid.nullish(),
+    // Which DELIVERY GROUP this product ships under — at most one, because the
+    // rate that prices a basket has to pick exactly one (see the commerce
+    // package's shipping-profile-match.ts). `null` clears it and the product
+    // goes back to shipping the standard way. Update-only: a product is filed
+    // into a group after it exists, which is what the group screen says.
+    shippingProfileId: Uuid.nullish(),
     seoTitle: z.string().max(255).nullish(),
     seoDescription: z.string().max(512).nullish(),
   });

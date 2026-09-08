@@ -50,10 +50,12 @@ import { VariantRow } from './product-variants/variant-row';
 import { useVariantsTab } from './product-variants/use-variants-tab';
 import type { SurfaceContext } from '../../lib/surfaces/registry';
 import type { Product } from './products-data';
+import { SaveFailure } from '@/components/save-failure';
 
 export function ProductVariantsTab({ product }: { ctx: SurfaceContext; product: Product }) {
   const tab = useVariantsTab(product);
-  const { options, variants, live, retired, homeless, axes, slots, stranded, empty } = tab;
+  const { options, variants, live, retired, homeless, axes, slots, stem, taken, stranded, empty } =
+    tab;
 
   if (options.isError || variants.isError) {
     // A failed load REPLACES the grid. An empty table beside a dead Save invites
@@ -100,17 +102,10 @@ export function ProductVariantsTab({ product }: { ctx: SurfaceContext; product: 
 
       {/* ONE message, the most specific one — the server's own sentence names the
           exact code that clashed, which no generic banner could. */}
-      {tab.saveError ? (
-        <Alert color="error">
-          <AlertContent>
-            <AlertTitle>That version was not saved</AlertTitle>
-            <AlertDescription>{tab.saveError}</AlertDescription>
-          </AlertContent>
-        </Alert>
-      ) : null}
+      <SaveFailure title="That version was not saved" message={tab.saveError} />
 
       {live.length === 0 && retired.length === 0 ? (
-        <NoPriceYet product={product} axes={axes} slots={slots} onCreated={tab.create} />
+        <NoPriceYet axes={axes} slots={slots} stem={stem} onCreated={tab.create} />
       ) : null}
 
       {axes.length === 0 ? (
@@ -134,7 +129,8 @@ export function ProductVariantsTab({ product }: { ctx: SurfaceContext; product: 
           slots={slots}
           axes={axes}
           rowProps={tab.rowProps}
-          product={product}
+          stem={stem}
+          taken={taken}
           create={tab.create}
           restoring={tab.restoring}
           onRestore={tab.onRestore}

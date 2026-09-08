@@ -359,7 +359,7 @@ export function ReportScheduleDetailSurface({ ctx }: { ctx: SurfaceContext }) {
 
           <FormSection
             title="What gets sent"
-            description="Pick the report and give this a name you will recognise in your inbox."
+            description="Pick the report and give this a name you will recognize in your inbox."
           >
             <Field>
               <FieldLabel>Report</FieldLabel>

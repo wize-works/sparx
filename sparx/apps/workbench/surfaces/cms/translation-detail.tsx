@@ -53,7 +53,6 @@ import { FormSection } from '../../components/form-section';
 import { ModuleScope } from '../../components/module-scope';
 import { useDirtySource } from '../../lib/workbench/dirty';
 import type { SurfaceContext } from '../../lib/surfaces/registry';
-import { ScrollStrip } from '../../components/scroll-strip';
 import {
   canonicalLocale,
   isValidLocale,
@@ -125,18 +124,25 @@ export function TranslationDetailSurface({ ctx }: { ctx: SurfaceContext }) {
   if (productId === '' || failed || loading) {
     return (
       <ModuleScope module="commerce" className={PANE_SHELL}>
-        <PaneToolbar label="Product translations actions">
-          <Languages className="size-4 shrink-0" aria-hidden />
-          <Heading level={2} className="min-w-0 truncate text-base font-semibold">
-            {productId === '' ? 'Translations' : title}
-          </Heading>
-          <RefreshButton
-            className="ml-auto"
-            isFetching={source.isFetching || translations.isFetching}
-            updatedAt={source.data ? source.dataUpdatedAt : undefined}
-            onRefresh={refresh}
-          />
-        </PaneToolbar>
+        <PaneToolbar
+          label="Product translations actions"
+          controls={
+            <>
+              <Languages className="size-4 shrink-0" aria-hidden />
+              <Heading level={2} className="min-w-0 truncate text-base font-semibold">
+                {productId === '' ? 'Translations' : title}
+              </Heading>
+            </>
+          }
+          refresh={
+            <RefreshButton
+              className="ml-auto"
+              isFetching={source.isFetching || translations.isFetching}
+              updatedAt={source.data ? source.dataUpdatedAt : undefined}
+              onRefresh={refresh}
+            />
+          }
+        />
         <div className="min-h-0 flex-1 overflow-y-auto">
           <div className={COLUMN}>
             {productId === '' ? (
@@ -334,29 +340,36 @@ function Editor({
 
   return (
     <ModuleScope module="commerce" className={PANE_SHELL}>
-      <PaneToolbar label="Product translations actions" wrap>
-        <Languages className="size-4 shrink-0" aria-hidden />
-        <Heading level={2} className="min-w-0 truncate text-base font-semibold">
-          {product.title}
-        </Heading>
-        <Badge color={status.tone} variant="soft" size="sm">
-          {status.label}
-        </Badge>
-
-        <Button
-          size="sm"
-          color="module"
-          className="ml-auto"
-          disabled={!canSave}
-          loading={saveTranslation.isPending}
-          onClick={save}
-        >
-          <Save className="size-4" aria-hidden />
-          {active === '' ? 'Save' : `Save ${localeName(active)}`}
-        </Button>
-
-        <RefreshButton isFetching={isFetching} updatedAt={dataUpdatedAt} onRefresh={onRefresh} />
-      </PaneToolbar>
+      <PaneToolbar
+        label="Product translations actions"
+        primary={
+          <Button
+            size="sm"
+            color="module"
+            className="ml-auto"
+            disabled={!canSave}
+            loading={saveTranslation.isPending}
+            onClick={save}
+          >
+            <Save className="size-4" aria-hidden />
+            {active === '' ? 'Save' : `Save ${localeName(active)}`}
+          </Button>
+        }
+        controls={
+          <>
+            <Languages className="size-4 shrink-0" aria-hidden />
+            <Heading level={2} className="min-w-0 truncate text-base font-semibold">
+              {product.title}
+            </Heading>
+            <Badge color={status.tone} variant="soft" size="sm">
+              {status.label}
+            </Badge>
+          </>
+        }
+        refresh={
+          <RefreshButton isFetching={isFetching} updatedAt={dataUpdatedAt} onRefresh={onRefresh} />
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className={COLUMN}>
@@ -382,18 +395,16 @@ function Editor({
               className="flex flex-col gap-3"
             >
               <div className="bg-base-300 shrink-0 rounded-full px-4 py-2">
-                <ScrollStrip label="languages">
-                  <TabsList>
-                    {locales.map((locale) => (
-                      <TabsTab key={locale} value={locale}>
-                        {localeName(locale)}
-                        {dirtyLocales.includes(locale) ? (
-                          <span aria-label="has unsaved changes"> •</span>
-                        ) : null}
-                      </TabsTab>
-                    ))}
-                  </TabsList>
-                </ScrollStrip>
+                <TabsList scrollable scrollLabel="languages">
+                  {locales.map((locale) => (
+                    <TabsTab key={locale} value={locale}>
+                      {localeName(locale)}
+                      {dirtyLocales.includes(locale) ? (
+                        <span aria-label="has unsaved changes"> •</span>
+                      ) : null}
+                    </TabsTab>
+                  ))}
+                </TabsList>
               </div>
 
               {active === '' ? null : (

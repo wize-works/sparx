@@ -27,7 +27,7 @@
 
 import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
-import { prisma, withTenant } from '@wizeworks/db';
+import { prisma, withTenant, type TxClient } from '@wizeworks/db';
 // Runtime import: `Prisma.DbNull` (clearing the brandOverride JSON column) is a
 // value, plus the Update/JSON input shapes are used as types (cf. brand.ts).
 import { Prisma } from '@prisma/client';
@@ -192,6 +192,53 @@ const CreateProperty = z.object({
 
 // eslint-disable-next-line @typescript-eslint/require-await -- FastifyPluginAsync signature.
 const propertiesRoutes: FastifyPluginAsync = async (app) => {
+  // ─── Every write to a site leaves a record of who did it ───────────────
+  //
+  // The site IS the business a customer deals with: its name, its brand, which
+  // modules it carries, whether it is the primary one. None of that was audited.
+  // The ONLY `Property` rows in `audit_logs` came from the Builder's publish and
+  // reset, so a site could be renamed, re-branded, promoted over another, or
+  // DELETED, and nothing anywhere said who did it or what it had been called.
+  //
+  // Found by trying to answer a smaller question: another business's name was
+  // sitting in a shop's brand override, and there was no way to find out how it
+  // got there. Every settings change and every publish on that site was logged.
+  // The change to the business's own NAME was not.
+  //
+  // `tenant.` rather than a module prefix, because a property is owned above
+  // every module (see the header) — the same family as `tenant.industry.installed`.
+  //
+  // In the SAME transaction as the write it describes, so a rolled-back change
+  // never leaves a log entry claiming it happened.
+  const logSite = async (
+    tx: TxClient,
+    auth: { tenantId: string; actorId: string | null },
+    verb: 'created' | 'updated' | 'made_primary' | 'deleted',
+    propertyId: string,
+    diff: { before?: Record<string, unknown>; after?: Record<string, unknown> } | null = null
+  ): Promise<void> => {
+    await tx.auditLog.create({
+      data: {
+        tenantId: auth.tenantId,
+        actorId: auth.actorId,
+        actorType: auth.actorId ? 'user' : 'system',
+        action: `tenant.site.${verb}`,
+        entityType: 'Property',
+        entityId: propertyId,
+        diff: (diff ?? null) as never,
+      },
+    });
+  };
+
+  /** The one field in the brand override anybody ever comes looking for. The
+   *  rest is colors and fonts; logging the whole blob on every save would bury
+   *  the line that matters. */
+  const businessNameOf = (override: unknown): string | null => {
+    if (!override || typeof override !== 'object' || Array.isArray(override)) return null;
+    const value = (override as Record<string, unknown>).businessName;
+    return typeof value === 'string' ? value : null;
+  };
+
   app.get('/v1/properties', async (request) => {
     const auth = requireRole(request, 'viewer');
     const [rows, pages] = await withTenant({ tenantId: auth.tenantId }, async (tx) => [
@@ -260,6 +307,7 @@ const propertiesRoutes: FastifyPluginAsync = async (app) => {
       const property = await tx.property.create({
         data: { tenantId: auth.tenantId, slug, name: input.name, isPrimary: false },
       });
+      await logSite(tx, auth, 'created', property.id, { after: { name: input.name, slug } });
       await tx.domain.create({
         data: {
           tenantId: auth.tenantId,
@@ -325,7 +373,7 @@ const propertiesRoutes: FastifyPluginAsync = async (app) => {
       // `socials`/`settings` patch MERGES into the bag rather than clobbering it.
       const existing = await tx.property.findUnique({
         where: { id },
-        select: { id: true, settings: true },
+        select: { id: true, settings: true, name: true, brandOverride: true, moduleScope: true },
       });
       if (!existing) return null;
       // settings, socials + contact all live in the settings JSON. Layer:
@@ -356,7 +404,36 @@ const propertiesRoutes: FastifyPluginAsync = async (app) => {
         }
         data.settings = merged as Prisma.InputJsonValue;
       }
-      return tx.property.update({ where: { id }, data });
+      const updated = await tx.property.update({ where: { id }, data });
+
+      // Only what the caller actually sent. `settings` and the rest of the brand
+      // override are big bags; they are recorded as "this changed" rather than
+      // dumped, so the log stays readable and the identity fields stay findable.
+      const before: Record<string, unknown> = {};
+      const after: Record<string, unknown> = {};
+      if (input.name !== undefined) {
+        before.name = existing.name;
+        after.name = updated.name;
+      }
+      if (input.brandOverride !== undefined) {
+        before.businessName = businessNameOf(existing.brandOverride);
+        after.businessName = businessNameOf(updated.brandOverride);
+        after.brandChanged = true;
+      }
+      if (input.moduleScope !== undefined) {
+        before.moduleScope = existing.moduleScope;
+        after.moduleScope = updated.moduleScope;
+      }
+      if (
+        input.settings !== undefined ||
+        input.socials !== undefined ||
+        input.contact !== undefined
+      ) {
+        after.settingsChanged = true;
+      }
+      await logSite(tx, auth, 'updated', id, { before, after });
+
+      return updated;
     });
     if (!row) throw notFound('Property', id);
     await indexEntity({
@@ -405,6 +482,11 @@ const propertiesRoutes: FastifyPluginAsync = async (app) => {
       // never sees two).
       await tx.property.updateMany({ where: { isPrimary: true }, data: { isPrimary: false } });
       const updated = await tx.property.update({ where: { id }, data: { isPrimary: true } });
+      // Which site lost the bare address matters as much as which one gained it.
+      await logSite(tx, auth, 'made_primary', id, {
+        before: { primarySite: prevPrimary?.slug ?? null },
+        after: { primarySite: updated.slug },
+      });
 
       // (a) Guarantee the demoted site a stable per-site subdomain and make it
       //     that site's canonical (it's about to lose the bare host). Upsert by
@@ -479,11 +561,18 @@ const propertiesRoutes: FastifyPluginAsync = async (app) => {
       async (tx) => {
         const existing = await tx.property.findUnique({
           where: { id },
-          select: { id: true, isPrimary: true },
+          select: { id: true, isPrimary: true, name: true, slug: true },
         });
         if (!existing) return { error: 'not_found' as const };
         if (existing.isPrimary) return { error: 'primary' as const };
         await tx.property.delete({ where: { id } });
+        // What it WAS. The row is gone and the cascade has taken its pages and
+        // its domains with it, so the log is the only place left that can say
+        // which site this used to be. `entity_id` carries no foreign key, so it
+        // outlives the row it names.
+        await logSite(tx, auth, 'deleted', id, {
+          before: { name: existing.name, slug: existing.slug },
+        });
         return { ok: true as const };
       }
     );

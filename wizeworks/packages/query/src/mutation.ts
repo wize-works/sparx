@@ -98,3 +98,44 @@ export function useMutation<
 
   return { ...base, mutate, mutateAsync };
 }
+
+/**
+ * An opaque, stable identity for the hook instance a mutation came from.
+ *
+ * Every `mutate()` call builds a NEW `Mutation` with a new `mutationId`, so a
+ * failure and the retry that fixes it are two different mutations as far as the
+ * cache is concerned. The only thing they share is the hook they came from —
+ * this object, carried by reference on `meta`. A watcher that needs to connect
+ * "that write failed" to "the same write just succeeded" keys on this.
+ *
+ * Undefined for a mutation that never went through this hook, which callers
+ * must handle rather than key on a fallback: two unrelated mutations sharing a
+ * fallback key would close each other's messages.
+ */
+export function writeIdentity(meta: unknown): object | undefined {
+  if (typeof meta !== 'object' || meta === null) return undefined;
+  const held = (meta as Record<string, unknown>)[CALLER_HANDLERS];
+  return typeof held === 'object' && held !== null ? held : undefined;
+}
+
+/**
+ * "The surface is showing this failure itself — stay quiet."
+ *
+ * Pass it where an `onError` handler goes:
+ *
+ *     create.mutate(input, { onSuccess: close, onError: shownInPlace });
+ *
+ * A dialog that renders `create.error` in an Alert has already said what went
+ * wrong, and usually says it better than a toast can: beside the field, with
+ * the typed values still there, sometimes with the way out. But it says it by
+ * RENDERING, and a mutation-cache watcher cannot see a render. Without this the
+ * call site looks exactly like one that said nothing, so the net speaks too and
+ * the same sentence arrives twice — once with the remedy, once without, and the
+ * second one never dismisses itself.
+ *
+ * A no-op is the honest implementation. The signal is not what it does; it is
+ * that the caller claimed the conversation.
+ */
+export function shownInPlace(): void {
+  // Deliberately empty — see above.
+}

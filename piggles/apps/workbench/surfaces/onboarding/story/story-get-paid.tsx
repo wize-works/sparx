@@ -63,7 +63,7 @@ export function StoryGetPaid({
           <Text className="max-w-[58ch] text-sm">
             Stripe is how the money reaches you — cards, wallets, and bank debits, paid straight to
             your bank. It’s the account that <span className="font-medium">receives</span> customer
-            payments, separate from your own sparx subscription.
+            payments, separate from what you pay us each month.
           </Text>
         </div>
       )}

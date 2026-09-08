@@ -13,12 +13,7 @@
 // local clock time would move the boundary for anyone east of UTC.
 
 export type PeriodKey =
-  | 'this_month'
-  | 'last_month'
-  | 'this_quarter'
-  | 'this_year'
-  | 'last_12'
-  | 'all';
+  'this_month' | 'last_month' | 'this_quarter' | 'this_year' | 'last_12' | 'all';
 
 export const PERIOD_OPTIONS: { value: PeriodKey; label: string }[] = [
   { value: 'this_month', label: 'This month' },

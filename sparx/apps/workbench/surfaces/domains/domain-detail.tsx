@@ -47,6 +47,7 @@ import { afterPaneChange } from '../../lib/defer';
 import { FormSection } from '../../components/form-section';
 import type { SurfaceContext } from '../../lib/surfaces/registry';
 import { useSites } from '../sites/data';
+import { SaveFailure } from '@/components/save-failure';
 import {
   domainErrorMessage,
   domainState,
@@ -58,6 +59,7 @@ import {
   useVerifyDomain,
   type DnsRecord,
 } from './data';
+import { PaneLoadError } from '../../components/pane-load-error';
 
 /** The one column everything in this pane sits in. Centred and capped, because a
  *  pane torn onto a second monitor is otherwise 2000px of dead grey with a
@@ -162,19 +164,22 @@ function ConnectDomain({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Connect a domain actions">
-        <Button
-          color="module"
-          size="sm"
-          className="ml-auto"
-          loading={connect.isPending}
-          disabled={trimmed === '' || chosenSite === ''}
-          onClick={submit}
-        >
-          <Link2 className="size-4" aria-hidden />
-          Connect
-        </Button>
-      </PaneToolbar>
+      <PaneToolbar
+        label="Connect a domain actions"
+        primary={
+          <Button
+            color="module"
+            size="sm"
+            className="ml-auto"
+            loading={connect.isPending}
+            disabled={trimmed === '' || chosenSite === ''}
+            onClick={submit}
+          >
+            <Link2 className="size-4" aria-hidden />
+            Connect
+          </Button>
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className={COLUMN}>
@@ -188,14 +193,7 @@ function ConnectDomain({ ctx }: { ctx: SurfaceContext }) {
             </Text>
           </div>
 
-          {failure ? (
-            <Alert color="error">
-              <AlertContent>
-                <AlertTitle>Could not connect that domain</AlertTitle>
-                <AlertDescription>{failure}</AlertDescription>
-              </AlertContent>
-            </Alert>
-          ) : null}
+          <SaveFailure title="Could not connect that domain" message={failure} />
 
           <FormSection title="The domain">
             <Field>
@@ -254,7 +252,7 @@ function ConnectDomain({ ctx }: { ctx: SurfaceContext }) {
 function ManageDomain({ ctx, id }: { ctx: SurfaceContext; id: string }) {
   const toast = useToast();
   const confirm = useConfirm();
-  const { data: domain, isPending, isError, refetch } = useDomain(id);
+  const { data: domain, isPending, isError, error, refetch } = useDomain(id);
   const { data: sites } = useSites();
 
   const verify = useVerifyDomain(id);
@@ -268,26 +266,15 @@ function ManageDomain({ ctx, id }: { ctx: SurfaceContext; id: string }) {
 
   if (isError) {
     return (
-      <div className="flex h-full items-center justify-center p-8">
-        <Alert color="error" className="max-w-md">
-          <AlertContent>
-            <AlertTitle>Could not load this address</AlertTitle>
-            <AlertDescription>
-              This is a problem reaching the server. The address itself is unaffected.
-            </AlertDescription>
-          </AlertContent>
-          <Button
-            size="sm"
-            color="error"
-            variant="soft"
-            onClick={() => {
-              void refetch();
-            }}
-          >
-            Try again
-          </Button>
-        </Alert>
-      </div>
+      <PaneLoadError
+        error={error}
+        noun="address"
+        title="Could not load this address"
+        description="This is a problem reaching the server. The address itself is unaffected."
+        onRetry={() => {
+          void refetch();
+        }}
+      />
     );
   }
 
@@ -388,71 +375,74 @@ function ManageDomain({ ctx, id }: { ctx: SurfaceContext; id: string }) {
       {/* `wrap` because this bar carries a variable number of lifecycle actions
           — Visit, Check now, Make main address, Disconnect — and which of them
           appear depends on the domain's state. There is no fixed set to reduce. */}
-      <PaneToolbar label="Web address actions" wrap>
-        <Badge color={state.tone} variant="soft" size="sm">
-          {state.label}
-        </Badge>
-        {domain.isCanonical ? (
-          <Badge color="module" variant="soft" size="sm">
-            Main address
-          </Badge>
-        ) : null}
-
-        <div className="flex-1" />
-
-        {isLive ? (
-          <Button
-            size="sm"
-            variant="outline"
-            color="neutral"
-            // Empty here, not at runtime — silica's `render` moves this Button's
-            // children onto the anchor, which the a11y rule cannot see.
-            // eslint-disable-next-line jsx-a11y/anchor-has-content -- children arrive via `render`
-            render={<a href={`https://${domain.host}`} target="_blank" rel="noreferrer" />}
-          >
-            Visit
-            <ExternalLink className="size-3" aria-hidden />
-          </Button>
-        ) : null}
-        {isManaged ? null : (
+      <PaneToolbar
+        label="Web address actions"
+        controls={
           <>
-            {isLive ? null : (
-              <Button size="sm" color="module" loading={verify.isPending} onClick={onCheck}>
-                <RefreshCw className="size-4" aria-hidden />
-                Check now
-              </Button>
-            )}
-            {isLive && !domain.isCanonical ? (
+            <Badge color={state.tone} variant="soft" size="sm">
+              {state.label}
+            </Badge>
+            {domain.isCanonical ? (
+              <Badge color="module" variant="soft" size="sm">
+                Main address
+              </Badge>
+            ) : null}
+            <div className="flex-1" />
+            {isLive ? (
               <Button
                 size="sm"
                 variant="outline"
                 color="neutral"
-                loading={canonical.isPending}
-                onClick={() => {
-                  void onMakeCanonical();
-                }}
+                // Empty here, not at runtime — silica's `render` moves this Button's
+                // children onto the anchor, which the a11y rule cannot see.
+                // eslint-disable-next-line jsx-a11y/anchor-has-content -- children arrive via `render`
+                render={<a href={`https://${domain.host}`} target="_blank" rel="noreferrer" />}
               >
-                <Star className="size-4" aria-hidden />
-                Make main address
+                Visit
+                <ExternalLink className="size-3" aria-hidden />
               </Button>
             ) : null}
-            <Button
-              size="sm"
-              variant="ghost"
-              color="danger"
-              shape="square"
-              aria-label="Disconnect this address"
-              title="Disconnect this address"
-              loading={disconnect.isPending}
-              onClick={() => {
-                void onDisconnect();
-              }}
-            >
-              <Trash2 className="size-4" aria-hidden />
-            </Button>
+            {isManaged ? null : (
+              <>
+                {isLive ? null : (
+                  <Button size="sm" color="module" loading={verify.isPending} onClick={onCheck}>
+                    <RefreshCw className="size-4" aria-hidden />
+                    Check now
+                  </Button>
+                )}
+                {isLive && !domain.isCanonical ? (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    color="neutral"
+                    loading={canonical.isPending}
+                    onClick={() => {
+                      void onMakeCanonical();
+                    }}
+                  >
+                    <Star className="size-4" aria-hidden />
+                    Make main address
+                  </Button>
+                ) : null}
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  color="danger"
+                  shape="square"
+                  aria-label="Disconnect this address"
+                  title="Disconnect this address"
+                  loading={disconnect.isPending}
+                  onClick={() => {
+                    void onDisconnect();
+                  }}
+                >
+                  <Trash2 className="size-4" aria-hidden />
+                </Button>
+              </>
+            )}
           </>
-        )}
-      </PaneToolbar>
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className={COLUMN}>

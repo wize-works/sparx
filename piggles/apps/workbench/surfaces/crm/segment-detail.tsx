@@ -10,6 +10,7 @@
 // audience take shape before saving. Identity (name, slug) is fields at the top,
 // not a repeated heading; archiving is the one destructive act, behind a confirm.
 
+import { shownInPlace } from '@wizeworks/query';
 import { useEffect, useMemo, useState } from 'react';
 import { PaneWaiting } from '../../components/pane-waiting';
 import { PaneLoadError } from '../../components/pane-load-error';
@@ -69,6 +70,7 @@ import {
   type SegmentRule,
 } from './segment-rules';
 import { RuleGroupEditor } from './segment-rule-builder';
+import { SaveFailure } from '@/components/save-failure';
 
 const COLUMN = 'mx-auto flex w-full max-w-3xl flex-col gap-4';
 
@@ -334,6 +336,7 @@ function SegmentEditor({
             toast.add({ title: `${input.name ?? 'Segment'} created`, type: 'success' });
           });
         },
+        onError: shownInPlace,
       });
       return;
     }
@@ -343,6 +346,7 @@ function SegmentEditor({
         setTouched(false);
         toast.add({ title: 'Segment saved', type: 'success' });
       },
+      onError: shownInPlace,
     });
   };
 
@@ -477,14 +481,7 @@ function SegmentEditor({
             </Text>
           ) : null}
 
-          {failure ? (
-            <Alert color="error">
-              <AlertContent>
-                <AlertTitle>Could not save this segment</AlertTitle>
-                <AlertDescription>{failure}</AlertDescription>
-              </AlertContent>
-            </Alert>
-          ) : null}
+          <SaveFailure title="Could not save this segment" message={failure} />
 
           {isArchived ? (
             <Alert color="info">

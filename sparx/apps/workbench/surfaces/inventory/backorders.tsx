@@ -32,7 +32,6 @@ import {
   Table,
   Text,
   Timestamp,
-  ToolbarSeparator,
   Tooltip,
   useToast,
 } from '@wizeworks/silicaui-react';
@@ -207,78 +206,84 @@ export function BackordersSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Backorder controls">
-        <NativeSelect
-          size="sm"
-          className="max-w-48 shrink"
-          aria-label="Which commitments"
-          value={lens}
-          onChange={(event) => {
-            setLens(event.target.value as Lens);
-          }}
-        >
-          <option value="waiting">Still waiting</option>
-          <option value="undated">No date given</option>
-          <option value="overdue">Past the date</option>
-          <option value="allocated">Stock has landed</option>
-          <option value="all">Everything</option>
-        </NativeSelect>
-
-        <ToolbarSeparator />
-
-        <Text className="text-sm">
-          {unitsOutstanding > 0
-            ? `${plural(unitsOutstanding, 'unit', 'units')} owed`
-            : 'Nothing owed'}
-        </Text>
-
-        <Button
-          color="module-inventory"
-          variant="soft"
-          size="sm"
-          className="ml-auto"
-          disabled={refresh.isPending}
-          onClick={() => {
-            refresh.mutate(undefined, {
-              onSuccess: (result) => {
-                afterCommit(() => {
-                  toast.add({
-                    title:
-                      result.newlyDated > 0 || result.redated > 0
-                        ? `${result.newlyDated} newly dated, ${result.redated} moved`
-                        : 'Nothing changed',
-                    description:
-                      result.stillUndated > 0
-                        ? `${plural(result.stillUndated, 'commitment', 'commitments')} still have no date anybody can give. Those need a purchase order raised.`
-                        : 'Every commitment already carries the best date available.',
-                    type: result.stillUndated > 0 ? 'info' : 'success',
+      <PaneToolbar
+        label="Backorder controls"
+        status={
+          <Text className="text-sm">
+            {unitsOutstanding > 0
+              ? `${plural(unitsOutstanding, 'unit', 'units')} owed`
+              : 'Nothing owed'}
+          </Text>
+        }
+        primary={
+          <Button
+            color="module-inventory"
+            variant="soft"
+            size="sm"
+            className="ml-auto"
+            disabled={refresh.isPending}
+            onClick={() => {
+              refresh.mutate(undefined, {
+                onSuccess: (result) => {
+                  afterCommit(() => {
+                    toast.add({
+                      title:
+                        result.newlyDated > 0 || result.redated > 0
+                          ? `${result.newlyDated} newly dated, ${result.redated} moved`
+                          : 'Nothing changed',
+                      description:
+                        result.stillUndated > 0
+                          ? `${plural(result.stillUndated, 'commitment', 'commitments')} still have no date anybody can give. Those need a purchase order raised.`
+                          : 'Every commitment already carries the best date available.',
+                      type: result.stillUndated > 0 ? 'info' : 'success',
+                    });
                   });
-                });
-              },
-              onError: () => {
-                afterCommit(() => {
-                  toast.add({
-                    title: 'Could not re-check the dates',
-                    description: 'Nothing was changed. Please try again in a moment.',
-                    type: 'error',
+                },
+                onError: () => {
+                  afterCommit(() => {
+                    toast.add({
+                      title: 'Could not re-check the dates',
+                      description: 'Nothing was changed. Please try again in a moment.',
+                      type: 'error',
+                    });
                   });
-                });
-              },
-            });
-          }}
-        >
-          <CalendarSync className="size-4" aria-hidden />
-          {refresh.isPending ? 'Checking…' : 'Re-check dates'}
-        </Button>
-
-        <RefreshButton
-          isFetching={list.isFetching}
-          updatedAt={list.data ? list.dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void list.refetch();
-          }}
-        />
-      </PaneToolbar>
+                },
+              });
+            }}
+          >
+            <CalendarSync className="size-4" aria-hidden />
+            {refresh.isPending ? 'Checking…' : 'Re-check dates'}
+          </Button>
+        }
+        controls={
+          <>
+            <NativeSelect
+              size="sm"
+              className="max-w-48 shrink"
+              aria-label="Which commitments"
+              value={lens}
+              onChange={(event) => {
+                setLens(event.target.value as Lens);
+              }}
+            >
+              <option value="waiting">Still waiting</option>
+              <option value="undated">No date given</option>
+              <option value="overdue">Past the date</option>
+              <option value="allocated">Stock has landed</option>
+              <option value="all">Everything</option>
+            </NativeSelect>
+          </>
+        }
+        refresh={
+          <RefreshButton
+            isFetching={list.isFetching}
+            updatedAt={list.data ? list.dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void list.refetch();
+            }}
+          />
+        }
+      />
 
       {/* Stated whatever lens is showing, because it is the number a screen
           filtered to "overdue" would otherwise hide behind a comfortable zero. */}

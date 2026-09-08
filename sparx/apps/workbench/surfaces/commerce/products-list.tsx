@@ -29,11 +29,8 @@ import {
   Button,
   Card,
   EmptyState,
-  Filter,
-  FilterItem,
   SearchInput,
   Table,
-  ToolbarSeparator,
 } from '@wizeworks/silicaui-react';
 import { ArrowDown, ArrowUp, Package, Plus } from 'lucide-react';
 import { ListPagination, MAX_TAKE, type PageSize } from '../../components/list-pagination';
@@ -205,65 +202,58 @@ export function ProductsListSurface({ ctx }: { ctx: SurfaceContext }) {
       <ProductsBulkActions
         selection={selection}
         toolbar={
-          <PaneToolbar label="Product list controls" wrap>
-            {/* The width has to sit on a WRAPPER: SearchInput forwards className to
-            its inner <input>, so a sizing class aimed at the control never
-            reaches the element that actually lays out. */}
-            <div className="max-w-xs min-w-0 flex-1">
-              <SearchInput
-                size="sm"
-                aria-label="Search products"
-                placeholder="Product name or brand…"
-                value={search}
-                onValueChange={(next) => {
-                  setSearch(next);
+          <PaneToolbar
+            label="Product list controls"
+            search={
+              <div className="max-w-xs min-w-0 flex-1">
+                <SearchInput
+                  size="sm"
+                  aria-label="Search products"
+                  placeholder="Product name or brand…"
+                  value={search}
+                  onValueChange={(next) => {
+                    setSearch(next);
+                    resetWindow();
+                  }}
+                />
+              </div>
+            }
+            filters={[
+              {
+                label: 'Show',
+                key: 'status',
+                value: filter,
+                onValueChange: (next) => {
+                  setFilter((next as FilterValue | null) ?? 'all');
                   resetWindow();
+                },
+                options: FILTERS.map((entry) => ({ value: entry.value, label: entry.label })),
+                neutralValue: 'all',
+              },
+            ]}
+            primary={
+              <Button
+                data-tour="commerce-add-product"
+                color="module"
+                size="sm"
+                className="ml-auto shrink-0 whitespace-nowrap"
+                title="Add a product — hold Shift to open alongside, Alt for a new window"
+                onClick={create}
+              >
+                <Plus className="size-4" aria-hidden />
+                <span className="hidden @2xl:inline">Add a product</span>
+              </Button>
+            }
+            refresh={
+              <RefreshButton
+                isFetching={isFetching}
+                updatedAt={data ? dataUpdatedAt : undefined}
+                onRefresh={() => {
+                  void refetch();
                 }}
               />
-            </div>
-
-            <ToolbarSeparator className="hidden @2xl:block" />
-
-            {/* `showReset={false}` because "All" already IS the reset; a × beside it
-            would be two controls for one idea. */}
-            <Filter
-              color="module"
-              value={filter}
-              onValueChange={(next) => {
-                setFilter((next as FilterValue | null) ?? 'all');
-                resetWindow();
-              }}
-              showReset={false}
-              aria-label="Filter products"
-            >
-              {FILTERS.map((entry) => (
-                <FilterItem key={entry.value} value={entry.value}>
-                  {entry.label}
-                </FilterItem>
-              ))}
-            </Filter>
-
-            <Button
-              data-tour="commerce-add-product"
-              color="module"
-              size="sm"
-              className="ml-auto shrink-0 whitespace-nowrap"
-              title="Add a product — hold Shift to open alongside, Alt for a new window"
-              onClick={create}
-            >
-              <Plus className="size-4" aria-hidden />
-              <span className="hidden @2xl:inline">Add a product</span>
-            </Button>
-
-            {/* ALWAYS the last child of a list toolbar — see RefreshButton. */}
-            <RefreshButton
-              isFetching={isFetching}
-              updatedAt={data ? dataUpdatedAt : undefined}
-              onRefresh={() => {
-                void refetch();
-              }}
-            />
-          </PaneToolbar>
+            }
+          />
         }
       />
 

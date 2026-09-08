@@ -18,32 +18,25 @@ import { FormSection } from '../../../components/form-section';
 import { MoneyInput } from '../../../components/money-input';
 import { cents } from './draft';
 import { suggestSlotSku, type Slot } from './slots';
-import {
-  productErrorMessage,
-  type Product,
-  type ProductOption,
-  type useCreateVariant,
-} from '../products-data';
+import { productErrorMessage, type ProductOption, type useCreateVariant } from '../products-data';
 
 export function NoPriceYet({
-  product,
   axes,
   slots,
+  stem,
   onCreated,
 }: {
-  product: Product;
   axes: ProductOption[];
   slots: Slot[];
+  /** The code this product already carries. On a product with no version at all
+   *  — which is the only way this section is reached — `skuStem` falls back to
+   *  the product's web address, so the offer is the same one it always was. */
+  stem: string;
   onCreated: ReturnType<typeof useCreateVariant>;
 }) {
   const toast = useToast();
   const [sku, setSku] = useState(() =>
-    axes.length > 0 && slots[0]
-      ? suggestSlotSku(product, slots[0], new Set())
-      : product.handle
-          .toUpperCase()
-          .replace(/[^A-Z0-9]+/g, '-')
-          .slice(0, 120)
+    axes.length > 0 && slots[0] ? suggestSlotSku(stem, slots[0], new Set()) : stem
   );
   const [price, setPrice] = useState(0);
 

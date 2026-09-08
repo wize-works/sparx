@@ -9,14 +9,11 @@
 // themselves, not here — this pane owns the group's identity and its shipping
 // rules (freight, signature), which is what a rate needs to know.
 
+import { shownInPlace } from '@wizeworks/query';
 import { useEffect, useMemo, useState } from 'react';
 import { PaneWaiting } from '../../components/pane-waiting';
 import { PaneLoadError } from '../../components/pane-load-error';
 import {
-  Alert,
-  AlertContent,
-  AlertDescription,
-  AlertTitle,
   Badge,
   Button,
   Card,
@@ -40,6 +37,7 @@ import { FormSection } from '../../components/form-section';
 import { useDirtySource } from '../../lib/workbench/dirty';
 import { afterPaneChange } from '../../lib/defer';
 import type { SurfaceContext } from '../../lib/surfaces/registry';
+import { SaveFailure } from '@/components/save-failure';
 import {
   shippingErrorMessage,
   useCreateShippingProfile,
@@ -207,6 +205,7 @@ function ProfileEditor({
             toast.add({ title: `${draft.name.trim()} created`, type: 'success' });
           });
         },
+        onError: shownInPlace,
       });
       return;
     }
@@ -215,6 +214,7 @@ function ProfileEditor({
         setTouched(false);
         toast.add({ title: 'Group saved', type: 'success' });
       },
+      onError: shownInPlace,
     });
   };
 
@@ -257,12 +257,14 @@ function ProfileEditor({
         label="Product group actions"
         status={
           !isNew ? (
-            <Badge color="neutral" variant="soft" size="sm">
-              {productCount === 0
-                ? 'No products yet'
-                : productCount === 1
-                  ? '1 product'
-                  : `${String(productCount)} products`}
+            <Badge variant="soft" size="sm">
+              {profile?.isDefault
+                ? 'All other products'
+                : productCount === 0
+                  ? 'Nothing in it yet'
+                  : productCount === 1
+                    ? '1 product'
+                    : `${String(productCount)} products`}
             </Badge>
           ) : null
         }
@@ -299,14 +301,7 @@ function ProfileEditor({
             </Text>
           ) : null}
 
-          {failure ? (
-            <Alert color="error">
-              <AlertContent>
-                <AlertTitle>Could not save this group</AlertTitle>
-                <AlertDescription>{failure}</AlertDescription>
-              </AlertContent>
-            </Alert>
-          ) : null}
+          <SaveFailure title="Could not save this group" message={failure} />
 
           <FormSection title="The group">
             <Field>

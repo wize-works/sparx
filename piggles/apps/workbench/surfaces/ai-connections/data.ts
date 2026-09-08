@@ -84,8 +84,7 @@ export function useDisconnectAiCredential() {
 
 /** Result of re-checking a stored key against its provider. */
 export type CredentialTestResult =
-  | { ok: true; credential: AiCredential }
-  | { ok: false; error: string };
+  { ok: true; credential: AiCredential } | { ok: false; error: string };
 
 /** Re-check the stored key right now. A diagnostic, not a gate — it resolves to
  *  the outcome rather than throwing, and stamps a fresh "last checked" on

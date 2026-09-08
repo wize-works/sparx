@@ -41,6 +41,7 @@ import { RefreshButton } from '../../components/refresh-button';
 import type { OpenTarget, SurfaceContext } from '../../lib/surfaces/registry';
 import {
   formatCount,
+  salesUntraced,
   formatLoad,
   formatMoney,
   loadTone,
@@ -80,6 +81,9 @@ export function PageResultsSurface({ ctx }: { ctx: SurfaceContext }) {
 
   const rows = data?.pages ?? [];
   const commerce = data?.commerce ?? false;
+  // Sales happened and none could be tied to a page, so neither of the money
+  // columns is a measurement. See `salesUntraced`.
+  const untraced = data ? salesUntraced(data) : false;
   const staleAfterFailure = Boolean(error) && rows.length > 0;
 
   const openEditor = (row: PageResultRow, event: { shiftKey: boolean; altKey: boolean }) => {
@@ -88,32 +92,38 @@ export function PageResultsSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Page results controls" wrap>
-        <Filter
-          color="module"
-          value={String(days)}
-          onValueChange={(next) => {
-            setDays((Number(next ?? 30) || 30) as ResultWindow);
-          }}
-          showReset={false}
-          aria-label="How far back to look"
-        >
-          {RESULT_WINDOWS.map((window) => (
-            <FilterItem key={window.days} value={String(window.days)}>
-              {window.label}
-            </FilterItem>
-          ))}
-        </Filter>
-
-        <RefreshButton
-          className="ml-auto"
-          isFetching={isFetching}
-          updatedAt={data ? dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void refetch();
-          }}
-        />
-      </PaneToolbar>
+      <PaneToolbar
+        label="Page results controls"
+        controls={
+          <>
+            <Filter
+              color="module"
+              value={String(days)}
+              onValueChange={(next) => {
+                setDays((Number(next ?? 30) || 30) as ResultWindow);
+              }}
+              showReset={false}
+              aria-label="How far back to look"
+            >
+              {RESULT_WINDOWS.map((window) => (
+                <FilterItem key={window.days} value={String(window.days)}>
+                  {window.label}
+                </FilterItem>
+              ))}
+            </Filter>
+          </>
+        }
+        refresh={
+          <RefreshButton
+            className="ml-auto"
+            isFetching={isFetching}
+            updatedAt={data ? dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void refetch();
+            }}
+          />
+        }
+      />
 
       <Card className="min-h-0 flex-1 overflow-y-auto">
         {staleAfterFailure ? (
@@ -206,14 +216,14 @@ export function PageResultsSurface({ ctx }: { ctx: SurfaceContext }) {
                         {/* Orders alongside the rate, because a rate on its own is
                             unreadable at small numbers — "20%" of five people is one
                             sale, and the owner needs to know which they are looking at. */}
-                        {row.conversionPct == null
+                        {untraced || row.conversionPct == null
                           ? '—'
                           : `${formatCount(row.orders)} (${String(row.conversionPct)}%)`}
                       </td>
                     ) : null}
                     {commerce ? (
                       <td className="text-right">
-                        {row.revenueCents > 0 ? formatMoney(row.revenueCents) : '—'}
+                        {!untraced && row.revenueCents > 0 ? formatMoney(row.revenueCents) : '—'}
                       </td>
                     ) : null}
                     <td className="hidden @2xl:table-cell">
@@ -265,9 +275,28 @@ export function PageResultsSurface({ ctx }: { ctx: SurfaceContext }) {
 function ReportFootnotes({ report }: { report: ReturnType<typeof usePageResults>['data'] }) {
   if (!report) return null;
   const otherViews = report.otherPaths.reduce((sum, row) => sum + row.views, 0);
+  const untraced = salesUntraced(report);
+  const placed = report.attribution.placed;
 
   return (
     <div className="flex flex-col gap-2 p-3">
+      {untraced ? (
+        <Alert color="info" variant="soft">
+          <AlertContent>
+            <AlertTitle>
+              {placed === 1
+                ? 'Your one sale could not be tied to a page'
+                : `None of your ${formatCount(placed)} sales could be tied to a page`}
+            </AlertTitle>
+            <AlertDescription>
+              A sale is credited to a page only when the visit and the purchase happen on the same
+              day, so somebody who looked on Tuesday and bought on Wednesday counts for nothing
+              here, and neither does an order taken over the phone. That is why Bought and Sales
+              read “—” rather than zero: nothing was measured, so there is nothing to report.
+            </AlertDescription>
+          </AlertContent>
+        </Alert>
+      ) : null}
       {report.commerce ? (
         <p className="text-base">
           Sales are credited to the page that brought the buyer to your site that day — not the page

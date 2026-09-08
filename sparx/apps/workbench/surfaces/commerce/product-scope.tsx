@@ -118,10 +118,60 @@ interface Selection {
   title: string | null;
 }
 
-let selection: Selection | null = null;
+const SELECTION_CHANNEL = 'sparx-workbench-product-selection';
+
+/* ── The selection outlives the page, because the layout does ─────────────
+ *
+ * A following pane came back from a reload saying "Choose a product first"
+ * while the product pane it had been following sat two tabs away, fully
+ * restored. Nothing was lost, but the screen said otherwise, and the way out —
+ * click the product pane, come back — is not something the sentence suggests.
+ *
+ * The selection is one id, so it is kept beside the layout it belongs to: same
+ * localStorage, same per-site key, same lifetime. Restore the workspace and the
+ * pane is still looking at what it was looking at.
+ *
+ * Per SITE, not global: a product id means nothing under a different site, and
+ * seeding one would land the pane on "that product does not exist", which reads
+ * as a deletion rather than a switch.
+ *
+ * Found and driven on screen in the other console; this is its own copy, not an
+ * import, since neither brand tree may depend on the other. */
+function selectionKey(): string {
+  const site = new URLSearchParams(window.location.search).get('site') ?? 'default';
+  return `${SELECTION_CHANNEL}:${site}`;
+}
+
+function readStoredSelection(): Selection | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = window.localStorage.getItem(selectionKey());
+    if (raw === null) return null;
+    const parsed: unknown = JSON.parse(raw);
+    if (typeof parsed !== 'object' || parsed === null) return null;
+    const { productId, title } = parsed as Partial<Selection>;
+    if (typeof productId !== 'string') return null;
+    return { productId, title: typeof title === 'string' ? title : null };
+  } catch {
+    // A private window, cleared site data, or a half-written value. A pane with
+    // no selection is the state this already handles well.
+    return null;
+  }
+}
+
+function storeSelection(next: Selection | null): void {
+  if (typeof window === 'undefined') return;
+  try {
+    if (next === null) window.localStorage.removeItem(selectionKey());
+    else window.localStorage.setItem(selectionKey(), JSON.stringify(next));
+  } catch {
+    // Storage refused. The in-memory selection still works for this page.
+  }
+}
+
+let selection: Selection | null = readStoredSelection();
 const selectionListeners = new Set<() => void>();
 
-const SELECTION_CHANNEL = 'sparx-workbench-product-selection';
 let channel: BroadcastChannel | null = null;
 
 function ensureChannel(): BroadcastChannel | null {
@@ -136,6 +186,8 @@ function emitSelection(): void {
 
 if (typeof BroadcastChannel !== 'undefined') {
   ensureChannel()?.addEventListener('message', (event: MessageEvent<Selection | null>) => {
+    // Not persisted: the tab that announced has already written it under ITS
+    // site.s key, and this tab may be on a different site.
     selection = event.data;
     emitSelection();
   });
@@ -144,6 +196,7 @@ if (typeof BroadcastChannel !== 'undefined') {
 function setSelection(next: Selection | null): void {
   if (selection?.productId === next?.productId && selection?.title === next?.title) return;
   selection = next;
+  storeSelection(next);
   emitSelection();
   ensureChannel()?.postMessage(next);
 }

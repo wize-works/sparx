@@ -4,15 +4,7 @@
 // The write side is ./category-detail-writes.ts.
 
 import { useEffect, useMemo, useState } from 'react';
-import {
-  Alert,
-  AlertContent,
-  AlertDescription,
-  AlertTitle,
-  Badge,
-  Button,
-  Text,
-} from '@wizeworks/silicaui-react';
+import { Badge, Button, Text } from '@wizeworks/silicaui-react';
 import { faTrashCan } from '@fortawesome/pro-solid-svg-icons';
 import { Icon } from '@piggles/ui';
 import { useDirtySource } from '../../lib/workbench/dirty';
@@ -24,6 +16,7 @@ import { emptyDraft, sameSet, toDraft, type Draft } from './category-draft';
 import { useCategoryWrites } from './category-detail-writes';
 import { CategoryBasics } from './category-detail-basics';
 import { CategoryExtras } from './category-detail-extras';
+import { SaveFailure } from '@/components/save-failure';
 
 const COLUMN = 'mx-auto flex w-full max-w-3xl flex-col gap-4';
 
@@ -157,14 +150,7 @@ export function CategoryEditor({
             </Text>
           ) : null}
 
-          {writes.failure ? (
-            <Alert color="error">
-              <AlertContent>
-                <AlertTitle>Could not save this category</AlertTitle>
-                <AlertDescription>{writes.failure}</AlertDescription>
-              </AlertContent>
-            </Alert>
-          ) : null}
+          <SaveFailure title="Could not save this category" message={writes.failure} />
 
           <CategoryBasics
             draft={draft}

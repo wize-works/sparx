@@ -286,40 +286,45 @@ export function CategoriesSurface() {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Category actions" wrap>
-        <Button
-          size="sm"
-          color="module"
-          onClick={() => {
-            setAdding(true);
-            setEditing(null);
-          }}
-        >
-          <Plus className="size-4" aria-hidden />
-          Add a category
-        </Button>
-
-        <div className="flex items-center gap-2">
-          <Switch
-            id="categories-show-archived"
-            color="module"
-            checked={showArchived}
-            onCheckedChange={setShowArchived}
+      <PaneToolbar
+        label="Category actions"
+        controls={
+          <>
+            <Button
+              size="sm"
+              color="module"
+              onClick={() => {
+                setAdding(true);
+                setEditing(null);
+              }}
+            >
+              <Plus className="size-4" aria-hidden />
+              Add a category
+            </Button>
+            <div className="flex items-center gap-2">
+              <Switch
+                id="categories-show-archived"
+                color="module"
+                checked={showArchived}
+                onCheckedChange={setShowArchived}
+              />
+              <label htmlFor="categories-show-archived" className="text-sm whitespace-nowrap">
+                Include archived
+              </label>
+            </div>
+          </>
+        }
+        refresh={
+          <RefreshButton
+            className="ml-auto"
+            isFetching={isFetching}
+            updatedAt={data ? dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void refetch();
+            }}
           />
-          <label htmlFor="categories-show-archived" className="text-sm whitespace-nowrap">
-            Include archived
-          </label>
-        </div>
-
-        <RefreshButton
-          className="ml-auto"
-          isFetching={isFetching}
-          updatedAt={data ? dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void refetch();
-          }}
-        />
-      </PaneToolbar>
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         {isError ? (

@@ -20,13 +20,7 @@ import type { OrderAddress } from './data';
 /* ── Shapes ─────────────────────────────────────────────────────────────── */
 
 export type CheckoutStep =
-  | 'cart_review'
-  | 'contact'
-  | 'shipping'
-  | 'payment'
-  | 'review'
-  | 'completed'
-  | 'expired';
+  'cart_review' | 'contact' | 'shipping' | 'payment' | 'review' | 'completed' | 'expired';
 
 /** A row in the checkout-sessions list. */
 export interface CheckoutRow {
@@ -36,6 +30,9 @@ export interface CheckoutRow {
   currency: string;
   customerId: string | null;
   customerEmail: string | null;
+  /** The shopper's name when they have an account. Null for a guest, who is
+   *  only ever an email address. */
+  customerName: string | null;
   subtotalCents: number;
   totalCents: number;
   expiresAt: string;
@@ -84,6 +81,10 @@ export const CHECKOUT_KEY = ['commerce', 'checkout'];
 
 export interface CheckoutQuery {
   step?: CheckoutStep;
+  /** Every step except completed and expired. The list is called half-finished
+   *  checkouts and most of what it held were finished ones, so this is what it
+   *  opens on. */
+  unfinished?: boolean;
   take: number;
   skip: number;
 }
@@ -94,6 +95,7 @@ export function useCheckoutSessions(query: CheckoutQuery) {
     queryFn: () =>
       api.list<CheckoutRow>('/v1/commerce/checkout-sessions', {
         ...(query.step ? { step: query.step } : {}),
+        ...(query.unfinished ? { unfinished: true } : {}),
         take: query.take,
         skip: query.skip,
       }),

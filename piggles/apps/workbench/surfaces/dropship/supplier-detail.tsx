@@ -14,6 +14,7 @@
 // plain row after the form, so the rare, irreversible disconnect never sits with
 // equal weight beside the settings someone came to change.
 
+import { shownInPlace } from '@wizeworks/query';
 import { useEffect, useMemo, useState } from 'react';
 import { PaneWaiting } from '../../components/pane-waiting';
 import { PaneLoadError } from '../../components/pane-load-error';
@@ -70,6 +71,7 @@ import {
   type VendorCredentialField,
 } from './dropship-data';
 import { productCopy } from '../../lib/product';
+import { SaveFailure } from '@/components/save-failure';
 
 const COLUMN = 'mx-auto flex w-full max-w-3xl flex-col gap-4';
 
@@ -406,6 +408,7 @@ function SupplierEditor({
               });
             });
           },
+          onError: shownInPlace,
         }
       );
       return;
@@ -430,6 +433,7 @@ function SupplierEditor({
           setDraft((current) => ({ ...current, credentials: {} }));
           toast.add({ title: 'Supplier saved', type: 'success' });
         },
+        onError: shownInPlace,
       }
     );
   };
@@ -583,14 +587,7 @@ function SupplierEditor({
             </Text>
           ) : null}
 
-          {failure ? (
-            <Alert color="error">
-              <AlertContent>
-                <AlertTitle>Could not save this supplier</AlertTitle>
-                <AlertDescription>{failure}</AlertDescription>
-              </AlertContent>
-            </Alert>
-          ) : null}
+          <SaveFailure title="Could not save this supplier" message={failure} />
 
           {/* On edit, the one status message — the most specific true thing about
               the connection right now. */}

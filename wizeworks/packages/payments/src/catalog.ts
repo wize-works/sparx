@@ -60,6 +60,13 @@ export interface GatewayCapabilities {
 export interface GatewayDescriptor {
   id: string;
   name: string;
+  /** The company whose account, dashboard and settings the merchant actually
+   *  has — used wherever a sentence says "your X account". It is NOT always the
+   *  shelf name: the shelf has to distinguish "Your own Stripe" from the
+   *  platform's own gateway, and interpolating that into a possessive produced
+   *  "your Your own Stripe account" on the live screen. Absent means the shelf
+   *  name reads correctly on its own (Square, PayPal). */
+  processor?: string;
   tagline?: string;
   blurb: string;
   /** Whether a tenant can switch this on TODAY. Omitted means `available` — a gateway
@@ -117,6 +124,7 @@ const CATALOG_TEMPLATE: readonly GatewayDescriptor[] = [
   {
     id: 'stripe_direct',
     name: 'Your own Stripe',
+    processor: 'Stripe',
     blurb:
       'Route checkout to your own Stripe account. No {platform} fee — you own disputes, PCI, and payouts. Paste your secret key and webhook signing secret from the Stripe dashboard.',
     onboarding: 'api_keys',
@@ -284,6 +292,7 @@ const CATALOG_TEMPLATE: readonly GatewayDescriptor[] = [
   {
     id: 'custom',
     name: 'Custom gateway',
+    processor: 'payment processor',
     blurb:
       'Use any other processor. Point {platform} at your gateway’s hosted checkout URL and credentials; {platform} redirects shoppers there and reconciles on return. For full control, a developer can drop in a code adapter — see the plugin contract.',
     onboarding: 'api_keys',
@@ -430,6 +439,7 @@ function fillDescriptor(g: GatewayDescriptor, brand: string): GatewayDescriptor 
     name: fill(g.name),
     blurb: fill(g.blurb),
     feeNote: fill(g.feeNote),
+    ...(g.processor ? { processor: fill(g.processor) } : {}),
     ...(g.tagline ? { tagline: fill(g.tagline) } : {}),
     credentialFields: g.credentialFields.map((field) => ({
       ...field,

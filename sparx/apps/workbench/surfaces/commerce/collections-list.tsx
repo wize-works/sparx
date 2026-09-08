@@ -24,7 +24,6 @@ import {
   FilterItem,
   SearchInput,
   Table,
-  ToolbarSeparator,
 } from '@wizeworks/silicaui-react';
 import { ArrowDown, ArrowUp, Layers, Plus } from 'lucide-react';
 import { ListPagination, MAX_TAKE, type PageSize } from '../../components/list-pagination';
@@ -141,60 +140,66 @@ export function CollectionsListSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Collection list controls" wrap>
-        <div className="max-w-xs min-w-0 flex-1">
-          <SearchInput
+      <PaneToolbar
+        label="Collection list controls"
+        search={
+          <div className="max-w-xs min-w-0 flex-1">
+            <SearchInput
+              size="sm"
+              aria-label="Search collections"
+              placeholder="Search collections…"
+              value={search}
+              onValueChange={(next) => {
+                setSearch(next);
+                resetWindow();
+              }}
+            />
+          </div>
+        }
+        primary={
+          <Button
+            color="module"
             size="sm"
-            aria-label="Search collections"
-            placeholder="Search collections…"
-            value={search}
-            onValueChange={(next) => {
-              setSearch(next);
-              resetWindow();
+            className="ml-auto"
+            title="Add a collection — hold Shift to open alongside, Alt for a new window"
+            onClick={(event) => {
+              ctx.open('commerce.collection.detail', { id: 'new' }, { target: targetFor(event) });
+            }}
+          >
+            <Plus className="size-4" aria-hidden />
+            <span className="hidden @lg:inline">Add a collection</span>
+          </Button>
+        }
+        controls={
+          <>
+            <Filter
+              color="module"
+              value={type}
+              onValueChange={(next) => {
+                setType(next ?? 'all');
+                resetWindow();
+              }}
+              showReset={false}
+              aria-label="Filter by how the collection fills"
+            >
+              {TYPE_FILTERS.map((filter) => (
+                <FilterItem key={filter.value} value={filter.value}>
+                  {filter.label}
+                </FilterItem>
+              ))}
+            </Filter>
+          </>
+        }
+        refresh={
+          <RefreshButton
+            isFetching={isFetching}
+            updatedAt={data ? dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void refetch();
             }}
           />
-        </div>
-
-        <ToolbarSeparator className="hidden @xl:block" />
-
-        <Filter
-          color="module"
-          value={type}
-          onValueChange={(next) => {
-            setType(next ?? 'all');
-            resetWindow();
-          }}
-          showReset={false}
-          aria-label="Filter by how the collection fills"
-        >
-          {TYPE_FILTERS.map((filter) => (
-            <FilterItem key={filter.value} value={filter.value}>
-              {filter.label}
-            </FilterItem>
-          ))}
-        </Filter>
-
-        <Button
-          color="module"
-          size="sm"
-          className="ml-auto"
-          title="Add a collection — hold Shift to open alongside, Alt for a new window"
-          onClick={(event) => {
-            ctx.open('commerce.collection.detail', { id: 'new' }, { target: targetFor(event) });
-          }}
-        >
-          <Plus className="size-4" aria-hidden />
-          <span className="hidden @lg:inline">Add a collection</span>
-        </Button>
-
-        <RefreshButton
-          isFetching={isFetching}
-          updatedAt={data ? dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void refetch();
-          }}
-        />
-      </PaneToolbar>
+        }
+      />
 
       <Card className="min-h-0 flex-1 overflow-y-auto">
         {isError ? (

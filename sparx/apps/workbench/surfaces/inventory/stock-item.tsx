@@ -95,6 +95,7 @@ import {
   type StockLocation,
 } from './data';
 import { useGenerateBarcodes, useVariantBarcodes } from './scan-data';
+import { PaneLoadError } from '../../components/pane-load-error';
 
 /** Centred and capped — a pane torn onto a second monitor is 2000px wide, and
  *  uncapped this becomes a line of numbers pinned to the left edge. */
@@ -957,32 +958,18 @@ export function StockItemSurface({ ctx }: { ctx: SurfaceContext }) {
     const gone = isNotFound(item.error);
     return (
       <div className={PANE_SHELL}>
-        <div className="flex h-full items-center justify-center p-8">
-          <Alert color={gone ? 'warning' : 'danger'} variant="soft" className="max-w-md">
-            <AlertContent>
-              <AlertTitle>
-                {gone ? 'This item no longer exists' : 'Could not load this item’s stock'}
-              </AlertTitle>
-              <AlertDescription>
-                {gone
-                  ? 'It has been removed from your catalog. Its past orders and its stock history are unaffected.'
-                  : 'This is a problem reaching the server. Your stock is unaffected — the numbers just could not be read just now.'}
-              </AlertDescription>
-            </AlertContent>
-            {gone ? null : (
-              <Button
-                size="sm"
-                color="danger"
-                variant="soft"
-                onClick={() => {
-                  void item.refetch();
-                }}
-              >
-                Try again
-              </Button>
-            )}
-          </Alert>
-        </div>
+        <PaneLoadError
+          reason={gone ? 'missing' : 'unreachable'}
+          title={gone ? 'This item no longer exists' : 'Could not load this item’s stock'}
+          description={
+            gone
+              ? 'It has been removed from your catalog. Its past orders and its stock history are unaffected.'
+              : 'This is a problem reaching the server. Your stock is unaffected — the numbers just could not be read just now.'
+          }
+          onRetry={() => {
+            void item.refetch();
+          }}
+        />
       </div>
     );
   }
@@ -1044,57 +1031,63 @@ export function StockItemSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Stock item actions">
-        <Badge color={state.tone} variant="soft" size="sm">
-          {state.label}
-        </Badge>
-
-        {/* Sheds its label first: the product is one click away either way, and
-            counting is what this pane is for. */}
-        {productId ? (
+      <PaneToolbar
+        label="Stock item actions"
+        primary={
           <Button
             size="sm"
-            variant="outline"
-            color="neutral"
-            className="ml-auto shrink-0 whitespace-nowrap"
-            title="Open the product this belongs to"
-            onClick={(event) => {
-              ctx.open(
-                'commerce.product.detail',
-                { id: productId },
-                { target: event.shiftKey ? 'beside' : 'tab' }
-              );
+            color="module"
+            className={`shrink-0 whitespace-nowrap${productId ? '' : 'ml-auto'}`}
+            disabled={locations.length === 0}
+            onClick={() => {
+              startCount(levels[0]?.warehouseId ?? null);
             }}
           >
-            <Package className="size-4" aria-hidden />
-            <span className="hidden @xl:inline">Open product</span>
+            <ClipboardCheck className="size-4" aria-hidden />
+            Record a count
           </Button>
-        ) : null}
-
-        <Button
-          size="sm"
-          color="module"
-          className={`shrink-0 whitespace-nowrap${productId ? '' : 'ml-auto'}`}
-          disabled={locations.length === 0}
-          onClick={() => {
-            startCount(levels[0]?.warehouseId ?? null);
-          }}
-        >
-          <ClipboardCheck className="size-4" aria-hidden />
-          Record a count
-        </Button>
-
-        {/* ALWAYS the last child of a toolbar — see RefreshButton. */}
-        <RefreshButton
-          isFetching={item.isFetching}
-          updatedAt={item.data ? item.dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void item.refetch();
-            void holds.refetch();
-            void history.refetch();
-          }}
-        />
-      </PaneToolbar>
+        }
+        controls={
+          <>
+            <Badge color={state.tone} variant="soft" size="sm">
+              {state.label}
+            </Badge>
+            {/* Sheds its label first: the product is one click away either way, and
+            counting is what this pane is for. */}
+            {productId ? (
+              <Button
+                size="sm"
+                variant="outline"
+                color="neutral"
+                className="ml-auto shrink-0 whitespace-nowrap"
+                title="Open the product this belongs to"
+                onClick={(event) => {
+                  ctx.open(
+                    'commerce.product.detail',
+                    { id: productId },
+                    { target: event.shiftKey ? 'beside' : 'tab' }
+                  );
+                }}
+              >
+                <Package className="size-4" aria-hidden />
+                <span className="hidden @xl:inline">Open product</span>
+              </Button>
+            ) : null}
+            {/* ALWAYS the last child of a toolbar — see RefreshButton. */}
+          </>
+        }
+        refresh={
+          <RefreshButton
+            isFetching={item.isFetching}
+            updatedAt={item.data ? item.dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void item.refetch();
+              void holds.refetch();
+              void history.refetch();
+            }}
+          />
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className={COLUMN}>

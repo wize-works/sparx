@@ -123,11 +123,80 @@ export const COMMERCE_ABANDONED_CART_NUDGE: SystemAutomationSpec = {
 };
 
 /** The order-lifecycle transactional emails (docs/implementation/transactional-email
- *  §4 P1) — the counterparts to order-confirmation that were missing. Each fires on
- *  its matching `order.*` event (all four are ORDER_EVENTS in the trigger resolver,
- *  so `customer.email` + the `order` refs resolve) and sends a provisioned Builder
- *  email by key. Transactional, so a marketing unsubscribe never withholds them; the
- *  `is_set` guard skips a guest order with no emailable address. */
+ *  §4 P1). Each fires on its matching `order.*` event (all of them are ORDER_EVENTS
+ *  in the trigger resolver, so `customer.email` + the `order` refs resolve) and sends
+ *  a provisioned Builder email by key. Transactional, so a marketing unsubscribe
+ *  never withholds them; the `is_set` guard skips a guest order with no emailable
+ *  address.
+ *
+ *  THE CONFIRMATION COMES FIRST, and for a long time it was the one that did not
+ *  exist. The later ones were written as "the counterparts to order-confirmation
+ *  that were missing" — on the reasonable assumption that the confirmation itself
+ *  was already handled somewhere. It was not. The `order-confirmation` Builder
+ *  email was provisioned, published and live on every shop, and NOTHING sent it:
+ *  no automation seed named it, no tenant automation triggered on `order.placed`
+ *  (zero rows, platform-wide), and `checkout-service.complete()` sends no mail.
+ *
+ *  So a shopper bought something and heard nothing back. No order number, no
+ *  receipt, no confirmation that the money or the order had registered — and on a
+ *  pay-later shop, which is what a shop with no payment provider is, that silence
+ *  is the entire handover. Later mails told her the order was delivered, cancelled
+ *  or refunded; none told her it had been placed. */
+export const COMMERCE_ORDER_CONFIRMATION_EMAIL: SystemAutomationSpec = {
+  name: 'Order confirmation — email',
+  description: 'Emails the customer their order confirmation as soon as the order is placed.',
+  trigger: { kind: 'event', eventType: 'order.placed' },
+  conditions: {
+    logic: 'AND',
+    conditions: [{ field: 'customer.email', operator: 'is_set' }],
+  },
+  actions: [
+    {
+      type: 'email.send_campaign',
+      // No delay. A confirmation that arrives later than the shopper's own doubt
+      // is not a confirmation.
+      config: { builderEmailKey: 'order-confirmation', emailType: 'transactional' },
+    },
+  ],
+  locked: false,
+  status: 'active',
+};
+
+/** The same silence, one step later in the order's life. `shipping-confirmation`
+ *  was provisioned and published on every shop and nothing sent it either: the
+ *  only listener on `order.fulfilled` was the review request, which waits three
+ *  days and then asks the customer how they liked a parcel nobody ever told them
+ *  was coming. Sends the moment the goods leave, so the tracking number reaches
+ *  the customer before the parcel does.
+ *
+ *  NOT ON A COLLECTION. A customer walking out of the shop with their order is
+ *  recorded as a fulfillment carried by `pickup`, and it publishes
+ *  `order.fulfilled` exactly like a despatch — deliberately, so the activity feed
+ *  and the review request see the sale complete. But "Your order is on its way —
+ *  track your package" is plainly false to somebody already holding it, so the
+ *  carrier is checked. `order.delivered` fires for a collection too, and the
+ *  delivered notice is the one that belongs there. */
+export const COMMERCE_SHIPPING_CONFIRMATION_EMAIL: SystemAutomationSpec = {
+  name: 'Shipping confirmation — email',
+  description: 'Emails the customer their tracking details as soon as an order ships.',
+  trigger: { kind: 'event', eventType: 'order.fulfilled' },
+  conditions: {
+    logic: 'AND',
+    conditions: [
+      { field: 'customer.email', operator: 'is_set' },
+      { field: 'fulfillment.carrier', operator: 'neq', value: 'pickup' },
+    ],
+  },
+  actions: [
+    {
+      type: 'email.send_campaign',
+      config: { builderEmailKey: 'shipping-confirmation', emailType: 'transactional' },
+    },
+  ],
+  locked: false,
+  status: 'active',
+};
+
 export const COMMERCE_ORDER_DELIVERED_EMAIL: SystemAutomationSpec = {
   name: 'Order delivered — email',
   description: 'Emails the customer when their order is marked delivered.',

@@ -659,31 +659,50 @@ const productProjector: EntityProjector = {
 // ─── cms: page (reindex-only — CMS emits no domain events yet, docs/39 §6.3) ─
 // Read via the shared Prisma client (no @wizeworks/cms dep / Dockerfile edge, same
 // as the CRM projectors). Public storefront search filters status:='published'.
+//
+// A "page" here is a `ContentEntry` with `typeKey = 'page'` — a tenant's policy and
+// standalone pages. It used to read the `Page` MODEL, which is deprecated and holds
+// ZERO rows platform-wide, so this projector produced no document for anybody and
+// public search's `cms_page` branch could never match (issue 378). The SEO audit had
+// always resolved `cms_page` against `contentEntry`; this now agrees with it.
+//
+// Its sibling `contentEntryProjector` covers every OTHER typeKey, and the split is
+// what keeps the two from indexing the same row twice.
 
 const cmsPageProjector: EntityProjector = {
   entityType: 'cms_page',
   module: 'cms',
   listIdsForTenant: (ctx: ProjectorContext) =>
     withTenant(ctx, async (tx) => {
-      const rows = await tx.page.findMany({ select: { id: true } });
+      const rows = await tx.contentEntry.findMany({
+        where: { typeKey: 'page', deletedAt: null },
+        select: { id: true },
+      });
       return rows.map((r) => r.id);
     }),
   project: (ctx: ProjectorContext, id: string) =>
     withTenant(ctx, async (tx): Promise<UniversalSearchDocument | null> => {
-      const p = await tx.page.findFirst({ where: { id } });
+      const p = await tx.contentEntry.findFirst({
+        where: { id, typeKey: 'page', deletedAt: null },
+      });
       if (!p) return null;
+      const body = (p.body ?? {}) as Record<string, unknown>;
+      const seo = (p.seoJson ?? {}) as Record<string, unknown>;
+      // No title COLUMN on a content entry — it lives in the body the type defines.
+      const title = pickString(body.title) ?? p.slug ?? 'Untitled page';
       return {
         id: universalId(ctx.tenantId, 'cms_page', p.id),
         tenant_id: ctx.tenantId,
         entity_type: 'cms_page',
         module: 'cms',
         record_id: p.id,
-        title: p.title,
-        subtitle: p.slug,
-        body: snippet(p.metaDescription),
+        title,
+        // Nullable on a content entry, unlike the `Page` column this used to read.
+        subtitle: p.slug ?? undefined,
+        body: snippet(pickString(seo.description) ?? pickString(body.excerpt)),
         keywords: keywords([p.slug]),
         status: p.status, // draft | published (public search filters published)
-        url: `/cms/${p.id}`,
+        url: `/content/${p.id}`,
         created_at: epoch(p.createdAt),
         updated_at: epoch(p.updatedAt),
       };

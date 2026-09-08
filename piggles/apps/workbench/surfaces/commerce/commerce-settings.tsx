@@ -9,6 +9,7 @@
 // name which one it is editing. The fulfilment origin (a warehouse) is carried
 // through untouched — it is set elsewhere, and saving here must not clear it.
 
+import { shownInPlace } from '@wizeworks/query';
 import { useEffect, useMemo, useState } from 'react';
 import { PaneWaiting } from '../../components/pane-waiting';
 import { PaneLoadError } from '../../components/pane-load-error';
@@ -34,6 +35,7 @@ import { FormSection } from '../../components/form-section';
 import { RefreshButton } from '../../components/refresh-button';
 import { useDirtySource } from '../../lib/workbench/dirty';
 import type { SurfaceContext } from '../../lib/surfaces/registry';
+import { SaveFailure } from '@/components/save-failure';
 import {
   CURRENCY_OPTIONS,
   describeDunningPolicy,
@@ -209,6 +211,7 @@ function SettingsForm({
           setTouched(false);
           toast.add({ title: 'Selling settings saved', type: 'success' });
         },
+        onError: shownInPlace,
       }
     );
   };
@@ -241,14 +244,7 @@ function SettingsForm({
             checkout works.
           </Text>
 
-          {failure ? (
-            <Alert color="error">
-              <AlertContent>
-                <AlertTitle>Could not save your settings</AlertTitle>
-                <AlertDescription>{failure}</AlertDescription>
-              </AlertContent>
-            </Alert>
-          ) : null}
+          <SaveFailure title="Could not save your settings" message={failure} />
 
           <FormSection
             title="Currency and language"

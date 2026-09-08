@@ -114,6 +114,11 @@ export interface ResolvedSite {
   // `site.identity.phone` / `.email` / `.address`. Each is null when unset — an
   // empty string would blank the authored node instead of leaving it standing.
   contact: { phone: string | null; email: string | null; address: string | null };
+  // The languages this shop's catalogue is written in, beyond its own words.
+  // Derived by api-rest from the translations that actually exist, so a language
+  // is here because a real product carries words in it. Empty for almost every
+  // shop, which is what makes the language switcher absent rather than empty.
+  languages: string[];
   // Whether the always-on platform attribution credit renders for this site.
   // Defaults true; a future merchant toggle can hide it.
   showPlatformCredit: boolean;
@@ -437,6 +442,9 @@ export const resolveSite = cache(async (): Promise<ResolvedSite | null> => {
       tagline: data.tagline ?? null,
       // Defaults true so a storefront on an older api-rest (which sent this under
       // its former, brand-named key) keeps showing the credit — always-on by default.
+      // Defaults to [] on an older api-rest that omits it — a shop with no known
+      // other languages reads exactly as it always did.
+      languages: Array.isArray(data.languages) ? data.languages : [],
       showPlatformCredit: data.showPlatformCredit ?? true,
       platformBrand: data.platformBrand ?? DEFAULT_PLATFORM_BRAND,
       // Defaults 'active' on an older api-rest that omits it — a site is NEVER

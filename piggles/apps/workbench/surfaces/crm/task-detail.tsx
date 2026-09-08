@@ -13,10 +13,6 @@ import { useEffect, useMemo, useState } from 'react';
 import { PaneWaiting } from '../../components/pane-waiting';
 import { PaneLoadError } from '../../components/pane-load-error';
 import {
-  Alert,
-  AlertContent,
-  AlertDescription,
-  AlertTitle,
   Badge,
   Button,
   Card,
@@ -43,6 +39,7 @@ import { useTeamRoster } from '../../lib/api/team';
 import { useViewer } from '../../lib/api/shell-data';
 import { useCustomers } from './customers-data';
 import { customerName } from './customer-display';
+import { SaveFailure } from '@/components/save-failure';
 import {
   TASK_PRIORITIES,
   TASK_STATUSES,
@@ -399,14 +396,7 @@ function TaskEditor({
             </Text>
           ) : null}
 
-          {failure ? (
-            <Alert color="error">
-              <AlertContent>
-                <AlertTitle>Could not save this task</AlertTitle>
-                <AlertDescription>{failure}</AlertDescription>
-              </AlertContent>
-            </Alert>
-          ) : null}
+          <SaveFailure title="Could not save this task" message={failure} />
 
           <FormSection title="The task">
             <Field>

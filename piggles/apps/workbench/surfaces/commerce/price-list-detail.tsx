@@ -55,6 +55,7 @@ import type { SurfaceContext } from '../../lib/surfaces/registry';
 import { MoneyInput } from '../../components/money-input';
 import { VariantPicker } from './variant-picker';
 import type { VariantChoice } from './bundles-data';
+import { SaveFailure } from '@/components/save-failure';
 import {
   priceListErrorMessage,
   priceListState,
@@ -592,14 +593,7 @@ function PriceListEditor({
             </Text>
           ) : null}
 
-          {failure ? (
-            <Alert color="error">
-              <AlertContent>
-                <AlertTitle>Could not save this price list</AlertTitle>
-                <AlertDescription>{failure}</AlertDescription>
-              </AlertContent>
-            </Alert>
-          ) : null}
+          <SaveFailure title="Could not save this price list" message={failure} />
 
           {/* 1 — What it is */}
           <FormSection title="Name">

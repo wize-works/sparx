@@ -75,6 +75,7 @@ import {
   type LotDetail,
   type SerialRow,
 } from './lots-data';
+import { PaneLoadError } from '../../components/pane-load-error';
 
 /** Centred and capped — a pane torn onto a second monitor is 2000px wide, and
  *  uncapped this becomes facts pinned to the left edge with a badge a foot away. */
@@ -355,32 +356,18 @@ export function LotDetailSurface({ ctx }: { ctx: SurfaceContext }) {
     const gone = isNotFound(lot.error);
     return (
       <div className={PANE_SHELL}>
-        <div className="flex h-full items-center justify-center p-8">
-          <Alert color={gone ? 'warning' : 'danger'} variant="soft" className="max-w-md">
-            <AlertContent>
-              <AlertTitle>
-                {gone ? 'This batch no longer exists' : 'Could not load this batch'}
-              </AlertTitle>
-              <AlertDescription>
-                {gone
-                  ? 'It has been removed. Any orders and stock history that referenced it are unaffected.'
-                  : 'This is a problem reaching the server. The batch record is unaffected — it just could not be read just now.'}
-              </AlertDescription>
-            </AlertContent>
-            {gone ? null : (
-              <Button
-                size="sm"
-                color="danger"
-                variant="soft"
-                onClick={() => {
-                  void lot.refetch();
-                }}
-              >
-                Try again
-              </Button>
-            )}
-          </Alert>
-        </div>
+        <PaneLoadError
+          reason={gone ? 'missing' : 'unreachable'}
+          title={gone ? 'This batch no longer exists' : 'Could not load this batch'}
+          description={
+            gone
+              ? 'It has been removed. Any orders and stock history that referenced it are unaffected.'
+              : 'This is a problem reaching the server. The batch record is unaffected — it just could not be read just now.'
+          }
+          onRetry={() => {
+            void lot.refetch();
+          }}
+        />
       </div>
     );
   }
@@ -430,37 +417,44 @@ export function LotDetailSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Batch actions">
-        <Badge color={state.tone} variant="soft" size="sm">
-          {state.label}
-        </Badge>
-
-        <Button
-          size="sm"
-          variant="outline"
-          color="neutral"
-          className="ml-auto shrink-0 whitespace-nowrap"
-          title="Open this item's stock"
-          onClick={(event) => {
-            ctx.open(
-              'inventory.stock.item',
-              { variantId: data.variantId },
-              { target: event.shiftKey ? 'beside' : 'tab' }
-            );
-          }}
-        >
-          <Boxes className="size-4" aria-hidden />
-          <span className="hidden @xl:inline">Item stock</span>
-        </Button>
-
-        <RefreshButton
-          isFetching={lot.isFetching}
-          updatedAt={lot.data ? lot.dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void lot.refetch();
-          }}
-        />
-      </PaneToolbar>
+      <PaneToolbar
+        label="Batch actions"
+        primary={
+          <Button
+            size="sm"
+            variant="outline"
+            color="neutral"
+            className="ml-auto shrink-0 whitespace-nowrap"
+            title="Open this item's stock"
+            onClick={(event) => {
+              ctx.open(
+                'inventory.stock.item',
+                { variantId: data.variantId },
+                { target: event.shiftKey ? 'beside' : 'tab' }
+              );
+            }}
+          >
+            <Boxes className="size-4" aria-hidden />
+            <span className="hidden @xl:inline">Item stock</span>
+          </Button>
+        }
+        controls={
+          <>
+            <Badge color={state.tone} variant="soft" size="sm">
+              {state.label}
+            </Badge>
+          </>
+        }
+        refresh={
+          <RefreshButton
+            isFetching={lot.isFetching}
+            updatedAt={lot.data ? lot.dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void lot.refetch();
+            }}
+          />
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className={COLUMN}>

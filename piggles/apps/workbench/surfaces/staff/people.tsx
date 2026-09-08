@@ -286,7 +286,7 @@ export function PeopleSurface({ ctx }: { ctx: SurfaceContext }) {
                   ? 'Try a different name, or switch the filter to Everyone.'
                   : productCopy(
                       'staff.people.description',
-                      'Add the people who work for you and Piggles can track their hours, what those hours cost, and when their tickets and licences run out.'
+                      'Add the people who work for you and Piggles can track their hours, what those hours cost, and when their tickets and licenses run out.'
                     )
               }
               actions={
@@ -329,7 +329,7 @@ export function PeopleSurface({ ctx }: { ctx: SurfaceContext }) {
 
                 {needsAttention > 0 ? (
                   <Card className="p-4">
-                    <Text className="text-sm">Expired tickets and licences</Text>
+                    <Text className="text-sm">Expired tickets and licenses</Text>
                     <Heading level={2} className="mt-1 text-3xl font-semibold tabular-nums">
                       {needsAttention}
                     </Heading>

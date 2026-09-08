@@ -24,14 +24,15 @@ import { FormSection } from '../../components/form-section';
 const MODULE = 'commerce';
 import type { OpenTarget, SurfaceContext } from '../../lib/surfaces/registry';
 import {
+  checkoutSummary,
   gatewayState,
   paymentsErrorMessage,
-  useGatewayCatalog,
-  useGatewayCredentials,
-  usePaymentConfig,
   type GatewayDescriptor,
   type MaskedGatewayCredential,
   type PaymentConfig,
+  useGatewayCatalog,
+  useGatewayCredentials,
+  usePaymentConfig,
 } from './providers-data';
 import { productCopy, productHidesFeature } from '../../lib/product';
 import { RowOpenHint } from '../../components/row-open-hint';
@@ -117,15 +118,16 @@ export function PaymentProvidersSurface({ ctx }: { ctx: SurfaceContext }) {
   );
   const credByGateway = new Map((credentials.data ?? []).map((c) => [c.gatewayId, c]));
   const active = config.data && gateways.find((g) => g.id === config.data?.gatewayId);
+  const summary = checkoutSummary(active ?? undefined, Boolean(config.data?.isActive));
 
   return (
     <div className={PANE_SHELL}>
       <PaneToolbar
         label="Payment providers controls"
         status={
-          active && config.data?.isActive ? (
-            <Badge color="success" variant="soft" size="sm">
-              Taking payments
+          summary ? (
+            <Badge color={summary.tone} variant="soft" size="sm">
+              {summary.label}
             </Badge>
           ) : null
         }

@@ -615,12 +615,17 @@ export function SocialCadenceSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Cadence controls">
-        <CalendarClock className="size-4 shrink-0" aria-hidden />
-        <Heading level={2} className="min-w-0 truncate text-base font-semibold">
-          Cadence
-        </Heading>
-      </PaneToolbar>
+      <PaneToolbar
+        label="Cadence controls"
+        controls={
+          <>
+            <CalendarClock className="size-4 shrink-0" aria-hidden />
+            <Heading level={2} className="min-w-0 truncate text-base font-semibold">
+              Cadence
+            </Heading>
+          </>
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className={COLUMN}>

@@ -8,8 +8,16 @@
 // (its name, its machine key, whether it nests, how many labels it holds) and
 // people scan DOWN a column — "which of these nests", "which one is biggest".
 //
-// The vocabulary's name leads each row; its key, structure and term count are
-// notes about it, and the less-important of those give way on a narrow pane.
+// The vocabulary's name leads each row; its reference, nesting and label count
+// are notes about it, and the less-important of those give way on a narrow pane.
+//
+// The three note columns are worded to match the EDITOR one click away, because
+// they are the same three facts and a person reads them minutes apart. It used
+// to say "Key" over a bare `blog_category` in monospace, "Structure" over the
+// word "Flat", and "Terms" over a number — three pieces of vocabulary a shop
+// owner has no use for, on a screen whose own detail pane already calls them
+// "Reference", "Allow nesting" and "the individual labels inside this" and
+// explains each one (issue 385).
 
 import { useMemo, useState } from 'react';
 import { PaneLoadError } from '../../components/pane-load-error';
@@ -165,9 +173,14 @@ export function TaxonomyListSurface({ ctx }: { ctx: SurfaceContext }) {
             <thead>
               <tr>
                 <th>Name</th>
-                <th className="hidden @xl:table-cell">Key</th>
-                <th className="hidden @2xl:table-cell">Structure</th>
-                <th className="text-right">Terms</th>
+                <th
+                  className="hidden @xl:table-cell"
+                  title="The code that connects this to your content. You never have to type it."
+                >
+                  Reference
+                </th>
+                <th className="hidden @2xl:table-cell">Nesting</th>
+                <th className="text-right">Labels</th>
               </tr>
             </thead>
             <tbody>
@@ -197,12 +210,15 @@ export function TaxonomyListSurface({ ctx }: { ctx: SurfaceContext }) {
                       {taxonomy.key}
                     </td>
                     <td className="hidden @2xl:table-cell">
+                      {/* A badge only for the notable case. "Plain list" is the
+                          ordinary one and reads better as words than as a second
+                          pill competing for the eye (RULE #4). */}
                       {kind ? (
                         <Badge color="info" variant="soft" size="sm" title={kind.detail}>
                           {kind.label}
                         </Badge>
                       ) : (
-                        <span className="text-sm">Flat</span>
+                        <span className="text-sm">Plain list</span>
                       )}
                     </td>
                     <td className="text-right tabular-nums">

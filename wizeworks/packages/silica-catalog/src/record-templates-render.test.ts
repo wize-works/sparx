@@ -71,9 +71,13 @@ const PRODUCT = {
 };
 
 /** The product template carries a "you might also like" rail bound to
- *  `commerce.featured`. Left empty it renders its own placeholder card — correctly, the
+ *  `commerce.related`. Left empty it renders its own placeholder card — correctly, the
  *  same way the starter's grid does — so a PDP assertion about placeholders has to fill
- *  the rail or it is really testing the rail's empty state. */
+ *  the rail or it is really testing the rail's empty state.
+ *
+ *  It was `commerce.featured` and is RELATED now (issue 412): featured means the ones the
+ *  merchant tagged, which is the shop's window display and belongs on a home page, and
+ *  which is empty for every shop that has tagged nothing. */
 const ALSO_LIKE = {
   title: 'Dock Cleat Bookend',
   price: '$64.00',
@@ -97,11 +101,11 @@ describe('a record template shows the record', () => {
   it('the product page renders the product, not the placeholder', () => {
     const html = render('commerce.product', {
       product: [PRODUCT],
-      'commerce.featured': [ALSO_LIKE],
+      'commerce.related': [ALSO_LIKE],
     });
 
     expect(html, 'title').toContain(PRODUCT.title);
-    expect(html, 'featured rail').toContain(ALSO_LIKE.title);
+    expect(html, 'related rail').toContain(ALSO_LIKE.title);
     expect(html, 'price').toContain(PRODUCT.price);
     expect(html, 'description').toContain(PRODUCT.description);
     expect(html, 'image').toContain(PRODUCT.image);
@@ -125,13 +129,47 @@ describe('a record template shows the record', () => {
     expect(html, 'featuredImage').toContain(POST.featuredImage);
   });
 
+  it('the blog post page prints the byline, which nothing used to draw', () => {
+    // `projectByline` has put `authorName` in scope since the public read started
+    // `include`ing the author relation, the CMS has an author picker on every post, and
+    // no template ever bound it — so a shop owner picked her own name, saved it, and the
+    // page still said nobody wrote it (issue 388).
+    const html = render('cms.blog_post', {
+      blog_post: [{ ...POST, authorName: 'Devi Raman' }],
+    });
+
+    expect(html, 'byline').toContain('Devi Raman');
+    // Beside the date, not instead of it — both are facts about the post.
+    expect(html, 'date survived the byline').toContain(POST.date);
+    expect(html, 'placeholder byline survived').not.toContain('Author name');
+  });
+
+  it('a post with no author prints no byline AND no stray separator', () => {
+    // The half that gets forgotten. A bare bind would print the authored placeholder,
+    // and a separator authored OUTSIDE the gate would leave "August 6, 2026 ·" trailing
+    // into nothing — which is why the whole span, dot included, hangs off `visibleWhen`.
+    //
+    // `authorName: ''` and not an ABSENT key, because that is what the storefront
+    // actually sends: `projectByline` returns `author?.display_name ?? ''` on every
+    // post, so the ref is always known and an authorless post answers it empty. The
+    // distinction is the whole contract — an absent ref is UNKNOWN and keeps the
+    // authored placeholder (so the canvas still shows something to style), while an
+    // empty one is ABSENT and drops the node.
+    const html = render('cms.blog_post', { blog_post: [{ ...POST, authorName: '' }] });
+
+    expect(html, 'placeholder byline leaked').not.toContain('Author name');
+    expect(html, 'orphaned separator').not.toContain('·');
+    // And the date is untouched — the gate must drop the byline, not the row.
+    expect(html, 'date').toContain(POST.date);
+  });
+
   it('falls back to the placeholder picture when the record has no image', () => {
     // The other half of the contract: a real record with no picture must still not
     // render a broken image. This is `fillMissingImageSrc` doing its job on the record
     // path rather than the empty-catalog one.
     const html = render('commerce.product', {
       product: [{ ...PRODUCT, image: '' }],
-      'commerce.featured': [ALSO_LIKE],
+      'commerce.related': [ALSO_LIKE],
     });
     expect(html).toContain(PRODUCT.title);
     for (const tag of html.match(/<img[^>]*>/g) ?? []) {

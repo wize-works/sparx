@@ -24,7 +24,6 @@ import {
   Alert,
   AlertContent,
   AlertDescription,
-  AlertTitle,
   Badge,
   Button,
   Dialog,
@@ -51,6 +50,7 @@ import { RefreshButton } from '../../components/refresh-button';
 import { PaneScope } from '../../lib/dock/window-boundary';
 import { afterPaneChange } from '../../lib/defer';
 import { CustomerPicker } from './bookings-customer-picker';
+import { SaveFailure } from '@/components/save-failure';
 import {
   formatDay,
   formatWhen,
@@ -141,70 +141,77 @@ export function WaitlistSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Waiting list controls" wrap>
-        <div className="max-w-xs min-w-0 flex-1">
-          <SearchInput
+      <PaneToolbar
+        label="Waiting list controls"
+        search={
+          <div className="max-w-xs min-w-0 flex-1">
+            <SearchInput
+              size="sm"
+              aria-label="Search the waiting list"
+              placeholder="Search name, email or service…"
+              value={search}
+              onValueChange={setSearch}
+            />
+          </div>
+        }
+        primary={
+          <Button
+            color="module"
             size="sm"
-            aria-label="Search the waiting list"
-            placeholder="Search name, email or service…"
-            value={search}
-            onValueChange={setSearch}
+            className="ml-auto"
+            onClick={() => {
+              setAdding(true);
+            }}
+          >
+            <Plus className="size-4" aria-hidden />
+            Add someone
+          </Button>
+        }
+        controls={
+          <>
+            <NativeSelect
+              size="sm"
+              aria-label="Filter by state"
+              className="w-auto"
+              value={status}
+              onChange={(event) => {
+                setStatus(event.target.value as WaitlistStatus | '');
+              }}
+            >
+              {STATUS_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </NativeSelect>
+            <NativeSelect
+              size="sm"
+              aria-label="Filter by service"
+              className="w-auto max-w-44"
+              value={serviceId}
+              onChange={(event) => {
+                setServiceId(event.target.value);
+              }}
+            >
+              <option value="">Any service</option>
+              {serviceList.map((service) => (
+                <option key={service.id} value={service.id}>
+                  {service.name}
+                </option>
+              ))}
+            </NativeSelect>
+          </>
+        }
+        refresh={
+          <RefreshButton
+            isFetching={isFetching}
+            updatedAt={data ? dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void refetch();
+            }}
           />
-        </div>
-
-        <NativeSelect
-          size="sm"
-          aria-label="Filter by state"
-          className="w-auto"
-          value={status}
-          onChange={(event) => {
-            setStatus(event.target.value as WaitlistStatus | '');
-          }}
-        >
-          {STATUS_OPTIONS.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </NativeSelect>
-
-        <NativeSelect
-          size="sm"
-          aria-label="Filter by service"
-          className="w-auto max-w-44"
-          value={serviceId}
-          onChange={(event) => {
-            setServiceId(event.target.value);
-          }}
-        >
-          <option value="">Any service</option>
-          {serviceList.map((service) => (
-            <option key={service.id} value={service.id}>
-              {service.name}
-            </option>
-          ))}
-        </NativeSelect>
-
-        <Button
-          color="module"
-          size="sm"
-          className="ml-auto"
-          onClick={() => {
-            setAdding(true);
-          }}
-        >
-          <Plus className="size-4" aria-hidden />
-          Add someone
-        </Button>
-
-        <RefreshButton
-          isFetching={isFetching}
-          updatedAt={data ? dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void refetch();
-          }}
-        />
-      </PaneToolbar>
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         {error ? (
@@ -633,14 +640,7 @@ function AddToWaitlistModal({
               submit();
             }}
           >
-            {saveError ? (
-              <Alert color="error">
-                <AlertContent>
-                  <AlertTitle>Could not add them</AlertTitle>
-                  <AlertDescription>{saveError}</AlertDescription>
-                </AlertContent>
-              </Alert>
-            ) : null}
+            <SaveFailure title="Could not add them" message={saveError} />
 
             <Field>
               <FieldLabel>For which service</FieldLabel>

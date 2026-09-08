@@ -11,9 +11,7 @@
 
 import { useMemo, useState } from 'react';
 import { PaneWaiting } from '../../components/pane-waiting';
-import Image from 'next/image';
 import { Button, Card, SearchInput } from '@wizeworks/silicaui-react';
-import { Table } from '../../components/table';
 import { faPlus, faUser, faUserPlus } from '@fortawesome/pro-solid-svg-icons';
 import { Icon } from '@piggles/ui';
 import { PaneToolbar, PANE_SHELL } from '../../components/pane-toolbar';
@@ -24,7 +22,11 @@ import type { OpenTarget, SurfaceContext } from '../../lib/surfaces/registry';
 // Read-only import: resolves avatar asset ids to real thumbnail URLs, the same
 // way the content editor's asset fields do.
 import { useMediaAssets, type MediaAsset } from './media';
-import { authorName, useAuthorsList, type Author } from './authors-data';
+// Read-only import: how many sites the business runs, which is the only thing
+// that decides whether a shared byline is worth marking as one.
+import { useSites } from '../sites/data';
+import { useAuthorsList, type Author } from './authors-data';
+import { AuthorsTable } from './authors-list-table';
 import { RowOpenHint } from '../../components/row-open-hint';
 
 /** Registry module for this surface, so the brand's empty-state artwork is this
@@ -38,66 +40,6 @@ function targetFor(event: { shiftKey: boolean; altKey: boolean }): OpenTarget {
   return 'tab';
 }
 
-/** The author's photo, or a person glyph when there isn't one. */
-function AuthorPhoto({ asset }: { asset: MediaAsset | undefined }) {
-  return (
-    <span className="border-base-300 bg-base-200 relative size-11 shrink-0 overflow-hidden rounded-full border">
-      {asset?.url ? (
-        <Image
-          src={asset.url}
-          alt=""
-          fill
-          sizes="44px"
-          className="object-cover"
-          // Unoptimized: cross-origin tenant media whose host is not on the image
-          // optimizer's allow-list — a broken tile plus a console error is worse
-          // than the browser scaling an already-small file. Same call the media
-          // picker makes.
-          unoptimized
-        />
-      ) : (
-        <span className="flex h-full items-center justify-center">
-          <Icon glyph={faUser} className="size-5" aria-hidden />
-        </span>
-      )}
-    </span>
-  );
-}
-
-function AuthorRow({
-  author,
-  asset,
-  onOpen,
-}: {
-  author: Author;
-  asset: MediaAsset | undefined;
-  onOpen: (event: { shiftKey: boolean; altKey: boolean }) => void;
-}) {
-  return (
-    <tr
-      className="cursor-pointer"
-      tabIndex={0}
-      role="button"
-      onClick={onOpen}
-      onKeyDown={(event) => {
-        if (event.key !== 'Enter' && event.key !== ' ') return;
-        event.preventDefault();
-        onOpen(event);
-      }}
-    >
-      <td>
-        <span className="flex min-w-0 items-center gap-3">
-          <AuthorPhoto asset={asset} />
-          {/* The name is the content of the row — everything else is a note about
-              it, so nothing else gets to be the same size. */}
-          <span className="max-w-72 truncate text-base font-medium">{authorName(author)}</span>
-        </span>
-      </td>
-      <td className="hidden max-w-72 truncate font-mono text-sm @xl:table-cell">/{author.slug}</td>
-    </tr>
-  );
-}
-
 export function AuthorsListSurface({ ctx }: { ctx: SurfaceContext }) {
   const [search, setSearch] = useState('');
 
@@ -109,6 +51,11 @@ export function AuthorsListSurface({ ctx }: { ctx: SurfaceContext }) {
   });
 
   const authors = useMemo(() => data?.items ?? [], [data]);
+
+  // The list is already scoped to this site by the server; this only decides
+  // whether "shared across all your sites" is a distinction worth printing.
+  const { data: sites } = useSites();
+  const multiSite = (sites ?? []).length > 1;
 
   // Every avatar in ONE request, so the list shows real faces rather than ids.
   const avatarIds = useMemo(
@@ -242,26 +189,12 @@ export function AuthorsListSurface({ ctx }: { ctx: SurfaceContext }) {
             }}
           />
         ) : (
-          <Table size="sm" hover>
-            <thead>
-              <tr>
-                <th>Author</th>
-                <th className="hidden @xl:table-cell">Web address</th>
-              </tr>
-            </thead>
-            <tbody>
-              {matches.map((author) => (
-                <AuthorRow
-                  key={author.id}
-                  author={author}
-                  asset={author.avatar_asset_id ? assetById.get(author.avatar_asset_id) : undefined}
-                  onOpen={(event) => {
-                    open(author, event);
-                  }}
-                />
-              ))}
-            </tbody>
-          </Table>
+          <AuthorsTable
+            authors={matches}
+            assetById={assetById}
+            showShared={multiSite}
+            onOpen={open}
+          />
         )}
       </Card>
 

@@ -112,8 +112,20 @@ export interface MediaAsset {
   filename: string;
   mimeType: string;
   kind: MediaKind;
-  /** Bytes as a real number — files are capped at 200 MB, so this is safe. */
-  byteSize: number;
+  /** Bytes as a real number — files are capped at 200 MB, so this is safe.
+   *
+   *  NULL when nobody measured it. No file is zero bytes, so a stored 0 never
+   *  means "weighs nothing"; it means the size was never recorded — every linked
+   *  picture, and every stored one whose upload predates the size being written.
+   *  Coercing that to 0 and rendering it through `formatBytes` printed a
+   *  confident **0 bytes** under most of a library (issue 380). */
+  byteSize: number | null;
+  /** The file is LINKED from somewhere else rather than stored here — the key is
+   *  an `http(s):` URL (a hot-linked blueprint picture) or a `data:` URI (an
+   *  inline brand mark). It is why most unmeasured files are unmeasured: there
+   *  was never a local file to weigh. Same test api-rest uses to decide whether a
+   *  key needs resolving through storage. */
+  linked: boolean;
   width: number | null;
   height: number | null;
   durationSec: number | null;
@@ -148,7 +160,8 @@ function toAsset(wire: MediaAssetWire): MediaAsset {
     filename: wire.original_filename,
     mimeType: wire.mime_type,
     kind: mediaKind(wire.mime_type),
-    byteSize: Number.isFinite(byteSize) ? byteSize : 0,
+    byteSize: Number.isFinite(byteSize) && byteSize > 0 ? byteSize : null,
+    linked: /^(?:https?:|data:)/i.test(wire.key),
     width: wire.width,
     height: wire.height,
     durationSec: wire.duration_sec,
@@ -288,6 +301,17 @@ export function useDeleteAsset(id: string) {
 /**
  * A human size — "2.4 MB", not "2516582 bytes".
  */
+/** What to print where a file's size goes.
+ *
+ *  A size nobody recorded must not render as one, and the two reasons a size is
+ *  missing are worth telling apart: a linked picture was never downloaded here,
+ *  so there is nothing of ours to weigh, while a stored file with no size is a
+ *  gap in its own record. */
+export function sizeLabel(asset: Pick<MediaAsset, 'byteSize' | 'linked'>): string {
+  if (asset.byteSize !== null) return formatBytes(asset.byteSize);
+  return asset.linked ? 'Stored somewhere else' : 'Size not recorded';
+}
+
 export function formatBytes(bytes: number): string {
   if (!Number.isFinite(bytes) || bytes <= 0) return '0 bytes';
   const units = ['bytes', 'KB', 'MB', 'GB'];

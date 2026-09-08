@@ -34,7 +34,6 @@ import {
   Text,
   ToggleGroup,
   ToggleGroupItem,
-  ToolbarSeparator,
   Tooltip,
 } from '@wizeworks/silicaui-react';
 import { Grid3x3, QrCode, Search } from 'lucide-react';
@@ -247,103 +246,104 @@ export function BinsListSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Shelf list controls">
-        <Button
-          color="module-inventory"
-          size="sm"
-          onClick={() => {
-            ctx.open('inventory.bins.detail', { id: 'new' });
-          }}
-        >
-          New shelf
-        </Button>
-
-        <Tooltip content="Print labels for the shelves you are looking at">
-          <Button
-            size="sm"
-            variant="outline"
-            color="neutral"
-            onClick={() => {
-              ctx.open(
-                'inventory.bins.labels',
-                { ...(locationId ? { warehouseId: locationId } : {}) },
-                { target: 'beside' }
-              );
+      <PaneToolbar
+        label="Shelf list controls"
+        search={
+          <SearchInput
+            value={search}
+            placeholder="Shelf label or zone"
+            onValueChange={(value) => {
+              setSearch(value);
+              resetWindow();
             }}
-          >
-            <QrCode className="size-4" aria-hidden />
-            Labels
-          </Button>
-        </Tooltip>
-
-        <ToolbarSeparator />
-
-        <SearchInput
-          value={search}
-          placeholder="Shelf label or zone"
-          onValueChange={(value) => {
-            setSearch(value);
-            resetWindow();
-          }}
-        />
-
-        <NativeSelect
-          size="sm"
-          className="max-w-40 shrink"
-          aria-label="Location"
-          value={locationId}
-          onChange={(event) => {
-            setLocationId(event.target.value);
-            resetWindow();
-          }}
-        >
-          <option value="">Every location</option>
-          {activeLocations.map((location) => (
-            <option key={location.id} value={location.id}>
-              {location.name}
-            </option>
-          ))}
-        </NativeSelect>
-
-        <NativeSelect
-          size="sm"
-          className="max-w-36 shrink"
-          aria-label="Kind of shelf"
-          value={type}
-          onChange={(event) => {
-            setType(event.target.value);
-            resetWindow();
-          }}
-        >
-          <option value="">Every kind</option>
-          {BIN_TYPES.map((t) => (
-            <option key={t.value} value={t.value}>
-              {t.label}
-            </option>
-          ))}
-        </NativeSelect>
-
-        <ToggleGroup
-          value={nonEmptyOnly ? ['non-empty'] : []}
-          onValueChange={(value) => {
-            setNonEmptyOnly(value.includes('non-empty'));
-            resetWindow();
-          }}
-        >
-          <ToggleGroupItem value="non-empty" aria-label="Only show shelves holding stock">
-            Holding stock
-          </ToggleGroupItem>
-        </ToggleGroup>
-
-        <RefreshButton
-          className="ml-auto"
-          isFetching={isFetching}
-          updatedAt={data ? dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void refetch();
-          }}
-        />
-      </PaneToolbar>
+          />
+        }
+        controls={
+          <>
+            <Button
+              color="module-inventory"
+              size="sm"
+              onClick={() => {
+                ctx.open('inventory.bins.detail', { id: 'new' });
+              }}
+            >
+              New shelf
+            </Button>
+            <Tooltip content="Print labels for the shelves you are looking at">
+              <Button
+                size="sm"
+                variant="outline"
+                color="neutral"
+                onClick={() => {
+                  ctx.open(
+                    'inventory.bins.labels',
+                    { ...(locationId ? { warehouseId: locationId } : {}) },
+                    { target: 'beside' }
+                  );
+                }}
+              >
+                <QrCode className="size-4" aria-hidden />
+                Labels
+              </Button>
+            </Tooltip>
+            <NativeSelect
+              size="sm"
+              className="max-w-40 shrink"
+              aria-label="Location"
+              value={locationId}
+              onChange={(event) => {
+                setLocationId(event.target.value);
+                resetWindow();
+              }}
+            >
+              <option value="">Every location</option>
+              {activeLocations.map((location) => (
+                <option key={location.id} value={location.id}>
+                  {location.name}
+                </option>
+              ))}
+            </NativeSelect>
+            <NativeSelect
+              size="sm"
+              className="max-w-36 shrink"
+              aria-label="Kind of shelf"
+              value={type}
+              onChange={(event) => {
+                setType(event.target.value);
+                resetWindow();
+              }}
+            >
+              <option value="">Every kind</option>
+              {BIN_TYPES.map((t) => (
+                <option key={t.value} value={t.value}>
+                  {t.label}
+                </option>
+              ))}
+            </NativeSelect>
+            <ToggleGroup
+              value={nonEmptyOnly ? ['non-empty'] : []}
+              onValueChange={(value) => {
+                setNonEmptyOnly(value.includes('non-empty'));
+                resetWindow();
+              }}
+            >
+              <ToggleGroupItem value="non-empty" aria-label="Only show shelves holding stock">
+                Holding stock
+              </ToggleGroupItem>
+            </ToggleGroup>
+          </>
+        }
+        refresh={
+          <RefreshButton
+            className="ml-auto"
+            isFetching={isFetching}
+            updatedAt={data ? dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void refetch();
+            }}
+          />
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">{body()}</div>
 

@@ -135,11 +135,16 @@ export function useCategoryWrites({
 
   const onDelete = async () => {
     if (!category) return;
+    // What a delete DETACHES is everything filed here, not just what a shopper
+    // can currently see — an archived product is still filed, and un-archiving it
+    // later would find its heading gone. So this sentence counts both halves,
+    // while the list column counts only the visible one (issue 382).
+    const filed = category.productCount + category.hiddenProductCount;
     const ok = await confirm({
       title: `Delete ${category.name}?`,
       description:
-        category.productCount > 0
-          ? `This category comes off your website menu. The ${String(category.productCount)} product${category.productCount === 1 ? '' : 's'} filed here ${category.productCount === 1 ? 'is' : 'are'} kept — ${category.productCount === 1 ? 'it' : 'they'} just stop appearing under this heading. This cannot be undone.`
+        filed > 0
+          ? `This category comes off your website menu. The ${String(filed)} product${filed === 1 ? '' : 's'} filed here ${filed === 1 ? 'is' : 'are'} kept — ${filed === 1 ? 'it' : 'they'} just stop appearing under this heading. This cannot be undone.`
           : 'This category comes off your website menu. This cannot be undone. Categories with sub-categories underneath them cannot be deleted until those are moved or removed first.',
       confirmLabel: 'Delete this category',
       cancelLabel: 'Keep it',

@@ -9,7 +9,7 @@ import type { AddressSnapshotType, RateOption, ShipmentRequest } from '@wizework
 
 import { CommerceNotFoundError, CommerceValidationError } from '../errors';
 import type { ServiceContext } from '../errors';
-import { rateShipment } from './shipping-service';
+import { rateShipment, shipmentContents } from './shipping-service';
 import { resolvePackageForItems, resolveShipFromAddress } from './shipping-request-resolver';
 
 export async function buildOutboundShipmentRequest(
@@ -103,5 +103,23 @@ export async function quoteOutboundRates(
   fulfillmentId: string
 ): Promise<RateOption[]> {
   const request = await buildOutboundShipmentRequest(ctx, fulfillmentId);
-  return rateShipment(ctx, request);
+  // Staff picking a carrier see the same manual options a shopper would, so
+  // the parcel's product groups have to travel here too — otherwise a coats
+  // surcharge shows up against a fulfillment of ordinary goods.
+  const contents = await shipmentContents(ctx, await fulfillmentVariantIds(ctx, fulfillmentId));
+  return rateShipment(ctx, request, contents);
+}
+
+/** The variants in one fulfillment, for resolving its product groups. */
+async function fulfillmentVariantIds(
+  ctx: ServiceContext,
+  fulfillmentId: string
+): Promise<string[]> {
+  return withTenant(ctx, async (tx) => {
+    const lines = await tx.orderFulfillmentItem.findMany({
+      where: { fulfillmentId },
+      select: { orderItem: { select: { variantId: true } } },
+    });
+    return lines.map((line) => line.orderItem.variantId).filter((id): id is string => Boolean(id));
+  });
 }

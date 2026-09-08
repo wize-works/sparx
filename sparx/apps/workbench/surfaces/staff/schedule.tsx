@@ -257,78 +257,82 @@ export function ScheduleSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Schedule controls" wrap>
-        <div className="flex items-center gap-1">
-          <Button
-            size="sm"
-            variant="ghost"
-            color="neutral"
-            aria-label="Previous week"
-            onClick={() => {
-              setRange((current) => shiftRange(current, -1));
+      <PaneToolbar
+        label="Schedule controls"
+        controls={
+          <>
+            <div className="flex items-center gap-1">
+              <Button
+                size="sm"
+                variant="ghost"
+                color="neutral"
+                aria-label="Previous week"
+                onClick={() => {
+                  setRange((current) => shiftRange(current, -1));
+                }}
+              >
+                <ChevronLeft className="size-4" aria-hidden />
+              </Button>
+              <Text as="span" className="min-w-40 text-center text-sm font-medium">
+                {new Date(`${range.from}T00:00:00.000Z`).toLocaleDateString(undefined, {
+                  day: 'numeric',
+                  month: 'short',
+                  timeZone: 'UTC',
+                })}
+                {' – '}
+                {new Date(`${range.to}T00:00:00.000Z`).toLocaleDateString(undefined, {
+                  day: 'numeric',
+                  month: 'short',
+                  timeZone: 'UTC',
+                })}
+              </Text>
+              <Button
+                size="sm"
+                variant="ghost"
+                color="neutral"
+                aria-label="Next week"
+                onClick={() => {
+                  setRange((current) => shiftRange(current, 1));
+                }}
+              >
+                <ChevronRight className="size-4" aria-hidden />
+              </Button>
+            </div>
+            <Button
+              size="sm"
+              variant="ghost"
+              color="neutral"
+              onClick={() => {
+                setRange(weekRange(new Date()));
+              }}
+            >
+              This week
+            </Button>
+            {drafts.length > 0 ? (
+              <Button
+                size="sm"
+                color="module"
+                className="ml-auto"
+                loading={publish.isPending}
+                onClick={doPublish}
+              >
+                <Send className="size-4" aria-hidden />
+                Publish {String(drafts.length)} {drafts.length === 1 ? 'shift' : 'shifts'}
+              </Button>
+            ) : null}
+          </>
+        }
+        refresh={
+          <RefreshButton
+            className={drafts.length > 0 ? undefined : 'ml-auto'}
+            isFetching={shifts.isFetching}
+            updatedAt={shifts.data ? shifts.dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void shifts.refetch();
             }}
-          >
-            <ChevronLeft className="size-4" aria-hidden />
-          </Button>
-          <Text as="span" className="min-w-40 text-center text-sm font-medium">
-            {new Date(`${range.from}T00:00:00.000Z`).toLocaleDateString(undefined, {
-              day: 'numeric',
-              month: 'short',
-              timeZone: 'UTC',
-            })}
-            {' – '}
-            {new Date(`${range.to}T00:00:00.000Z`).toLocaleDateString(undefined, {
-              day: 'numeric',
-              month: 'short',
-              timeZone: 'UTC',
-            })}
-          </Text>
-          <Button
-            size="sm"
-            variant="ghost"
-            color="neutral"
-            aria-label="Next week"
-            onClick={() => {
-              setRange((current) => shiftRange(current, 1));
-            }}
-          >
-            <ChevronRight className="size-4" aria-hidden />
-          </Button>
-        </div>
-
-        <Button
-          size="sm"
-          variant="ghost"
-          color="neutral"
-          onClick={() => {
-            setRange(weekRange(new Date()));
-          }}
-        >
-          This week
-        </Button>
-
-        {drafts.length > 0 ? (
-          <Button
-            size="sm"
-            color="module"
-            className="ml-auto"
-            loading={publish.isPending}
-            onClick={doPublish}
-          >
-            <Send className="size-4" aria-hidden />
-            Publish {String(drafts.length)} {drafts.length === 1 ? 'shift' : 'shifts'}
-          </Button>
-        ) : null}
-
-        <RefreshButton
-          className={drafts.length > 0 ? undefined : 'ml-auto'}
-          isFetching={shifts.isFetching}
-          updatedAt={shifts.data ? shifts.dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void shifts.refetch();
-          }}
-        />
-      </PaneToolbar>
+          />
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         {shifts.isError ? (

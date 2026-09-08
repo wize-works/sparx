@@ -1,8 +1,13 @@
 'use client';
 
-// The rules themselves. Rows are not clickable: a redirect has no editable
-// surface — it is created, imported or deleted, never changed in place — so the
-// only per-row action is remove.
+// The rules themselves.
+//
+// A ROW OPENS THE RULE. This once said "rows are not clickable: a redirect has
+// no editable surface — it is created, imported or deleted, never changed in
+// place", and that was a dead end wearing a design decision: adding a duplicate
+// is refused with "a redirect from /shipping already exists", and the only way
+// to act on that sentence was to delete the rule — through a confirm warning
+// that its search-engine standing is lost — and type it again (issue 396).
 
 import { Badge, Button } from '@wizeworks/silicaui-react';
 import { Table } from '../../components/table';
@@ -12,13 +17,14 @@ import { formatDate, redirectTypeMeta, type Redirect } from './redirects-data';
 
 interface RedirectsTableProps {
   rows: readonly Redirect[];
+  onOpen: (row: Redirect) => void;
   onDelete: (row: Redirect) => void;
   /** Which row is mid-delete, so only its own button spins. */
   removingId: string | null;
   busy: boolean;
 }
 
-export function RedirectsTable({ rows, onDelete, removingId, busy }: RedirectsTableProps) {
+export function RedirectsTable({ rows, onOpen, onDelete, removingId, busy }: RedirectsTableProps) {
   return (
     <Table size="sm">
       <thead>
@@ -36,7 +42,24 @@ export function RedirectsTable({ rows, onDelete, removingId, busy }: RedirectsTa
         {rows.map((row) => {
           const type = redirectTypeMeta(row.status_code);
           return (
-            <tr key={row.id}>
+            <tr
+              key={row.id}
+              // A row is the rule. `tabIndex`/`onKeyDown` rather than wrapping
+              // the cells in a button: the row already holds a Remove button,
+              // and a button inside a button is invalid and swallows the click.
+              className="hover:bg-base-200 cursor-pointer"
+              tabIndex={0}
+              aria-label={`Change the redirect from ${row.from_path}`}
+              onClick={() => {
+                onOpen(row);
+              }}
+              onKeyDown={(event) => {
+                if (event.key !== 'Enter' && event.key !== ' ') return;
+                if (event.target !== event.currentTarget) return;
+                event.preventDefault();
+                onOpen(row);
+              }}
+            >
               <td>
                 <div className="flex min-w-0 flex-col gap-0.5">
                   <span className="max-w-96 truncate font-mono text-sm font-medium">
@@ -72,7 +95,9 @@ export function RedirectsTable({ rows, onDelete, removingId, busy }: RedirectsTa
                   title="Remove this redirect"
                   loading={removingId === row.id && busy}
                   disabled={busy}
-                  onClick={() => {
+                  onClick={(event) => {
+                    // The row opens the rule; this must not do both.
+                    event.stopPropagation();
                     onDelete(row);
                   }}
                 >

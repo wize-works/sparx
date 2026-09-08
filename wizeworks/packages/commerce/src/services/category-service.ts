@@ -19,10 +19,10 @@ import {
   UpdateCategoryInput,
 } from '@wizeworks/commerce-schemas';
 import { withTenant } from '@wizeworks/db';
-import type { Prisma, ProductCategory } from '@wizeworks/db';
+import type { Prisma, ProductCategory, TxClient } from '@wizeworks/db';
 
 import { writeAuditLog } from '../audit';
-import { categorySiteVisibility } from './site-visibility';
+import { categorySiteVisibility, productSiteVisibility } from './site-visibility';
 import { CommerceConflictError, CommerceNotFoundError, CommerceValidationError } from '../errors';
 import type { ServiceContext } from '../errors';
 import { publishCommerceEvent } from '../events';
@@ -40,7 +40,24 @@ export interface CategoryRow {
   featured: boolean;
   iconMediaId: string | null;
   heroMediaId: string | null;
+  /** Products a shopper would actually FIND under this heading right now:
+   *  active, not soft-deleted, and — when a site is in scope — on that site.
+   *
+   *  This is deliberately the plainly-named field, because it is the number a
+   *  screen beside a category should print: it is the same number the shop's own
+   *  category page prints. It used to be `_count.products`, a raw count of join
+   *  rows, which counted archived, drafted, soft-deleted and other-site products
+   *  alike — so Juniper Row's console read "Goods · 6" over a shop page that
+   *  said "0 products · Nothing here yet", and seven of her eight stocked
+   *  categories overstated (issue 382). */
   productCount: number;
+  /** Products filed here that a shopper CANNOT see — archived, drafted,
+   *  soft-deleted, or scoped to one of the tenant's other sites.
+   *
+   *  Filed-in-total is `productCount + hiddenProductCount`, and that sum is what
+   *  a DELETE detaches — so the delete confirmation asks for both rather than
+   *  promising to keep only the visible ones. */
+  hiddenProductCount: number;
   seoTitle: string | null;
   seoDescription: string | null;
   ogImageId: string | null;
@@ -97,36 +114,61 @@ export async function tree(
       orderBy: [{ path: 'asc' }, { position: 'asc' }],
       include: { _count: { select: { products: true } } },
     });
-    return filtering ? buildFiltered(rows, q, featured) : buildTree(rows);
+    // One grouped query for the whole tree rather than one per category — this
+    // endpoint returns EVERY category in a single response (the parent pickers
+    // depend on that), so a per-row count would be a query per aisle.
+    const visible = await visibleProductCounts(
+      tx,
+      rows.map((r) => r.id),
+      opts.propertyId
+    );
+    return filtering ? buildFiltered(rows, visible, q, featured) : buildTree(rows, visible);
   });
 }
 
-export async function get(ctx: ServiceContext, categoryId: string): Promise<CategoryRow> {
-  const row = await withTenant(ctx, (tx) =>
-    tx.productCategory.findFirst({
+/** `propertyId` scopes the product counts to ONE site, the same way {@link tree}
+ *  does. Omitted, the counts answer "visible anywhere in this business", which is
+ *  what a caller with no site in hand (the blueprint updater) should get. */
+export async function get(
+  ctx: ServiceContext,
+  categoryId: string,
+  propertyId?: string
+): Promise<CategoryRow> {
+  const found = await withTenant(ctx, async (tx) => {
+    const row = await tx.productCategory.findFirst({
       where: { id: categoryId, deletedAt: null },
       include: {
         _count: { select: { products: true } },
         propertyLinks: { select: { propertyId: true } },
       },
-    })
-  );
-  if (!row) throw new CommerceNotFoundError('Category', categoryId);
-  return toCategoryRow(row);
+    });
+    if (!row) return null;
+    const visible = await visibleProductCounts(tx, [row.id], propertyId);
+    return toCategoryRow(row, visible.get(row.id) ?? 0);
+  });
+  if (!found) throw new CommerceNotFoundError('Category', categoryId);
+  return found;
 }
 
-export async function getByHandle(ctx: ServiceContext, handle: string): Promise<CategoryRow> {
-  const row = await withTenant(ctx, (tx) =>
-    tx.productCategory.findFirst({
+export async function getByHandle(
+  ctx: ServiceContext,
+  handle: string,
+  propertyId?: string
+): Promise<CategoryRow> {
+  const found = await withTenant(ctx, async (tx) => {
+    const row = await tx.productCategory.findFirst({
       where: { handle, deletedAt: null },
       include: {
         _count: { select: { products: true } },
         propertyLinks: { select: { propertyId: true } },
       },
-    })
-  );
-  if (!row) throw new CommerceNotFoundError('Category', handle);
-  return toCategoryRow(row);
+    });
+    if (!row) return null;
+    const visible = await visibleProductCounts(tx, [row.id], propertyId);
+    return toCategoryRow(row, visible.get(row.id) ?? 0);
+  });
+  if (!found) throw new CommerceNotFoundError('Category', handle);
+  return found;
 }
 
 // ─── Writes ───────────────────────────────────────────────────────────
@@ -454,6 +496,47 @@ export async function setProductCategories(
 
 // ─── Internal helpers ─────────────────────────────────────────────────
 
+/** What a shopper can actually see, as a `where` on Product.
+ *
+ *  This MIRRORS the storefront's own product filter (api-rest
+ *  `public/commerce.ts`: `status: 'active'`, `deletedAt: null`,
+ *  `productSiteVisibilityWhere`). The two have to agree, because the whole point
+ *  of the count is that it predicts what the shop page will print — if this
+ *  drifts from that, the console starts lying again in a new way. */
+function shopperVisibleProduct(propertyId?: string): Prisma.ProductWhereInput {
+  return {
+    status: 'active',
+    deletedAt: null,
+    ...(propertyId ? productSiteVisibility(propertyId) : {}),
+  };
+}
+
+/** How many VISIBLE products sit in each of these categories, keyed by id.
+ *
+ *  Counted from the products themselves rather than from the join table, for the
+ *  same reason media usage is counted rather than remembered: a link row survives
+ *  its product being archived or soft-deleted, so `_count.products` answers "how
+ *  many links exist" while every screen asks "how many things are in this part of
+ *  my shop". Categories with nothing visible come back as 0 rather than absent,
+ *  so a caller never has to tell "none" apart from "not asked about". */
+async function visibleProductCounts(
+  tx: TxClient,
+  categoryIds: readonly string[],
+  propertyId?: string
+): Promise<Map<string, number>> {
+  const counts = new Map<string, number>();
+  for (const id of categoryIds) counts.set(id, 0);
+  if (categoryIds.length === 0) return counts;
+
+  const rows = await tx.categoryProduct.groupBy({
+    by: ['categoryId'],
+    where: { categoryId: { in: [...categoryIds] }, product: shopperVisibleProduct(propertyId) },
+    _count: { _all: true },
+  });
+  for (const row of rows) counts.set(row.categoryId, row._count._all);
+  return counts;
+}
+
 type CategoryWithCount = ProductCategory & {
   _count: { products: number };
   // Only the single-category reads (`get`/`getByHandle`) include this; the tree
@@ -462,7 +545,11 @@ type CategoryWithCount = ProductCategory & {
   propertyLinks?: { propertyId: string }[];
 };
 
-function toCategoryRow(c: CategoryWithCount): CategoryRow {
+/** `visible` is the shopper-visible count from {@link visibleProductCounts}. It
+ *  is required rather than optional on purpose: every read path has to decide
+ *  what it means, and an accidental omission would silently reinstate the raw
+ *  join-row count this whole helper exists to replace. */
+function toCategoryRow(c: CategoryWithCount, visible: number): CategoryRow {
   return {
     id: c.id,
     name: c.name,
@@ -474,7 +561,10 @@ function toCategoryRow(c: CategoryWithCount): CategoryRow {
     featured: c.featured,
     iconMediaId: c.iconMediaId,
     heroMediaId: c.heroMediaId,
-    productCount: c._count.products,
+    productCount: visible,
+    // Never negative: the visible set is a subset of the filed set, both counted
+    // over the same join rows in the same transaction.
+    hiddenProductCount: Math.max(0, c._count.products - visible),
     seoTitle: c.seoTitle,
     seoDescription: c.seoDescription,
     ogImageId: c.ogImageId,
@@ -484,11 +574,11 @@ function toCategoryRow(c: CategoryWithCount): CategoryRow {
   };
 }
 
-function buildTree(rows: CategoryWithCount[]): CategoryTreeNode[] {
+function buildTree(rows: CategoryWithCount[], visible: Map<string, number>): CategoryTreeNode[] {
   const nodes = new Map<string, CategoryTreeNode>();
   for (const row of rows) {
     nodes.set(row.id, {
-      ...toCategoryRow(row),
+      ...toCategoryRow(row, visible.get(row.id) ?? 0),
       depth: row.path.split('.').length - 1,
       children: [],
     });
@@ -540,6 +630,7 @@ export function categoryMatchesFilter(
 // "under {parent}" context the flattened-away hierarchy would otherwise give.
 function buildFiltered(
   rows: CategoryWithCount[],
+  visible: Map<string, number>,
   q: string,
   featured: boolean | undefined
 ): CategoryTreeNode[] {
@@ -548,7 +639,7 @@ function buildFiltered(
   for (const row of rows) {
     if (!categoryMatchesFilter(row, q, featured)) continue;
     matches.push({
-      ...toCategoryRow(row),
+      ...toCategoryRow(row, visible.get(row.id) ?? 0),
       depth: row.path.split('.').length - 1,
       children: [],
       parentName: row.parentId ? (nameById.get(row.parentId) ?? null) : null,

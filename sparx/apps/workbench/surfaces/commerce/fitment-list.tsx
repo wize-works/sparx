@@ -73,47 +73,58 @@ export function FitmentListSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Compatibility list controls">
-        <div className="max-w-xs min-w-0 flex-1">
-          <SearchInput
+      <PaneToolbar
+        label="Compatibility list controls"
+        search={
+          <div className="max-w-xs min-w-0 flex-1">
+            <SearchInput
+              size="sm"
+              aria-label="Search compatibility lists"
+              placeholder="Search lists…"
+              value={search}
+              onValueChange={setSearch}
+            />
+          </div>
+        }
+        primary={
+          <Button
             size="sm"
-            aria-label="Search compatibility lists"
-            placeholder="Search lists…"
-            value={search}
-            onValueChange={setSearch}
+            variant="outline"
+            color="neutral"
+            className="ml-auto shrink-0 whitespace-nowrap"
+            title="Start from a ready-made list"
+            onClick={() => {
+              setPickerOpen(true);
+            }}
+          >
+            <Sparkles className="size-4" aria-hidden />
+            <span className="hidden @xl:inline">Starter library</span>
+          </Button>
+        }
+        controls={
+          <>
+            <Button
+              color="module"
+              size="sm"
+              className="shrink-0 whitespace-nowrap"
+              title="Build a list from scratch — hold Shift to open alongside, Alt for a new window"
+              onClick={create}
+            >
+              <Plus className="size-4" aria-hidden />
+              <span className="hidden @xl:inline">Add a list</span>
+            </Button>
+          </>
+        }
+        refresh={
+          <RefreshButton
+            isFetching={isFetching}
+            updatedAt={data ? dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void refetch();
+            }}
           />
-        </div>
-        <Button
-          size="sm"
-          variant="outline"
-          color="neutral"
-          className="ml-auto shrink-0 whitespace-nowrap"
-          title="Start from a ready-made list"
-          onClick={() => {
-            setPickerOpen(true);
-          }}
-        >
-          <Sparkles className="size-4" aria-hidden />
-          <span className="hidden @xl:inline">Starter library</span>
-        </Button>
-        <Button
-          color="module"
-          size="sm"
-          className="shrink-0 whitespace-nowrap"
-          title="Build a list from scratch — hold Shift to open alongside, Alt for a new window"
-          onClick={create}
-        >
-          <Plus className="size-4" aria-hidden />
-          <span className="hidden @xl:inline">Add a list</span>
-        </Button>
-        <RefreshButton
-          isFetching={isFetching}
-          updatedAt={data ? dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void refetch();
-          }}
-        />
-      </PaneToolbar>
+        }
+      />
 
       <Card className="min-h-0 flex-1 overflow-y-auto">
         {isError ? (

@@ -55,6 +55,7 @@ import { RefreshButton } from '../../components/refresh-button';
 import type { SurfaceContext } from '../../lib/surfaces/registry';
 import { BodyFields } from './schema-form';
 import { MediaPickerProvider } from './media-picker';
+import { SaveFailure } from '@/components/save-failure';
 import {
   contentErrorMessage,
   entryStatusState,
@@ -75,6 +76,7 @@ import {
   type ContentEntry,
   type ContentType,
 } from './data';
+import { PaneLoadError } from '../../components/pane-load-error';
 
 const COLUMN = 'mx-auto flex w-full max-w-3xl flex-col gap-4';
 
@@ -302,18 +304,21 @@ function CreateEntry({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="New content actions">
-        <Button
-          color="module"
-          size="sm"
-          className="ml-auto"
-          disabled={!type}
-          loading={create.isPending}
-          onClick={submit}
-        >
-          Create
-        </Button>
-      </PaneToolbar>
+      <PaneToolbar
+        label="New content actions"
+        primary={
+          <Button
+            color="module"
+            size="sm"
+            className="ml-auto"
+            disabled={!type}
+            loading={create.isPending}
+            onClick={submit}
+          >
+            Create
+          </Button>
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className={COLUMN}>
@@ -327,14 +332,7 @@ function CreateEntry({ ctx }: { ctx: SurfaceContext }) {
             </Text>
           </div>
 
-          {failure ? (
-            <Alert color="error">
-              <AlertContent>
-                <AlertTitle>Could not create this</AlertTitle>
-                <AlertDescription>{failure}</AlertDescription>
-              </AlertContent>
-            </Alert>
-          ) : null}
+          <SaveFailure title="Could not create this" message={failure} />
 
           {typesError ? (
             <Alert color="error">
@@ -432,6 +430,7 @@ function EditEntry({ ctx, id }: { ctx: SurfaceContext; id: string }) {
     data: entry,
     isPending,
     isError,
+    error,
     isFetching,
     dataUpdatedAt,
     refetch,
@@ -495,26 +494,15 @@ function EditEntry({ ctx, id }: { ctx: SurfaceContext; id: string }) {
 
   if (isError) {
     return (
-      <div className="flex h-full items-center justify-center p-8">
-        <Alert color="error" className="max-w-md">
-          <AlertContent>
-            <AlertTitle>Could not load this</AlertTitle>
-            <AlertDescription>
-              This is a problem reaching the server. The content itself is unaffected.
-            </AlertDescription>
-          </AlertContent>
-          <Button
-            size="sm"
-            color="error"
-            variant="soft"
-            onClick={() => {
-              void refetch();
-            }}
-          >
-            Try again
-          </Button>
-        </Alert>
-      </div>
+      <PaneLoadError
+        error={error}
+        noun="entry"
+        title="Could not load this entry"
+        description="This is a problem reaching the server. The content itself is unaffected."
+        onRetry={() => {
+          void refetch();
+        }}
+      />
     );
   }
 
@@ -709,59 +697,64 @@ function ManageBody({
     <div className={PANE_SHELL}>
       {/* `wrap` because the lifecycle actions that appear depend on the entry's
           state — there is no fixed set to reduce to one line. */}
-      <PaneToolbar label="Content actions" wrap>
-        <Badge color={state.tone} variant="soft" size="sm">
-          {state.label}
-        </Badge>
+      <PaneToolbar
+        label="Content actions"
+        controls={
+          <>
+            <Badge color={state.tone} variant="soft" size="sm">
+              {state.label}
+            </Badge>
+            <div className="ml-auto flex flex-wrap items-center gap-2">
+              {!isPublished ? (
+                <Button size="sm" color="module" loading={publish.isPending} onClick={publishNow}>
+                  <Send className="size-4" aria-hidden />
+                  {isScheduled ? 'Publish now' : 'Publish'}
+                </Button>
+              ) : null}
+              {!isPublished && !isScheduled ? (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  color="neutral"
+                  disabled={lifecycleBusy}
+                  onClick={() => {
+                    setScheduleOpen(true);
+                  }}
+                >
+                  <CalendarClock className="size-4" aria-hidden />
+                  Schedule…
+                </Button>
+              ) : null}
+              {isPublished || isScheduled ? (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  color="neutral"
+                  loading={unpublish.isPending}
+                  onClick={() => {
+                    void onUnpublish();
+                  }}
+                >
+                  {isScheduled ? 'Cancel schedule' : 'Unpublish'}
+                </Button>
+              ) : null}
 
-        <div className="ml-auto flex flex-wrap items-center gap-2">
-          {!isPublished ? (
-            <Button size="sm" color="module" loading={publish.isPending} onClick={publishNow}>
-              <Send className="size-4" aria-hidden />
-              {isScheduled ? 'Publish now' : 'Publish'}
-            </Button>
-          ) : null}
-          {!isPublished && !isScheduled ? (
-            <Button
-              size="sm"
-              variant="outline"
-              color="neutral"
-              disabled={lifecycleBusy}
-              onClick={() => {
-                setScheduleOpen(true);
-              }}
-            >
-              <CalendarClock className="size-4" aria-hidden />
-              Schedule…
-            </Button>
-          ) : null}
-          {isPublished || isScheduled ? (
-            <Button
-              size="sm"
-              variant="outline"
-              color="neutral"
-              loading={unpublish.isPending}
-              onClick={() => {
-                void onUnpublish();
-              }}
-            >
-              {isScheduled ? 'Cancel schedule' : 'Unpublish'}
-            </Button>
-          ) : null}
-
-          <Button
-            size="sm"
-            color="module"
-            disabled={!dirty}
-            loading={update.isPending}
-            onClick={save}
-          >
-            Save
-          </Button>
-        </div>
-
-        <RefreshButton isFetching={isFetching} updatedAt={dataUpdatedAt} onRefresh={refetch} />
-      </PaneToolbar>
+              <Button
+                size="sm"
+                color="module"
+                disabled={!dirty}
+                loading={update.isPending}
+                onClick={save}
+              >
+                Save
+              </Button>
+            </div>
+          </>
+        }
+        refresh={
+          <RefreshButton isFetching={isFetching} updatedAt={dataUpdatedAt} onRefresh={refetch} />
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className={COLUMN}>

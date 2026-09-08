@@ -5,6 +5,7 @@
 // The kind picks the starting ladder. Everything else is easier to decide once
 // there is a campaign on screen to decide it about.
 
+import { shownInPlace } from '@wizeworks/query';
 import { useState } from 'react';
 import {
   Button,
@@ -57,6 +58,7 @@ export function NewCampaign({ ctx }: { ctx: SurfaceContext }) {
           // edited are one campaign.
           ctx.open('funnels.campaign', { id: funnel.id }, { target: 'replace' });
         },
+        onError: shownInPlace,
       }
     );
   };

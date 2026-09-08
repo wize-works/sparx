@@ -27,7 +27,6 @@ import {
   SearchInput,
   Table,
   Timestamp,
-  ToolbarSeparator,
 } from '@wizeworks/silicaui-react';
 import { Cable, FileSpreadsheet, Link2, Plus, Server } from 'lucide-react';
 import { ListPagination, MAX_TAKE, type PageSize } from '../../components/list-pagination';
@@ -243,52 +242,58 @@ export function SourcesListSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Stock source controls">
-        <div className="max-w-xs min-w-0 flex-1">
-          <SearchInput
-            size="sm"
-            aria-label="Search stock sources"
-            placeholder="Source name…"
-            value={search}
-            onValueChange={(next) => {
-              setSearch(next);
-              resetWindow();
+      <PaneToolbar
+        label="Stock source controls"
+        search={
+          <div className="max-w-xs min-w-0 flex-1">
+            <SearchInput
+              size="sm"
+              aria-label="Search stock sources"
+              placeholder="Source name…"
+              value={search}
+              onValueChange={(next) => {
+                setSearch(next);
+                resetWindow();
+              }}
+            />
+          </div>
+        }
+        primary={
+          <Button size="sm" color="module" className="ml-auto shrink-0" onClick={addSource}>
+            <Plus className="size-4" aria-hidden />
+            <span className="hidden @sm:inline">Add a source</span>
+          </Button>
+        }
+        controls={
+          <>
+            <NativeSelect
+              size="sm"
+              className="max-w-40 shrink"
+              aria-label="Show sources with status"
+              value={status}
+              onChange={(event) => {
+                setStatus(event.target.value as SourceStatus | '');
+                resetWindow();
+              }}
+            >
+              {STATUS_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </NativeSelect>
+          </>
+        }
+        refresh={
+          <RefreshButton
+            isFetching={isFetching}
+            updatedAt={data ? dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void refetch();
             }}
           />
-        </div>
-
-        <ToolbarSeparator className="hidden @xl:block" />
-
-        <NativeSelect
-          size="sm"
-          className="max-w-40 shrink"
-          aria-label="Show sources with status"
-          value={status}
-          onChange={(event) => {
-            setStatus(event.target.value as SourceStatus | '');
-            resetWindow();
-          }}
-        >
-          {STATUS_OPTIONS.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </NativeSelect>
-
-        <Button size="sm" color="module" className="ml-auto shrink-0" onClick={addSource}>
-          <Plus className="size-4" aria-hidden />
-          <span className="hidden @sm:inline">Add a source</span>
-        </Button>
-
-        <RefreshButton
-          isFetching={isFetching}
-          updatedAt={data ? dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void refetch();
-          }}
-        />
-      </PaneToolbar>
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">{body()}</div>
 

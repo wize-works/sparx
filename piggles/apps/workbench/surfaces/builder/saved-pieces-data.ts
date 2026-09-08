@@ -25,6 +25,7 @@ import { useMutation, useQuery, useQueryClient } from '@wizeworks/query';
 import { ApiError } from '@wizeworks/api-client';
 import { apiErrorMessage } from '../../lib/api-error';
 import { api } from '../../lib/api/client';
+import { invalidatePieceLibrary, pieceKeys } from '../../lib/studio/piece-keys';
 
 /* ── Shapes (mirrors of @wizeworks/builder-schemas DTOs, carried not imported) ── */
 
@@ -87,20 +88,20 @@ export interface PieceUsage {
   pages: { id: string; name: string }[];
   layouts: { id: string; name: string }[];
   total: number;
+  /** How many of those would REFUSE a delete. Not the same as `total`: a piece
+   *  placed by the current editor DETACHES — the page keeps the design and stops
+   *  following the master — so it is used without standing in the way. */
+  blocking: number;
   pinnedVersions: number[];
 }
 
 /* ── The query-key tree ─────────────────────────────────────────────────── */
 
-export const pieceKeys = {
-  all: ['builder', 'components'] as const,
-  // Separate from the detail keys so a list refresh can be targeted WITHOUT
-  // re-touching an open detail — which matters on delete, where refetching a
-  // just-deleted (still-mounted) detail would 404 mid-close.
-  list: () => [...pieceKeys.all, 'list'] as const,
-  detail: (key: string) => [...pieceKeys.all, 'piece', key] as const,
-  usages: (key: string) => [...pieceKeys.all, 'piece', key, 'usages'] as const,
-};
+// Owned by `lib/studio/piece-keys.ts`, alongside the two keys the EDITOR caches
+// the same library under. It lived here, they lived there, and nothing cleared
+// across the split — so a piece saved in the editor left this pane reading "No
+// saved pieces yet" over a row already in the database (issue 394).
+export { pieceKeys };
 
 /* ── Reads ──────────────────────────────────────────────────────────────── */
 
@@ -157,8 +158,9 @@ export function useUpdatePiece(key: string) {
     mutationFn: (input: UpdatePieceInput) =>
       api.patch<Piece>(`/v1/builder/components/${encodeURIComponent(key)}`, input),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: pieceKeys.list() });
-      void queryClient.invalidateQueries({ queryKey: pieceKeys.detail(key) });
+      // The whole library, not just this pane's two keys — a rename here is the
+      // name the editor's Add panel offers.
+      invalidatePieceLibrary(queryClient);
     },
   });
 }
@@ -172,10 +174,11 @@ export function useDeletePiece(key: string) {
   return useMutation({
     mutationFn: () => api.delete(`/v1/builder/components/${encodeURIComponent(key)}`),
     onSuccess: () => {
-      // Only the LIST is refreshed. The detail query is left alone: the delete
-      // closes this pane, and disturbing its still-mounted observer while
-      // dockview commits the close lands a flushSync inside a lifecycle method.
-      void queryClient.invalidateQueries({ queryKey: pieceKeys.list() });
+      // Everything EXCEPT this piece's own detail: the delete closes this pane,
+      // and disturbing its still-mounted observer while dockview commits the
+      // close lands a flushSync inside a lifecycle method. The editor's caches
+      // still have to go — a deleted piece must stop appearing in Add.
+      invalidatePieceLibrary(queryClient, { skipDetail: key });
     },
   });
 }

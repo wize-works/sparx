@@ -170,30 +170,37 @@ export function AsnListSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Inbound shipment controls">
-        <NativeSelect
-          size="sm"
-          className="max-w-48 shrink"
-          aria-label="Show shipments that are"
-          value={view}
-          onChange={(event) => {
-            setView(event.target.value as View);
-          }}
-        >
-          <option value="open">On the way</option>
-          <option value="overdue">Should have arrived</option>
-          <option value="received">Arrived</option>
-          <option value="all">Everything</option>
-        </NativeSelect>
-        <RefreshButton
-          className="ml-auto"
-          isFetching={notices.isFetching}
-          updatedAt={notices.data ? notices.dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void notices.refetch();
-          }}
-        />
-      </PaneToolbar>
+      <PaneToolbar
+        label="Inbound shipment controls"
+        controls={
+          <>
+            <NativeSelect
+              size="sm"
+              className="max-w-48 shrink"
+              aria-label="Show shipments that are"
+              value={view}
+              onChange={(event) => {
+                setView(event.target.value as View);
+              }}
+            >
+              <option value="open">On the way</option>
+              <option value="overdue">Should have arrived</option>
+              <option value="received">Arrived</option>
+              <option value="all">Everything</option>
+            </NativeSelect>
+          </>
+        }
+        refresh={
+          <RefreshButton
+            className="ml-auto"
+            isFetching={notices.isFetching}
+            updatedAt={notices.data ? notices.dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void notices.refetch();
+            }}
+          />
+        }
+      />
 
       {overdue > 0 && view !== 'overdue' ? (
         <Alert color="danger" variant="soft">

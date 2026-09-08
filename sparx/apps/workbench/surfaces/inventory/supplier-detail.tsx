@@ -75,6 +75,7 @@ import {
   type SupplierInput,
   type SupplierVariant,
 } from './suppliers-data';
+import { PaneLoadError } from '../../components/pane-load-error';
 
 const COLUMN = 'mx-auto flex w-full max-w-3xl flex-col gap-4';
 
@@ -642,32 +643,18 @@ export function SupplierDetailSurface({ ctx }: { ctx: SurfaceContext }) {
     const gone = isNotFound(supplier.error);
     return (
       <div className={PANE_SHELL}>
-        <div className="flex h-full items-center justify-center p-8">
-          <Alert color={gone ? 'warning' : 'danger'} variant="soft" className="max-w-md">
-            <AlertContent>
-              <AlertTitle>
-                {gone ? 'This supplier no longer exists' : 'Could not load this supplier'}
-              </AlertTitle>
-              <AlertDescription>
-                {gone
-                  ? 'It may have been removed. Its past orders are unaffected.'
-                  : 'This is a problem reaching the server. The supplier record is unaffected.'}
-              </AlertDescription>
-            </AlertContent>
-            {gone ? null : (
-              <Button
-                size="sm"
-                color="danger"
-                variant="soft"
-                onClick={() => {
-                  void supplier.refetch();
-                }}
-              >
-                Try again
-              </Button>
-            )}
-          </Alert>
-        </div>
+        <PaneLoadError
+          reason={gone ? 'missing' : 'unreachable'}
+          title={gone ? 'This supplier no longer exists' : 'Could not load this supplier'}
+          description={
+            gone
+              ? 'It may have been removed. Its past orders are unaffected.'
+              : 'This is a problem reaching the server. The supplier record is unaffected.'
+          }
+          onRetry={() => {
+            void supplier.refetch();
+          }}
+        />
       </div>
     );
   }
@@ -687,42 +674,49 @@ export function SupplierDetailSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Supplier actions">
-        {state ? (
-          <Badge color={state.tone} variant="soft" size="sm">
-            {state.label}
-          </Badge>
-        ) : (
-          <span className="inline-flex items-center gap-1.5">
-            <Truck className="size-4" aria-hidden />
-            <Text as="span" className="text-sm font-medium">
-              New supplier
-            </Text>
-          </span>
-        )}
-
-        <Button
-          size="sm"
-          color="module"
-          className="ml-auto shrink-0"
-          disabled={!canSave}
-          loading={saving}
-          onClick={save}
-        >
-          <Save className="size-4" aria-hidden />
-          {isNew ? 'Add supplier' : 'Save'}
-        </Button>
-
-        {isNew ? null : (
-          <RefreshButton
-            isFetching={supplier.isFetching}
-            updatedAt={supplier.data ? supplier.dataUpdatedAt : undefined}
-            onRefresh={() => {
-              void supplier.refetch();
-            }}
-          />
-        )}
-      </PaneToolbar>
+      <PaneToolbar
+        label="Supplier actions"
+        primary={
+          <Button
+            size="sm"
+            color="module"
+            className="ml-auto shrink-0"
+            disabled={!canSave}
+            loading={saving}
+            onClick={save}
+          >
+            <Save className="size-4" aria-hidden />
+            {isNew ? 'Add supplier' : 'Save'}
+          </Button>
+        }
+        controls={
+          <>
+            {state ? (
+              <Badge color={state.tone} variant="soft" size="sm">
+                {state.label}
+              </Badge>
+            ) : (
+              <span className="inline-flex items-center gap-1.5">
+                <Truck className="size-4" aria-hidden />
+                <Text as="span" className="text-sm font-medium">
+                  New supplier
+                </Text>
+              </span>
+            )}
+          </>
+        }
+        refresh={
+          isNew ? null : (
+            <RefreshButton
+              isFetching={supplier.isFetching}
+              updatedAt={supplier.data ? supplier.dataUpdatedAt : undefined}
+              onRefresh={() => {
+                void supplier.refetch();
+              }}
+            />
+          )
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className={COLUMN}>

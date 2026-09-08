@@ -101,7 +101,7 @@ function ConnectPrompt({ configured, onOpen }: { configured: boolean; onOpen: ()
       <Text className="text-sm">
         {configured
           ? 'These are the real numbers Google records — how many people saw your site in search and how many clicked. Connect Search Console, the free tool from Google, to see them here.'
-          : 'Real search numbers from Google will appear here once this connection is switched on for your account.'}
+          : 'Google’s own search numbers are not ready on this side yet. It is nothing to do with your account or your plan, and there is nothing for you to switch on. Everything measured here — how each page scores, and what is worth fixing — is up to date.'}
       </Text>
       <Button size="sm" color="module" variant="outline" onClick={onOpen}>
         <Icon glyph={faLink} className="size-4" aria-hidden />

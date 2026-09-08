@@ -48,6 +48,7 @@ import { PaneToolbar, PANE_SHELL } from '../../components/pane-toolbar';
 import { FormSection } from '../../components/form-section';
 import { RefreshButton } from '../../components/refresh-button';
 import type { SurfaceContext } from '../../lib/surfaces/registry';
+import { SaveFailure } from '@/components/save-failure';
 import {
   buildTermTree,
   collectDescendants,
@@ -67,6 +68,7 @@ import {
   type TaxonomyTerm,
   type TermNode,
 } from './taxonomy-data';
+import { PaneLoadError } from '../../components/pane-load-error';
 
 /** The one column everything in this pane sits in. Centred and capped, because a
  *  pane torn onto a second monitor is otherwise 2000px of dead grey with a
@@ -132,18 +134,21 @@ function CreateTaxonomy({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="New taxonomy actions">
-        <Button
-          color="module"
-          size="sm"
-          className="ml-auto"
-          disabled={!canCreate}
-          loading={create.isPending}
-          onClick={submit}
-        >
-          Create
-        </Button>
-      </PaneToolbar>
+      <PaneToolbar
+        label="New taxonomy actions"
+        primary={
+          <Button
+            color="module"
+            size="sm"
+            className="ml-auto"
+            disabled={!canCreate}
+            loading={create.isPending}
+            onClick={submit}
+          >
+            Create
+          </Button>
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className={COLUMN}>
@@ -157,14 +162,7 @@ function CreateTaxonomy({ ctx }: { ctx: SurfaceContext }) {
             </Text>
           </div>
 
-          {failure ? (
-            <Alert color="error">
-              <AlertContent>
-                <AlertTitle>Could not create this</AlertTitle>
-                <AlertDescription>{failure}</AlertDescription>
-              </AlertContent>
-            </Alert>
-          ) : null}
+          <SaveFailure title="Could not create this" message={failure} />
 
           <FormSection title="Name">
             <Field>
@@ -305,28 +303,17 @@ function ManageTaxonomy({ ctx, taxKey }: { ctx: SurfaceContext; taxKey: string }
     ctx.setTitle(displayTitle);
   }, [ctx, displayTitle]);
 
+  // No missing-state to pass: `useTaxonomy` selects out of the LIST, so a deleted label arrives as
+  // null after a good load and is handled below, never as a 404.
   if (isError) {
     return (
-      <div className="flex h-full items-center justify-center p-8">
-        <Alert color="error" className="max-w-md">
-          <AlertContent>
-            <AlertTitle>Could not load this</AlertTitle>
-            <AlertDescription>
-              This is a problem reaching the server. Your labels are unaffected.
-            </AlertDescription>
-          </AlertContent>
-          <Button
-            size="sm"
-            color="error"
-            variant="soft"
-            onClick={() => {
-              void refetch();
-            }}
-          >
-            Try again
-          </Button>
-        </Alert>
-      </div>
+      <PaneLoadError
+        title="Could not load this label"
+        description="This is a problem reaching the server. Your labels are unaffected."
+        onRetry={() => {
+          void refetch();
+        }}
+      />
     );
   }
 
@@ -472,35 +459,42 @@ function ManageBody({
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Taxonomy actions">
-        {kind ? (
-          <Badge color="info" variant="soft" size="sm" title={kind.detail}>
-            {kind.label}
-          </Badge>
-        ) : null}
-
-        <Button
-          color="module"
-          size="sm"
-          className="ml-auto"
-          disabled={!canSave}
-          loading={update.isPending}
-          onClick={save}
-        >
-          Save
-        </Button>
-
-        {/* This pane reads TWO queries — the taxonomy's settings and its terms —
+      <PaneToolbar
+        label="Taxonomy actions"
+        primary={
+          <Button
+            color="module"
+            size="sm"
+            className="ml-auto"
+            disabled={!canSave}
+            loading={update.isPending}
+            onClick={save}
+          >
+            Save
+          </Button>
+        }
+        controls={
+          <>
+            {kind ? (
+              <Badge color="info" variant="soft" size="sm" title={kind.detail}>
+                {kind.label}
+              </Badge>
+            ) : null}
+            {/* This pane reads TWO queries — the taxonomy's settings and its terms —
             so one refresh reloads both. */}
-        <RefreshButton
-          isFetching={isFetching || termsFetching}
-          updatedAt={terms ? termsUpdatedAt : undefined}
-          onRefresh={() => {
-            refetchTaxonomy();
-            void refetchTerms();
-          }}
-        />
-      </PaneToolbar>
+          </>
+        }
+        refresh={
+          <RefreshButton
+            isFetching={isFetching || termsFetching}
+            updatedAt={terms ? termsUpdatedAt : undefined}
+            onRefresh={() => {
+              refetchTaxonomy();
+              void refetchTerms();
+            }}
+          />
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className={COLUMN}>

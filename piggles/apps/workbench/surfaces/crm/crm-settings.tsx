@@ -145,7 +145,7 @@ export function CrmSettingsSurface({ ctx }: { ctx: SurfaceContext }) {
   return (
     <div className={PANE_SHELL}>
       <PaneToolbar
-        label="CRM behaviour actions"
+        label="CRM behavior actions"
         status={
           <>
             <Icon glyph={faSliders} className="size-4 shrink-0" aria-hidden />

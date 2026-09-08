@@ -200,55 +200,59 @@ export function ProfitSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Profit controls" wrap>
-        <NativeSelect
-          size="sm"
-          color="module"
-          value={period}
-          aria-label="Period"
-          onChange={(event) => {
-            setPeriod(event.target.value as PeriodKey);
-          }}
-        >
-          {PERIOD_OPTIONS.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </NativeSelect>
-
-        <Button
-          size="sm"
-          variant="outline"
-          color="neutral"
-          loading={recompute.isPending}
-          onClick={rebuild}
-        >
-          <RefreshCw className="size-4" aria-hidden />
-          Rebuild figures
-        </Button>
-
-        <Button
-          size="sm"
-          variant="outline"
-          color="neutral"
-          onClick={() => {
-            ctx.open('finance.jobs', {}, { target: 'tab' });
-          }}
-        >
-          <TrendingUp className="size-4" aria-hidden />
-          By job
-        </Button>
-
-        <RefreshButton
-          className="ml-auto"
-          isFetching={isFetching}
-          updatedAt={data ? dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void refetch();
-          }}
-        />
-      </PaneToolbar>
+      <PaneToolbar
+        label="Profit controls"
+        controls={
+          <>
+            <NativeSelect
+              size="sm"
+              color="module"
+              value={period}
+              aria-label="Period"
+              onChange={(event) => {
+                setPeriod(event.target.value as PeriodKey);
+              }}
+            >
+              {PERIOD_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </NativeSelect>
+            <Button
+              size="sm"
+              variant="outline"
+              color="neutral"
+              loading={recompute.isPending}
+              onClick={rebuild}
+            >
+              <RefreshCw className="size-4" aria-hidden />
+              Rebuild figures
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              color="neutral"
+              onClick={() => {
+                ctx.open('finance.jobs', {}, { target: 'tab' });
+              }}
+            >
+              <TrendingUp className="size-4" aria-hidden />
+              By job
+            </Button>
+          </>
+        }
+        refresh={
+          <RefreshButton
+            className="ml-auto"
+            isFetching={isFetching}
+            updatedAt={data ? dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void refetch();
+            }}
+          />
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         {isError ? (

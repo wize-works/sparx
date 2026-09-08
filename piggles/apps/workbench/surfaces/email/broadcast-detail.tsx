@@ -15,14 +15,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { PaneWaiting } from '../../components/pane-waiting';
 import { PaneLoadError } from '../../components/pane-load-error';
-import {
-  Alert,
-  AlertContent,
-  AlertDescription,
-  AlertTitle,
-  Card,
-  Text,
-} from '@wizeworks/silicaui-react';
+import { Card, Text } from '@wizeworks/silicaui-react';
 import { useDirtySource } from '../../lib/workbench/dirty';
 import { PANE_SHELL } from '../../components/pane-toolbar';
 import type { SurfaceContext } from '../../lib/surfaces/registry';
@@ -40,6 +33,7 @@ import { BroadcastComposeToolbar } from './broadcast-compose-toolbar';
 import { useBroadcastCommit } from './broadcast-compose-writes';
 import { BroadcastReview } from './broadcast-review';
 import { COLUMN, draftFrom, missingPieces, serialize, type Draft } from './broadcast-draft';
+import { SaveFailure } from '@/components/save-failure';
 
 /* ── The pane router ──────────────────────────────────────────────────────── */
 
@@ -189,14 +183,7 @@ function BroadcastComposer({ ctx, broadcast }: { ctx: SurfaceContext; broadcast?
             </Text>
           )}
 
-          {commit.serverError ? (
-            <Alert color="error">
-              <AlertContent>
-                <AlertTitle>That didn’t go through</AlertTitle>
-                <AlertDescription>{commit.serverError}</AlertDescription>
-              </AlertContent>
-            </Alert>
-          ) : null}
+          <SaveFailure title="That didn’t go through" message={commit.serverError} />
 
           <BroadcastComposeBody
             ctx={ctx}

@@ -55,6 +55,13 @@ const ListQuery = z.object({
   skip: z.coerce.number().int().min(0).optional(),
 });
 
+const UncountedQuery = z.object({
+  q: z.string().min(1).optional(),
+  product_id: z.string().uuid().optional(),
+  take: z.coerce.number().int().min(1).max(200).optional(),
+  skip: z.coerce.number().int().min(0).optional(),
+});
+
 const AlertsQuery = z.object({
   warehouse_id: z.string().uuid().optional(),
   take: z.coerce.number().int().min(1).max(250).optional(),
@@ -86,6 +93,28 @@ const inventoryApiRoutes: FastifyPluginAsync = async (app) => {
       ...(q.sellable_only === true ? { sellableOnly: true } : {}),
       ...(q.sort_by ? { sortBy: q.sort_by } : {}),
       ...(q.order ? { order: q.order } : {}),
+      take,
+      skip,
+    });
+    return paged(items, { total, skip, per_page: take });
+  });
+
+  // GET /v1/inventory/uncounted — versions on sale that have NO level row.
+  //
+  // A separate route rather than a filter on the list above, because it is not
+  // a list of the same thing: `/v1/inventory` reads stock POSITIONS and a
+  // version nobody has counted does not have one. Registered before the
+  // `:variant_id` route for the same reason as `/alerts`.
+  app.get('/v1/inventory/uncounted', async (request) => {
+    await requireInventoryModule(request);
+    requireScope(request, READ);
+    requireRole(request, 'viewer');
+    const q = UncountedQuery.parse(request.query);
+    const take = q.take ?? 50;
+    const skip = q.skip ?? 0;
+    const { items, total } = await inventoryService.listUncounted(toInventoryContext(request), {
+      ...(q.q ? { q: q.q } : {}),
+      ...(q.product_id ? { productId: q.product_id } : {}),
       take,
       skip,
     });

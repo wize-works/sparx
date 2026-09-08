@@ -131,33 +131,40 @@ export function ReportsSurface({ ctx: _ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Reports controls">
-        <BarChart3 className="size-4 shrink-0" aria-hidden />
-        <Heading level={2} className="min-w-0 truncate text-base font-semibold">
-          Reports
-        </Heading>
-        <div className="ml-auto w-36">
-          <Select
-            size="sm"
-            color="module"
-            aria-label="Time period"
-            value={preset}
-            items={[
-              { value: '7', label: RANGE_LABEL['7'] },
-              { value: '30', label: RANGE_LABEL['30'] },
-              { value: '90', label: RANGE_LABEL['90'] },
-            ]}
-            onValueChange={(next) => {
-              setPreset((next as RangePreset) ?? '30');
-            }}
+      <PaneToolbar
+        label="Reports controls"
+        controls={
+          <>
+            <BarChart3 className="size-4 shrink-0" aria-hidden />
+            <Heading level={2} className="min-w-0 truncate text-base font-semibold">
+              Reports
+            </Heading>
+            <div className="ml-auto w-36">
+              <Select
+                size="sm"
+                color="module"
+                aria-label="Time period"
+                value={preset}
+                items={[
+                  { value: '7', label: RANGE_LABEL['7'] },
+                  { value: '30', label: RANGE_LABEL['30'] },
+                  { value: '90', label: RANGE_LABEL['90'] },
+                ]}
+                onValueChange={(next) => {
+                  setPreset((next as RangePreset) ?? '30');
+                }}
+              />
+            </div>
+          </>
+        }
+        refresh={
+          <RefreshButton
+            isFetching={isFetching}
+            updatedAt={data ? summary.dataUpdatedAt : undefined}
+            onRefresh={refetchAll}
           />
-        </div>
-        <RefreshButton
-          isFetching={isFetching}
-          updatedAt={data ? summary.dataUpdatedAt : undefined}
-          onRefresh={refetchAll}
-        />
-      </PaneToolbar>
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className="mx-auto flex w-full max-w-3xl flex-col gap-4">

@@ -9,7 +9,7 @@ import { useToast } from '@wizeworks/silicaui-react';
 import { useDirtySource } from '../../../lib/workbench/dirty';
 import { useTabSave } from '../product-tab-save';
 import { buildPatch, changed, draftProblem, toDraft, type VariantDraft } from './draft';
-import { slotsOf } from './slots';
+import { skuStem, slotsOf } from './slots';
 import { useVariantActions } from './variant-actions';
 import {
   productErrorMessage,
@@ -34,8 +34,16 @@ export function useVariantsTab(product: Product) {
   const live = useMemo(() => all.filter((variant) => variant.deletedAt === null), [all]);
   const retired = useMemo(() => all.filter((variant) => variant.deletedAt !== null), [all]);
   const axes = useMemo(() => options.data ?? [], [options.data]);
+  const slots = useMemo(() => slotsOf(axes, live, retired), [axes, live, retired]);
 
-  const actions = useVariantActions(product, all, live);
+  /** The code this product already carries, and every code it already holds.
+   *  Both are needed wherever a new version is offered a code, and both are
+   *  worked out ONCE here: three places offer one, and a stem derived three
+   *  times is a stem that drifts (issue 172). */
+  const stem = useMemo(() => skuStem(product, slots, live), [product, slots, live]);
+  const taken = useMemo(() => new Set(all.map((variant) => variant.sku.toLowerCase())), [all]);
+
+  const actions = useVariantActions(product, all, live, stem);
 
   const saved = useMemo(() => {
     const map: Record<string, VariantDraft> = {};
@@ -152,7 +160,6 @@ export function useVariantsTab(product: Product) {
     onMakeDefault: actions.onMakeDefault,
   };
 
-  const slots = slotsOf(axes, live, retired);
   const placed = new Set(
     slots
       .flatMap((slot) => [slot.variant?.id, ...slot.retired.map((v) => v.id)])
@@ -185,6 +192,8 @@ export function useVariantsTab(product: Product) {
     homeless,
     axes,
     slots,
+    stem,
+    taken,
     stranded,
     resting,
     empty,

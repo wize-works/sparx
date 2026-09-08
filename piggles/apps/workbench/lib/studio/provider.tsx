@@ -186,6 +186,12 @@ function useSymbolLibrary(session: StudioSession | null, propertyId: string | nu
         name: piece.name,
         rev: piece.version,
         root: piece.root,
+        // Carried, not dropped. The piece's manage screen calls this "What it's
+        // for" and tells the author it shows up "in this list and in the editor's
+        // Add panel" — the Add panel is the studio's Insert rail, which reads it
+        // back off the loaded document. Site-owned pieces above have no note to
+        // carry: their store keeps a name and a tree and nothing else.
+        note: piece.description,
       })),
     ]);
   }, [session, library, own, propertyId]);

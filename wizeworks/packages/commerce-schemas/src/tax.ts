@@ -26,7 +26,18 @@ export const CreateTaxZoneInput = z.object({
   nexusType: NexusType,
   registrationNumber: z.string().max(63).optional(), // sales-tax permit / VAT
   registeredAt: z.string().datetime().optional(),
-  isActive: z.boolean().default(true),
+  // DEFAULTS TO OFF, and `taxService.createZone` REFUSES `true` outright: a tax
+  // place is always created switched off, and starting to collect is its own
+  // separate act. Kept on the input rather than dropped so that asking for it
+  // fails loudly, since Zod would otherwise strip the key and silently do
+  // something other than what the caller asked.
+  //
+  // It used to default to `true`, so any caller that simply did not mention
+  // collection got a shop charging sales tax: the `tax-us-sales` preset reached
+  // from five industry starters set a Denver studio collecting in California,
+  // Texas and New York (issue 429). A caller that says nothing is not asking to
+  // collect, and absence of a decision must never be stored as a decision.
+  isActive: z.boolean().default(false),
 });
 export type CreateTaxZoneInput = z.infer<typeof CreateTaxZoneInput>;
 
@@ -39,6 +50,30 @@ export const UpdateTaxZoneInput = CreateTaxZoneInput.extend({
   isActive: z.boolean(),
 }).partial();
 export type UpdateTaxZoneInput = z.infer<typeof UpdateTaxZoneInput>;
+
+// ─── When a place actually charges ────────────────────────────────────
+//
+// ONE definition, shared by the checkout calculator and by both consoles, so a
+// screen can never say "Collecting" about a place that takes nothing (or the
+// reverse). Two things have to be true:
+//
+//   isActive     the owner wants to collect here right now
+//   activatedAt  a signed-in person switched it on, and this is when
+//
+// The second is not redundant. `isActive` alone cannot tell a decision the owner
+// made from a row a starter, an importer or a script wrote, and something had
+// been writing them. A place with no activation record charges nothing, whatever
+// its switch says, and the database CHECK `tax_zones_active_needs_a_person`
+// stops such a row being written in the first place.
+
+export interface TaxZoneCollectionState {
+  isActive: boolean;
+  activatedAt: string | null;
+}
+
+export function zoneIsCollecting(zone: TaxZoneCollectionState): boolean {
+  return zone.isActive && zone.activatedAt !== null;
+}
 
 // Merchant-defined fallback rate, used only when no TaxProvider is
 // installed. Real tax calculation always prefers the provider.

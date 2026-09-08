@@ -57,6 +57,7 @@ import {
   type IntegrationCategoryView,
 } from './data';
 import { RowOpenHint } from '../../components/row-open-hint';
+import { PaneLoadError } from '../../components/pane-load-error';
 
 function targetFor(event: { shiftKey: boolean; altKey: boolean }): OpenTarget {
   if (event.altKey) return 'window';
@@ -323,24 +324,14 @@ export function IntegrationsListSurface({ ctx }: { ctx: SurfaceContext }) {
 
   if (catalog.isError) {
     return (
-      <div className="flex h-full items-center justify-center p-8">
-        <EmptyState
-          icon={<Plug className="size-6" aria-hidden />}
-          title="Could not load your integrations"
-          description="This is a problem reaching the server. Your existing connections are unaffected and still working."
-          actions={
-            <Button
-              size="sm"
-              color="module"
-              onClick={() => {
-                void catalog.refetch();
-              }}
-            >
-              Try again
-            </Button>
-          }
-        />
-      </div>
+      <PaneLoadError
+        icon={<Plug className="size-6" aria-hidden />}
+        title="Could not load your integrations"
+        description="This is a problem reaching the server. Your existing connections are unaffected and still working."
+        onRetry={() => {
+          void catalog.refetch();
+        }}
+      />
     );
   }
 
@@ -349,48 +340,59 @@ export function IntegrationsListSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Integration list controls">
-        <div className="max-w-xs min-w-0 flex-1">
-          <SearchInput
-            size="sm"
-            aria-label="Search integrations"
-            placeholder="Search services…"
-            value={search}
-            onValueChange={setSearch}
-          />
-        </div>
-        {/* A segmented control, not chips: these four are MODES of one question and
+      <PaneToolbar
+        label="Integration list controls"
+        search={
+          <div className="max-w-xs min-w-0 flex-1">
+            <SearchInput
+              size="sm"
+              aria-label="Search integrations"
+              placeholder="Search services…"
+              value={search}
+              onValueChange={setSearch}
+            />
+          </div>
+        }
+        status={
+          <p className="ml-auto hidden shrink-0 text-sm whitespace-nowrap @2xl:block">
+            {connectedCount === 0
+              ? 'None connected yet'
+              : connectedCount === 1
+                ? '1 connected'
+                : `${String(connectedCount)} connected`}
+          </p>
+        }
+        controls={
+          <>
+            {/* A segmented control, not chips: these four are MODES of one question and
             exactly one is always true, which is what a segmented control means. */}
-        <ToggleGroup
-          size="sm"
-          color="module"
-          value={[status]}
-          onValueChange={(next: unknown[]) => {
-            setStatus((next[0] as StatusFilter | undefined) ?? 'all');
-          }}
-          aria-label="Filter by connection state"
-        >
-          {(Object.keys(STATUS_LABEL) as StatusFilter[]).map((value) => (
-            <ToggleGroupItem key={value} value={value}>
-              {STATUS_LABEL[value]}
-            </ToggleGroupItem>
-          ))}
-        </ToggleGroup>
-        <p className="ml-auto hidden shrink-0 text-sm whitespace-nowrap @2xl:block">
-          {connectedCount === 0
-            ? 'None connected yet'
-            : connectedCount === 1
-              ? '1 connected'
-              : `${String(connectedCount)} connected`}
-        </p>
-        <RefreshButton
-          isFetching={catalog.isFetching}
-          updatedAt={catalog.data ? catalog.dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void catalog.refetch();
-          }}
-        />
-      </PaneToolbar>
+            <ToggleGroup
+              size="sm"
+              color="module"
+              value={[status]}
+              onValueChange={(next: unknown[]) => {
+                setStatus((next[0] as StatusFilter | undefined) ?? 'all');
+              }}
+              aria-label="Filter by connection state"
+            >
+              {(Object.keys(STATUS_LABEL) as StatusFilter[]).map((value) => (
+                <ToggleGroupItem key={value} value={value}>
+                  {STATUS_LABEL[value]}
+                </ToggleGroupItem>
+              ))}
+            </ToggleGroup>
+          </>
+        }
+        refresh={
+          <RefreshButton
+            isFetching={catalog.isFetching}
+            updatedAt={catalog.data ? catalog.dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void catalog.refetch();
+            }}
+          />
+        }
+      />
 
       {/* Category as a FACET rather than a container — silica's own Filter, which brings
           its own reset chip, so "back to everything" is always one click away. The row

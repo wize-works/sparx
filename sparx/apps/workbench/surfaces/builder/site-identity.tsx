@@ -23,10 +23,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import Image from 'next/image';
 import {
-  Alert,
-  AlertContent,
-  AlertDescription,
-  AlertTitle,
   Badge,
   Button,
   Field,
@@ -50,6 +46,7 @@ import { MediaPickerProvider, useMediaPicker } from '../cms/media-picker';
 import { useMediaAssets } from '../cms/media';
 import { useDomains } from '../domains/data';
 import type { Site } from '../sites/data';
+import { SaveFailure } from '@/components/save-failure';
 import {
   contactOf,
   effectiveBrand,
@@ -62,6 +59,7 @@ import {
   type SiteContact,
   type SocialLink,
 } from './site-identity-data';
+import { PaneLoadError } from '../../components/pane-load-error';
 
 /** The one column everything sits in — centred and capped, so a pane torn onto a
  *  second monitor is not a paragraph pinned to the left of 2000px of grey. */
@@ -87,28 +85,17 @@ export function SiteIdentitySurface({ ctx }: { ctx: SurfaceContext }) {
   if (isError) {
     return (
       <div className={PANE_SHELL}>
-        <div className="flex h-full items-center justify-center p-8">
-          <Alert color="error" className="max-w-md">
-            <AlertContent>
-              <AlertTitle>Could not load this site&apos;s identity</AlertTitle>
-              <AlertDescription>
-                This is a problem reaching the server — your site&apos;s name and logo are
-                unaffected. Try again in a moment.
-              </AlertDescription>
-            </AlertContent>
-            <Button
-              size="sm"
-              color="error"
-              variant="soft"
-              onClick={() => {
-                void brandQuery.refetch();
-                void propertyQuery.refetch();
-              }}
-            >
-              Try again
-            </Button>
-          </Alert>
-        </div>
+        {/* No missing-state: these two queries describe a site that exists by
+            definition — you reached this pane through it. Only unreachable is
+            possible here. */}
+        <PaneLoadError
+          title="Could not load this site's identity"
+          description="This is a problem reaching the server — your site's name and logo are unaffected."
+          onRetry={() => {
+            void brandQuery.refetch();
+            void propertyQuery.refetch();
+          }}
+        />
       </div>
     );
   }
@@ -232,22 +219,29 @@ function IdentityEditor({
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Site identity actions">
-        <Badge color={isPrimary ? 'module' : 'neutral'} variant="soft" size="sm">
-          {isPrimary ? 'Main site' : 'Secondary site'}
-        </Badge>
-        <Button
-          color="module"
-          size="sm"
-          className="ml-auto"
-          loading={save.isPending}
-          disabled={!dirty}
-          onClick={onSave}
-        >
-          <Save className="size-4" aria-hidden />
-          Save
-        </Button>
-      </PaneToolbar>
+      <PaneToolbar
+        label="Site identity actions"
+        primary={
+          <Button
+            color="module"
+            size="sm"
+            className="ml-auto"
+            loading={save.isPending}
+            disabled={!dirty}
+            onClick={onSave}
+          >
+            <Save className="size-4" aria-hidden />
+            Save
+          </Button>
+        }
+        controls={
+          <>
+            <Badge color={isPrimary ? 'module' : 'neutral'} variant="soft" size="sm">
+              {isPrimary ? 'Main site' : 'Secondary site'}
+            </Badge>
+          </>
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className={COLUMN}>
@@ -280,14 +274,7 @@ function IdentityEditor({
             logo, or links on any of your other sites.
           </Text>
 
-          {failure ? (
-            <Alert color="error">
-              <AlertContent>
-                <AlertTitle>Could not save your changes</AlertTitle>
-                <AlertDescription>{failure}</AlertDescription>
-              </AlertContent>
-            </Alert>
-          ) : null}
+          <SaveFailure title="Could not save your changes" message={failure} />
 
           <FormSection title="Name & tagline">
             <Field>

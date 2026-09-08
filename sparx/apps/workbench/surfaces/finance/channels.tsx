@@ -50,31 +50,38 @@ export function ChannelsSurface(_props: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Channel breakdown controls">
-        <Filter
-          color="module"
-          value={range}
-          onValueChange={(next) => {
-            setRange(next ?? '90');
-          }}
-          showReset={false}
-          aria-label="Time range"
-        >
-          {RANGES.map((r) => (
-            <FilterItem key={r.value} value={r.value}>
-              {r.label}
-            </FilterItem>
-          ))}
-        </Filter>
-        <RefreshButton
-          className="ml-auto"
-          isFetching={isFetching}
-          updatedAt={data ? dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void refetch();
-          }}
-        />
-      </PaneToolbar>
+      <PaneToolbar
+        label="Channel breakdown controls"
+        controls={
+          <>
+            <Filter
+              color="module"
+              value={range}
+              onValueChange={(next) => {
+                setRange(next ?? '90');
+              }}
+              showReset={false}
+              aria-label="Time range"
+            >
+              {RANGES.map((r) => (
+                <FilterItem key={r.value} value={r.value}>
+                  {r.label}
+                </FilterItem>
+              ))}
+            </Filter>
+          </>
+        }
+        refresh={
+          <RefreshButton
+            className="ml-auto"
+            isFetching={isFetching}
+            updatedAt={data ? dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void refetch();
+            }}
+          />
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         {isError ? (

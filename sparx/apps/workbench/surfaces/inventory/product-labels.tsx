@@ -40,7 +40,6 @@ import {
   Text,
   ToggleGroup,
   ToggleGroupItem,
-  ToolbarSeparator,
   Tooltip,
 } from '@wizeworks/silicaui-react';
 import { barcodeSvg, encodeBarcode } from '@wizeworks/commerce-schemas';
@@ -237,86 +236,91 @@ export function ProductLabelsSurface({ ctx }: { ctx: SurfaceContext }) {
   return (
     <div className={PANE_SHELL}>
       {/* `print:hidden` — the controls are not part of the sheet. */}
-      <PaneToolbar label="Product label controls" className="print:hidden">
-        <Button
-          color="module-inventory"
-          size="sm"
-          disabled={rows.length === 0}
-          onClick={() => {
-            window.print();
-          }}
-        >
-          <Printer className="size-4" aria-hidden />
-          Print {rows.length > 0 ? plural(rows.length, 'label', 'labels') : 'labels'}
-        </Button>
-
-        <ToolbarSeparator />
-
-        {!presetVariant ? (
-          <SearchInput
-            value={search}
-            placeholder="Code, SKU or product"
-            onValueChange={setSearch}
-          />
-        ) : null}
-
-        <ToggleGroup
-          value={[size]}
-          onValueChange={(value) => {
-            const next = value[0];
-            if (next) setSize(next as SizeKey);
-          }}
-        >
-          {SIZES.map((s) => (
-            <ToggleGroupItem key={s.value} value={s.value} aria-label={`${s.label} — ${s.hint}`}>
-              {s.label}
-            </ToggleGroupItem>
-          ))}
-        </ToggleGroup>
-
-        <NativeSelect
-          size="sm"
-          className="max-w-40 shrink"
-          aria-label="What goes on the label"
-          value={preset}
-          onChange={(event) => {
-            setPreset(event.target.value as PresetKey);
-          }}
-        >
-          {PRESETS.map((p) => (
-            <option key={p.value} value={p.value}>
-              {p.label} — {p.hint}
-            </option>
-          ))}
-        </NativeSelect>
-
-        <NativeSelect
-          size="sm"
-          className="max-w-28 shrink"
-          aria-label="Copies of each label"
-          value={String(copies)}
-          onChange={(event) => {
-            setCopies(Number(event.target.value));
-          }}
-        >
-          {[1, 2, 4, 8, 12, 24].map((n) => (
-            <option key={n} value={n}>
-              {n} each
-            </option>
-          ))}
-        </NativeSelect>
-
-        <Tooltip content="Off prints every code an item has, including case and supplier codes">
-          <Checkbox
-            checked={primaryOnly}
-            onChange={(event) => {
-              setPrimaryOnly(event.target.checked);
-            }}
-          >
-            Main code only
-          </Checkbox>
-        </Tooltip>
-      </PaneToolbar>
+      <PaneToolbar
+        label="Product label controls"
+        className="print:hidden"
+        search={
+          !presetVariant ? (
+            <SearchInput
+              value={search}
+              placeholder="Code, SKU or product"
+              onValueChange={setSearch}
+            />
+          ) : null
+        }
+        controls={
+          <>
+            <Button
+              color="module-inventory"
+              size="sm"
+              disabled={rows.length === 0}
+              onClick={() => {
+                window.print();
+              }}
+            >
+              <Printer className="size-4" aria-hidden />
+              Print {rows.length > 0 ? plural(rows.length, 'label', 'labels') : 'labels'}
+            </Button>
+            <ToggleGroup
+              value={[size]}
+              onValueChange={(value) => {
+                const next = value[0];
+                if (next) setSize(next as SizeKey);
+              }}
+            >
+              {SIZES.map((s) => (
+                <ToggleGroupItem
+                  key={s.value}
+                  value={s.value}
+                  aria-label={`${s.label} — ${s.hint}`}
+                >
+                  {s.label}
+                </ToggleGroupItem>
+              ))}
+            </ToggleGroup>
+            <NativeSelect
+              size="sm"
+              className="max-w-40 shrink"
+              aria-label="What goes on the label"
+              value={preset}
+              onChange={(event) => {
+                setPreset(event.target.value as PresetKey);
+              }}
+            >
+              {PRESETS.map((p) => (
+                <option key={p.value} value={p.value}>
+                  {p.label} — {p.hint}
+                </option>
+              ))}
+            </NativeSelect>
+            <NativeSelect
+              size="sm"
+              className="max-w-28 shrink"
+              aria-label="Copies of each label"
+              value={String(copies)}
+              onChange={(event) => {
+                setCopies(Number(event.target.value));
+              }}
+            >
+              {[1, 2, 4, 8, 12, 24].map((n) => (
+                <option key={n} value={n}>
+                  {n} each
+                </option>
+              ))}
+            </NativeSelect>
+            <Tooltip content="Off prints every code an item has, including case and supplier codes">
+              <Checkbox
+                checked={primaryOnly}
+                onChange={(event) => {
+                  setPrimaryOnly(event.target.checked);
+                }}
+              >
+                Main code only
+              </Checkbox>
+            </Tooltip>
+          </>
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         {isLoading ? (

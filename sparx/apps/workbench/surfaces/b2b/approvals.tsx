@@ -77,24 +77,29 @@ export function ApprovalsSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Approval controls">
-        <div className="max-w-xs min-w-0 flex-1">
-          <SearchInput
-            size="sm"
-            aria-label="Search held orders"
-            placeholder="Order number or company…"
-            value={search}
-            onValueChange={setSearch}
+      <PaneToolbar
+        label="Approval controls"
+        search={
+          <div className="max-w-xs min-w-0 flex-1">
+            <SearchInput
+              size="sm"
+              aria-label="Search held orders"
+              placeholder="Order number or company…"
+              value={search}
+              onValueChange={setSearch}
+            />
+          </div>
+        }
+        refresh={
+          <RefreshButton
+            isFetching={queue.isFetching}
+            updatedAt={queue.data ? queue.dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void queue.refetch();
+            }}
           />
-        </div>
-        <RefreshButton
-          isFetching={queue.isFetching}
-          updatedAt={queue.data ? queue.dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void queue.refetch();
-          }}
-        />
-      </PaneToolbar>
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className={COLUMN}>

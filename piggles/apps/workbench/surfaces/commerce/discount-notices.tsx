@@ -7,6 +7,7 @@
 import { Alert, AlertContent, AlertDescription, AlertTitle, Text } from '@wizeworks/silicaui-react';
 import { CREATABLE_TYPES, TYPE_LABELS } from './discount-draft';
 import type { DiscountType } from './discounts-data';
+import { SaveFailure } from '@/components/save-failure';
 
 export function DiscountNotices({
   isNew,
@@ -28,14 +29,7 @@ export function DiscountNotices({
         </Text>
       ) : null}
 
-      {failure ? (
-        <Alert color="error">
-          <AlertContent>
-            <AlertTitle>Could not save this discount</AlertTitle>
-            <AlertDescription>{failure}</AlertDescription>
-          </AlertContent>
-        </Alert>
-      ) : null}
+      <SaveFailure title="Could not save this discount" message={failure} />
 
       {canCreateType ? null : (
         <Alert color="info">

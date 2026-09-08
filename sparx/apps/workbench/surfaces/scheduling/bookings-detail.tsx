@@ -55,6 +55,7 @@ import { afterPaneChange } from '../../lib/defer';
 import type { SurfaceContext } from '../../lib/surfaces/registry';
 import { BookingTimeline } from './booking-timeline';
 import { CustomerPicker } from './bookings-customer-picker';
+import { SaveFailure } from '@/components/save-failure';
 import {
   bookingResourceLabel,
   bookingStateMeta,
@@ -84,6 +85,7 @@ import {
   type CustomerLite,
   type ServiceLite,
 } from './bookings-data';
+import { PaneLoadError } from '../../components/pane-load-error';
 
 /** Centred and capped — a pane torn onto a second monitor is 2000px wide, and
  *  uncapped this becomes fields pinned to the far-left edge. */
@@ -173,30 +175,26 @@ function BookingCreate({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="New booking actions">
-        <Button
-          color="module"
-          size="sm"
-          className="ml-auto shrink-0"
-          disabled={!canSave}
-          loading={create.isPending}
-          onClick={submit}
-        >
-          <Save className="size-4" aria-hidden />
-          Take booking
-        </Button>
-      </PaneToolbar>
+      <PaneToolbar
+        label="New booking actions"
+        primary={
+          <Button
+            color="module"
+            size="sm"
+            className="ml-auto shrink-0"
+            disabled={!canSave}
+            loading={create.isPending}
+            onClick={submit}
+          >
+            <Save className="size-4" aria-hidden />
+            Take booking
+          </Button>
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className={COLUMN}>
-          {saveError ? (
-            <Alert color="error">
-              <AlertContent>
-                <AlertTitle>Could not take this booking</AlertTitle>
-                <AlertDescription>{saveError}</AlertDescription>
-              </AlertContent>
-            </Alert>
-          ) : null}
+          <SaveFailure title="Could not take this booking" message={saveError} />
 
           {noServices ? (
             <Alert color="info">
@@ -501,72 +499,74 @@ function BookingManage({ ctx, booking }: { ctx: SurfaceContext; booking: Booking
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Booking actions" wrap>
-        <Badge color={meta.tone} variant="soft" size="sm">
-          {meta.label}
-        </Badge>
-
-        {booking.status === 'requested' ? (
-          <Button
-            color="module"
-            size="sm"
-            className="ml-auto"
-            loading={confirm.isPending}
-            disabled={lifecycleBusy}
-            onClick={() => {
-              confirm.mutate(undefined, {
-                onSuccess: () => {
-                  toast.add({ title: 'Booking confirmed', type: 'success' });
-                },
-              });
-            }}
-          >
-            <CircleCheck className="size-4" aria-hidden />
-            Confirm
-          </Button>
-        ) : null}
-
-        {booking.status === 'confirmed' ? (
-          <Button
-            color="module"
-            size="sm"
-            className="ml-auto"
-            loading={checkIn.isPending}
-            disabled={lifecycleBusy}
-            onClick={() => {
-              checkIn.mutate(undefined, {
-                onSuccess: () => {
-                  toast.add({ title: 'Checked in', type: 'success' });
-                },
-              });
-            }}
-          >
-            <LogIn className="size-4" aria-hidden />
-            Check in
-          </Button>
-        ) : null}
-
-        {booking.status === 'confirmed' || booking.status === 'in_progress' ? (
-          <Button
-            color="success"
-            variant={booking.status === 'in_progress' ? 'solid' : 'outline'}
-            size="sm"
-            className={booking.status === 'in_progress' ? 'ml-auto' : undefined}
-            loading={complete.isPending}
-            disabled={lifecycleBusy}
-            onClick={() => {
-              complete.mutate(undefined, {
-                onSuccess: () => {
-                  toast.add({ title: 'Booking completed', type: 'success' });
-                },
-              });
-            }}
-          >
-            <CheckCheck className="size-4" aria-hidden />
-            Complete
-          </Button>
-        ) : null}
-      </PaneToolbar>
+      <PaneToolbar
+        label="Booking actions"
+        controls={
+          <>
+            <Badge color={meta.tone} variant="soft" size="sm">
+              {meta.label}
+            </Badge>
+            {booking.status === 'requested' ? (
+              <Button
+                color="module"
+                size="sm"
+                className="ml-auto"
+                loading={confirm.isPending}
+                disabled={lifecycleBusy}
+                onClick={() => {
+                  confirm.mutate(undefined, {
+                    onSuccess: () => {
+                      toast.add({ title: 'Booking confirmed', type: 'success' });
+                    },
+                  });
+                }}
+              >
+                <CircleCheck className="size-4" aria-hidden />
+                Confirm
+              </Button>
+            ) : null}
+            {booking.status === 'confirmed' ? (
+              <Button
+                color="module"
+                size="sm"
+                className="ml-auto"
+                loading={checkIn.isPending}
+                disabled={lifecycleBusy}
+                onClick={() => {
+                  checkIn.mutate(undefined, {
+                    onSuccess: () => {
+                      toast.add({ title: 'Checked in', type: 'success' });
+                    },
+                  });
+                }}
+              >
+                <LogIn className="size-4" aria-hidden />
+                Check in
+              </Button>
+            ) : null}
+            {booking.status === 'confirmed' || booking.status === 'in_progress' ? (
+              <Button
+                color="success"
+                variant={booking.status === 'in_progress' ? 'solid' : 'outline'}
+                size="sm"
+                className={booking.status === 'in_progress' ? 'ml-auto' : undefined}
+                loading={complete.isPending}
+                disabled={lifecycleBusy}
+                onClick={() => {
+                  complete.mutate(undefined, {
+                    onSuccess: () => {
+                      toast.add({ title: 'Booking completed', type: 'success' });
+                    },
+                  });
+                }}
+              >
+                <CheckCheck className="size-4" aria-hidden />
+                Complete
+              </Button>
+            ) : null}
+          </>
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className={COLUMN}>
@@ -592,14 +592,7 @@ function BookingManage({ ctx, booking }: { ctx: SurfaceContext; booking: Booking
             </div>
           </div>
 
-          {actionError ? (
-            <Alert color="error">
-              <AlertContent>
-                <AlertTitle>That did not go through</AlertTitle>
-                <AlertDescription>{actionError}</AlertDescription>
-              </AlertContent>
-            </Alert>
-          ) : null}
+          <SaveFailure title="That did not go through" message={actionError} />
 
           {/* Moving the booking in time. Hidden once it is over — a completed or
               cancelled booking does not move. */}
@@ -768,32 +761,18 @@ export function BookingDetailSurface({ ctx }: { ctx: SurfaceContext }) {
     const gone = isNotFound(booking.error);
     return (
       <div className={PANE_SHELL}>
-        <div className="flex h-full items-center justify-center p-8">
-          <Alert color={gone ? 'warning' : 'error'} variant="soft" className="max-w-md">
-            <AlertContent>
-              <AlertTitle>
-                {gone ? 'This booking no longer exists' : 'Could not load this booking'}
-              </AlertTitle>
-              <AlertDescription>
-                {gone
-                  ? 'It may have been removed. Nothing else is affected.'
-                  : 'This is a problem reaching the server. Nothing about the booking has changed.'}
-              </AlertDescription>
-            </AlertContent>
-            {gone ? null : (
-              <Button
-                size="sm"
-                color="error"
-                variant="soft"
-                onClick={() => {
-                  void booking.refetch();
-                }}
-              >
-                Try again
-              </Button>
-            )}
-          </Alert>
-        </div>
+        <PaneLoadError
+          reason={gone ? 'missing' : 'unreachable'}
+          title={gone ? 'This booking no longer exists' : 'Could not load this booking'}
+          description={
+            gone
+              ? 'It may have been removed. Nothing else is affected.'
+              : 'This is a problem reaching the server. Nothing about the booking has changed.'
+          }
+          onRetry={() => {
+            void booking.refetch();
+          }}
+        />
       </div>
     );
   }

@@ -10,6 +10,7 @@ import { OrderLines } from './order-detail-lines';
 import { BuyerSection, DestinationSection, OrderHeadline } from './order-detail-parties';
 import { SoldBySection } from './sold-by-section';
 import { PaymentsSection, RefundsSection } from './order-detail-money';
+import { InvoicesSection } from './order-detail-invoices';
 import { HandoverSection } from './order-detail-handover';
 import { ReturnsSection } from './order-detail-returns';
 import { CancelRow, OrderNotes, RefundRow } from './order-detail-risk';
@@ -52,6 +53,10 @@ export function OrderBody(props: OrderBodyProps) {
         <SoldBySection type="order" sourceId={order.id} canSeePay={props.canSeeCommission} />
 
         <DestinationSection order={order} facts={facts} />
+        {/* The ask comes before the money, because that is the order the two
+            happen in on a shop that takes no payment at checkout: you send the
+            bill, then it gets paid. */}
+        <InvoicesSection order={order} ctx={props.ctx} />
         <PaymentsSection order={order} payments={props.payments} />
         <HandoverSection
           order={order}

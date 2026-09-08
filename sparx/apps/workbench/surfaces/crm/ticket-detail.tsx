@@ -49,6 +49,7 @@ import { useTeamRoster } from '../../lib/api/team';
 import { customerName, useCustomers } from './customers-data';
 import { EngagementComposer } from './engagement-composer';
 import { usePipelines } from './pipelines-data';
+import { SaveFailure } from '@/components/save-failure';
 import {
   priorityLabel,
   priorityTone,
@@ -69,6 +70,7 @@ import {
   type TicketPriority,
   type TicketView,
 } from './tickets-data';
+import { PaneLoadError } from '../../components/pane-load-error';
 
 const COLUMN = 'mx-auto flex w-full max-w-3xl flex-col gap-4';
 
@@ -138,31 +140,19 @@ export function TicketDetailSurface({ ctx }: { ctx: SurfaceContext }) {
 }
 
 function TicketLoader({ ctx, id }: { ctx: SurfaceContext; id: string }) {
-  const { data: view, isPending, isError, refetch } = useTicket(id);
+  const { data: view, isPending, isError, error, refetch } = useTicket(id);
 
   if (isError) {
     return (
-      <div className="flex h-full items-center justify-center p-8">
-        <Alert color="error" className="max-w-md">
-          <AlertContent>
-            <AlertTitle>Could not load this request</AlertTitle>
-            <AlertDescription>
-              This is a problem reaching the server, or the request has been removed. Nothing has
-              been changed.
-            </AlertDescription>
-          </AlertContent>
-          <Button
-            size="sm"
-            color="error"
-            variant="soft"
-            onClick={() => {
-              void refetch();
-            }}
-          >
-            Try again
-          </Button>
-        </Alert>
-      </div>
+      <PaneLoadError
+        error={error}
+        noun="request"
+        title="Could not load this request"
+        description="This is a problem reaching the server, or the request has been removed. Nothing has been changed."
+        onRetry={() => {
+          void refetch();
+        }}
+      />
     );
   }
 
@@ -375,77 +365,84 @@ function TicketEditor({ ctx, id, view }: { ctx: SurfaceContext; id: string; view
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Request actions">
-        {view ? (
+      <PaneToolbar
+        label="Request actions"
+        primary={
+          <Button
+            color="module"
+            size="sm"
+            className={view ? 'shrink-0' : 'ml-auto shrink-0'}
+            loading={saving}
+            disabled={Boolean(subjectError) || (!isNew && !dirty)}
+            onClick={submit}
+          >
+            {isNew ? 'Open request' : 'Save'}
+          </Button>
+        }
+        controls={
           <>
-            <Badge color={priorityTone(view.ticket.priority)} variant="soft" size="sm">
-              {priorityLabel(view.ticket.priority)}
-            </Badge>
-            {view.firstResponse.state !== 'none' ? (
-              <Badge
-                color={slaTone(view.firstResponse.state)}
-                variant="soft"
-                size="sm"
-                title="How long is left to reply for the first time"
-              >
-                {view.firstResponse.state === 'met'
-                  ? 'Replied'
-                  : (remainingLabel(view.firstResponse.minutesRemaining) ?? 'Reply due')}
-              </Badge>
+            {view ? (
+              <>
+                <Badge color={priorityTone(view.ticket.priority)} variant="soft" size="sm">
+                  {priorityLabel(view.ticket.priority)}
+                </Badge>
+                {view.firstResponse.state !== 'none' ? (
+                  <Badge
+                    color={slaTone(view.firstResponse.state)}
+                    variant="soft"
+                    size="sm"
+                    title="How long is left to reply for the first time"
+                  >
+                    {view.firstResponse.state === 'met'
+                      ? 'Replied'
+                      : (remainingLabel(view.firstResponse.minutesRemaining) ?? 'Reply due')}
+                  </Badge>
+                ) : null}
+                {view.resolution.state !== 'none' ? (
+                  <Badge
+                    color={slaTone(view.resolution.state)}
+                    variant="soft"
+                    size="sm"
+                    title="How long is left to have it sorted"
+                  >
+                    {view.resolution.state === 'met'
+                      ? 'Sorted'
+                      : (remainingLabel(view.resolution.minutesRemaining) ?? 'Resolution due')}
+                  </Badge>
+                ) : null}
+                <div className="ml-auto flex shrink-0 items-center gap-2">
+                  <div className="w-44">
+                    <Select
+                      size="sm"
+                      color="module"
+                      aria-label="Which stage this request is on"
+                      value={view.ticket.stageId}
+                      items={stageItems}
+                      disabled={moveStage.isPending || Object.keys(stageItems).length === 0}
+                      onValueChange={(next) => {
+                        if (next !== view.ticket.stageId) onMove(next as string);
+                      }}
+                    />
+                  </div>
+                  <div className="hidden w-44 @xl:block">
+                    <Select
+                      color="module"
+                      size="sm"
+                      aria-label="Who owns this request"
+                      value={view.ticket.assignedToUserId ?? ''}
+                      items={assigneeItems}
+                      disabled={assign.isPending}
+                      onValueChange={(next) => {
+                        assign.mutate((next as string) || null);
+                      }}
+                    />
+                  </div>
+                </div>
+              </>
             ) : null}
-            {view.resolution.state !== 'none' ? (
-              <Badge
-                color={slaTone(view.resolution.state)}
-                variant="soft"
-                size="sm"
-                title="How long is left to have it sorted"
-              >
-                {view.resolution.state === 'met'
-                  ? 'Sorted'
-                  : (remainingLabel(view.resolution.minutesRemaining) ?? 'Resolution due')}
-              </Badge>
-            ) : null}
-            <div className="ml-auto flex shrink-0 items-center gap-2">
-              <div className="w-44">
-                <Select
-                  size="sm"
-                  color="module"
-                  aria-label="Which stage this request is on"
-                  value={view.ticket.stageId}
-                  items={stageItems}
-                  disabled={moveStage.isPending || Object.keys(stageItems).length === 0}
-                  onValueChange={(next) => {
-                    if (next !== view.ticket.stageId) onMove(next as string);
-                  }}
-                />
-              </div>
-              <div className="hidden w-44 @xl:block">
-                <Select
-                  color="module"
-                  size="sm"
-                  aria-label="Who owns this request"
-                  value={view.ticket.assignedToUserId ?? ''}
-                  items={assigneeItems}
-                  disabled={assign.isPending}
-                  onValueChange={(next) => {
-                    assign.mutate((next as string) || null);
-                  }}
-                />
-              </div>
-            </div>
           </>
-        ) : null}
-        <Button
-          color="module"
-          size="sm"
-          className={view ? 'shrink-0' : 'ml-auto shrink-0'}
-          loading={saving}
-          disabled={Boolean(subjectError) || (!isNew && !dirty)}
-          onClick={submit}
-        >
-          {isNew ? 'Open request' : 'Save'}
-        </Button>
-      </PaneToolbar>
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className={COLUMN}>
@@ -462,14 +459,7 @@ function TicketEditor({ ctx, id, view }: { ctx: SurfaceContext; id: string; view
             </div>
           ) : null}
 
-          {failure ? (
-            <Alert color="error">
-              <AlertContent>
-                <AlertTitle>Could not save this request</AlertTitle>
-                <AlertDescription>{failure}</AlertDescription>
-              </AlertContent>
-            </Alert>
-          ) : null}
+          <SaveFailure title="Could not save this request" message={failure} />
 
           <FormSection title="The request">
             <Field>

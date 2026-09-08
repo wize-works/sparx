@@ -52,6 +52,7 @@ import {
   type SlaPolicy,
   type TicketPriority,
 } from './tickets-data';
+import { PaneLoadError } from '../../components/pane-load-error';
 
 const COLUMN = 'mx-auto flex w-full max-w-3xl flex-col gap-4';
 const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -139,26 +140,13 @@ export function SlaPoliciesSurface({ ctx }: { ctx: SurfaceContext }) {
 
   if (isError) {
     return (
-      <div className="flex h-full items-center justify-center p-8">
-        <Alert color="error" className="max-w-md">
-          <AlertContent>
-            <AlertTitle>Could not load your response times</AlertTitle>
-            <AlertDescription>
-              Something went wrong reaching the server. Nothing has been changed.
-            </AlertDescription>
-          </AlertContent>
-          <Button
-            size="sm"
-            color="error"
-            variant="soft"
-            onClick={() => {
-              void refetch();
-            }}
-          >
-            Try again
-          </Button>
-        </Alert>
-      </div>
+      <PaneLoadError
+        title="Could not load your response times"
+        description="Something went wrong reaching the server. Nothing has been changed."
+        onRetry={() => {
+          void refetch();
+        }}
+      />
     );
   }
 
@@ -332,37 +320,44 @@ function PolicyEditor({
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Response time actions">
-        {policy.isDefault ? (
-          <Badge color="module" variant="soft" size="sm">
-            Used by default
-          </Badge>
-        ) : null}
-        {policies.length > 1 ? (
-          <div className="w-52">
-            <Select
-              color="module"
-              size="sm"
-              aria-label="Which set of response times"
-              value={policy.id}
-              items={policyItems}
-              onValueChange={(next) => {
-                onSelect(next as string);
-              }}
-            />
-          </div>
-        ) : null}
-        <Button
-          color="module"
-          size="sm"
-          className="ml-auto shrink-0"
-          loading={save.isPending}
-          disabled={Boolean(blocked) || !dirty}
-          onClick={submit}
-        >
-          Save
-        </Button>
-      </PaneToolbar>
+      <PaneToolbar
+        label="Response time actions"
+        primary={
+          <Button
+            color="module"
+            size="sm"
+            className="ml-auto shrink-0"
+            loading={save.isPending}
+            disabled={Boolean(blocked) || !dirty}
+            onClick={submit}
+          >
+            Save
+          </Button>
+        }
+        controls={
+          <>
+            {policy.isDefault ? (
+              <Badge color="module" variant="soft" size="sm">
+                Used by default
+              </Badge>
+            ) : null}
+            {policies.length > 1 ? (
+              <div className="w-52">
+                <Select
+                  color="module"
+                  size="sm"
+                  aria-label="Which set of response times"
+                  value={policy.id}
+                  items={policyItems}
+                  onValueChange={(next) => {
+                    onSelect(next as string);
+                  }}
+                />
+              </div>
+            ) : null}
+          </>
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className={COLUMN}>

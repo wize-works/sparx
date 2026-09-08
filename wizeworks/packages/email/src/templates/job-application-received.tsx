@@ -55,7 +55,11 @@ export function JobApplicationReceivedEmail({
   if (portfolioUrl?.trim()) rows.push({ label: 'Portfolio', value: portfolioUrl });
   if (roleInterest?.trim()) rows.push({ label: 'What they want to own', value: roleInterest });
   return (
-    <EmailLayout preview={`${applicantName} applied — ${roleTitle}`}>
+    <EmailLayout
+      // Our own hiring inbox.
+      audience="platform"
+      preview={`${applicantName} applied — ${roleTitle}`}
+    >
       <Section>
         <EmailHeading>New application — {roleTitle}</EmailHeading>
         <EmailParagraph>

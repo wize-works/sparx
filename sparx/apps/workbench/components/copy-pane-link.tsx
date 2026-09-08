@@ -27,6 +27,7 @@ import { Check, Link2 } from 'lucide-react';
 import { useActiveSiteSlug } from '../lib/api/shell-data';
 import { useWorkbench } from '../lib/workbench/context';
 import { usePaneId } from '../lib/workbench/pane-identity';
+import { MENU_ROW, type ToolbarPresentation } from './toolbar-presentation';
 import { shareableAddressForPane } from '../lib/workbench/address';
 import { useShareAsParams } from '../lib/workbench/share-as';
 
@@ -53,6 +54,20 @@ export function usePaneLink(paneId: string | null): string | null {
     shareAs ? { ...descriptor, params: shareAs } : descriptor,
     siteSlug
   );
+}
+
+/**
+ * Whether this pane has an address to share — i.e. whether `CopyPaneLink`
+ * renders anything at all.
+ *
+ * PaneToolbar asks because a collapsed bar must never show an overflow trigger
+ * over an empty popover. A pane with no filters, no actions and nothing to
+ * refetch has only this control left to fold, so "is there a link?" is the
+ * difference between a menu and a button that opens nothing.
+ */
+export function usePaneHasLink(): boolean {
+  const paneId = usePaneId();
+  return usePaneLink(paneId) !== null;
 }
 
 export function useCopyLink(): (link: string) => Promise<boolean> {
@@ -83,11 +98,13 @@ export function useCopyLink(): (link: string) => Promise<boolean> {
  * surfaces gets it from a single edit — and so a later change to how a link is
  * shared lands everywhere at once instead of needing a sweep.
  *
- * Neutral and ghost: this is chrome about the pane, not an action the surface
- * offers. It must not compete with the thing the pane exists to do, which is
- * usually the colored button a few pixels to its left.
+ * Colorless: this is chrome about the pane, not an action the surface offers. It
+ * must not compete with the thing the pane exists to do, which is usually the
+ * colored button a few pixels to its left.
  */
-export function CopyPaneLink() {
+export function CopyPaneLink({
+  presentation = 'bar',
+}: { presentation?: ToolbarPresentation } = {}) {
   const paneId = usePaneId();
   const link = usePaneLink(paneId);
   const copyLink = useCopyLink();
@@ -95,26 +112,39 @@ export function CopyPaneLink() {
 
   if (!link) return null;
 
+  const copy = () => {
+    void copyLink(link).then((ok) => {
+      if (!ok) return;
+      setCopied(true);
+      // Long enough to register, short enough to be ready again before someone
+      // reaches for the next one.
+      setTimeout(() => {
+        setCopied(false);
+      }, 1600);
+    });
+  };
+
+  // In the overflow popover there is no position to read and no hover to reveal
+  // a tooltip, so the icon carries its label — see RefreshButton.
+  if (presentation === 'menu') {
+    return (
+      <Button size="sm" variant="ghost" className={MENU_ROW} onClick={copy}>
+        {copied ? (
+          <Check className="size-4" aria-hidden />
+        ) : (
+          <Link2 className="size-4" aria-hidden />
+        )}
+        <span>{copied ? 'Link copied' : 'Copy a link to this'}</span>
+      </Button>
+    );
+  }
+
+  // Neither `color` nor `variant`: a bare `.btn` resolves to base-content, which
+  // is the theme-correct ink for chrome that belongs to no module. `neutral` was
+  // naming a color this control has no business choosing.
   return (
     <Tooltip content={copied ? 'Link copied' : 'Copy a link to this'}>
-      <Button
-        size="sm"
-        variant="ghost"
-        color="neutral"
-        shape="square"
-        aria-label="Copy a link to this panel"
-        onClick={() => {
-          void copyLink(link).then((ok) => {
-            if (!ok) return;
-            setCopied(true);
-            // Long enough to register, short enough to be ready again before
-            // someone reaches for the next one.
-            setTimeout(() => {
-              setCopied(false);
-            }, 1600);
-          });
-        }}
-      >
+      <Button size="sm" shape="square" aria-label="Copy a link to this panel" onClick={copy}>
         {copied ? (
           <Check className="size-4" aria-hidden />
         ) : (

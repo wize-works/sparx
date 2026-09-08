@@ -50,6 +50,7 @@ import { afterPaneChange } from '../../lib/defer';
 import { PaneToolbar, PANE_SHELL } from '../../components/pane-toolbar';
 import { FormSection } from '../../components/form-section';
 import type { SurfaceContext } from '../../lib/surfaces/registry';
+import { SaveFailure } from '@/components/save-failure';
 import {
   formatCents,
   productErrorMessage,
@@ -71,6 +72,7 @@ import {
   useUpdateTemplate,
   type ConfiguratorAddOnInput,
 } from './configurator-data';
+import { PaneLoadError } from '../../components/pane-load-error';
 
 const COLUMN = 'mx-auto flex w-full max-w-3xl flex-col gap-4';
 const NEW = 'new';
@@ -327,7 +329,7 @@ function CreateFlow({ ctx }: { ctx: SurfaceContext }) {
 /* ── Manage: load then edit ─────────────────────────────────────────────── */
 
 function ManageFlow({ ctx, id }: { ctx: SurfaceContext; id: string }) {
-  const { data: template, isPending, isError, refetch } = useConfiguratorTemplate(id);
+  const { data: template, isPending, isError, error, refetch } = useConfiguratorTemplate(id);
   const [draft, setDraft] = useState<Draft | null>(null);
 
   useEffect(() => {
@@ -336,26 +338,15 @@ function ManageFlow({ ctx, id }: { ctx: SurfaceContext; id: string }) {
 
   if (isError) {
     return (
-      <div className="flex h-full items-center justify-center p-8">
-        <Alert color="error" className="max-w-md">
-          <AlertContent>
-            <AlertTitle>Could not load this build</AlertTitle>
-            <AlertDescription>
-              This is a problem reaching the server. The build itself is unaffected.
-            </AlertDescription>
-          </AlertContent>
-          <Button
-            size="sm"
-            color="error"
-            variant="soft"
-            onClick={() => {
-              void refetch();
-            }}
-          >
-            Try again
-          </Button>
-        </Alert>
-      </div>
+      <PaneLoadError
+        error={error}
+        noun="build"
+        title="Could not load this build"
+        description="This is a problem reaching the server. The build itself is unaffected."
+        onRetry={() => {
+          void refetch();
+        }}
+      />
     );
   }
 
@@ -542,14 +533,7 @@ function Editor({
             </Text>
           </div>
 
-          {failure ? (
-            <Alert color="error">
-              <AlertContent>
-                <AlertTitle>Could not save this build</AlertTitle>
-                <AlertDescription>{failure}</AlertDescription>
-              </AlertContent>
-            </Alert>
-          ) : null}
+          <SaveFailure title="Could not save this build" message={failure} />
 
           {blocked !== null && dirty ? (
             <Alert color="warning">

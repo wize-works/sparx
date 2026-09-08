@@ -22,6 +22,7 @@ import { FormSection } from '../../components/form-section';
 import type { SurfaceContext } from '../../lib/surfaces/registry';
 import { BookingResourcePicker } from './booking-resource-picker';
 import { BookingCreateWho } from './booking-create-who';
+import { SaveFailure } from '@/components/save-failure';
 import {
   bookingTypeLabel,
   formatMoney,
@@ -91,14 +92,7 @@ export function BookingCreateFields({
   const chosenService = serviceList.find((s) => s.id === serviceId) ?? null;
   return (
     <>
-      {saveError ? (
-        <Alert color="error">
-          <AlertContent>
-            <AlertTitle>Could not take this booking</AlertTitle>
-            <AlertDescription>{saveError}</AlertDescription>
-          </AlertContent>
-        </Alert>
-      ) : null}
+      <SaveFailure title="Could not take this booking" message={saveError} />
 
       {noServices ? (
         <Alert color="info">

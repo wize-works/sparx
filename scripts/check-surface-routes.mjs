@@ -65,23 +65,17 @@ const SURFACE_KEY = /^[a-z][a-z0-9-]*(?:\.[a-z0-9-]+)+$/;
 const NO_ADDRESS_YET = new Set([]);
 
 // Dead `open()` calls that already existed when this direction was first checked
-// (2026-08-29, issue 327). Listed by exact call site rather than by key, so the
-// five that are here are the only five that pass — a sixth fails, and so does one
-// of these moving to another line.
+// (2026-08-29, issue 327).
 //
-// All five are sparx's, and all five are the ORIGINALS: the Piggles console was
-// copied from that tree in August and inherited every one of them. Piggles' copies
-// are fixed; these are the same three typos (`commerce.products.detail` for
-// `commerce.product.detail`, `crm.orders.detail` for `commerce.order.detail`,
-// `inventory.stock.detail` for `inventory.stock.item`) waiting on someone who owns
-// `sparx/**`. Delete an entry with its fix — never to make this quiet.
-const KNOWN_DEAD_OPENS = new Set([
-  'sparx/apps/workbench/surfaces/inventory/barcode-conflicts.tsx:153 commerce.products.detail',
-  'sparx/apps/workbench/surfaces/inventory/barcodes-list.tsx:106 commerce.products.detail',
-  'sparx/apps/workbench/surfaces/inventory/pack-bench.tsx:582 crm.orders.detail',
-  'sparx/apps/workbench/surfaces/inventory/stock-ownership.tsx:59 inventory.stock.detail',
-  'sparx/apps/workbench/surfaces/inventory/warehouse-mode.tsx:256 commerce.products.detail',
-]);
+// EMPTY, and it should stay that way. All five were sparx's, and all five were the
+// ORIGINALS: the Piggles console was copied from that tree in August and inherited
+// every one of them. Piggles' copies were fixed first; the sparx originals were the
+// same three typos (`commerce.products.detail` for `commerce.product.detail`,
+// `crm.orders.detail` for `commerce.order.detail`, `inventory.stock.detail` for
+// `inventory.stock.item`) and are now fixed too, so the list is gone rather than
+// re-recorded at new line numbers. Add an entry only with a reason nobody can act on
+// today — never to make this quiet.
+const KNOWN_DEAD_OPENS = new Set([]);
 
 /** Strip `//` line comments so a key quoted inside prose is not read as a declaration. */
 function decomment(source) {

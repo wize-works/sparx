@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { PlatformEmailLayout } from './_layout';
+import { EmailLayout } from './_layout';
 import {
   EmailActionButton,
   EmailAmountHero,
@@ -11,6 +11,11 @@ import {
 export interface DocumentSignatureRequestEmailProps {
   /** The signer's name (falls back to "there"). */
   signerName?: string;
+  /** THE BUSINESS ASKING FOR THE SIGNATURE. This email named no sender at all --
+   *  it said "your estimate is ready" under OUR wordmark, to somebody who has
+   *  never heard of us, with a link asking them to sign something. Nullable
+   *  defensively; the copy falls back to naming no one rather than guessing. */
+  fromName?: string | null;
   /** Human label for the document, e.g. "Estimate", "Quote", "Work Order". */
   documentLabel: string;
   /** The document's number/reference, e.g. "EST-1042". */
@@ -55,21 +60,39 @@ export function DocumentSignatureRequestEmail({
   currency,
   expiresAt,
   signingUrl,
+  fromName,
 }: DocumentSignatureRequestEmailProps) {
   const label = documentLabel || 'document';
+  const from = (fromName ?? '').trim() || null;
   const expiryLabel = formatExpiry(expiresAt);
   return (
-    <PlatformEmailLayout
-      preview={`${label} ${documentNumber} is ready for your signature`}
-      footerReason={`You're receiving this because a ${label.toLowerCase()} was sent to you for signature.`}
+    // A TENANT send. This was on the platform chassis, so a customer asked to
+    // sign a stranger's estimate got our wordmark over it and our operating
+    // company in the fine print -- the exact reading the invoice template
+    // removed its own masthead to avoid, on the one email that also asks the
+    // reader to click a link and put their name to something.
+    <EmailLayout
+      audience="visitor"
+      preview={
+        from
+          ? `${from} sent you ${label.toLowerCase()} ${documentNumber} to sign`
+          : `${label} ${documentNumber} is ready for your signature`
+      }
+      footerNote={
+        from
+          ? `${from} asked you to sign ${label.toLowerCase()} ${documentNumber}.`
+          : `You're receiving this because a ${label.toLowerCase()} was sent to you for signature.`
+      }
     >
-      <EmailDisplayHeading>Please review and sign</EmailDisplayHeading>
+      <EmailDisplayHeading>
+        {from ? `${label} from ${from}` : 'Please review and sign'}
+      </EmailDisplayHeading>
       <EmailParagraph>
-        Hi {signerName ?? 'there'}, your {label.toLowerCase()}{' '}
+        Hi {signerName ?? 'there'}, {from ? `${from} has sent you ` : 'your '}
         <strong>
           {label} {documentNumber}
         </strong>{' '}
-        is ready. Take a moment to review it and add your signature — it only takes a minute.
+        to sign. Take a moment to review it and add your signature — it only takes a minute.
       </EmailParagraph>
 
       <EmailAmountHero
@@ -85,14 +108,20 @@ export function DocumentSignatureRequestEmail({
           ? `This signing link is valid until ${expiryLabel}.`
           : 'This signing link will expire, so please sign soon.'}
       </EmailFinePrint>
-    </PlatformEmailLayout>
+    </EmailLayout>
   );
 }
 
 export function documentSignatureRequestSubject(
   documentLabel: string,
-  documentNumber: string
+  documentNumber: string,
+  fromName?: string | null
 ): string {
   const label = documentLabel || 'Document';
-  return `${label} ${documentNumber} — ready for your signature`;
+  // The business first when we know it: a subject line naming nobody, asking a
+  // stranger to sign something, is what a phishing attempt looks like.
+  const from = (fromName ?? '').trim();
+  return from
+    ? `${label} ${documentNumber} from ${from} — ready for your signature`
+    : `${label} ${documentNumber} — ready for your signature`;
 }

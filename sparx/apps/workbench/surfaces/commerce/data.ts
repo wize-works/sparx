@@ -21,6 +21,11 @@
 // show both. Collapsing them loses the exact case an operator cares about most:
 // paid but not yet shipped.
 
+// Carrier words come from the schema package, not a local map. There were three
+// of those and they had drifted: this console said "Sent by the supplier" where
+// the shopper's own order page said "Drop-ship", and the customer's email said
+// "usps". One list, so a new carrier is named once.
+import { carrierLabel } from '@wizeworks/commerce-schemas';
 import { useMutation, useQuery, useQueryClient } from '@wizeworks/query';
 import { api } from '../../lib/api/client';
 import { paymentMethodLabels } from '../../lib/payment-methods';
@@ -389,6 +394,43 @@ export function useRecordFulfillment(id: string) {
   });
 }
 
+/**
+ * Putting a tracking number on a parcel that already went.
+ *
+ * The other half of the gap `useRecordFulfillment` above describes. `PATCH
+ * /v1/orders/:id/fulfillments/:fulfillmentId` has always existed and, like the
+ * POST before it, nothing in either console called it — so the moment a shipment
+ * was recorded its details were frozen forever.
+ *
+ * That is not an edge case for a shop that posts its own parcels. The tracking
+ * number is optional at the counter and usually not known yet: the goods are
+ * boxed and marked sent, and the number comes back from the post office
+ * afterwards. There was nowhere to put it. The customer had already been emailed
+ * "your order is on its way" with no way to follow it, and no later mail would
+ * ever carry one.
+ */
+export function useUpdateTracking(id: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      fulfillmentId,
+      trackingNumber,
+    }: {
+      fulfillmentId: string;
+      trackingNumber: string;
+    }) =>
+      api.patch<OrderFulfillment>(`/v1/orders/${id}/fulfillments/${fulfillmentId}`, {
+        // Empty clears it. `null` is what the schema takes for "there is no
+        // number", and it is a real answer — a number typed by mistake should be
+        // removable, not merely replaceable.
+        trackingNumber: trackingNumber.trim() || null,
+      }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ORDERS_KEY });
+    },
+  });
+}
+
 /** The rate ref checkout writes when a shopper chooses to come and get it.
  *  Mirrors COLLECTION_RATE_REF in @wizeworks/commerce (collection-option.ts);
  *  copied rather than imported because that package is server-side and would
@@ -619,13 +661,16 @@ export const PAYMENT_PROCESSOR_LABELS: Record<string, string> = paymentMethodLab
   'net_terms',
   'stripe',
   'paypal',
+  'gift_card',
 ]);
 
 /** True when the money never went through a gateway, so there is nothing to
  *  send it back to. Drives the refund wording, which used to promise every
  *  refund went "back to the card it was paid with" — including a cash sale. */
 export function paidByHand(processor: string): boolean {
-  return processor === 'manual' || processor === 'check' || processor === 'wire';
+  // `gift_card` counts: nothing here credits a card automatically, so putting
+  // the money back is an adjustment somebody makes on the card by hand.
+  return ['manual', 'check', 'wire', 'gift_card'].includes(processor);
 }
 
 export const FULFILLMENT_STATUS_LABELS: Record<string, string> = {
@@ -634,18 +679,6 @@ export const FULFILLMENT_STATUS_LABELS: Record<string, string> = {
   delivered: 'Delivered',
   failed: 'Delivery failed',
   cancelled: 'Cancelled',
-};
-
-/** The API's `Carrier` enum in the words a business uses. `pickup` is handled
- *  by `shipmentHeadline` rather than listed here — nothing was carried. */
-const CARRIER_LABELS: Record<string, string> = {
-  ups: 'UPS',
-  usps: 'USPS',
-  fedex: 'FedEx',
-  dhl: 'DHL',
-  digital: 'Sent electronically',
-  dropship: 'Sent by the supplier',
-  other: 'Another courier',
 };
 
 /**
@@ -658,8 +691,13 @@ const CARRIER_LABELS: Record<string, string> = {
  */
 export function shipmentHeadline(shipment: OrderFulfillment): string {
   if (shipment.carrier === 'pickup') return shipment.service ?? 'Collected in person';
-  const carrier = shipment.carrier ? (CARRIER_LABELS[shipment.carrier] ?? shipment.carrier) : '';
-  return [carrier, shipment.service].filter(Boolean).join(' · ') || 'Delivery';
+  const carrier = carrierLabel(shipment.carrier);
+  const service = shipment.service ?? '';
+  // A carrier's own service names usually START with the carrier, so joining
+  // both produced "USPS · USPS Ground Advantage Economy". When the service
+  // already says who is carrying it, it says it once.
+  if (carrier && service.toLowerCase().startsWith(carrier.toLowerCase())) return service;
+  return [carrier, service].filter(Boolean).join(' · ') || 'Delivery';
 }
 
 /** "Delivered" is right for something a courier brought and wrong for something
@@ -761,4 +799,74 @@ export function addressLines(address: OrderAddress | null): string[] {
     address.country,
     address.phone,
   ].filter((line): line is string => Boolean(line?.trim()));
+}
+
+/** One invoice raised for an order, as the order pane shows it. */
+export interface OrderInvoice {
+  id: string;
+  number: string | null;
+  status: string;
+  total: number;
+  amountPaid: number;
+  balance: number;
+  currency: string;
+  dueAt: string | null;
+  createdAt: string;
+  /** When the invoice was actually emailed, and where to. Null while it has only
+   *  been raised — making an invoice and sending it are two different acts. */
+  sentAt: string | null;
+  sentTo: string | null;
+}
+
+/**
+ * The invoices raised to ask for the money on this order.
+ *
+ * Empty is the ordinary answer for a shop that takes card at checkout — nobody
+ * needs to be asked. It is the shops that take NO payment at checkout for which
+ * this is the whole second half of the sale.
+ */
+export function useOrderInvoices(id: string) {
+  return useQuery({
+    queryKey: [...ORDERS_KEY, id, 'invoices'],
+    queryFn: () =>
+      api.get<OrderInvoice[]>(`/v1/orders/${id}/invoices`).then((rows) =>
+        rows.map((row) => ({
+          ...row,
+          total: num(row.total),
+          amountPaid: num(row.amountPaid),
+          balance: num(row.balance),
+        }))
+      ),
+  });
+}
+
+/**
+ * Raising the invoice that asks for the money on this order.
+ *
+ * The order is copied onto it — every line, the delivery charge, the addresses
+ * as they were frozen at checkout, and the order's own tax. Nothing is
+ * re-priced: the order is the record of what was agreed, and an invoice quietly
+ * charging a different number would be a second opinion about a sale that has
+ * already happened.
+ *
+ * The server refuses, in a sentence worth showing verbatim, when there is
+ * nothing to ask for: an order paid in full, one that was called off, or one
+ * that has already been invoiced.
+ */
+export function useCreateInvoiceForOrder(id: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { dueAt?: string } = {}) =>
+      api.post<{ document: { id: string; number: string | null }; balance: number }>(
+        `/v1/orders/${id}/invoices`,
+        input.dueAt ? { dueAt: input.dueAt } : {}
+      ),
+    onSuccess: () => {
+      // The order's own paid/unpaid state does not move yet — raising an invoice
+      // asks for money, it does not receive any — but the invoice list on this
+      // pane does, and so does the Invoices screen.
+      void queryClient.invalidateQueries({ queryKey: ORDERS_KEY });
+      void queryClient.invalidateQueries({ queryKey: ['invoicing'] });
+    },
+  });
 }

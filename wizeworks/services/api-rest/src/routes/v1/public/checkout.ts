@@ -15,7 +15,7 @@
 
 import { randomUUID } from 'node:crypto';
 
-import type { FastifyPluginAsync } from 'fastify';
+import type { FastifyPluginAsync, FastifyRequest } from 'fastify';
 import { z } from 'zod';
 
 import {
@@ -290,16 +290,45 @@ const publicCheckoutRoutes: FastifyPluginAsync = async (app) => {
     return ok(await checkoutService.get(ctx, sessionId));
   });
 
-  // Apply a discount code to the checkout session's underlying cart.
-  // Validates the code, enforces usage limits, and returns the updated session
-  // so the storefront can re-render totals. Idempotent — re-applying the same
-  // code for the same cart returns the existing saving without erroring.
-  app.post('/v1/public/commerce/checkout/:sessionId/discount', async (request) => {
+  // Apply a code to the checkout session's underlying cart — a discount or a
+  // gift card, because the shopper has one code and no way to tell which it is.
+  // Validates it, enforces usage limits, and returns the updated session so the
+  // storefront can re-render totals. Idempotent — re-applying the same discount
+  // for the same cart returns the existing saving without erroring.
+  //
+  // The discount is tried first: an unknown discount code costs the shopper
+  // nothing, while reserving the wrong gift card takes money off a balance. Same
+  // rule, same order, as the cart's own code route.
+  const applyCode = async (request: FastifyRequest) => {
     const { sessionId } = SessionParam.parse(request.params);
     const body = DiscountBody.parse(request.body);
     const { tenantId, ctx } = await publicCommerceContext(request);
     const { cartId } = await assertSessionOwner(request, ctx, tenantId, sessionId);
-    await discountService.redeemCode(ctx, { cartId, code: body.code });
+    let discountError: Error | null = null;
+    try {
+      await discountService.redeemCode(ctx, { cartId, code: body.code });
+      return ok(await checkoutService.get(ctx, sessionId));
+    } catch (err) {
+      discountError = err as Error;
+    }
+    try {
+      await discountService.applyGiftCardToCart(ctx, { cartId, code: body.code });
+      return ok(await checkoutService.get(ctx, sessionId));
+    } catch {
+      throw badRequest(discountError?.message || 'That code can’t be applied.');
+    }
+  };
+
+  app.post('/v1/public/commerce/checkout/:sessionId/code', applyCode);
+  // The older name for the same handler, sharing one implementation so the two
+  // cannot answer differently.
+  app.post('/v1/public/commerce/checkout/:sessionId/discount', applyCode);
+
+  app.delete('/v1/public/commerce/checkout/:sessionId/gift-card', async (request) => {
+    const { sessionId } = SessionParam.parse(request.params);
+    const { tenantId, ctx } = await publicCommerceContext(request);
+    const { cartId } = await assertSessionOwner(request, ctx, tenantId, sessionId);
+    await discountService.removeGiftCardFromCart(ctx, { cartId });
     return ok(await checkoutService.get(ctx, sessionId));
   });
 

@@ -63,7 +63,6 @@ import { RefreshButton } from '../../components/refresh-button';
 import { FormSection } from '../../components/form-section';
 import { useDirtySource } from '../../lib/workbench/dirty';
 import type { SurfaceContext } from '../../lib/surfaces/registry';
-import { ScrollStrip } from '../../components/scroll-strip';
 import { FollowingNotice, ProductScopeFallback, useProductScope } from './product-scope';
 import {
   canonicalLocale,
@@ -373,20 +372,18 @@ function TranslationEditor({
           className="flex flex-col gap-3"
         >
           <div className="bg-base-300 shrink-0 rounded-full px-4 py-2">
-            <ScrollStrip label="languages">
-              <TabsList>
-                {locales.map((locale) => (
-                  <TabsTab key={locale} value={locale}>
-                    {localeName(locale)}
-                    {/* A dot rather than the word "unsaved": the strip has to stay
+            <TabsList scrollable scrollLabel="languages">
+              {locales.map((locale) => (
+                <TabsTab key={locale} value={locale}>
+                  {localeName(locale)}
+                  {/* A dot rather than the word "unsaved": the strip has to stay
                         readable at four languages in a narrow docked pane. */}
-                    {dirtyLocales.includes(locale) ? (
-                      <span aria-label="has unsaved changes"> •</span>
-                    ) : null}
-                  </TabsTab>
-                ))}
-              </TabsList>
-            </ScrollStrip>
+                  {dirtyLocales.includes(locale) ? (
+                    <span aria-label="has unsaved changes"> •</span>
+                  ) : null}
+                </TabsTab>
+              ))}
+            </TabsList>
           </div>
 
           {/* One panel, re-keyed per language, rather than a TabsPanel each: the

@@ -10,7 +10,7 @@
 // Order via @wizeworks/crm's orderService and fires the post-commit events
 // (order.placed, inventory.adjusted, email.send).
 
-import { orderService, b2bArService } from '@wizeworks/crm';
+import { orderService, orderPaymentsService, b2bArService } from '@wizeworks/crm';
 import {
   type AppliedSurcharge,
   applySurcharges,
@@ -54,6 +54,13 @@ import * as madeToOrderService from './made-to-order-service';
 import * as marketService from './market';
 import * as pricingService from './pricing-service';
 import * as shippingService from './shipping-service';
+import * as taxService from './tax-service';
+import { taxRegionCode } from './tax-region';
+import { resolveShipFromAddress } from './shipping-request-resolver';
+import type {
+  AddressSnapshot as AddressSnapshotType,
+  TaxBreakdown,
+} from '@wizeworks/commerce-schemas';
 import { describeRate, isCollection } from './collection-option';
 import * as surchargeService from './surcharge-service';
 
@@ -246,11 +253,18 @@ async function syncSessionToCart<T extends CheckoutSession | null>(
   await cartService.recomputeCartTotals(tx, ctx, row.cartId);
   const cart = await tx.cart.findFirst({
     where: { id: row.cartId },
-    select: { subtotalCents: true, discountTotalCents: true },
+    // The gift card belongs here for exactly the reason the discount does: it is
+    // reserved on the BASKET, and a shopper can put one on after checkout began.
+    // Syncing the discount and not the card left a session priced without a card
+    // the basket was already holding — the shopper saw the reduction in the cart
+    // and full price at the till.
+    select: { subtotalCents: true, discountTotalCents: true, giftCardAppliedCents: true },
   });
   if (
     !cart ||
-    (cart.subtotalCents === row.subtotalCents && cart.discountTotalCents === row.discountTotalCents)
+    (cart.subtotalCents === row.subtotalCents &&
+      cart.discountTotalCents === row.discountTotalCents &&
+      cart.giftCardAppliedCents === row.giftCardAppliedCents)
   ) {
     return row;
   }
@@ -259,7 +273,7 @@ async function syncSessionToCart<T extends CheckoutSession | null>(
     0,
     cart.subtotalCents -
       cart.discountTotalCents -
-      row.giftCardAppliedCents -
+      cart.giftCardAppliedCents -
       row.accountCreditAppliedCents +
       row.shippingTotalCents +
       row.taxTotalCents
@@ -269,6 +283,7 @@ async function syncSessionToCart<T extends CheckoutSession | null>(
     data: {
       subtotalCents: cart.subtotalCents,
       discountTotalCents: cart.discountTotalCents,
+      giftCardAppliedCents: cart.giftCardAppliedCents,
       totalCents,
     },
   })) as T;
@@ -388,7 +403,7 @@ export async function submitShipping(ctx: ServiceContext, rawInput: unknown): Pr
   const owner = await withTenant(ctx, (tx) =>
     tx.checkoutSession.findFirst({
       where: { id: input.sessionId },
-      select: { cartId: true },
+      select: { cartId: true, customerId: true },
     })
   );
   if (!owner) throw new CommerceNotFoundError('CheckoutSession', input.sessionId);
@@ -435,12 +450,36 @@ export async function submitShipping(ctx: ServiceContext, rawInput: unknown): Pr
     );
   }
 
+  // TAX, priced here for exactly the reasons shipping is: it needs its own
+  // tenant-scoped reads, it must not nest inside the write transaction, and it
+  // must never come from the client.
+  //
+  // Nothing called `taxService.calculate` before this — not checkout, not the
+  // cart, not the B2B flow — so `taxTotalCents` stayed 0 on every order the
+  // platform has ever taken, while Sell › Tax showed places in green marked
+  // "Collecting" (issue 428). A shop that must charge sales tax charged none and
+  // still owed it.
+  const taxBreakdown = await quoteTaxForSession(ctx, {
+    cartId: owner.cartId,
+    customerId: owner.customerId,
+    shippingAddress: input.shippingAddress,
+    shippingAmountCents: chosen.amountCents,
+  });
+
   await withTenant(ctx, async (tx) => {
     const session = await assertSessionWritable(tx, input.sessionId);
     // Re-point the total at the newly chosen rate: swap out whatever shipping the
     // session was carrying (0 on first pass, the previous pick on a change) for this
-    // one, so going back and switching methods can't stack charges.
-    const nextTotalCents = session.totalCents - session.shippingTotalCents + chosen.amountCents;
+    // one, so going back and switching methods can't stack charges. Tax is swapped
+    // the same way, and for the same reason — it moves when the address or the
+    // delivery price does.
+    const nextTaxCents = taxBreakdown?.totalTaxCents ?? 0;
+    const nextTotalCents =
+      session.totalCents -
+      session.shippingTotalCents +
+      chosen.amountCents -
+      session.taxTotalCents +
+      nextTaxCents;
     await tx.checkoutSession.update({
       where: { id: session.id },
       data: {
@@ -459,6 +498,15 @@ export async function submitShipping(ctx: ServiceContext, rawInput: unknown): Pr
         shippingRateRef: chosen.rateRef,
         shippingTotalCents: chosen.amountCents,
         shippingDescription: describeRate(chosen),
+        taxTotalCents: nextTaxCents,
+        // Null rather than a stale ref when nothing was taxable: a breakdown
+        // reference that points at a calculation for a different address is
+        // worse than none when somebody asks why they were charged.
+        taxProviderSlug: taxBreakdown?.providerSlug ?? null,
+        taxBreakdownRef: taxBreakdown?.breakdownRef ?? null,
+        taxBreakdown: taxBreakdown
+          ? (taxBreakdown as unknown as Prisma.InputJsonValue)
+          : Prisma.DbNull,
         totalCents: nextTotalCents,
       },
     });
@@ -981,7 +1029,15 @@ export async function complete(
     await cartService.recomputeCartTotals(tx, ctx, cart.id);
     const settled = await tx.cart.findFirstOrThrow({
       where: { id: cart.id },
-      select: { subtotalCents: true, discountTotalCents: true },
+      // pricingTrace carries WHICH gift card is reserved. The scalar beside it
+      // says how much; only the trace says which card to debit, and the order
+      // cannot be written before that is known.
+      select: {
+        subtotalCents: true,
+        discountTotalCents: true,
+        giftCardAppliedCents: true,
+        pricingTrace: true,
+      },
     });
     // `get()` keeps the two in line on every step, so a difference here means the
     // basket moved between the page being drawn and this button being pressed —
@@ -991,12 +1047,18 @@ export async function complete(
     // arriving a different way.
     if (
       settled.subtotalCents !== session.subtotalCents ||
-      settled.discountTotalCents !== session.discountTotalCents
+      settled.discountTotalCents !== session.discountTotalCents ||
+      settled.giftCardAppliedCents !== session.giftCardAppliedCents
     ) {
       throw new CommerceConflictError(
         'Your basket changed while you were checking out. Open it again to see the current total.'
       );
     }
+
+    // WHICH gift card this basket is holding. The scalar says how much; only the
+    // trace says which card, and both the order's record and the debit below
+    // need the identity rather than the amount.
+    const reservedCard = discountService.giftCardOnCart(settled.pricingTrace);
 
     // Today's allowance, re-checked at the binding moment (issue 026). The cart
     // checked it too, but a basket can sit open past midnight or past the last
@@ -1109,10 +1171,53 @@ export async function complete(
           paymentTermsRequested: session.paymentTermsRequested,
           subtotalCents: session.subtotalCents,
           giftCardAppliedCents: session.giftCardAppliedCents,
+          // The amount alone cannot answer "which card was this?" — the question
+          // a shopper asks when a balance looks wrong, and the one a refund has
+          // to answer before it can put money back on the right card.
+          ...(reservedCard ? { giftCardCode: reservedCard.code } : {}),
           accountCreditAppliedCents: session.accountCreditAppliedCents,
         },
       }
     );
+
+    // The gift card comes off the CARD here, and nowhere earlier. Applying one to
+    // a basket only reserves it, so an abandoned basket leaves the balance whole
+    // and there is no reversal step to get wrong. Composed into this transaction
+    // (tx injection) so anything that fails below rolls the debit back with the
+    // order: a card debited against an order that does not exist is money the
+    // shopper can neither spend nor get back.
+    if (reservedCard && session.giftCardAppliedCents > 0) {
+      await discountService.redeemGiftCard(
+        { ...ctx, tx },
+        {
+          giftCardId: reservedCard.id,
+          deltaCents: session.giftCardAppliedCents,
+          orderId: order.id,
+        }
+      );
+      // …and the order has to KNOW it was part-paid, or the shopper pays twice.
+      //
+      // The order's own total is the value of the goods and the delivery: it is
+      // not reduced by a gift card, because a card is not a discount. What the
+      // card does is settle part of the bill, so it is recorded as MONEY IN,
+      // which is what `amountPaid` and "Still owed" are already built from.
+      //
+      // Without this the shopper was shown "$509.00 to pay", $150 came off the
+      // card, and the order was still written asking for $659 — the same $150
+      // charged twice, once off the card and once on the invoice.
+      await orderPaymentsService.recordPayment(
+        { ...ctx, tx },
+        {
+          orderId: order.id,
+          processor: 'gift_card',
+          processorRef: reservedCard.code,
+          amount: session.giftCardAppliedCents / 100,
+          currency: session.currency,
+          status: 'captured',
+          metadata: { giftCardId: reservedCard.id, giftCardCode: reservedCard.code },
+        }
+      );
+    }
 
     // Card payments: open a PENDING OrderPayment keyed to the gateway intent so the
     // payment webhook (payment.succeeded) can mark it captured + flip the order paid
@@ -1562,6 +1667,96 @@ async function linkKnownCustomer(
 
   await tx.cart.update({ where: { id: cartId }, data: { customerId: existing.id } });
   return existing.id;
+}
+
+/**
+ * What tax this order owes, or null when the question does not arise.
+ *
+ * Null means one of three honest things, and none of them is an error: the
+ * order is being collected so there is no destination; the shop has no tax
+ * place covering that destination; or nothing in the basket is taxable. All
+ * three come back as "no tax line", which is what a shopper should see.
+ *
+ * The REGION is where this used to fall down even once the call existed: an
+ * address carries free text ("CA", "California") and a tax place is filed as
+ * "US-CA". `taxRegionCode` translates, and says nothing rather than guessing —
+ * an unrecognised region then matches only the country-level place, which
+ * under-charges visibly instead of charging a stranger the wrong state's rate.
+ */
+async function quoteTaxForSession(
+  ctx: ServiceContext,
+  input: {
+    cartId: string;
+    customerId: string | null;
+    shippingAddress?: AddressSnapshotType | undefined;
+    shippingAmountCents: number;
+  }
+): Promise<TaxBreakdown | null> {
+  const to = input.shippingAddress;
+  if (!to) return null;
+
+  const read = await withTenant(ctx, async (tx) => {
+    const cart = await tx.cart.findFirst({
+      where: { id: input.cartId },
+      select: { id: true, customerId: true, channel: true },
+    });
+    if (!cart) return null;
+    const [items, exemptions] = await Promise.all([
+      tx.cartItem.findMany({
+        where: { cartId: input.cartId },
+        select: {
+          id: true,
+          quantity: true,
+          unitPriceCents: true,
+          variantId: true,
+          variant: { select: { productId: true, product: { select: { taxClass: true } } } },
+        },
+      }),
+      input.customerId
+        ? tx.taxExemption.findMany({
+            where: { customerId: input.customerId },
+            select: { id: true },
+          })
+        : Promise.resolve([]),
+    ]);
+    // A line is taxed on what it actually costs, so its share of the basket's
+    // savings comes off first. CartItem carries no discount column — the
+    // apportionment is computed, and it is the same one the order is written
+    // from, so tax and the invoice agree about what was discounted.
+    const discountByLine = await apportionCartDiscounts(tx, cart);
+    return { items, exemptionIds: exemptions.map((e) => e.id), discountByLine };
+  });
+  if (!read || read.items.length === 0) return null;
+
+  const from = await resolveShipFromAddress(ctx).catch(() => ({ country: 'US' }) as const);
+
+  return taxService.calculate(ctx, {
+    shipFrom: {
+      country: from.country,
+      ...(taxRegionCode(from.country, 'region' in from ? from.region : undefined)
+        ? { region: taxRegionCode(from.country, 'region' in from ? from.region : undefined) }
+        : {}),
+    },
+    shipTo: {
+      country: to.country,
+      ...(taxRegionCode(to.country, to.region)
+        ? { region: taxRegionCode(to.country, to.region) }
+        : {}),
+      ...(to.postalCode ? { postalCode: to.postalCode } : {}),
+      ...(to.city ? { city: to.city } : {}),
+      ...(to.line1 ? { line1: to.line1 } : {}),
+    },
+    customerExemptionIds: read.exemptionIds,
+    shippingAmountCents: input.shippingAmountCents,
+    lines: read.items.map((item) => ({
+      variantId: item.variantId,
+      productId: item.variant.productId,
+      ...(item.variant.product.taxClass ? { productTaxClass: item.variant.product.taxClass } : {}),
+      quantity: item.quantity,
+      unitPriceCents: item.unitPriceCents,
+      discountAmountCents: read.discountByLine.get(item.id) ?? 0,
+    })),
+  });
 }
 
 async function assertSessionWritable(tx: TxClient, sessionId: string): Promise<CheckoutSession> {

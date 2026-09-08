@@ -607,6 +607,20 @@ const publicContentRoutes: FastifyPluginAsync = (app) => {
     // through `withTenant` itself, and it never throws.
     const paymentMode = await checkoutService.resolvePaymentMode(tenant.id);
 
+    // Which languages this shop's catalogue is actually WRITTEN in, so the site
+    // can offer them and refuse the ones nobody has translated. Derived rather
+    // than configured: a language exists here because a real product carries
+    // words in it, which is the only definition that cannot go stale.
+    const languages = await withTenant({ tenantId: tenant.id }, async (tx) => {
+      const rows = await tx.productTranslation.findMany({
+        where: { product: { status: 'active', deletedAt: null } },
+        distinct: ['locale'],
+        select: { locale: true },
+        orderBy: { locale: 'asc' },
+      });
+      return rows.map((row) => row.locale);
+    });
+
     // Merge the per-site override over the tenant brand identity (Phase 4). A
     // null override leaves the tenant brand untouched, so single-site / no-override
     // payloads are byte-for-byte unchanged.
@@ -704,6 +718,10 @@ const publicContentRoutes: FastifyPluginAsync = (app) => {
         // Tenant-level, not per-site: one business has one way of being paid.
         paymentMode,
       },
+      // The catalogue's other languages, empty when nobody has translated
+      // anything. The site reads it to decide whether to offer a choice at all —
+      // an empty list means one language, and no switcher.
+      languages,
       consent,
       // Per-site disabled modules (docs/49 Slice F). Empty = all tenant-active
       // modules are on. The storefront uses this to gate module-specific routes

@@ -57,6 +57,7 @@ import {
   type InboxFilter,
   type InboxItem,
 } from './inbox-data';
+import { PaneLoadError } from '../../components/pane-load-error';
 
 /* ── Filters ──────────────────────────────────────────────────────────────── */
 
@@ -376,60 +377,57 @@ export function SocialInboxSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Inbox controls" wrap>
-        <Inbox className="size-4 shrink-0" aria-hidden />
-        <Heading level={2} className="min-w-0 truncate text-base font-semibold">
-          Inbox
-        </Heading>
-        <ToggleGroup
-          color="module"
-          size="sm"
-          value={[status]}
-          aria-label="Which messages to show"
-          onValueChange={(value: string[]) => {
-            const next = value[value.length - 1];
-            if (next) setStatus(next as 'open' | 'replied' | 'archived');
-          }}
-        >
-          {STATUS_FILTERS.map((f) => (
-            <ToggleGroupItem key={f.value} value={f.value}>
-              {f.label}
-            </ToggleGroupItem>
-          ))}
-        </ToggleGroup>
-        <RefreshButton
-          className="ml-auto"
-          isFetching={items.isFetching}
-          updatedAt={items.data ? items.dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void items.refetch();
-          }}
-        />
-      </PaneToolbar>
+      <PaneToolbar
+        label="Inbox controls"
+        controls={
+          <>
+            <Inbox className="size-4 shrink-0" aria-hidden />
+            <Heading level={2} className="min-w-0 truncate text-base font-semibold">
+              Inbox
+            </Heading>
+            <ToggleGroup
+              color="module"
+              size="sm"
+              value={[status]}
+              aria-label="Which messages to show"
+              onValueChange={(value: string[]) => {
+                const next = value[value.length - 1];
+                if (next) setStatus(next as 'open' | 'replied' | 'archived');
+              }}
+            >
+              {STATUS_FILTERS.map((f) => (
+                <ToggleGroupItem key={f.value} value={f.value}>
+                  {f.label}
+                </ToggleGroupItem>
+              ))}
+            </ToggleGroup>
+          </>
+        }
+        refresh={
+          <RefreshButton
+            className="ml-auto"
+            isFetching={items.isFetching}
+            updatedAt={items.data ? items.dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void items.refetch();
+            }}
+          />
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-hidden">
         {items.isError ? (
-          <div className="flex h-full items-center justify-center p-8">
-            <EmptyState
-              icon={<ServerCrash className="size-6" aria-hidden />}
-              title="Could not load your inbox"
-              description={socialErrorMessage(
-                items.error,
-                'This is a problem reaching the server. Nothing has changed.'
-              )}
-              actions={
-                <Button
-                  size="sm"
-                  color="module"
-                  onClick={() => {
-                    void items.refetch();
-                  }}
-                >
-                  Try again
-                </Button>
-              }
-            />
-          </div>
+          <PaneLoadError
+            icon={<ServerCrash className="size-6" aria-hidden />}
+            title="Could not load your inbox"
+            description={socialErrorMessage(
+              items.error,
+              'This is a problem reaching the server. Nothing has changed.'
+            )}
+            onRetry={() => {
+              void items.refetch();
+            }}
+          />
         ) : items.isPending ? (
           <p className="p-4 text-base" role="status">
             Loading…

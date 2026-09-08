@@ -97,11 +97,17 @@ function ProfileRow({ profile, onOpen }: { profile: ShippingProfile; onOpen: Row
         ) : null}
       </span>
       <Text as="span" className="shrink-0 text-sm tabular-nums">
-        {count === 0
+        {/* "All other products" belongs to the DEFAULT group and to nothing
+            else. It used to be shown for any group with no members, which made
+            a brand-new empty group claim the whole catalog on the one screen an
+            owner checks her delivery prices on. */}
+        {profile.isDefault
           ? 'All other products'
-          : count === 1
-            ? '1 product'
-            : `${String(count)} products`}
+          : count === 0
+            ? 'Nothing in it yet'
+            : count === 1
+              ? '1 product'
+              : `${String(count)} products`}
       </Text>
     </button>
   );
@@ -135,21 +141,28 @@ export function ShippingSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Shipping controls">
-        <Truck className="size-4 shrink-0" aria-hidden />
-        <Heading level={2} className="min-w-0 truncate text-base font-semibold">
-          Shipping
-        </Heading>
-        <RefreshButton
-          className="ml-auto"
-          isFetching={isFetching}
-          updatedAt={zones.data ? updatedAt : undefined}
-          onRefresh={() => {
-            void zones.refetch();
-            void profiles.refetch();
-          }}
-        />
-      </PaneToolbar>
+      <PaneToolbar
+        label="Shipping controls"
+        controls={
+          <>
+            <Truck className="size-4 shrink-0" aria-hidden />
+            <Heading level={2} className="min-w-0 truncate text-base font-semibold">
+              Shipping
+            </Heading>
+          </>
+        }
+        refresh={
+          <RefreshButton
+            className="ml-auto"
+            isFetching={isFetching}
+            updatedAt={zones.data ? updatedAt : undefined}
+            onRefresh={() => {
+              void zones.refetch();
+              void profiles.refetch();
+            }}
+          />
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className="mx-auto flex w-full max-w-3xl flex-col gap-4">

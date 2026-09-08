@@ -877,47 +877,52 @@ export function PerformanceReportsSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Performance report controls">
-        <NativeSelect
-          size="sm"
-          className="max-w-40 shrink"
-          aria-label="Period these figures cover"
-          value={String(rangeDays)}
-          onChange={(event) => {
-            setRangeDays(Number(event.target.value));
-          }}
-        >
-          {RANGE_PRESETS.map((preset) => (
-            <option key={preset.days} value={preset.days}>
-              {preset.label}
-            </option>
-          ))}
-        </NativeSelect>
-
-        <NativeSelect
-          size="sm"
-          className="max-w-40 shrink"
-          aria-label="Location these figures cover"
-          value={locationId}
-          onChange={(event) => {
-            setLocationId(event.target.value);
-          }}
-        >
-          <option value="">Every location</option>
-          {activeLocations.map((location) => (
-            <option key={location.id} value={location.id}>
-              {location.name}
-            </option>
-          ))}
-        </NativeSelect>
-
-        <RefreshButton
-          className="ml-auto"
-          isFetching={anyFetching}
-          updatedAt={sellThrough.data ? sellThrough.dataUpdatedAt : undefined}
-          onRefresh={refreshAll}
-        />
-      </PaneToolbar>
+      <PaneToolbar
+        label="Performance report controls"
+        controls={
+          <>
+            <NativeSelect
+              size="sm"
+              className="max-w-40 shrink"
+              aria-label="Period these figures cover"
+              value={String(rangeDays)}
+              onChange={(event) => {
+                setRangeDays(Number(event.target.value));
+              }}
+            >
+              {RANGE_PRESETS.map((preset) => (
+                <option key={preset.days} value={preset.days}>
+                  {preset.label}
+                </option>
+              ))}
+            </NativeSelect>
+            <NativeSelect
+              size="sm"
+              className="max-w-40 shrink"
+              aria-label="Location these figures cover"
+              value={locationId}
+              onChange={(event) => {
+                setLocationId(event.target.value);
+              }}
+            >
+              <option value="">Every location</option>
+              {activeLocations.map((location) => (
+                <option key={location.id} value={location.id}>
+                  {location.name}
+                </option>
+              ))}
+            </NativeSelect>
+          </>
+        }
+        refresh={
+          <RefreshButton
+            className="ml-auto"
+            isFetching={anyFetching}
+            updatedAt={sellThrough.data ? sellThrough.dataUpdatedAt : undefined}
+            onRefresh={refreshAll}
+          />
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">{body()}</div>
     </div>

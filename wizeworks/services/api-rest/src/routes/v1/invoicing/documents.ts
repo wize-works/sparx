@@ -53,6 +53,10 @@ const ListDocumentsQuery = z.object({
   customerId: z.string().uuid().optional(),
   companyId: z.string().uuid().optional(),
   status: z.string().max(20).optional(),
+  // Whether the customer was actually given it. Orthogonal to status: an unpaid
+  // invoice nobody sent and an unpaid one sent three weeks ago read the same on
+  // the list and are different problems.
+  sent: queryBool.optional(),
   includeDeleted: queryBool.optional(),
   take: z.coerce.number().int().min(1).max(250).optional(),
   skip: z.coerce.number().int().min(0).optional(),
@@ -69,6 +73,25 @@ const ListDocumentsQuery = z.object({
   order: z.enum(['asc', 'desc']).optional(),
 });
 const SnapshotPathIds = z.object({ id: z.string().uuid(), snapshotId: z.string().uuid() });
+
+/**
+ * The issuer frozen on a document when it was finalized.
+ *
+ * Read separately from the render data because it is not display substance — it
+ * is who the letterhead must say sent this, and the answer has to be the one
+ * that was true on the day, not the one that is true now. Without it, renaming a
+ * site or editing the legal entity's address rewrites the masthead on invoices
+ * already in customers' hands.
+ *
+ * Null on anything finalized before the column existed; the resolver falls back
+ * to the live business, which is the only answer available for those.
+ */
+async function frozenIssuerOf(ctx: { tenantId: string }, documentId: string): Promise<unknown> {
+  const doc = await withTenant(ctx, (tx) =>
+    tx.billingDocument.findUnique({ where: { id: documentId }, select: { issuedBy: true } })
+  );
+  return doc?.issuedBy ?? null;
+}
 
 /** The unsaved draft the editor previews. Everything is optional on purpose — the
  *  editor posts on every keystroke, so a half-typed document must render rather
@@ -123,6 +146,7 @@ const documentRoutes: FastifyPluginAsync = (app) => {
       // among the most sensitive per-business records.
       propertyIds: reachableSiteIds(auth),
       status: q.status,
+      sent: q.sent,
       includeDeleted: q.includeDeleted,
       // The service speaks limit/offset; `default(50)`/`default(0)` apply when omitted.
       ...(q.take !== undefined ? { limit: q.take } : {}),
@@ -357,7 +381,7 @@ const documentRoutes: FastifyPluginAsync = (app) => {
     const { id } = PathId.parse(request.params);
     const [data, brand] = await Promise.all([
       billingRenderService.buildRenderData(ctx, id),
-      resolveInvoiceBrand(ctx),
+      frozenIssuerOf(ctx, id).then((issuedBy) => resolveInvoiceBrand(ctx, issuedBy)),
     ]);
     const html = await renderTenantInvoiceHtml(ctx, data, brand);
     void reply.header('Content-Type', 'text/html; charset=utf-8');
@@ -369,15 +393,18 @@ const documentRoutes: FastifyPluginAsync = (app) => {
   });
 
   // Print a frozen snapshot — the approved estimate / final invoice exactly as it
-  // stood when captured (§4). Renders the frozen substance; brand is resolved live.
+  // stood when captured (§4). Renders the frozen substance, under the frozen
+  // ISSUER: this route is the customer's copy, so it is the one place where the
+  // masthead reading today's business name instead of the one that signed the
+  // document is most obviously wrong. Only the visual brand resolves live.
   app.get('/v1/invoicing/documents/:id/snapshots/:snapshotId/pdf', async (request, reply) => {
     requireRole(request, 'viewer');
     await requireInvoicingModule(request);
     const ctx = toInvoicingContext(request);
-    const { snapshotId } = SnapshotPathIds.parse(request.params);
+    const { id, snapshotId } = SnapshotPathIds.parse(request.params);
     const [data, brand] = await Promise.all([
       billingRenderService.buildRenderDataFromSnapshot(ctx, snapshotId),
-      resolveInvoiceBrand(ctx),
+      frozenIssuerOf(ctx, id).then((issuedBy) => resolveInvoiceBrand(ctx, issuedBy)),
     ]);
     const html = await renderTenantInvoiceHtml(ctx, data, brand);
     void reply.header('Content-Type', 'text/html; charset=utf-8');

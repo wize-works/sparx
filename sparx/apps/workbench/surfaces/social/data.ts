@@ -124,11 +124,7 @@ export interface SocialOverview {
 /** What a platform will and won't let one connected account do. Mirrors
  *  `SocialConnectionReadiness` in @wizeworks/social. */
 export type ReadinessVerdict =
-  | 'ready'
-  | 'permissions_missing'
-  | 'awaiting_review'
-  | 'reconnect_required'
-  | 'unverifiable';
+  'ready' | 'permissions_missing' | 'awaiting_review' | 'reconnect_required' | 'unverifiable';
 
 export interface ConnectionReadiness {
   connectionId: string;

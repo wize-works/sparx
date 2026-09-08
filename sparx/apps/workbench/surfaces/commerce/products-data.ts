@@ -142,6 +142,9 @@ export interface Product {
    *  should read this — `collectionMemberships` says WHY, and the why is what
    *  decides whether a person is allowed to change it. */
   collectionIds: string[];
+  /** The delivery group this product ships under, or null for the standard
+   *  way. At most one: the rate that prices a basket has to pick exactly one. */
+  shippingProfileId: string | null;
   /**
    * Why this product is in each of its collections.
    *
@@ -875,6 +878,8 @@ export interface ProductPatch {
   propertyIds?: string[];
   categoryIds?: string[];
   collectionIds?: string[];
+  /** null clears it — the product goes back to shipping the standard way. */
+  shippingProfileId?: string | null;
 }
 
 export function useUpdateProduct(id: string) {

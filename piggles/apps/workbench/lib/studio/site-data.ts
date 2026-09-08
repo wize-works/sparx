@@ -18,12 +18,16 @@ import { api } from '../api/client';
 import { getTokenState } from '../api/token';
 import type { BrandColumns } from './brand-theme';
 import type { SitePreviewData } from './preview-data';
+import { SILICA_PIECES_KEY } from './piece-keys';
 
 export type { BindingCatalog };
 
 export const CATALOG_KEY = ['builder', 'binding-catalog'];
 export const RECORD_SAMPLES_KEY = ['builder', 'record-samples'];
-export const SILICA_PIECES_KEY = ['builder', 'silica-pieces'];
+// Re-exported, not re-declared. It was written out here a second time with the
+// same literal, which worked only by coincidence and was one of the three keys
+// nothing invalidated across — see piece-keys.ts.
+export { SILICA_PIECES_KEY };
 
 /** A connected domain, enough to build a preview address from. */
 interface DomainRow {

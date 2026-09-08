@@ -148,6 +148,10 @@ describe('hostCore — pinning is opt-out, and only the brand opts out', () => {
         // leave an undeletable "Reviews · No reviews yet" band on a product page
         // whose owner asked for it once.
         HOST_KEYS.commerceProductReviews,
+        // Questions are the same choice reviews are, and unpinned for the same
+        // sentence: a business that would rather answer by email must be able to take
+        // the section off the page without breaking anything.
+        HOST_KEYS.commerceProductQuestions,
       ].sort()
     );
   });

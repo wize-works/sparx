@@ -248,43 +248,51 @@ export function CountSchedulesListSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Counting schedule controls">
-        <NativeSelect
-          size="sm"
-          className="max-w-48 shrink"
-          aria-label="Show schedules for"
-          value={locationId}
-          onChange={(event) => {
-            setLocationId(event.target.value);
-          }}
-        >
-          <option value="">Every location</option>
-          {activeLocations.map((location) => (
-            <option key={location.id} value={location.id}>
-              {location.name}
-            </option>
-          ))}
-        </NativeSelect>
-
-        <Button
-          className="ml-auto"
-          size="sm"
-          color="module"
-          onClick={() => {
-            ctx.open('inventory.count-schedules.detail', { id: 'new' });
-          }}
-        >
-          <PlusCircle className="size-4" aria-hidden />
-          New schedule
-        </Button>
-        <RefreshButton
-          isFetching={schedules.isFetching}
-          updatedAt={schedules.data ? schedules.dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void schedules.refetch();
-          }}
-        />
-      </PaneToolbar>
+      <PaneToolbar
+        label="Counting schedule controls"
+        primary={
+          <Button
+            className="ml-auto"
+            size="sm"
+            color="module"
+            onClick={() => {
+              ctx.open('inventory.count-schedules.detail', { id: 'new' });
+            }}
+          >
+            <PlusCircle className="size-4" aria-hidden />
+            New schedule
+          </Button>
+        }
+        controls={
+          <>
+            <NativeSelect
+              size="sm"
+              className="max-w-48 shrink"
+              aria-label="Show schedules for"
+              value={locationId}
+              onChange={(event) => {
+                setLocationId(event.target.value);
+              }}
+            >
+              <option value="">Every location</option>
+              {activeLocations.map((location) => (
+                <option key={location.id} value={location.id}>
+                  {location.name}
+                </option>
+              ))}
+            </NativeSelect>
+          </>
+        }
+        refresh={
+          <RefreshButton
+            isFetching={schedules.isFetching}
+            updatedAt={schedules.data ? schedules.dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void schedules.refetch();
+            }}
+          />
+        }
+      />
 
       {dueCount > 0 ? (
         <Alert color="warning">

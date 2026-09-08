@@ -26,9 +26,10 @@ import {
   NavbarStart,
   Tooltip,
 } from '@wizeworks/silicaui-react';
-import { Search, Star } from 'lucide-react';
+import { Copy, LayoutGrid, Search, Star } from 'lucide-react';
 import { Wordmark } from '@sparx/brand/react';
 import { useFavorites, useTenant, useToggleFavorite } from '../lib/api/shell-data';
+import type { WindowMode } from '../lib/window-mode';
 import type { ThemeChoice } from '../lib/theme';
 import { useWorkbench } from '../lib/workbench/context';
 import { AppearanceMenu } from './appearance-menu';
@@ -51,6 +52,53 @@ interface ToolbarProps {
   siteKey: string;
   onSetTheme: (choice: ThemeChoice) => void;
   onOpenLauncher: () => void;
+  /** Windows or tabs. Null while the stored preference is still being read, in
+   *  which case the control is not offered rather than guessed at. */
+  windowMode: WindowMode | null;
+  onChangeWindowMode: (mode: WindowMode) => void;
+}
+
+/**
+ * Windows or tabs, as one pressed button rather than a pair.
+ *
+ * It sits beside the appearance menu because it is the same kind of thing: a
+ * decision about the WORKSPACE, not an action on anything in it. Colorless, like
+ * the chrome around it — a bare `.btn` resolves to base-content, and this
+ * control has no state worth a hue beyond the pressed one.
+ */
+function WindowModeToggle({
+  windowMode,
+  onChangeWindowMode,
+}: {
+  windowMode: WindowMode;
+  onChangeWindowMode: (mode: WindowMode) => void;
+}) {
+  const toTabs = windowMode === 'windows';
+  return (
+    <Tooltip
+      content={
+        toTabs
+          ? 'Tidy everything back into a grid'
+          : 'Show each thing in its own window you can move around'
+      }
+    >
+      <Button
+        variant="ghost"
+        shape="square"
+        aria-label={toTabs ? 'Switch to a tidy grid' : 'Switch to movable windows'}
+        aria-pressed={windowMode === 'windows'}
+        onClick={() => {
+          onChangeWindowMode(toTabs ? 'tabs' : 'windows');
+        }}
+      >
+        {toTabs ? (
+          <LayoutGrid className="size-4" aria-hidden />
+        ) : (
+          <Copy className="size-4" aria-hidden />
+        )}
+      </Button>
+    </Tooltip>
+  );
 }
 
 export function Toolbar({
@@ -60,6 +108,8 @@ export function Toolbar({
   siteKey,
   onSetTheme,
   onOpenLauncher,
+  windowMode,
+  onChangeWindowMode,
 }: ToolbarProps) {
   const { controller } = useWorkbench();
   const { data: tenant } = useTenant();
@@ -138,6 +188,10 @@ export function Toolbar({
         <span data-tour="feedback" className="inline-flex">
           <FeedbackButton />
         </span>
+
+        {windowMode ? (
+          <WindowModeToggle windowMode={windowMode} onChangeWindowMode={onChangeWindowMode} />
+        ) : null}
 
         <AppearanceMenu choice={themeChoice} onSetTheme={onSetTheme} />
 

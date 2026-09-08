@@ -38,6 +38,7 @@ import {
   useRecoverCart,
   type CartDetail,
 } from './carts-data';
+import { PaneLoadError } from '../../components/pane-load-error';
 
 const COLUMN = 'mx-auto flex w-full max-w-3xl flex-col gap-4';
 
@@ -74,7 +75,7 @@ export function CartDetailSurface({ ctx }: { ctx: SurfaceContext }) {
   const toast = useToast();
   const confirm = useConfirm();
 
-  const { data, isPending, isError, refetch } = useCart(id);
+  const { data, isPending, isError, error, refetch } = useCart(id);
   const recover = useRecoverCart(id);
 
   useEffect(() => {
@@ -83,27 +84,15 @@ export function CartDetailSurface({ ctx }: { ctx: SurfaceContext }) {
 
   if (isError) {
     return (
-      <div className="flex h-full items-center justify-center p-8">
-        <Alert color="error" className="max-w-md">
-          <AlertContent>
-            <AlertTitle>Could not load this cart</AlertTitle>
-            <AlertDescription>
-              This is a problem reaching the server. The cart itself is unaffected — nothing has
-              been changed or lost.
-            </AlertDescription>
-          </AlertContent>
-          <Button
-            size="sm"
-            color="error"
-            variant="soft"
-            onClick={() => {
-              void refetch();
-            }}
-          >
-            Try again
-          </Button>
-        </Alert>
-      </div>
+      <PaneLoadError
+        error={error}
+        noun="cart"
+        title="Could not load this cart"
+        description="This is a problem reaching the server. The cart itself is unaffected — nothing has been changed or lost."
+        onRetry={() => {
+          void refetch();
+        }}
+      />
     );
   }
 
@@ -167,13 +156,22 @@ export function CartDetailSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Cart actions" wrap>
-        <Badge color={state.tone} variant="soft" size="sm">
-          {state.label}
-        </Badge>
-        <div className="flex-1" />
-        <Text className="text-sm tabular-nums">{money(cart.totals.totalCents, cart.currency)}</Text>
-      </PaneToolbar>
+      <PaneToolbar
+        label="Cart actions"
+        status={
+          <Text className="text-sm tabular-nums">
+            {money(cart.totals.totalCents, cart.currency)}
+          </Text>
+        }
+        controls={
+          <>
+            <Badge color={state.tone} variant="soft" size="sm">
+              {state.label}
+            </Badge>
+            <div className="flex-1" />
+          </>
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto p-4">
         <div className={COLUMN}>

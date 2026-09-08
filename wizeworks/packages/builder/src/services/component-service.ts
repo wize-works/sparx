@@ -35,7 +35,7 @@ import { withTenant } from '@wizeworks/db';
 
 import { writeAuditLog } from '../audit';
 import type { ServiceContext } from '../errors';
-import { detachEverywhereTx } from './detach-instances';
+import { detachEverywhereTx, placesInstance } from './detach-instances';
 import { BuilderNotFoundError, BuilderValidationError } from '../errors';
 
 /** The symbol id a tenant library piece is materialized under in a silica tree.
@@ -485,39 +485,82 @@ export async function expandTreeForPublish(
   });
 }
 
-/** Where a component is placed (docs/53 §6): the pages + layouts whose draft OR
- *  published tree references `custom:<key>`. Powers the delete-impact warning and
- *  the detail page's "Used on" panel. Scans within the caller's transaction so it
- *  shares the publish/delete consistency snapshot. */
+/**
+ * Where a component is placed (docs/53 §6): the pages + layouts whose draft OR
+ * published tree holds it, in EITHER placement system.
+ *
+ * TWO SYSTEMS, AND IT ONLY EVER SAW ONE. A legacy placement is `custom:<key>` in
+ * a `BuilderNode` tree; a silica placement is `instanceOf: tenant:<key>` in a
+ * `silicaDraftTree` / `silicaPublishedTree`. This scanned only the legacy columns
+ * for the legacy shape, so every piece the surviving editor creates reported
+ * "not used yet" forever — and the console believed it. A clothing maker saved
+ * her contact form as a piece, and its own page said it was on none of her pages
+ * and offered a delete whose confirm told her "nothing your visitors see will
+ * change" (issue 393). `placesInstance` was already exported next door for the
+ * detach path; nothing called it from here.
+ *
+ * `blocking` is the second number, and it is not the same question. A legacy
+ * reference cannot be inlined, so it refuses a delete. A silica instance detaches
+ * — the page keeps the design and stops following the master. Answering both with
+ * one count is how a screen refuses a delete the server would happily allow.
+ *
+ * Scans within the caller's transaction so it shares the publish/delete
+ * consistency snapshot.
+ */
 async function scanUsages(tx: Prisma.TransactionClient, key: string): Promise<ComponentUsageDto> {
+  const symbolId = tenantSymbolId(key);
   const refsFor = (tree: unknown): { key: string; version: number | null }[] =>
     collectComponentRefs(tree as BuilderNode).filter((r) => r.key === key);
   const usesKey = (tree: unknown): boolean => refsFor(tree).length > 0;
   const [pages, layouts] = [
     await tx.builderPage.findMany({
-      select: { id: true, name: true, draftTree: true, publishedTree: true },
+      select: {
+        id: true,
+        name: true,
+        draftTree: true,
+        publishedTree: true,
+        silicaDraftTree: true,
+        silicaPublishedTree: true,
+      },
     }),
     await tx.builderLayout.findMany({
-      select: { id: true, name: true, draftTree: true, publishedTree: true },
+      select: {
+        id: true,
+        name: true,
+        draftTree: true,
+        publishedTree: true,
+        silicaDraftTree: true,
+        silicaPublishedTree: true,
+      },
     }),
   ];
-  const pageHits = pages
-    .filter((p) => usesKey(p.draftTree) || (p.publishedTree != null && usesKey(p.publishedTree)))
-    .map((p) => ({ id: p.id, name: p.name }));
-  const layoutHits = layouts
-    .filter((l) => usesKey(l.draftTree) || (l.publishedTree != null && usesKey(l.publishedTree)))
-    .map((l) => ({ id: l.id, name: l.name }));
+
+  /** A legacy reference, which refuses a delete. */
+  const blocks = (row: { draftTree: unknown; publishedTree: unknown }): boolean =>
+    usesKey(row.draftTree) || (row.publishedTree != null && usesKey(row.publishedTree));
+
+  /** A silica instance, which detaches on delete. */
+  const places = (row: { silicaDraftTree: unknown; silicaPublishedTree: unknown }): boolean =>
+    placesInstance(row.silicaDraftTree, symbolId) ||
+    placesInstance(row.silicaPublishedTree, symbolId);
+
+  const pageHits = pages.filter((p) => blocks(p) || places(p));
+  const layoutHits = layouts.filter((l) => blocks(l) || places(l));
+  const blocking = pages.filter((p) => blocks(p)).length + layouts.filter((l) => blocks(l)).length;
+
   // Pinned versions across every DRAFT placement (what an upgrade would re-pin) —
   // lets the detail page tell whether a bulk upgrade would actually move anything.
+  // Legacy only: a silica instance pins no version, it follows the master.
   const pinned = new Set<number>();
   for (const p of pages)
     for (const r of refsFor(p.draftTree)) if (r.version != null) pinned.add(r.version);
   for (const l of layouts)
     for (const r of refsFor(l.draftTree)) if (r.version != null) pinned.add(r.version);
   return {
-    pages: pageHits,
-    layouts: layoutHits,
+    pages: pageHits.map((p) => ({ id: p.id, name: p.name })),
+    layouts: layoutHits.map((l) => ({ id: l.id, name: l.name })),
     total: pageHits.length + layoutHits.length,
+    blocking,
     pinnedVersions: [...pinned].sort((a, b) => a - b),
   };
 }
@@ -612,20 +655,25 @@ export async function remove(ctx: ServiceContext, key: string): Promise<void> {
     //
     // A LEGACY placement (`custom:<key>` in a BuilderNode tree) is a reference the
     // renderer resolves at draw time and cannot be inlined here, so it still blocks.
+    // `blocking`, NOT `total`. The scan sees both systems now, so guarding on the
+    // combined count would refuse every delete of a placed silica piece — the exact
+    // case the detach below exists to serve.
     const used = await scanUsages(tx, key);
-    if (used.total > 0) {
+    if (used.blocking > 0) {
       throw new BuilderValidationError(
         'This component is still placed on pages or layouts. Remove those placements before deleting it.',
-        [{ field: 'key', message: `In use in ${used.total} place${used.total === 1 ? '' : 's'}.` }]
+        [
+          {
+            field: 'key',
+            message: `In use in ${used.blocking} place${used.blocking === 1 ? '' : 's'}.`,
+          },
+        ]
       );
     }
 
-    // A SILICA instance can, so it DETACHES — the page keeps the design and simply
-    // stops following the master, which is what the console's delete confirm has
-    // always promised. `scanUsages` never looked at the silica trees at all, so a
-    // placed piece was invisible to the guard above AND left dangling: the page kept
-    // a node rendering "This saved design is no longer available" where the work had
-    // been, on pages nobody was looking at.
+    // A SILICA instance can be inlined, so it DETACHES — the page keeps the design
+    // and simply stops following the master, which is what the console's delete
+    // confirm has always promised.
     const version = await tx.builderComponentVersion.findFirst({
       where: { componentId: existing.id, version: existing.latestVersion },
       select: { silicaTree: true },

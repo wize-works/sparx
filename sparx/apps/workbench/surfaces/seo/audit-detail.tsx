@@ -176,23 +176,30 @@ function AuditDetail({ ctx, type, id }: { ctx: SurfaceContext; type: EntityType;
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Page check actions">
-        {card ? (
-          <Badge color={scoreTone(card.grade)} variant="soft" size="sm">
-            {card.score} / 100 · {gradeLabel(card.grade)}
-          </Badge>
-        ) : null}
-        {/* ALWAYS the last child — a fresh read here re-scores the page, so this
+      <PaneToolbar
+        label="Page check actions"
+        controls={
+          <>
+            {card ? (
+              <Badge color={scoreTone(card.grade)} variant="soft" size="sm">
+                {card.score} / 100 · {gradeLabel(card.grade)}
+              </Badge>
+            ) : null}
+            {/* ALWAYS the last child — a fresh read here re-scores the page, so this
             IS "check again". Carries ml-auto as the only right-hand control. */}
-        <RefreshButton
-          className="ml-auto"
-          isFetching={isFetching}
-          updatedAt={card ? dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void refetch();
-          }}
-        />
-      </PaneToolbar>
+          </>
+        }
+        refresh={
+          <RefreshButton
+            className="ml-auto"
+            isFetching={isFetching}
+            updatedAt={card ? dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void refetch();
+            }}
+          />
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         {isError ? (

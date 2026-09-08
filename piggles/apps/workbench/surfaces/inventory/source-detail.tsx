@@ -819,7 +819,7 @@ function SourceEditor({
                 }
               />
               <FieldDescription>
-                A name you will recognise on your list — where it comes from or who looks after it.
+                A name you will recognize on your list — where it comes from or who looks after it.
               </FieldDescription>
             </Field>
 

@@ -12,7 +12,7 @@
 
 import { useState } from 'react';
 import { TabsList, TabsTab } from '@wizeworks/silicaui-react';
-import { useSelectedNode } from '../context';
+import { useSelectedNode, useSymbolNames } from '../context';
 import type { CanvasDevice } from '../canvas/canvas';
 import { rowLabel } from '../navigator/layer-tree';
 import { FillTabs, FillTabsPanel } from '../fill-tabs';
@@ -22,6 +22,7 @@ import { SettingsTab } from './settings-tab';
 
 export function Inspector({ device }: { device: CanvasDevice }) {
   const node = useSelectedNode();
+  const symbolNames = useSymbolNames();
   const [tab, setTab] = useState('design');
 
   if (!node) {
@@ -38,7 +39,7 @@ export function Inspector({ device }: { device: CanvasDevice }) {
     <div className="flex h-full min-h-0 flex-col">
       <div className="border-base-300 flex items-center gap-2 border-b px-3 py-2">
         <p className="text-base-content min-w-0 flex-1 truncate text-sm font-medium">
-          {rowLabel(node)}
+          {rowLabel(node, node.instanceOf ? symbolNames[node.instanceOf] : undefined)}
         </p>
         <NodeActions node={node} />
       </div>

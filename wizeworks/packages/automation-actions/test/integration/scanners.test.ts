@@ -30,6 +30,7 @@ import {
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { installEntityResolvers } from '../../src/index.js';
+import { INVOICING_REMINDER_3D } from '../../src/seeds/invoicing.js';
 
 const DAY = 86_400_000;
 const HOUR = 3_600_000;
@@ -120,6 +121,9 @@ describe('billing_document scanner', () => {
     tenantId: string;
     dueInDays: number;
     status: string;
+    /** When the send route emailed it. Undefined = never sent, which is the
+     *  ordinary state of an invoice somebody just raised. */
+    sentAt?: string;
   }): Promise<string> {
     const { tenantId } = opts;
     // The issuing site — `propertyId` is required on a billing document (docs/131
@@ -173,6 +177,8 @@ describe('billing_document scanner', () => {
         // + 12h so the floor lands on exactly `dueInDays`.
         dueAt: new Date(Date.now() + opts.dueInDays * DAY + 12 * HOUR),
         finalizedAt: new Date(),
+        // The send route records the send here; there is no column.
+        metadata: opts.sentAt ? { sentAt: opts.sentAt, sentTo: 'ar@example.com' } : {},
       },
       select: { id: true },
     });
@@ -229,5 +235,54 @@ describe('billing_document scanner', () => {
 
     await runScheduleTick(deps, appDb);
     expect(await runCount(auto.id)).toBe(0);
+  });
+
+  // ── NEVER CHASE A BILL THE CUSTOMER WAS NEVER GIVEN ─────────────────────
+  //
+  // These two drive the REAL shipped seed rather than a copy of it, because the
+  // thing under test is the seed's own predicate. Making an invoice and sending
+  // it are two acts, and this ladder keyed on the due date alone: an owner who
+  // raised an invoice and had not yet emailed it — the normal state of an
+  // invoice while a deadline is set and a line is checked — had her customer
+  // sent a friendly reminder about a bill they had never seen, then an overdue
+  // notice, then a second, then a final one.
+  //
+  // The pair is the point. Removing `WAS_SENT` from the seed turns the first
+  // one red while the second stays green, so the guard cannot rot into a
+  // condition that is always true.
+  describe('the dunning ladder', () => {
+    it('does not chase an invoice that was never sent', async () => {
+      const tenantId = await createTenant();
+      const ctx: ServiceCtx = { tenantId };
+      await seedInvoice({ tenantId, dueInDays: 3, status: 'unpaid' });
+      const auto = await upsertSystemAutomation(ctx, INVOICING_REMINDER_3D);
+
+      await runScheduleTick(deps, appDb);
+      expect(await runCount(auto.id)).toBe(0);
+    });
+
+    it('chases the same invoice once the customer has been given it', async () => {
+      const tenantId = await createTenant();
+      const ctx: ServiceCtx = { tenantId };
+      const docId = await seedInvoice({
+        tenantId,
+        dueInDays: 3,
+        status: 'unpaid',
+        sentAt: new Date().toISOString(),
+      });
+      const auto = await upsertSystemAutomation(ctx, INVOICING_REMINDER_3D);
+
+      await runScheduleTick(deps, appDb);
+      expect(await runCount(auto.id)).toBe(1);
+
+      const run = await ownerDb.automationRun.findFirstOrThrow({
+        where: { automationId: auto.id },
+      });
+      const data = (
+        run.triggerEvent as { data?: { entityId?: string; __fields?: Record<string, unknown> } }
+      ).data;
+      expect(data?.entityId).toBe(docId);
+      expect(data?.__fields?.['invoice.sentAt']).toBeTruthy();
+    });
   });
 });

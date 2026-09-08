@@ -5,6 +5,7 @@
 // A new booking and an existing one are the same appointment at two ages, so the
 // pane replaces itself with the record once this succeeds.
 
+import { shownInPlace } from '@wizeworks/query';
 import { useEffect, useState } from 'react';
 import { Button, useToast } from '@wizeworks/silicaui-react';
 import { Icon } from '@piggles/ui';
@@ -110,6 +111,7 @@ export function BookingCreate({ ctx }: { ctx: SurfaceContext }) {
             toast.add({ title: 'Booking taken', type: 'success' });
           });
         },
+        onError: shownInPlace,
       }
     );
   };

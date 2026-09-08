@@ -260,40 +260,47 @@ export function ReportSchedulesSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Scheduled report controls">
-        {paused.length > 0 ? (
+      <PaneToolbar
+        label="Scheduled report controls"
+        primary={
           <Button
-            color={showPaused ? 'danger' : 'neutral'}
-            variant={showPaused ? 'soft' : 'outline'}
+            color="module"
             size="sm"
+            className="ml-auto"
             onClick={() => {
-              setShowPaused((current) => !current);
+              ctx.open('inventory.reports.schedule', { id: 'new' });
             }}
           >
-            {showPaused ? 'Hide' : 'Show'} the {paused.length} that stopped
+            <Plus className="size-4" aria-hidden />
+            Send a report
           </Button>
-        ) : null}
-
-        <Button
-          color="module"
-          size="sm"
-          className="ml-auto"
-          onClick={() => {
-            ctx.open('inventory.reports.schedule', { id: 'new' });
-          }}
-        >
-          <Plus className="size-4" aria-hidden />
-          Send a report
-        </Button>
-
-        <RefreshButton
-          isFetching={schedules.isFetching}
-          updatedAt={schedules.data ? schedules.dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void schedules.refetch();
-          }}
-        />
-      </PaneToolbar>
+        }
+        controls={
+          <>
+            {paused.length > 0 ? (
+              <Button
+                color={showPaused ? 'danger' : 'neutral'}
+                variant={showPaused ? 'soft' : 'outline'}
+                size="sm"
+                onClick={() => {
+                  setShowPaused((current) => !current);
+                }}
+              >
+                {showPaused ? 'Hide' : 'Show'} the {paused.length} that stopped
+              </Button>
+            ) : null}
+          </>
+        }
+        refresh={
+          <RefreshButton
+            isFetching={schedules.isFetching}
+            updatedAt={schedules.data ? schedules.dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void schedules.refetch();
+            }}
+          />
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">{body()}</div>
     </div>

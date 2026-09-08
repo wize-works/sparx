@@ -6,7 +6,8 @@
 // "Deliveries" on an order nobody is delivering is the kind of wrongness that
 // makes a person distrust every other word on the screen.
 
-import { Badge } from '@wizeworks/silicaui-react';
+import { useState } from 'react';
+import { Badge, Button, Input, useToast } from '@wizeworks/silicaui-react';
 import { faArrowUpRightFromSquare } from '@fortawesome/pro-solid-svg-icons';
 import { Icon } from '@piggles/ui';
 
@@ -16,8 +17,10 @@ import type { useOrderFulfillments } from './data';
 import {
   formatDateTime,
   fulfillmentTone,
+  orderErrorMessage,
   shipmentHeadline,
   shipmentStatusLabel,
+  useUpdateTracking,
   type Order,
 } from './data';
 import type { DeliveryPlan } from './order-types';
@@ -57,7 +60,106 @@ function Tracking({ shipment }: { shipment: Shipment }) {
   );
 }
 
-function ShipmentRow({ shipment }: { shipment: Shipment }) {
+/**
+ * Putting a tracking number on after the parcel has gone.
+ *
+ * The number is optional at the counter and, for a shop that posts its own
+ * parcels, usually not known yet — the goods are boxed and marked sent, and the
+ * number comes back from the post office afterwards. Until now there was nowhere
+ * to put it: the shipment record was frozen the moment it was made, and the
+ * customer had already been emailed "on its way" with nothing to follow.
+ *
+ * A collection has nothing to track, so it gets no form.
+ */
+function TrackingEditor({ orderId, shipment }: { orderId: string; shipment: Shipment }) {
+  const update = useUpdateTracking(orderId);
+  const toast = useToast();
+  const [open, setOpen] = useState(false);
+  const [value, setValue] = useState(shipment.trackingNumber ?? '');
+
+  if (shipment.carrier === 'pickup') return null;
+
+  if (!open) {
+    return (
+      <Button
+        variant="link"
+        size="sm"
+        className="self-start px-0"
+        onClick={() => {
+          setValue(shipment.trackingNumber ?? '');
+          setOpen(true);
+        }}
+      >
+        {shipment.trackingNumber ? 'Change the tracking number' : 'Add a tracking number'}
+      </Button>
+    );
+  }
+
+  return (
+    <form
+      className="mt-1 flex flex-wrap items-end gap-2"
+      onSubmit={(event) => {
+        event.preventDefault();
+        update.mutate(
+          { fulfillmentId: shipment.id, trackingNumber: value },
+          {
+            onSuccess: () => {
+              setOpen(false);
+              toast.add({
+                title: value.trim() ? 'Tracking number saved' : 'Tracking number removed',
+                description: value.trim()
+                  ? 'It shows on the customer’s order page.'
+                  : 'The customer’s order page no longer shows one.',
+                type: 'success',
+              });
+            },
+            onError: (error) => {
+              toast.add({
+                title: 'Could not save the tracking number',
+                description: orderErrorMessage(
+                  error,
+                  'Nothing changed on this delivery. Try again in a moment.'
+                ),
+                type: 'error',
+              });
+            },
+          }
+        );
+      }}
+    >
+      {/* A width, so the box does not take the whole row and push Save onto a
+          line of its own. A placeholder, because "Add a tracking number" is on
+          the button that opened this and an empty box under a despatch date
+          otherwise says nothing about what belongs in it. Kept short: the field
+          is monospaced, so a longer hint is clipped rather than read. */}
+      <Input
+        aria-label="Tracking number"
+        placeholder="Tracking number"
+        value={value}
+        size="sm"
+        className="w-56 max-w-full font-mono"
+        onChange={(event) => {
+          setValue(event.target.value);
+        }}
+      />
+      <Button type="submit" color="primary" size="sm" disabled={update.isPending}>
+        Save
+      </Button>
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        onClick={() => {
+          setOpen(false);
+        }}
+      >
+        Cancel
+      </Button>
+    </form>
+  );
+}
+
+function ShipmentRow({ orderId, shipment }: { orderId: string; shipment: Shipment }) {
   return (
     <li className={ROW}>
       <div className="flex min-w-0 flex-col gap-0.5">
@@ -67,6 +169,7 @@ function ShipmentRow({ shipment }: { shipment: Shipment }) {
             it is asking somebody to write into a drawer that does not open. */}
         {shipment.notes ? <span className="text-sm">{shipment.notes}</span> : null}
         <span className="text-sm">{whenItMoved(shipment)}</span>
+        <TrackingEditor orderId={orderId} shipment={shipment} />
       </div>
       <Badge color={fulfillmentTone(shipment.status)} variant="soft" size="sm">
         {shipmentStatusLabel(shipment)}
@@ -116,7 +219,7 @@ export function HandoverSection({
     >
       <ul className="flex flex-col">
         {(fulfillments.data ?? []).map((shipment) => (
-          <ShipmentRow key={shipment.id} shipment={shipment} />
+          <ShipmentRow key={shipment.id} orderId={order.id} shipment={shipment} />
         ))}
       </ul>
     </SubSection>

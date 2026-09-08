@@ -18,7 +18,6 @@ import {
   Alert,
   AlertContent,
   AlertDescription,
-  AlertTitle,
   Badge,
   Button,
   Field,
@@ -40,6 +39,7 @@ import { PaneToolbar, PANE_SHELL } from '../../components/pane-toolbar';
 import { FormSection } from '../../components/form-section';
 import type { SurfaceContext } from '../../lib/surfaces/registry';
 import { SLUG_RE, slugify } from './segment-rules';
+import { SaveFailure } from '@/components/save-failure';
 import {
   stageTypesFor,
   pipelineErrorMessage,
@@ -56,6 +56,7 @@ import {
   type PipelineStage,
   type StageType,
 } from './pipelines-data';
+import { PaneLoadError } from '../../components/pane-load-error';
 
 const COLUMN = 'mx-auto flex w-full max-w-3xl flex-col gap-4';
 
@@ -71,31 +72,19 @@ export function PipelineDetailSurface({ ctx }: { ctx: SurfaceContext }) {
 }
 
 function PipelineLoader({ ctx, id }: { ctx: SurfaceContext; id: string }) {
-  const { data: pipeline, isPending, isError, refetch } = usePipeline(id);
+  const { data: pipeline, isPending, isError, error, refetch } = usePipeline(id);
 
   if (isError) {
     return (
-      <div className="flex h-full items-center justify-center p-8">
-        <Alert color="error" className="max-w-md">
-          <AlertContent>
-            <AlertTitle>Could not load this pipeline</AlertTitle>
-            <AlertDescription>
-              This is a problem reaching the server, or the pipeline has been removed. Nothing has
-              been changed.
-            </AlertDescription>
-          </AlertContent>
-          <Button
-            size="sm"
-            color="error"
-            variant="soft"
-            onClick={() => {
-              void refetch();
-            }}
-          >
-            Try again
-          </Button>
-        </Alert>
-      </div>
+      <PaneLoadError
+        error={error}
+        noun="pipeline"
+        title="Could not load this pipeline"
+        description="This is a problem reaching the server, or the pipeline has been removed. Nothing has been changed."
+        onRetry={() => {
+          void refetch();
+        }}
+      />
     );
   }
 
@@ -284,28 +273,35 @@ function PipelineEditor({
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Pipeline actions">
-        {pipeline?.isDefault ? (
-          <Badge color="module" variant="soft" size="sm">
-            Default
-          </Badge>
-        ) : null}
-        {isArchived ? (
-          <Badge color="neutral" variant="soft" size="sm">
-            Archived
-          </Badge>
-        ) : null}
-        <Button
-          color="module"
-          size="sm"
-          className="ml-auto shrink-0"
-          loading={saving}
-          disabled={Boolean(blocked) || (!isNew && !dirty)}
-          onClick={submit}
-        >
-          {isNew ? 'Create pipeline' : 'Save'}
-        </Button>
-      </PaneToolbar>
+      <PaneToolbar
+        label="Pipeline actions"
+        primary={
+          <Button
+            color="module"
+            size="sm"
+            className="ml-auto shrink-0"
+            loading={saving}
+            disabled={Boolean(blocked) || (!isNew && !dirty)}
+            onClick={submit}
+          >
+            {isNew ? 'Create pipeline' : 'Save'}
+          </Button>
+        }
+        controls={
+          <>
+            {pipeline?.isDefault ? (
+              <Badge color="module" variant="soft" size="sm">
+                Default
+              </Badge>
+            ) : null}
+            {isArchived ? (
+              <Badge color="neutral" variant="soft" size="sm">
+                Archived
+              </Badge>
+            ) : null}
+          </>
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className={COLUMN}>
@@ -321,14 +317,7 @@ function PipelineEditor({
             </div>
           ) : null}
 
-          {failure ? (
-            <Alert color="error">
-              <AlertContent>
-                <AlertTitle>Could not save this pipeline</AlertTitle>
-                <AlertDescription>{failure}</AlertDescription>
-              </AlertContent>
-            </Alert>
-          ) : null}
+          <SaveFailure title="Could not save this pipeline" message={failure} />
 
           <FormSection title="Name">
             <Field>

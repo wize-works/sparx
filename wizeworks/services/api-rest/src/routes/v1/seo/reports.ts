@@ -22,6 +22,8 @@ import { withRequestTenant } from '@wizeworks/api-core/db';
 import { ok } from '@wizeworks/api-core/envelope';
 import { requireRole } from '@wizeworks/api-core/auth';
 import { storedPath } from '../../../lib/seo-audit.js';
+import { resolveListScope } from '../../../lib/property.js';
+import { auditsOnSite } from './site-scope.js';
 
 const ActivityQuery = z.object({
   limit: z.coerce.number().int().min(1).max(50).optional(),
@@ -53,7 +55,15 @@ function deriveStatus(scored: number, fail: number, warn: number): ChecklistStat
 const seoReportRoutes: FastifyPluginAsync = (app) => {
   // ── Technical checklist: per-check site-wide pass/warn/fail roll-up ──
   app.get('/v1/seo/reports/checklist', async (request) => {
-    requireRole(request, 'viewer');
+    const auth = requireRole(request, 'viewer');
+    const propertyId = await resolveListScope(
+      auth,
+      undefined,
+      request.headers['x-sparx-property-id']
+    );
+    // Written as a parameter rather than interpolated: this is raw SQL, and the
+    // null case (an unscoped caller) has to mean "every row" rather than "no rows".
+    const scope = propertyId ?? null;
 
     return withRequestTenant(request, async (tx) => {
       const [rows, pagesScored] = await Promise.all([
@@ -72,9 +82,12 @@ const seoReportRoutes: FastifyPluginAsync = (app) => {
             CASE WHEN jsonb_typeof(a.card -> 'checks') = 'array'
                  THEN a.card -> 'checks' ELSE '[]'::jsonb END
           ) AS chk
+          WHERE ${scope}::uuid IS NULL
+             OR a.property_id = ${scope}::uuid
+             OR a.property_id IS NULL
           GROUP BY 1, 2, 3
         `,
-        tx.seoAudit.count(),
+        tx.seoAudit.count({ where: auditsOnSite(propertyId) }),
       ]);
 
       const checks = rows
@@ -117,11 +130,17 @@ const seoReportRoutes: FastifyPluginAsync = (app) => {
 
   // ── Activity feed: recent audit runs (newest computed first) ──
   app.get('/v1/seo/reports/activity', async (request) => {
-    requireRole(request, 'viewer');
+    const auth = requireRole(request, 'viewer');
     const take = ActivityQuery.parse(request.query).limit ?? 12;
+    const propertyId = await resolveListScope(
+      auth,
+      undefined,
+      request.headers['x-sparx-property-id']
+    );
 
     return withRequestTenant(request, async (tx) => {
       const audits = await tx.seoAudit.findMany({
+        where: auditsOnSite(propertyId),
         orderBy: { computedAt: 'desc' },
         take,
         select: {

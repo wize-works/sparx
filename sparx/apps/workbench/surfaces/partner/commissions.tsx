@@ -190,20 +190,25 @@ export function CommissionsSurface(_props: { ctx: SurfaceContext }) {
 
   const shell = (children: React.ReactNode) => (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Commissions controls">
-        <span className="inline-flex items-center gap-1.5">
-          <Coins className="size-4" aria-hidden />
-          <Text as="span" className="text-sm font-medium">
-            Your earnings
-          </Text>
-        </span>
-        <RefreshButton
-          className="ml-auto"
-          isFetching={busy}
-          updatedAt={updatedAt}
-          onRefresh={refetchAll}
-        />
-      </PaneToolbar>
+      <PaneToolbar
+        label="Commissions controls"
+        status={
+          <span className="inline-flex items-center gap-1.5">
+            <Coins className="size-4" aria-hidden />
+            <Text as="span" className="text-sm font-medium">
+              Your earnings
+            </Text>
+          </span>
+        }
+        refresh={
+          <RefreshButton
+            className="ml-auto"
+            isFetching={busy}
+            updatedAt={updatedAt}
+            onRefresh={refetchAll}
+          />
+        }
+      />
       {children}
     </div>
   );

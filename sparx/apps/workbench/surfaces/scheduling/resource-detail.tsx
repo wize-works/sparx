@@ -15,10 +15,6 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import {
-  Alert,
-  AlertContent,
-  AlertDescription,
-  AlertTitle,
   Badge,
   Button,
   Checkbox,
@@ -42,6 +38,7 @@ import { useDirtySource } from '../../lib/workbench/dirty';
 import { afterPaneChange } from '../../lib/defer';
 import type { SurfaceContext } from '../../lib/surfaces/registry';
 import { useBusinessTimezone } from '../../lib/business-timezone';
+import { SaveFailure } from '@/components/save-failure';
 import {
   RESOURCE_KINDS,
   isNotFound,
@@ -56,6 +53,7 @@ import {
   type ResourceKind,
   type SchedulingResource,
 } from './setup-data';
+import { PaneLoadError } from '../../components/pane-load-error';
 
 const COLUMN = 'mx-auto flex w-full max-w-2xl flex-col gap-4';
 
@@ -279,24 +277,31 @@ function ResourceEditor({
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label={isNew ? 'New resource actions' : 'Resource actions'}>
-        {state ? (
-          <Badge color={state.tone} variant="soft" size="sm">
-            {state.label}
-          </Badge>
-        ) : null}
-        <Button
-          color="module"
-          size="sm"
-          className="ml-auto shrink-0"
-          disabled={!canSave}
-          loading={busy}
-          onClick={submit}
-        >
-          <Save className="size-4" aria-hidden />
-          {isNew ? 'Create' : 'Save'}
-        </Button>
-      </PaneToolbar>
+      <PaneToolbar
+        label={isNew ? 'New resource actions' : 'Resource actions'}
+        primary={
+          <Button
+            color="module"
+            size="sm"
+            className="ml-auto shrink-0"
+            disabled={!canSave}
+            loading={busy}
+            onClick={submit}
+          >
+            <Save className="size-4" aria-hidden />
+            {isNew ? 'Create' : 'Save'}
+          </Button>
+        }
+        controls={
+          <>
+            {state ? (
+              <Badge color={state.tone} variant="soft" size="sm">
+                {state.label}
+              </Badge>
+            ) : null}
+          </>
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className={COLUMN}>
@@ -310,14 +315,7 @@ function ResourceEditor({
             </div>
           ) : null}
 
-          {saveError ? (
-            <Alert color="error">
-              <AlertContent>
-                <AlertTitle>Could not save this</AlertTitle>
-                <AlertDescription>{saveError}</AlertDescription>
-              </AlertContent>
-            </Alert>
-          ) : null}
+          <SaveFailure title="Could not save this" message={saveError} />
 
           <FormSection
             title={isNew ? 'New person or thing' : 'What it is'}
@@ -640,30 +638,18 @@ export function ResourceDetailSurface({ ctx }: { ctx: SurfaceContext }) {
     const gone = isNotFound(resource.error);
     return (
       <div className={PANE_SHELL}>
-        <div className="flex h-full items-center justify-center p-8">
-          <Alert color={gone ? 'warning' : 'error'} variant="soft" className="max-w-md">
-            <AlertContent>
-              <AlertTitle>{gone ? 'This no longer exists' : 'Could not load this'}</AlertTitle>
-              <AlertDescription>
-                {gone
-                  ? 'It has been removed. Any bookings already made against it are unaffected.'
-                  : 'This is a problem reaching the server. Nothing has changed.'}
-              </AlertDescription>
-            </AlertContent>
-            {gone ? null : (
-              <Button
-                size="sm"
-                color="error"
-                variant="soft"
-                onClick={() => {
-                  void resource.refetch();
-                }}
-              >
-                Try again
-              </Button>
-            )}
-          </Alert>
-        </div>
+        <PaneLoadError
+          reason={gone ? 'missing' : 'unreachable'}
+          title={gone ? 'This no longer exists' : 'Could not load this'}
+          description={
+            gone
+              ? 'It has been removed. Any bookings already made against it are unaffected.'
+              : 'This is a problem reaching the server. Nothing has changed.'
+          }
+          onRetry={() => {
+            void resource.refetch();
+          }}
+        />
       </div>
     );
   }

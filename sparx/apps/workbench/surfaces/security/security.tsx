@@ -61,14 +61,17 @@ export function SecuritySurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Security actions">
-        <RefreshButton
-          className="ml-auto"
-          isFetching={isFetching}
-          updatedAt={updatedAt}
-          onRefresh={refreshAll}
-        />
-      </PaneToolbar>
+      <PaneToolbar
+        label="Security actions"
+        refresh={
+          <RefreshButton
+            className="ml-auto"
+            isFetching={isFetching}
+            updatedAt={updatedAt}
+            onRefresh={refreshAll}
+          />
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className={COLUMN}>

@@ -43,15 +43,33 @@ interface EmailLayoutProps {
   children: React.ReactNode;
   /** Brief tagline rendered on the first footer line. */
   footerNote?: string;
-  /** Render the built-in wordmark header (wordmark + divider). Default `true` — the
-   *  CODED templates (welcome-merchant, password-reset, chat-notification) rely on
-   *  it. The Builder email renderer passes `false`: its tree carries an author-
-   *  editable `email_wordmark` node as the first body element instead (docs/52 §1),
-   *  so the header is part of what the merchant edits in /builder/email. */
-  header?: boolean;
+  /**
+   * WHOSE CUSTOMER IS READING THIS.
+   *
+   * `platform` — we are writing to somebody who has an account with us: a
+   * password reset, a chat notification, a form landing in the owner's inbox.
+   * They know who WizeWorks is, so the masthead carries the product's wordmark
+   * and the fine print names the operator.
+   *
+   * `visitor` — the TENANT is writing to their own customer, and we are simply
+   * the post. An invoice from a clothes shop, a download somebody swapped their
+   * address for, a thanks-for-getting-in-touch. **That reader has never heard of
+   * us**, so a software product's wordmark over their invoice reads like a
+   * billing service nobody hired, and an operating company's name in the fine
+   * print reads like a party to a transaction they never agreed to. They get the
+   * shop's name and, at the very bottom, "Sent with <product>" — the same quiet
+   * credit the Builder email frame has always given (`silica/frame.ts`
+   * `attributionHtml`).
+   *
+   * ONE prop rather than two, on purpose. The masthead and the sign-off are the
+   * same decision, and they were separate: `header={false}` existed and exactly
+   * ONE template ever passed it, so the other visitor-facing sends carried our
+   * wordmark to a stranger while the invoice did not.
+   */
+  audience: 'platform' | 'visitor';
 }
 
-export function EmailLayout({ preview, children, footerNote, header = true }: EmailLayoutProps) {
+export function EmailLayout({ preview, children, footerNote, audience }: EmailLayoutProps) {
   const brand = useBrand();
   const platform = usePlatform();
   const platformHost = displayHost(platform.url);
@@ -62,6 +80,22 @@ export function EmailLayout({ preview, children, footerNote, header = true }: Em
   // same distinction the wordmark makes.
   const senderName =
     brand.siteNameIsPlatformDefault || !brand.siteName ? platform.name : brand.siteName;
+  // The wordmark is OURS, so it belongs only on mail to somebody who deals with us.
+  const header = audience === 'platform';
+  // The last line. To our own account holder it is the operator, which is the one
+  // identity that does not vary between the two products. To a tenant's customer
+  // it is a quiet credit and nothing more -- and if the send could not resolve
+  // which product it is from, it says NOTHING, because crediting a guess in front
+  // of somebody else's customer is worse than crediting no one. Same rule, same
+  // wording, as `silica/frame.ts`'s `attributionHtml`.
+  const signOff =
+    audience === 'platform'
+      ? platformHost
+        ? `WizeWorks · ${platformHost}`
+        : 'WizeWorks'
+      : platform.name
+        ? `Sent with ${platform.name}`
+        : null;
   return (
     <Html lang="en">
       <Head />
@@ -115,13 +149,20 @@ export function EmailLayout({ preview, children, footerNote, header = true }: Em
 
             <EmailDivider />
 
-            {/* Tiered footer: a tagline line over a legal line, both muted. */}
+            {/* Tiered footer: a tagline line over the sign-off, both muted. On a
+                visitor send the tagline is the SHOP alone -- the product credit
+                moves to the line below it rather than appearing twice. */}
             <EmailMuted style={{ margin: 0 }}>
-              {footerNote ?? `${senderName} · Sent with ${platform.name}`}
+              {footerNote ??
+                (audience === 'platform'
+                  ? `${senderName} · Sent with ${platform.name}`
+                  : senderName)}
             </EmailMuted>
-            <EmailMuted style={{ margin: `${spacing.xs}px 0 0`, color: colors.textMuted }}>
-              {platformHost ? `WizeWorks · ${platformHost}` : 'WizeWorks'}
-            </EmailMuted>
+            {signOff ? (
+              <EmailMuted style={{ margin: `${spacing.xs}px 0 0`, color: colors.textMuted }}>
+                {signOff}
+              </EmailMuted>
+            ) : null}
           </Section>
         </Container>
       </Body>

@@ -39,6 +39,7 @@ import {
   TimelineMiddle,
   type SilicaColor,
 } from '@wizeworks/silicaui-react';
+import { carrierLabel } from '@wizeworks/commerce-schemas';
 
 import type { OrderDetail, OrderFulfillmentView } from '@/lib/customer-client';
 
@@ -98,20 +99,6 @@ interface TimelineStep {
   detail?: ReactNode;
 }
 
-const CARRIER_LABELS: Record<string, string> = {
-  ups: 'UPS',
-  usps: 'USPS',
-  fedex: 'FedEx',
-  dhl: 'DHL',
-  digital: 'Digital delivery',
-  dropship: 'Drop-ship',
-};
-
-function carrierLabel(carrier: string | null): string {
-  if (!carrier) return 'Carrier';
-  return CARRIER_LABELS[carrier] ?? carrier.toUpperCase();
-}
-
 function formatStamp(iso: string): string {
   return new Date(iso).toLocaleString('en-US', {
     month: 'short',
@@ -122,7 +109,15 @@ function formatStamp(iso: string): string {
   });
 }
 
-/** A shipment line: carrier + service and, when present, a tracking link. */
+/** A shipment line: carrier + service and, when present, a tracking link.
+ *
+ *  The carrier words come from the schema package, not a local map. This file's
+ *  copy was the worst of the three that had grown: it told a shopper "Drop-ship"
+ *  where the owner's console said "Sent by the supplier", it had no entry for
+ *  `other` so its `toUpperCase()` fallback showed the word "OTHER", and a
+ *  fulfillment with no carrier at all rendered the literal word "Carrier" beside
+ *  the service. The shared helper returns '' for absent, which this `filter`
+ *  already knows what to do with. */
 function ShipmentLine({ fulfillment }: { fulfillment: OrderFulfillmentView }): ReactNode {
   const label = [carrierLabel(fulfillment.carrier), fulfillment.service]
     .filter(Boolean)

@@ -255,18 +255,21 @@ export function EmailSettingsSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Email settings actions">
-        <Button
-          color="module"
-          size="sm"
-          className="ml-auto"
-          disabled={!dirty || hasFormatError || settings.isPending || save.isPending}
-          onClick={onSave}
-        >
-          <Save className="size-4" aria-hidden />
-          {save.isPending ? 'Saving…' : 'Save'}
-        </Button>
-      </PaneToolbar>
+      <PaneToolbar
+        label="Email settings actions"
+        primary={
+          <Button
+            color="module"
+            size="sm"
+            className="ml-auto"
+            disabled={!dirty || hasFormatError || settings.isPending || save.isPending}
+            onClick={onSave}
+          >
+            <Save className="size-4" aria-hidden />
+            {save.isPending ? 'Saving…' : 'Save'}
+          </Button>
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         {settings.isPending ? (

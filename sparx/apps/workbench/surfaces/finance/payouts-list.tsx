@@ -21,7 +21,6 @@ import {
   Filter,
   FilterItem,
   Table,
-  ToolbarSeparator,
 } from '@wizeworks/silicaui-react';
 import { ArrowDown, ArrowUp, Banknote } from 'lucide-react';
 import { ListPagination, MAX_TAKE, type PageSize } from '../../components/list-pagination';
@@ -170,52 +169,55 @@ export function PayoutsListSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Payouts list controls" wrap>
-        <Filter
-          color="module"
-          value={status}
-          onValueChange={(next) => {
-            setStatus(next ?? 'all');
-            resetWindow();
-          }}
-          showReset={false}
-          aria-label="Filter by whether the deposit has arrived"
-        >
-          {STATUS_FILTERS.map((filter) => (
-            <FilterItem key={filter.value} value={filter.value}>
-              {filter.label}
-            </FilterItem>
-          ))}
-        </Filter>
-
-        <ToolbarSeparator className="hidden @xl:block" />
-
-        <Filter
-          color="module"
-          value={processor}
-          onValueChange={(next) => {
-            setProcessor(next ?? 'all');
-            resetWindow();
-          }}
-          showReset={false}
-          aria-label="Filter by funding source"
-        >
-          {PROCESSOR_FILTERS.map((filter) => (
-            <FilterItem key={filter.value} value={filter.value}>
-              {filter.label}
-            </FilterItem>
-          ))}
-        </Filter>
-
-        <RefreshButton
-          className="ml-auto"
-          isFetching={isFetching}
-          updatedAt={data ? dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void refetch();
-          }}
-        />
-      </PaneToolbar>
+      <PaneToolbar
+        label="Payouts list controls"
+        controls={
+          <>
+            <Filter
+              color="module"
+              value={status}
+              onValueChange={(next) => {
+                setStatus(next ?? 'all');
+                resetWindow();
+              }}
+              showReset={false}
+              aria-label="Filter by whether the deposit has arrived"
+            >
+              {STATUS_FILTERS.map((filter) => (
+                <FilterItem key={filter.value} value={filter.value}>
+                  {filter.label}
+                </FilterItem>
+              ))}
+            </Filter>
+            <Filter
+              color="module"
+              value={processor}
+              onValueChange={(next) => {
+                setProcessor(next ?? 'all');
+                resetWindow();
+              }}
+              showReset={false}
+              aria-label="Filter by funding source"
+            >
+              {PROCESSOR_FILTERS.map((filter) => (
+                <FilterItem key={filter.value} value={filter.value}>
+                  {filter.label}
+                </FilterItem>
+              ))}
+            </Filter>
+          </>
+        }
+        refresh={
+          <RefreshButton
+            className="ml-auto"
+            isFetching={isFetching}
+            updatedAt={data ? dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void refetch();
+            }}
+          />
+        }
+      />
 
       <Card className="min-h-0 flex-1 overflow-y-auto">
         {isError ? (

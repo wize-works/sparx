@@ -28,7 +28,11 @@ export function FormSubmissionConfirmationEmail({
     message ??
     'Thanks for getting in touch — we’ve received your message and will be in touch soon.';
   return (
-    <EmailLayout preview={site ? `Thanks for contacting ${site}` : 'Thanks for getting in touch'}>
+    <EmailLayout
+      // The visitor filled in a form on the TENANT's site.
+      audience="visitor"
+      preview={site ? `Thanks for contacting ${site}` : 'Thanks for getting in touch'}
+    >
       <Section>
         <EmailHeading>Thanks{name ? `, ${name}` : ''}</EmailHeading>
         <EmailParagraph>{body}</EmailParagraph>

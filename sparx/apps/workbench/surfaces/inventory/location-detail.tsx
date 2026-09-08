@@ -52,6 +52,7 @@ import { FormSection } from '../../components/form-section';
 import { useDirtySource } from '../../lib/workbench/dirty';
 import { afterPaneChange } from '../../lib/defer';
 import type { SurfaceContext } from '../../lib/surfaces/registry';
+import { SaveFailure } from '@/components/save-failure';
 import {
   LOCATION_TYPES,
   conflictField,
@@ -67,6 +68,7 @@ import {
   type Location,
   type LocationAddressInput,
 } from './locations-data';
+import { PaneLoadError } from '../../components/pane-load-error';
 
 /** Centred and capped — a pane torn onto a second monitor is 2000px wide, and
  *  uncapped this becomes fields pinned to the left edge. */
@@ -334,24 +336,31 @@ function LocationEditor({
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label={isNew ? 'New location actions' : 'Location actions'}>
-        {existing ? (
-          <Badge color={locationState(existing).tone} variant="soft" size="sm">
-            {locationState(existing).label}
-          </Badge>
-        ) : null}
-        <Button
-          color="module"
-          size="sm"
-          className="ml-auto shrink-0"
-          disabled={!canSave}
-          loading={busy}
-          onClick={submit}
-        >
-          <Save className="size-4" aria-hidden />
-          {isNew ? 'Create location' : 'Save'}
-        </Button>
-      </PaneToolbar>
+      <PaneToolbar
+        label={isNew ? 'New location actions' : 'Location actions'}
+        primary={
+          <Button
+            color="module"
+            size="sm"
+            className="ml-auto shrink-0"
+            disabled={!canSave}
+            loading={busy}
+            onClick={submit}
+          >
+            <Save className="size-4" aria-hidden />
+            {isNew ? 'Create location' : 'Save'}
+          </Button>
+        }
+        controls={
+          <>
+            {existing ? (
+              <Badge color={locationState(existing).tone} variant="soft" size="sm">
+                {locationState(existing).label}
+              </Badge>
+            ) : null}
+          </>
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className={COLUMN}>
@@ -381,14 +390,7 @@ function LocationEditor({
             </div>
           ) : null}
 
-          {saveError ? (
-            <Alert color="error">
-              <AlertContent>
-                <AlertTitle>Could not save this location</AlertTitle>
-                <AlertDescription>{saveError}</AlertDescription>
-              </AlertContent>
-            </Alert>
-          ) : null}
+          <SaveFailure title="Could not save this location" message={saveError} />
 
           <FormSection
             title={isNew ? 'New location' : 'Name and kind'}
@@ -673,32 +675,18 @@ export function LocationDetailSurface({ ctx }: { ctx: SurfaceContext }) {
     const gone = isNotFound(location.error);
     return (
       <div className={PANE_SHELL}>
-        <div className="flex h-full items-center justify-center p-8">
-          <Alert color={gone ? 'warning' : 'error'} variant="soft" className="max-w-md">
-            <AlertContent>
-              <AlertTitle>
-                {gone ? 'This location no longer exists' : 'Could not load this location'}
-              </AlertTitle>
-              <AlertDescription>
-                {gone
-                  ? 'It has been archived or removed. Its past stock movements are unaffected.'
-                  : 'This is a problem reaching the server. Nothing about the location has changed.'}
-              </AlertDescription>
-            </AlertContent>
-            {gone ? null : (
-              <Button
-                size="sm"
-                color="error"
-                variant="soft"
-                onClick={() => {
-                  void location.refetch();
-                }}
-              >
-                Try again
-              </Button>
-            )}
-          </Alert>
-        </div>
+        <PaneLoadError
+          reason={gone ? 'missing' : 'unreachable'}
+          title={gone ? 'This location no longer exists' : 'Could not load this location'}
+          description={
+            gone
+              ? 'It has been archived or removed. Its past stock movements are unaffected.'
+              : 'This is a problem reaching the server. Nothing about the location has changed.'
+          }
+          onRetry={() => {
+            void location.refetch();
+          }}
+        />
       </div>
     );
   }

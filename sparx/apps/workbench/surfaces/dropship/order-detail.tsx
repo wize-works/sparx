@@ -40,6 +40,7 @@ import {
   useSuppliers,
   type DropshipOrder,
 } from './dropship-data';
+import { PaneLoadError } from '../../components/pane-load-error';
 
 const COLUMN = 'mx-auto flex w-full max-w-3xl flex-col gap-4';
 
@@ -62,7 +63,7 @@ function FactRow({ label, children }: { label: string; children: React.ReactNode
 
 export function DropshipOrderDetailSurface({ ctx }: { ctx: SurfaceContext }) {
   const id = typeof ctx.params.id === 'string' ? ctx.params.id : '';
-  const { data: order, isPending, isError, refetch } = useDropshipOrder(id);
+  const { data: order, isPending, isError, error, refetch } = useDropshipOrder(id);
   const suppliers = useSuppliers();
   const toast = useToast();
   const confirm = useConfirm();
@@ -79,27 +80,15 @@ export function DropshipOrderDetailSurface({ ctx }: { ctx: SurfaceContext }) {
 
   if (isError) {
     return (
-      <div className="flex h-full items-center justify-center p-8">
-        <Alert color="error" className="max-w-md">
-          <AlertContent>
-            <AlertTitle>Could not load this supplier order</AlertTitle>
-            <AlertDescription>
-              This is a problem reaching the server, or the order no longer exists. Nothing has been
-              changed.
-            </AlertDescription>
-          </AlertContent>
-          <Button
-            size="sm"
-            color="error"
-            variant="soft"
-            onClick={() => {
-              void refetch();
-            }}
-          >
-            Try again
-          </Button>
-        </Alert>
-      </div>
+      <PaneLoadError
+        error={error}
+        noun="supplier order"
+        title="Could not load this supplier order"
+        description="This is a problem reaching the server, or the order no longer exists. Nothing has been changed."
+        onRetry={() => {
+          void refetch();
+        }}
+      />
     );
   }
 
@@ -145,66 +134,68 @@ export function DropshipOrderDetailSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Supplier order actions" wrap>
-        <Badge color={state.tone} variant="soft" size="sm">
-          {state.label}
-        </Badge>
-
-        {order.trackingUrl ? (
-          <Button
-            size="sm"
-            variant="outline"
-            color="neutral"
-            className="ml-auto shrink-0"
-            // Children arrive via silica's `render` composition; the a11y rule
-            // reads the source anchor and cannot see them.
-            // eslint-disable-next-line jsx-a11y/anchor-has-content -- children arrive via `render`
-            render={<a href={order.trackingUrl} target="_blank" rel="noreferrer" />}
-          >
-            <Truck className="size-4" aria-hidden />
-            Track parcel
-            <ExternalLink className="size-3" aria-hidden />
-          </Button>
-        ) : null}
-
-        {/* Cross-module: this opens the customer's commerce order, so it wears
+      <PaneToolbar
+        label="Supplier order actions"
+        controls={
+          <>
+            <Badge color={state.tone} variant="soft" size="sm">
+              {state.label}
+            </Badge>
+            {order.trackingUrl ? (
+              <Button
+                size="sm"
+                variant="outline"
+                color="neutral"
+                className="ml-auto shrink-0"
+                // Children arrive via silica's `render` composition; the a11y rule
+                // reads the source anchor and cannot see them.
+                // eslint-disable-next-line jsx-a11y/anchor-has-content -- children arrive via `render`
+                render={<a href={order.trackingUrl} target="_blank" rel="noreferrer" />}
+              >
+                <Truck className="size-4" aria-hidden />
+                Track parcel
+                <ExternalLink className="size-3" aria-hidden />
+              </Button>
+            ) : null}
+            {/* Cross-module: this opens the customer's commerce order, so it wears
             commerce's hue. */}
-        <ModuleScope
-          module="commerce"
-          className={order.trackingUrl ? 'shrink-0' : 'ml-auto shrink-0'}
-        >
-          <Button
-            size="sm"
-            variant="outline"
-            color="module"
-            onClick={(event) => {
-              ctx.open(
-                'commerce.order.detail',
-                { id: order.orderId },
-                { target: targetFor(event) }
-              );
-            }}
-          >
-            <ShoppingBag className="size-4" aria-hidden />
-            Customer order
-          </Button>
-        </ModuleScope>
-
-        {canReroute ? (
-          <Button
-            size="sm"
-            color="module"
-            className="shrink-0"
-            loading={route.isPending}
-            onClick={() => {
-              void onReroute();
-            }}
-          >
-            <RotateCcw className="size-4" aria-hidden />
-            Route again
-          </Button>
-        ) : null}
-      </PaneToolbar>
+            <ModuleScope
+              module="commerce"
+              className={order.trackingUrl ? 'shrink-0' : 'ml-auto shrink-0'}
+            >
+              <Button
+                size="sm"
+                variant="outline"
+                color="module"
+                onClick={(event) => {
+                  ctx.open(
+                    'commerce.order.detail',
+                    { id: order.orderId },
+                    { target: targetFor(event) }
+                  );
+                }}
+              >
+                <ShoppingBag className="size-4" aria-hidden />
+                Customer order
+              </Button>
+            </ModuleScope>
+            {canReroute ? (
+              <Button
+                size="sm"
+                color="module"
+                className="shrink-0"
+                loading={route.isPending}
+                onClick={() => {
+                  void onReroute();
+                }}
+              >
+                <RotateCcw className="size-4" aria-hidden />
+                Route again
+              </Button>
+            ) : null}
+          </>
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className={COLUMN}>

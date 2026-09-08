@@ -12,10 +12,6 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import {
-  Alert,
-  AlertContent,
-  AlertDescription,
-  AlertTitle,
   Badge,
   Button,
   Field,
@@ -40,6 +36,7 @@ import { afterPaneChange } from '../../lib/defer';
 import type { SurfaceContext } from '../../lib/surfaces/registry';
 import { countryOptions, coverageSummary } from './geo';
 import { ZoneRatesEditor } from './shipping-rate-editor';
+import { SaveFailure } from '@/components/save-failure';
 import {
   shippingErrorMessage,
   useCreateShippingZone,
@@ -48,6 +45,7 @@ import {
   useUpdateShippingZone,
   type ShippingZone,
 } from './shipping-data';
+import { PaneLoadError } from '../../components/pane-load-error';
 
 const COLUMN = 'mx-auto flex w-full max-w-3xl flex-col gap-4';
 
@@ -71,31 +69,19 @@ export function ShippingZoneDetailSurface({ ctx }: { ctx: SurfaceContext }) {
 }
 
 function ZoneLoader({ ctx, id }: { ctx: SurfaceContext; id: string }) {
-  const { data: zone, isPending, isError, refetch } = useShippingZone(id);
+  const { data: zone, isPending, isError, error, refetch } = useShippingZone(id);
 
   if (isError) {
     return (
-      <div className="flex h-full items-center justify-center p-8">
-        <Alert color="error" className="max-w-md">
-          <AlertContent>
-            <AlertTitle>Could not load this delivery region</AlertTitle>
-            <AlertDescription>
-              This is a problem reaching the server. The region itself is unaffected — nothing has
-              been lost.
-            </AlertDescription>
-          </AlertContent>
-          <Button
-            size="sm"
-            color="error"
-            variant="soft"
-            onClick={() => {
-              void refetch();
-            }}
-          >
-            Try again
-          </Button>
-        </Alert>
-      </div>
+      <PaneLoadError
+        error={error}
+        noun="delivery region"
+        title="Could not load this delivery region"
+        description="This is a problem reaching the server. The region itself is unaffected — nothing has been lost."
+        onRetry={() => {
+          void refetch();
+        }}
+      />
     );
   }
 
@@ -220,29 +206,36 @@ function ZoneEditor({ ctx, id, zone }: { ctx: SurfaceContext; id: string; zone?:
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Delivery region actions">
-        {!isNew ? (
-          <Badge
-            color={zone && zone.rateCount > 0 ? 'success' : 'warning'}
-            variant="soft"
+      <PaneToolbar
+        label="Delivery region actions"
+        primary={
+          <Button
+            color="module"
             size="sm"
+            className="ml-auto"
+            loading={saving}
+            disabled={Boolean(nameError) || (!isNew && !dirty)}
+            onClick={submit}
           >
-            {zone && zone.rateCount > 0
-              ? `${String(zone.rateCount)} delivery option${zone.rateCount === 1 ? '' : 's'}`
-              : 'No delivery options'}
-          </Badge>
-        ) : null}
-        <Button
-          color="module"
-          size="sm"
-          className="ml-auto"
-          loading={saving}
-          disabled={Boolean(nameError) || (!isNew && !dirty)}
-          onClick={submit}
-        >
-          {isNew ? 'Create region' : 'Save'}
-        </Button>
-      </PaneToolbar>
+            {isNew ? 'Create region' : 'Save'}
+          </Button>
+        }
+        controls={
+          <>
+            {!isNew ? (
+              <Badge
+                color={zone && zone.rateCount > 0 ? 'success' : 'warning'}
+                variant="soft"
+                size="sm"
+              >
+                {zone && zone.rateCount > 0
+                  ? `${String(zone.rateCount)} delivery option${zone.rateCount === 1 ? '' : 's'}`
+                  : 'No delivery options'}
+              </Badge>
+            ) : null}
+          </>
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className={COLUMN}>
@@ -265,14 +258,7 @@ function ZoneEditor({ ctx, id, zone }: { ctx: SurfaceContext; id: string; zone?:
             </div>
           )}
 
-          {failure ? (
-            <Alert color="error">
-              <AlertContent>
-                <AlertTitle>Could not save this region</AlertTitle>
-                <AlertDescription>{failure}</AlertDescription>
-              </AlertContent>
-            </Alert>
-          ) : null}
+          <SaveFailure title="Could not save this region" message={failure} />
 
           <FormSection title="The region">
             <Field>

@@ -124,6 +124,13 @@ model Order {
   property              Property?        @relation(fields: [propertyId], references: [id], onDelete: SetNull)
   convertedFromDocument BillingDocument? @relation("DocumentConvertedToOrder", fields: [convertedFromDocumentId], references: [id], onDelete: SetNull)
 
+  // The invoices raised to ask for the money on this order. Plural because a
+  // long job can be billed in stages; a shop that takes payment at checkout
+  // never raises one at all. Reverse side of BillingDocument.orderId — NOT the
+  // same relation as `convertedFromDocument` above, which points the other way
+  // (the quote this order came FROM).
+  billingDocuments BillingDocument[] @relation("OrderBillingDocuments")
+
   items          OrderItem[]
   payments       OrderPayment[]
   refunds        OrderRefund[]

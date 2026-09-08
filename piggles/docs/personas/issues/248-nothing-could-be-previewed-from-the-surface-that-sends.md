@@ -105,7 +105,7 @@ audience is empty.
 
 > **Send this to 23 people?**
 > "Marguerite, the autumn pieces are here" goes out from Piggles
-> &lt;noreply@sparx.email&gt; straight away. Email can't be recalled once it has
+> `<noreply@sparx.email>` straight away. Email can't be recalled once it has
 > gone, so this is the last chance to change it.
 > [Not yet] [Send it now]
 

@@ -347,50 +347,56 @@ export function VendorsListSurface() {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Vendor list controls" wrap>
-        <div className="max-w-xs min-w-0 flex-1">
-          <SearchInput
-            size="sm"
-            aria-label="Search who you pay"
-            placeholder="Search by name, email or account…"
-            value={search}
-            onValueChange={setSearch}
+      <PaneToolbar
+        label="Vendor list controls"
+        search={
+          <div className="max-w-xs min-w-0 flex-1">
+            <SearchInput
+              size="sm"
+              aria-label="Search who you pay"
+              placeholder="Search by name, email or account…"
+              value={search}
+              onValueChange={setSearch}
+            />
+          </div>
+        }
+        controls={
+          <>
+            <Button
+              size="sm"
+              color="module"
+              onClick={() => {
+                setAdding(true);
+                setEditing(null);
+              }}
+            >
+              <Plus className="size-4" aria-hidden />
+              Add
+            </Button>
+            <div className="flex items-center gap-2">
+              <Switch
+                id="vendors-show-archived"
+                color="module"
+                checked={showArchived}
+                onCheckedChange={setShowArchived}
+              />
+              <label htmlFor="vendors-show-archived" className="text-sm whitespace-nowrap">
+                Include archived
+              </label>
+            </div>
+          </>
+        }
+        refresh={
+          <RefreshButton
+            className="ml-auto"
+            isFetching={isFetching}
+            updatedAt={data ? dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void refetch();
+            }}
           />
-        </div>
-
-        <Button
-          size="sm"
-          color="module"
-          onClick={() => {
-            setAdding(true);
-            setEditing(null);
-          }}
-        >
-          <Plus className="size-4" aria-hidden />
-          Add
-        </Button>
-
-        <div className="flex items-center gap-2">
-          <Switch
-            id="vendors-show-archived"
-            color="module"
-            checked={showArchived}
-            onCheckedChange={setShowArchived}
-          />
-          <label htmlFor="vendors-show-archived" className="text-sm whitespace-nowrap">
-            Include archived
-          </label>
-        </div>
-
-        <RefreshButton
-          className="ml-auto"
-          isFetching={isFetching}
-          updatedAt={data ? dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void refetch();
-          }}
-        />
-      </PaneToolbar>
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         {isError ? (

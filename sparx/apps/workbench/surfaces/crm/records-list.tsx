@@ -82,47 +82,56 @@ export function RecordsListSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label={`${labelPlural} list controls`}>
-        <Table2 className="size-4 shrink-0" aria-hidden />
-        <Input
-          color="module"
-          size="sm"
-          className="max-w-64"
-          aria-label={`Search ${labelPlural.toLowerCase()}`}
-          placeholder={`Search ${labelPlural.toLowerCase()}`}
-          value={q}
-          onChange={(event) => {
-            setQ(event.target.value);
-          }}
-        />
-        <Button
-          color="module"
-          size="sm"
-          className="ml-auto shrink-0"
-          title={`Add a ${label.toLowerCase()} — hold Shift to open alongside, Alt for a new window`}
-          onClick={(event) => {
-            ctx.open('crm.record.detail', { id: 'new', objectKey }, { target: targetFor(event) });
-          }}
-        >
-          <Plus className="size-4" aria-hidden />
-          Add {label.toLowerCase()}
-        </Button>
-        <SavedViewsMenu
-          objectKey={objectKey}
-          current={currentFilters}
-          baseline={viewFilters([])}
-          nameHint={`The ${labelPlural.toLowerCase()} I check`}
-          selectedId={viewId}
-          onApply={applyView}
-        />
-        <RefreshButton
-          isFetching={records.isFetching}
-          updatedAt={records.data ? records.dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void records.refetch();
-          }}
-        />
-      </PaneToolbar>
+      <PaneToolbar
+        label={`${labelPlural} list controls`}
+        primary={
+          <Button
+            color="module"
+            size="sm"
+            className="ml-auto shrink-0"
+            title={`Add a ${label.toLowerCase()} — hold Shift to open alongside, Alt for a new window`}
+            onClick={(event) => {
+              ctx.open('crm.record.detail', { id: 'new', objectKey }, { target: targetFor(event) });
+            }}
+          >
+            <Plus className="size-4" aria-hidden />
+            Add {label.toLowerCase()}
+          </Button>
+        }
+        controls={
+          <>
+            <Table2 className="size-4 shrink-0" aria-hidden />
+            <Input
+              color="module"
+              size="sm"
+              className="max-w-64"
+              aria-label={`Search ${labelPlural.toLowerCase()}`}
+              placeholder={`Search ${labelPlural.toLowerCase()}`}
+              value={q}
+              onChange={(event) => {
+                setQ(event.target.value);
+              }}
+            />
+            <SavedViewsMenu
+              objectKey={objectKey}
+              current={currentFilters}
+              baseline={viewFilters([])}
+              nameHint={`The ${labelPlural.toLowerCase()} I check`}
+              selectedId={viewId}
+              onApply={applyView}
+            />
+          </>
+        }
+        refresh={
+          <RefreshButton
+            isFetching={records.isFetching}
+            updatedAt={records.data ? records.dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void records.refetch();
+            }}
+          />
+        }
+      />
 
       {/* The same four branches, in the same order, as every other list in the
           workbench — error, loading, no rows, rows. A tenant's own record type

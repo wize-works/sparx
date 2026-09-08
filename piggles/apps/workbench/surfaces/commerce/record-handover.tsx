@@ -81,11 +81,19 @@ export function RecordHandover({ order, plan }: { order: Order; plan: DeliveryPl
         onSuccess: () => {
           setTracking('');
           setNote('');
+          // "They can follow it from here" is only true when there is something
+          // to follow. The tracking number is optional, and leaving it out is
+          // the normal case for a shop that walks its parcels to the post
+          // office — the customer's email then carries the carrier and nothing
+          // else, and the "Track your package" button is not in it at all. The
+          // message says which of the two just happened.
           toast.add({
             title: plan.collected ? 'Marked as collected' : 'Marked as sent',
             description: plan.collected
               ? 'This order is finished.'
-              : 'The customer can follow it from here.',
+              : tracking.trim()
+                ? 'The customer has the tracking number and can follow it from here.'
+                : 'The customer has been told it is on its way. Add a tracking number later if you get one.',
             type: 'success',
           });
         },
@@ -140,7 +148,7 @@ export function RecordHandover({ order, plan }: { order: Order; plan: DeliveryPl
         <span className="text-base font-medium">Anything to note (optional)</span>
         <Input
           value={note}
-          placeholder={plan.collected ? 'Who picked it up…' : 'Left with a neighbour…'}
+          placeholder={plan.collected ? 'Who picked it up…' : 'Left with a neighbor…'}
           onChange={(event) => {
             setNote(event.target.value);
           }}

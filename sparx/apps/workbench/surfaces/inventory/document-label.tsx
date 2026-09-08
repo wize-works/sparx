@@ -25,7 +25,7 @@
 // internal reference on someone else's desk, where it means nothing.
 
 import { useMemo, useState } from 'react';
-import { Alert, Button, NativeSelect, Text, ToolbarSeparator } from '@wizeworks/silicaui-react';
+import { Alert, Button, NativeSelect, Text } from '@wizeworks/silicaui-react';
 import { barcodeSvg, encodeBarcode } from '@wizeworks/commerce-schemas';
 import { Printer } from 'lucide-react';
 import { PaneToolbar, PANE_SHELL } from '../../components/pane-toolbar';
@@ -84,53 +84,55 @@ export function DocumentLabelSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Document label controls" className="print:hidden">
-        <Button
-          color="module-inventory"
-          size="sm"
-          disabled={svg === null}
-          onClick={() => {
-            window.print();
-          }}
-        >
-          <Printer className="size-4" aria-hidden />
-          Print
-        </Button>
-
-        <ToolbarSeparator />
-
-        <NativeSelect
-          size="sm"
-          className="max-w-36 shrink"
-          aria-label="Label size"
-          value={size}
-          onChange={(event) => {
-            setSize(event.target.value as SizeKey);
-          }}
-        >
-          {SIZES.map((s) => (
-            <option key={s.value} value={s.value}>
-              {s.label} — {s.hint}
-            </option>
-          ))}
-        </NativeSelect>
-
-        <NativeSelect
-          size="sm"
-          className="max-w-28 shrink"
-          aria-label="How many copies"
-          value={String(copies)}
-          onChange={(event) => {
-            setCopies(Number(event.target.value));
-          }}
-        >
-          {COPY_COUNTS.map((n) => (
-            <option key={n} value={n}>
-              {n} {n === 1 ? 'copy' : 'copies'}
-            </option>
-          ))}
-        </NativeSelect>
-      </PaneToolbar>
+      <PaneToolbar
+        label="Document label controls"
+        className="print:hidden"
+        controls={
+          <>
+            <Button
+              color="module-inventory"
+              size="sm"
+              disabled={svg === null}
+              onClick={() => {
+                window.print();
+              }}
+            >
+              <Printer className="size-4" aria-hidden />
+              Print
+            </Button>
+            <NativeSelect
+              size="sm"
+              className="max-w-36 shrink"
+              aria-label="Label size"
+              value={size}
+              onChange={(event) => {
+                setSize(event.target.value as SizeKey);
+              }}
+            >
+              {SIZES.map((s) => (
+                <option key={s.value} value={s.value}>
+                  {s.label} — {s.hint}
+                </option>
+              ))}
+            </NativeSelect>
+            <NativeSelect
+              size="sm"
+              className="max-w-28 shrink"
+              aria-label="How many copies"
+              value={String(copies)}
+              onChange={(event) => {
+                setCopies(Number(event.target.value));
+              }}
+            >
+              {COPY_COUNTS.map((n) => (
+                <option key={n} value={n}>
+                  {n} {n === 1 ? 'copy' : 'copies'}
+                </option>
+              ))}
+            </NativeSelect>
+          </>
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         {svg === null ? (

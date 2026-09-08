@@ -71,55 +71,63 @@ export function SequencesListSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Email sequences list controls">
-        <div className="max-w-xs min-w-0 flex-1">
-          <SearchInput
+      <PaneToolbar
+        label="Email sequences list controls"
+        search={
+          <div className="max-w-xs min-w-0 flex-1">
+            <SearchInput
+              size="sm"
+              aria-label="Search sequences"
+              placeholder="Search sequences…"
+              value={search}
+              onValueChange={setSearch}
+            />
+          </div>
+        }
+        primary={
+          <Button
+            color="module"
             size="sm"
-            aria-label="Search sequences"
-            placeholder="Search sequences…"
-            value={search}
-            onValueChange={setSearch}
-          />
-        </div>
-
-        <div className="hidden w-40 shrink-0 @md:block">
-          <Select
-            size="sm"
-            aria-label="Filter by status"
-            value={status}
-            items={{
-              all: 'Any status',
-              active: 'On',
-              draft: 'Draft',
-              archived: 'Stopped',
+            className="ml-auto shrink-0"
+            title="New sequence — hold Shift to open alongside, Alt for a new window"
+            onClick={(event) => {
+              ctx.open('email.sequences.detail', { id: 'new' }, { target: targetFor(event) });
             }}
-            onValueChange={(next) => {
-              setStatus((next as string) || 'all');
+          >
+            <Plus className="size-4" aria-hidden />
+            <span className="hidden @lg:inline">New sequence</span>
+          </Button>
+        }
+        controls={
+          <>
+            <div className="hidden w-40 shrink-0 @md:block">
+              <Select
+                size="sm"
+                aria-label="Filter by status"
+                value={status}
+                items={{
+                  all: 'Any status',
+                  active: 'On',
+                  draft: 'Draft',
+                  archived: 'Stopped',
+                }}
+                onValueChange={(next) => {
+                  setStatus((next as string) || 'all');
+                }}
+              />
+            </div>
+          </>
+        }
+        refresh={
+          <RefreshButton
+            isFetching={isFetching}
+            updatedAt={data ? dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void refetch();
             }}
           />
-        </div>
-
-        <Button
-          color="module"
-          size="sm"
-          className="ml-auto shrink-0"
-          title="New sequence — hold Shift to open alongside, Alt for a new window"
-          onClick={(event) => {
-            ctx.open('email.sequences.detail', { id: 'new' }, { target: targetFor(event) });
-          }}
-        >
-          <Plus className="size-4" aria-hidden />
-          <span className="hidden @lg:inline">New sequence</span>
-        </Button>
-
-        <RefreshButton
-          isFetching={isFetching}
-          updatedAt={data ? dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void refetch();
-          }}
-        />
-      </PaneToolbar>
+        }
+      />
 
       <Card className="min-h-0 flex-1 overflow-y-auto">
         {isError ? (

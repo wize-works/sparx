@@ -14,6 +14,7 @@ import type { SilicaPieceDto } from '@wizeworks/builder-schemas';
 import type { Node } from '@wizeworks/silicaui-html';
 import { api } from '../api/client';
 import { pieceKeyOf, tenantSymbolId } from './saved-pieces';
+import { invalidatePieceLibrary, SILICA_PIECES_KEY, SITE_SYMBOLS_KEY } from './piece-keys';
 
 /** A site-owned saved piece as the server stores it. `saved-pieces.ts` types the
  *  same shape with an `unknown` root because it only ever re-emits them; a canvas
@@ -24,8 +25,7 @@ export interface SiteSymbol {
   root: Node;
 }
 
-export const SITE_SYMBOLS_KEY = ['studio', 'site-symbols'] as const;
-export const PIECES_KEY = ['builder', 'silica-pieces'];
+export { SITE_SYMBOLS_KEY, SILICA_PIECES_KEY } from './piece-keys';
 
 /** One saved piece, whichever store it came from. */
 export interface PieceRow {
@@ -74,8 +74,7 @@ export function useSavePiece() {
       });
     },
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: PIECES_KEY });
-      void queryClient.invalidateQueries({ queryKey: SITE_SYMBOLS_KEY });
+      invalidatePieceLibrary(queryClient);
     },
   });
 }
@@ -120,8 +119,7 @@ export function useDeletePiece() {
       await api.delete(`/v1/builder/site/symbols/${encodeURIComponent(id)}`);
     },
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: PIECES_KEY });
-      void queryClient.invalidateQueries({ queryKey: SITE_SYMBOLS_KEY });
+      invalidatePieceLibrary(queryClient);
     },
   });
 }
@@ -155,7 +153,7 @@ export function useCreatePiece() {
     // available" — so waiting on a refetch means the author watches their own work
     // report itself lost. The invalidation still runs, for the authoritative copy.
     onSuccess: (piece) => {
-      queryClient.setQueryData<SilicaPieceDto[]>(PIECES_KEY, (prev) => [
+      queryClient.setQueryData<SilicaPieceDto[]>(SILICA_PIECES_KEY, (prev) => [
         ...(prev ?? []),
         {
           key: piece.key,
@@ -167,7 +165,7 @@ export function useCreatePiece() {
           root: piece.root,
         },
       ]);
-      void queryClient.invalidateQueries({ queryKey: PIECES_KEY });
+      invalidatePieceLibrary(queryClient);
     },
   });
 }

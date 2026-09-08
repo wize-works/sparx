@@ -95,13 +95,17 @@ export function InvoiceSentEmail({
     <EmailLayout
       preview={`${label} ${documentNumber} from ${fromName} — ${formatMoney(balance, currency)}`}
       footerNote={`${fromName} sent you ${label.toLowerCase()} ${documentNumber}.`}
-      // No masthead. `EmailWordmark` paints the PLATFORM's wordmark, and the
-      // person reading this bought bread from a bakery — a software product's
-      // name over their invoice reads like a billing service nobody hired. The
-      // business names itself in the heading and the first sentence instead,
-      // which is what a paper invoice does. (`header={false}` is the same lever
-      // the Builder email renderer pulls for the same reason.)
-      header={false}
+      // No masthead, and no operator in the fine print. `EmailWordmark` paints
+      // the PLATFORM's wordmark, and the person reading this bought bread from a
+      // bakery — a software product's name over their invoice reads like a
+      // billing service nobody hired. The business names itself in the heading
+      // and the first sentence instead, which is what a paper invoice does.
+      //
+      // This used to be `header={false}`, a lever only THIS template ever
+      // pulled — so the masthead was right here and wrong on every other
+      // visitor-facing send, and the footer went on naming the operating company
+      // to a stranger regardless. Audience decides both now.
+      audience="visitor"
     >
       <EmailDisplayHeading>
         {label} from {fromName}

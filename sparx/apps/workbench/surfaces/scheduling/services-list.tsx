@@ -24,7 +24,6 @@ import {
   Table,
   ToggleGroup,
   ToggleGroupItem,
-  ToolbarSeparator,
 } from '@wizeworks/silicaui-react';
 import { Briefcase, EyeOff, Plus } from 'lucide-react';
 import { ListPagination, MAX_TAKE, type PageSize } from '../../components/list-pagination';
@@ -226,79 +225,84 @@ export function ServicesListSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Services list controls">
-        <div className="max-w-xs min-w-0 flex-1">
-          <SearchInput
+      <PaneToolbar
+        label="Services list controls"
+        search={
+          <div className="max-w-xs min-w-0 flex-1">
+            <SearchInput
+              size="sm"
+              aria-label="Search services"
+              placeholder="Service name…"
+              value={search}
+              onValueChange={(next) => {
+                setSearch(next);
+                resetWindow();
+              }}
+            />
+          </div>
+        }
+        primary={
+          <Button
+            color="module"
             size="sm"
-            aria-label="Search services"
-            placeholder="Service name…"
-            value={search}
-            onValueChange={(next) => {
-              setSearch(next);
-              resetWindow();
+            className="ml-auto shrink-0 whitespace-nowrap"
+            title="New service — hold Shift to open alongside, Alt for a new window"
+            onClick={openNew}
+          >
+            <Plus className="size-4" aria-hidden />
+            <span className="hidden @lg:inline">New service</span>
+          </Button>
+        }
+        controls={
+          <>
+            <NativeSelect
+              size="sm"
+              className="max-w-44 shrink"
+              aria-label="Show only one kind of booking"
+              value={type}
+              onChange={(event) => {
+                setType(event.target.value);
+                resetWindow();
+              }}
+            >
+              <option value="">Every kind</option>
+              {BOOKING_TYPES.map((kind) => (
+                <option key={kind.value} value={kind.value}>
+                  {kind.label}
+                </option>
+              ))}
+            </NativeSelect>
+            <ToggleGroup
+              size="sm"
+              color="module"
+              className="shrink-0"
+              value={activeOnly ? ['active'] : []}
+              onValueChange={(next: unknown[]) => {
+                setActiveOnly(next.includes('active'));
+                resetWindow();
+              }}
+            >
+              <ToggleGroupItem
+                value="active"
+                aria-label="Hide switched-off services"
+                title="Hide switched-off services"
+              >
+                <EyeOff className="size-4" aria-hidden />
+                <span className="hidden @2xl:inline">Active only</span>
+              </ToggleGroupItem>
+            </ToggleGroup>
+          </>
+        }
+        refresh={
+          <RefreshButton
+            isFetching={isFetching}
+            updatedAt={data ? dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void refetch();
             }}
           />
-        </div>
-
-        <ToolbarSeparator className="hidden @xl:block" />
-
-        <NativeSelect
-          size="sm"
-          className="max-w-44 shrink"
-          aria-label="Show only one kind of booking"
-          value={type}
-          onChange={(event) => {
-            setType(event.target.value);
-            resetWindow();
-          }}
-        >
-          <option value="">Every kind</option>
-          {BOOKING_TYPES.map((kind) => (
-            <option key={kind.value} value={kind.value}>
-              {kind.label}
-            </option>
-          ))}
-        </NativeSelect>
-
-        <ToggleGroup
-          size="sm"
-          color="module"
-          className="shrink-0"
-          value={activeOnly ? ['active'] : []}
-          onValueChange={(next: unknown[]) => {
-            setActiveOnly(next.includes('active'));
-            resetWindow();
-          }}
-        >
-          <ToggleGroupItem
-            value="active"
-            aria-label="Hide switched-off services"
-            title="Hide switched-off services"
-          >
-            <EyeOff className="size-4" aria-hidden />
-            <span className="hidden @2xl:inline">Active only</span>
-          </ToggleGroupItem>
-        </ToggleGroup>
-
-        <Button
-          color="module"
-          size="sm"
-          className="ml-auto shrink-0 whitespace-nowrap"
-          title="New service — hold Shift to open alongside, Alt for a new window"
-          onClick={openNew}
-        >
-          <Plus className="size-4" aria-hidden />
-          <span className="hidden @lg:inline">New service</span>
-        </Button>
-
-        <RefreshButton
-          isFetching={isFetching}
-          updatedAt={data ? dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void refetch();
-          }}
-        />
-      </PaneToolbar>
+        }
+      />
 
       <Card className="mx-auto min-h-0 w-full max-w-5xl flex-1 overflow-y-auto">{body()}</Card>
 

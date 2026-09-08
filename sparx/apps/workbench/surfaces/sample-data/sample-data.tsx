@@ -14,18 +14,7 @@
 // shown as the body of the screen.
 
 import { useEffect } from 'react';
-import {
-  Alert,
-  AlertActions,
-  AlertContent,
-  AlertDescription,
-  AlertTitle,
-  Badge,
-  Button,
-  Heading,
-  Text,
-  useToast,
-} from '@wizeworks/silicaui-react';
+import { Badge, Button, Heading, Text, useToast } from '@wizeworks/silicaui-react';
 import { Database, FlaskConical, Trash2 } from 'lucide-react';
 import { useConfirm } from '../../lib/confirm';
 import { useDirtySource } from '../../lib/workbench/dirty';
@@ -45,6 +34,7 @@ import {
   useSampleDataStatus,
   type SampleDataCounts,
 } from './data';
+import { PaneLoadError } from '../../components/pane-load-error';
 
 const COLUMN = 'mx-auto flex w-full max-w-2xl flex-col gap-4';
 
@@ -92,28 +82,13 @@ export function SampleDataSurface({ ctx }: { ctx: SurfaceContext }) {
 
   if (isError) {
     return (
-      <div className="flex h-full items-center justify-center p-8">
-        <Alert color="error" className="max-w-md">
-          <AlertContent>
-            <AlertTitle>Could not load the sample-data status</AlertTitle>
-            <AlertDescription>
-              This is a problem reaching the server. Any sample data you have is unaffected.
-            </AlertDescription>
-          </AlertContent>
-          <AlertActions>
-            <Button
-              size="sm"
-              color="error"
-              variant="soft"
-              onClick={() => {
-                void refetch();
-              }}
-            >
-              Try again
-            </Button>
-          </AlertActions>
-        </Alert>
-      </div>
+      <PaneLoadError
+        title="Could not load the sample-data status"
+        description="This is a problem reaching the server. Any sample data you have is unaffected."
+        onRetry={() => {
+          void refetch();
+        }}
+      />
     );
   }
 
@@ -185,34 +160,39 @@ export function SampleDataSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Sample data actions">
-        <Button
-          color="module"
-          size="sm"
-          className="ml-auto"
-          loading={load.isPending}
-          disabled={busy}
-          onClick={() => {
-            void onLoad();
-          }}
-        >
-          <Database className="size-4" aria-hidden />
-          {load.isPending
-            ? loaded
-              ? 'Replacing…'
-              : 'Loading…'
-            : loaded
-              ? 'Reload sample data'
-              : 'Load sample data'}
-        </Button>
-        <RefreshButton
-          isFetching={isFetching}
-          updatedAt={data ? dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void refetch();
-          }}
-        />
-      </PaneToolbar>
+      <PaneToolbar
+        label="Sample data actions"
+        primary={
+          <Button
+            color="module"
+            size="sm"
+            className="ml-auto"
+            loading={load.isPending}
+            disabled={busy}
+            onClick={() => {
+              void onLoad();
+            }}
+          >
+            <Database className="size-4" aria-hidden />
+            {load.isPending
+              ? loaded
+                ? 'Replacing…'
+                : 'Loading…'
+              : loaded
+                ? 'Reload sample data'
+                : 'Load sample data'}
+          </Button>
+        }
+        refresh={
+          <RefreshButton
+            isFetching={isFetching}
+            updatedAt={data ? dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void refetch();
+            }}
+          />
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         {isPending || !data ? (

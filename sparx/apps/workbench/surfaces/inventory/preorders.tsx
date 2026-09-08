@@ -43,7 +43,6 @@ import {
   Text,
   Textarea,
   Timestamp,
-  ToolbarSeparator,
   useToast,
 } from '@wizeworks/silicaui-react';
 import { CalendarClock, CalendarPlus } from 'lucide-react';
@@ -186,40 +185,45 @@ export function PreordersSurface(_props: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Preorder controls">
-        <NativeSelect
-          size="sm"
-          className="max-w-40 shrink"
-          aria-label="Which preorders"
-          value={status}
-          onChange={(event) => {
-            setStatus(event.target.value);
-          }}
-        >
-          <option value="">All</option>
-          <option value="open">Running</option>
-          <option value="scheduled">Not started</option>
-          <option value="closed">Finished</option>
-          <option value="cancelled">Cancelled</option>
-        </NativeSelect>
-
-        <ToolbarSeparator />
-
-        <Text className="text-sm">
-          {live.length > 0
-            ? `${plural(live.length, 'preorder', 'preorders')} taking orders · ${plural(committed, 'unit', 'units')} committed`
-            : 'Nothing taking preorders'}
-        </Text>
-
-        <RefreshButton
-          className="ml-auto"
-          isFetching={list.isFetching}
-          updatedAt={list.data ? list.dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void list.refetch();
-          }}
-        />
-      </PaneToolbar>
+      <PaneToolbar
+        label="Preorder controls"
+        status={
+          <Text className="text-sm">
+            {live.length > 0
+              ? `${plural(live.length, 'preorder', 'preorders')} taking orders · ${plural(committed, 'unit', 'units')} committed`
+              : 'Nothing taking preorders'}
+          </Text>
+        }
+        controls={
+          <>
+            <NativeSelect
+              size="sm"
+              className="max-w-40 shrink"
+              aria-label="Which preorders"
+              value={status}
+              onChange={(event) => {
+                setStatus(event.target.value);
+              }}
+            >
+              <option value="">All</option>
+              <option value="open">Running</option>
+              <option value="scheduled">Not started</option>
+              <option value="closed">Finished</option>
+              <option value="cancelled">Cancelled</option>
+            </NativeSelect>
+          </>
+        }
+        refresh={
+          <RefreshButton
+            className="ml-auto"
+            isFetching={list.isFetching}
+            updatedAt={list.data ? list.dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void list.refetch();
+            }}
+          />
+        }
+      />
 
       <Card className="min-h-0 flex-1 overflow-auto">{body()}</Card>
 

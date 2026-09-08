@@ -28,7 +28,7 @@
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react';
 import { Dialog, DialogContent, DialogTitle, Kbd, SearchInput } from '@wizeworks/silicaui-react';
 import { useNavEntries, useRecordEntries } from './launcher-entries';
-import { rankEntries, type Entry } from './launcher-match';
+import { rankEntries, rankRecords, type Entry } from './launcher-match';
 import { groupEntries, LauncherEmpty, LauncherGroup } from './launcher-rows';
 
 export function Launcher({
@@ -73,7 +73,12 @@ export function Launcher({
   const entries = useMemo<Entry[]>(() => {
     const q = query.trim().toLowerCase();
     if (!q) return navEntries;
-    return [...rankEntries(navEntries, q), ...recordEntries];
+    // BOTH halves ranked. Surfaces were; records arrived in the search server's
+    // order and were appended untouched, so its typo tolerance decided what the
+    // highlight — and therefore Enter — landed on. Typing "Priya" put Privacy
+    // Policy first with three customers called Priya below it; typing
+    // "Marguerite" put the text of a review above the woman who wrote it.
+    return [...rankEntries(navEntries, q), ...rankRecords(recordEntries, q)];
   }, [query, navEntries, recordEntries]);
 
   // Keep the highlight in range as the list shrinks/grows under it.
@@ -115,7 +120,19 @@ export function Launcher({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="flex max-h-[70dvh] w-full max-w-xl flex-col overflow-hidden p-0">
+      {/* A FIXED height, not a maximum. Silica's dialog popup is centered by
+          `top: 50%` plus a `translate(-50%, -50%)`, so its height and its top
+          edge are the same number: everything in it shifts up by half of
+          whatever the panel grows. This panel changes height three times in one
+          search — it opens tall on the whole navigation list, collapses to the
+          few surfaces that match what was typed, then grows again when the
+          record results land a beat later. An owner reading the list, aiming at
+          a row and clicking it got a different row: aiming at "Saved pieces"
+          opened a blog post, because the records arrived between the eye and the
+          finger (issue 414). Pinning the height pins the top edge, so the panel
+          opens in one place and stays there for the whole interaction — which
+          costs nothing, because the resting list already fills it. */}
+      <DialogContent className="flex h-[70dvh] w-full max-w-xl flex-col overflow-hidden p-0">
         <DialogTitle className="sr-only">Search everything</DialogTitle>
 
         {/* The keydown handler rides the search field itself — arrows move the

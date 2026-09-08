@@ -240,58 +240,64 @@ export function BinDetailSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Shelf controls">
-        <Button
-          color="module-inventory"
-          size="sm"
-          disabled={!valid || !changed || create.isPending || update.isPending}
-          onClick={submit}
-        >
-          <Save className="size-4" aria-hidden />
-          Save
-        </Button>
-
-        {!isNew && !isSystem ? (
-          <Tooltip content="Remove this shelf">
-            <Button
-              size="sm"
-              variant="ghost"
-              color="danger"
-              aria-label="Remove this shelf"
-              onClick={() => void onArchive()}
-            >
-              <Archive className="size-4" aria-hidden />
-            </Button>
-          </Tooltip>
-        ) : null}
-
-        {!isNew ? (
-          <Tooltip content="Print a label for this shelf">
-            <Button
-              size="sm"
-              variant="ghost"
-              color="neutral"
-              aria-label="Print a label for this shelf"
-              onClick={() => {
-                ctx.open('inventory.bins.labels', { binId: id }, { target: 'beside' });
-              }}
-            >
-              <QrCode className="size-4" aria-hidden />
-            </Button>
-          </Tooltip>
-        ) : null}
-
-        <RefreshButton
-          className="ml-auto"
-          isFetching={bin.isFetching || contents.isFetching}
-          updatedAt={bin.data ? bin.dataUpdatedAt : undefined}
-          onRefresh={() => {
-            setLoaded(false);
-            void bin.refetch();
-            void contents.refetch();
-          }}
-        />
-      </PaneToolbar>
+      <PaneToolbar
+        label="Shelf controls"
+        primary={
+          <Button
+            color="module-inventory"
+            size="sm"
+            disabled={!valid || !changed || create.isPending || update.isPending}
+            onClick={submit}
+          >
+            <Save className="size-4" aria-hidden />
+            Save
+          </Button>
+        }
+        controls={
+          <>
+            {!isNew && !isSystem ? (
+              <Tooltip content="Remove this shelf">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  color="danger"
+                  aria-label="Remove this shelf"
+                  onClick={() => void onArchive()}
+                >
+                  <Archive className="size-4" aria-hidden />
+                </Button>
+              </Tooltip>
+            ) : null}
+            {!isNew ? (
+              <Tooltip content="Print a label for this shelf">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  color="neutral"
+                  aria-label="Print a label for this shelf"
+                  onClick={() => {
+                    ctx.open('inventory.bins.labels', { binId: id }, { target: 'beside' });
+                  }}
+                >
+                  <QrCode className="size-4" aria-hidden />
+                </Button>
+              </Tooltip>
+            ) : null}
+          </>
+        }
+        refresh={
+          <RefreshButton
+            className="ml-auto"
+            isFetching={bin.isFetching || contents.isFetching}
+            updatedAt={bin.data ? bin.dataUpdatedAt : undefined}
+            onRefresh={() => {
+              setLoaded(false);
+              void bin.refetch();
+              void contents.refetch();
+            }}
+          />
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className={COLUMN}>

@@ -136,72 +136,83 @@ export function TicketsListSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Support queue controls">
-        <div className="max-w-xs min-w-0 flex-1">
-          <SearchInput
+      <PaneToolbar
+        label="Support queue controls"
+        search={
+          <div className="max-w-xs min-w-0 flex-1">
+            <SearchInput
+              color="module"
+              size="sm"
+              aria-label="Search requests"
+              placeholder="Search by subject or number…"
+              value={search}
+              onValueChange={setSearch}
+            />
+          </div>
+        }
+        primary={
+          <Button
             color="module"
             size="sm"
-            aria-label="Search requests"
-            placeholder="Search by subject or number…"
-            value={search}
-            onValueChange={setSearch}
-          />
-        </div>
-        <div className="hidden w-40 shrink-0 @lg:block">
-          <Select
-            color="module"
-            size="sm"
-            aria-label="Which requests to show"
-            value={view}
-            items={viewItems}
-            onValueChange={(next) => {
-              setView(next as 'open' | 'unassigned' | 'late' | 'all');
+            className="ml-auto shrink-0"
+            title="New request — hold Shift to open alongside, Alt for a new window"
+            onClick={(event) => {
+              ctx.open('crm.ticket.detail', { id: 'new' }, { target: targetFor(event) });
             }}
-          />
-        </div>
-        <div className="hidden w-36 shrink-0 @2xl:block">
-          <Select
-            color="module"
-            size="sm"
-            aria-label="Filter by urgency"
-            value={priority}
-            items={priorityItems}
-            onValueChange={(next) => {
-              setPriority(next as 'all' | TicketPriority);
-            }}
-          />
-        </div>
-        <Button
-          color="module"
-          size="sm"
-          className="ml-auto shrink-0"
-          title="New request — hold Shift to open alongside, Alt for a new window"
-          onClick={(event) => {
-            ctx.open('crm.ticket.detail', { id: 'new' }, { target: targetFor(event) });
-          }}
-        >
-          <Plus className="size-4" aria-hidden />
-          New request
-        </Button>
-        {/* No sort: this queue is ordered by what runs out first, which is
+          >
+            <Plus className="size-4" aria-hidden />
+            New request
+          </Button>
+        }
+        controls={
+          <>
+            <div className="hidden w-40 shrink-0 @lg:block">
+              <Select
+                color="module"
+                size="sm"
+                aria-label="Which requests to show"
+                value={view}
+                items={viewItems}
+                onValueChange={(next) => {
+                  setView(next as 'open' | 'unassigned' | 'late' | 'all');
+                }}
+              />
+            </div>
+            <div className="hidden w-36 shrink-0 @2xl:block">
+              <Select
+                color="module"
+                size="sm"
+                aria-label="Filter by urgency"
+                value={priority}
+                items={priorityItems}
+                onValueChange={(next) => {
+                  setPriority(next as 'all' | TicketPriority);
+                }}
+              />
+            </div>
+            {/* No sort: this queue is ordered by what runs out first, which is
             business-hours arithmetic the server does. A saved view must not
             overwrite that with a column somebody happened to click. */}
-        <SavedViewsMenu
-          objectKey="ticket"
-          current={currentFilters}
-          baseline={viewFilters([{ field: 'ticket.isResolved', operator: 'eq', value: false }])}
-          nameHint="Needs me today"
-          selectedId={viewId}
-          onApply={applyView}
-        />
-        <RefreshButton
-          isFetching={isFetching}
-          updatedAt={data ? dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void refetch();
-          }}
-        />
-      </PaneToolbar>
+            <SavedViewsMenu
+              objectKey="ticket"
+              current={currentFilters}
+              baseline={viewFilters([{ field: 'ticket.isResolved', operator: 'eq', value: false }])}
+              nameHint="Needs me today"
+              selectedId={viewId}
+              onApply={applyView}
+            />
+          </>
+        }
+        refresh={
+          <RefreshButton
+            isFetching={isFetching}
+            updatedAt={data ? dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void refetch();
+            }}
+          />
+        }
+      />
 
       <Card className="min-h-0 flex-1 overflow-y-auto">
         {isError ? (

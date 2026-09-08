@@ -294,60 +294,68 @@ export function AiToolPoliciesSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Connected app access controls" wrap>
-        <Text as="span" className="text-sm font-medium">
-          Permissions
-        </Text>
-        {blockedCount > 0 ? (
-          <Badge color="warning" variant="soft" size="sm">
-            {blockedCount === 1 ? '1 switched off' : `${String(blockedCount)} switched off`}
-          </Badge>
-        ) : null}
-
-        <Button
-          size="sm"
-          variant="outline"
-          color="neutral"
-          className="ml-auto shrink-0"
-          title="Connect an app and manage its keys"
-          onClick={(event) => {
-            ctx.open('platform.settings.ai', {}, { target: targetFor(event) });
-          }}
-        >
-          <KeyRound className="size-4" aria-hidden />
-          AI connections
-        </Button>
-
-        {canManage ? (
+      <PaneToolbar
+        label="Connected app access controls"
+        status={
+          <Text as="span" className="text-sm font-medium">
+            Permissions
+          </Text>
+        }
+        primary={
           <Button
             size="sm"
             variant="outline"
             color="neutral"
-            className="shrink-0"
-            loading={resetAll.isPending}
-            disabled={changedCount === 0}
-            title={
-              changedCount === 0
-                ? 'Nothing to reset — every tool is at its default'
-                : 'Remove every restriction and turn all tools back on'
-            }
-            onClick={() => {
-              void onResetAll();
+            className="ml-auto shrink-0"
+            title="Connect an app and manage its keys"
+            onClick={(event) => {
+              ctx.open('platform.settings.ai', {}, { target: targetFor(event) });
             }}
           >
-            <RotateCcw className="size-4" aria-hidden />
-            Reset all
+            <KeyRound className="size-4" aria-hidden />
+            AI connections
           </Button>
-        ) : null}
-
-        <RefreshButton
-          isFetching={isFetching}
-          updatedAt={data ? dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void refetch();
-          }}
-        />
-      </PaneToolbar>
+        }
+        controls={
+          <>
+            {blockedCount > 0 ? (
+              <Badge color="warning" variant="soft" size="sm">
+                {blockedCount === 1 ? '1 switched off' : `${String(blockedCount)} switched off`}
+              </Badge>
+            ) : null}
+            {canManage ? (
+              <Button
+                size="sm"
+                variant="outline"
+                color="neutral"
+                className="shrink-0"
+                loading={resetAll.isPending}
+                disabled={changedCount === 0}
+                title={
+                  changedCount === 0
+                    ? 'Nothing to reset — every tool is at its default'
+                    : 'Remove every restriction and turn all tools back on'
+                }
+                onClick={() => {
+                  void onResetAll();
+                }}
+              >
+                <RotateCcw className="size-4" aria-hidden />
+                Reset all
+              </Button>
+            ) : null}
+          </>
+        }
+        refresh={
+          <RefreshButton
+            isFetching={isFetching}
+            updatedAt={data ? dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void refetch();
+            }}
+          />
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className="mx-auto flex w-full max-w-3xl flex-col gap-4">

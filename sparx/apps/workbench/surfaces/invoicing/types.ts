@@ -136,9 +136,34 @@ export interface BillingDocument {
    * a working receivables list.
    */
   billedToName?: string | null;
+  /**
+   * When the customer was actually emailed this, resolved server-side on LIST
+   * rows. Null means the bill is still sitting here.
+   */
+  sentAt?: string | null;
+  /**
+   * Where a send would actually go, resolved server-side on the single-document
+   * read: the frozen `billTo` address first, else the customer's own.
+   *
+   * The screen must not resolve this itself. `billTo.email` alone is blank on
+   * every document nobody typed an address onto, which is most of them, so a
+   * confirm reading it would announce there is no address for an invoice whose
+   * customer has one — and the send would then succeed anyway, because the
+   * server knows the fallback.
+   */
+  billedToEmail?: string | null;
+  /** Free-form bag on the document. Carries `sentAt` / `sentTo`, which is where
+   *  the send route records that the customer has it — there is no column. */
+  metadata?: Record<string, unknown> | null;
   taxRate: number;
   subtotal: number;
   taxTotal: number;
+  /** Document-level charges carried across from the order: not lines, not taxed,
+   *  added last. They were missing from this interface, so the editor's running
+   *  total was short by exactly the delivery charge and no screen ever showed
+   *  it -- see issue 442. */
+  shippingTotal: number;
+  surchargeTotal: number;
   total: number;
   balance: number;
   amountPaid: number;
@@ -201,6 +226,8 @@ export function normalizeDocument(raw: BillingDocument): BillingDocument {
     taxRate: num(raw.taxRate),
     subtotal: num(raw.subtotal),
     taxTotal: num(raw.taxTotal),
+    shippingTotal: num(raw.shippingTotal),
+    surchargeTotal: num(raw.surchargeTotal),
     total: num(raw.total),
     balance: num(raw.balance),
     amountPaid: num(raw.amountPaid),

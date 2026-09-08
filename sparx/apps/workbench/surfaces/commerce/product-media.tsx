@@ -66,6 +66,7 @@ import { ChevronLeft, ChevronRight, ImageOff, Star, Trash2, Upload } from 'lucid
 import { FormSection } from '../../components/form-section';
 import type { SurfaceContext } from '../../lib/surfaces/registry';
 import { useTabSave } from './product-tab-save';
+import { SaveFailure } from '@/components/save-failure';
 import {
   productErrorMessage,
   useAddProductImage,
@@ -397,14 +398,7 @@ export function ProductMediaTab({ product }: { ctx: SurfaceContext; product: Pro
       {/* ONE message, the most specific one — the server's own sentence when it
           gave us one. Sits above the gallery because every action below can
           raise it. */}
-      {failure ? (
-        <Alert color="error">
-          <AlertContent>
-            <AlertTitle>That did not work</AlertTitle>
-            <AlertDescription>{failure}</AlertDescription>
-          </AlertContent>
-        </Alert>
-      ) : null}
+      <SaveFailure title="That did not work" message={failure} />
 
       <FormSection
         title="Photos"

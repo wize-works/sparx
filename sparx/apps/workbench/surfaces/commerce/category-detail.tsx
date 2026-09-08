@@ -17,10 +17,6 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import {
-  Alert,
-  AlertContent,
-  AlertDescription,
-  AlertTitle,
   Badge,
   Button,
   Field,
@@ -46,6 +42,7 @@ import { FormSection } from '../../components/form-section';
 import { SiteScopeField } from '../../components/site-scope-field';
 import type { SurfaceContext } from '../../lib/surfaces/registry';
 import { MediaField } from './media-field';
+import { SaveFailure } from '@/components/save-failure';
 import {
   categoryErrorMessage,
   slugifyHandle,
@@ -58,6 +55,7 @@ import {
   type CategoryDetail,
   type CategoryNode,
 } from './categories-data';
+import { PaneLoadError } from '../../components/pane-load-error';
 
 /** The one column everything sits in. Centred and capped, because a pane torn
  *  onto a second monitor is otherwise 2000px of dead grey. */
@@ -135,31 +133,19 @@ export function CategoryDetailSurface({ ctx }: { ctx: SurfaceContext }) {
 /** Fetches the category first so a failed load REPLACES the form rather than
  *  rendering an empty one beside a dead Save. */
 function CategoryLoader({ ctx, id }: { ctx: SurfaceContext; id: string }) {
-  const { data: category, isPending, isError, refetch } = useCategory(id);
+  const { data: category, isPending, isError, error, refetch } = useCategory(id);
 
   if (isError) {
     return (
-      <div className="flex h-full items-center justify-center p-8">
-        <Alert color="error" className="max-w-md">
-          <AlertContent>
-            <AlertTitle>Could not load this category</AlertTitle>
-            <AlertDescription>
-              This is a problem reaching the server. The category itself is unaffected — nothing has
-              been lost.
-            </AlertDescription>
-          </AlertContent>
-          <Button
-            size="sm"
-            color="error"
-            variant="soft"
-            onClick={() => {
-              void refetch();
-            }}
-          >
-            Try again
-          </Button>
-        </Alert>
-      </div>
+      <PaneLoadError
+        error={error}
+        noun="category"
+        title="Could not load this category"
+        description="This is a problem reaching the server. The category itself is unaffected — nothing has been lost."
+        onRetry={() => {
+          void refetch();
+        }}
+      />
     );
   }
 
@@ -365,23 +351,30 @@ function CategoryEditor({
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Category actions">
-        {!isNew && category?.featured ? (
-          <Badge color="info" variant="soft" size="sm">
-            Featured
-          </Badge>
-        ) : null}
-        <Button
-          color="module"
-          size="sm"
-          className="ml-auto"
-          loading={saving}
-          disabled={Boolean(nameError) || (!isNew && !dirty)}
-          onClick={submit}
-        >
-          {isNew ? 'Create category' : 'Save'}
-        </Button>
-      </PaneToolbar>
+      <PaneToolbar
+        label="Category actions"
+        primary={
+          <Button
+            color="module"
+            size="sm"
+            className="ml-auto"
+            loading={saving}
+            disabled={Boolean(nameError) || (!isNew && !dirty)}
+            onClick={submit}
+          >
+            {isNew ? 'Create category' : 'Save'}
+          </Button>
+        }
+        controls={
+          <>
+            {!isNew && category?.featured ? (
+              <Badge color="info" variant="soft" size="sm">
+                Featured
+              </Badge>
+            ) : null}
+          </>
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className={COLUMN}>
@@ -398,14 +391,7 @@ function CategoryEditor({
             </div>
           ) : null}
 
-          {failure ? (
-            <Alert color="error">
-              <AlertContent>
-                <AlertTitle>Could not save this category</AlertTitle>
-                <AlertDescription>{failure}</AlertDescription>
-              </AlertContent>
-            </Alert>
-          ) : null}
+          <SaveFailure title="Could not save this category" message={failure} />
 
           <FormSection title="Name and place">
             <Field>

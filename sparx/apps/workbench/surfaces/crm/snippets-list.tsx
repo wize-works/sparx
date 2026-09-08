@@ -225,25 +225,36 @@ export function SnippetsListSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Saved paragraph actions">
-        <TextQuote className="size-4 shrink-0" aria-hidden />
-        <Text as="span" className="text-sm">
-          {rows.length === 0
-            ? 'No saved paragraphs yet'
-            : rows.length === 1
-              ? '1 saved paragraph'
-              : `${String(rows.length)} saved paragraphs`}
-        </Text>
-        <Button color="module" size="sm" className="ml-auto shrink-0" onClick={startNew}>
-          <Plus className="size-4" aria-hidden />
-          New paragraph
-        </Button>
-        <RefreshButton
-          isFetching={snippets.isFetching}
-          updatedAt={snippets.dataUpdatedAt}
-          onRefresh={() => void snippets.refetch()}
-        />
-      </PaneToolbar>
+      <PaneToolbar
+        label="Saved paragraph actions"
+        status={
+          <Text as="span" className="text-sm">
+            {rows.length === 0
+              ? 'No saved paragraphs yet'
+              : rows.length === 1
+                ? '1 saved paragraph'
+                : `${String(rows.length)} saved paragraphs`}
+          </Text>
+        }
+        primary={
+          <Button color="module" size="sm" className="ml-auto shrink-0" onClick={startNew}>
+            <Plus className="size-4" aria-hidden />
+            New paragraph
+          </Button>
+        }
+        controls={
+          <>
+            <TextQuote className="size-4 shrink-0" aria-hidden />
+          </>
+        }
+        refresh={
+          <RefreshButton
+            isFetching={snippets.isFetching}
+            updatedAt={snippets.dataUpdatedAt}
+            onRefresh={() => void snippets.refetch()}
+          />
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className={COLUMN}>

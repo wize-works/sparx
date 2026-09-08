@@ -90,6 +90,7 @@ import {
 } from './counts-data';
 import { ScanInput, playScanFeedback } from './scan-input';
 import { useScanQueue, useScanToCount, type ScanActionResult } from './scan-data';
+import { PaneLoadError } from '../../components/pane-load-error';
 
 /** Centred and capped — a count torn onto a second monitor is 2000px wide, and
  *  uncapped the difference column drifts a foot from the item it belongs to. */
@@ -166,19 +167,22 @@ function StartCount({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="New count actions">
-        <Button
-          size="sm"
-          color="module"
-          className="ml-auto"
-          disabled={warehouseId === '' || create.isPending}
-          loading={create.isPending}
-          onClick={submit}
-        >
-          <ClipboardCheck className="size-4" aria-hidden />
-          Start counting
-        </Button>
-      </PaneToolbar>
+      <PaneToolbar
+        label="New count actions"
+        primary={
+          <Button
+            size="sm"
+            color="module"
+            className="ml-auto"
+            disabled={warehouseId === '' || create.isPending}
+            loading={create.isPending}
+            onClick={submit}
+          >
+            <ClipboardCheck className="size-4" aria-hidden />
+            Start counting
+          </Button>
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className={COLUMN}>
@@ -807,115 +811,121 @@ function CountSession({
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Count actions">
-        <Badge color={state.tone} variant="soft" size="sm">
-          {state.label}
-        </Badge>
-
-        {/* The sticker that makes "scan the count sheet" true. Without it that
-            instruction in warehouse mode has nothing to scan. */}
-        <Tooltip content="Print a scannable label for the count sheet">
-          <Button
-            size="sm"
-            variant="ghost"
-            color="neutral"
-            shape="square"
-            className="shrink-0"
-            aria-label="Print a scannable label for this count"
-            onClick={() => {
-              ctx.open(
-                'inventory.documents.label',
-                {
-                  number: count.number,
-                  title: 'Stock count',
-                  subtitle: count.warehouseName ?? '',
-                },
-                { target: 'beside' }
-              );
-            }}
-          >
-            <Printer className="size-4" aria-hidden />
-          </Button>
-        </Tooltip>
-
-        {editable ? (
+      <PaneToolbar
+        label="Count actions"
+        controls={
           <>
-            {changed.length > 0 ? (
+            <Badge color={state.tone} variant="soft" size="sm">
+              {state.label}
+            </Badge>
+            {/* The sticker that makes "scan the count sheet" true. Without it that
+            instruction in warehouse mode has nothing to scan. */}
+            <Tooltip content="Print a scannable label for the count sheet">
               <Button
                 size="sm"
-                variant="outline"
+                variant="ghost"
                 color="neutral"
-                className="ml-auto shrink-0 whitespace-nowrap"
-                loading={enter.isPending}
+                shape="square"
+                className="shrink-0"
+                aria-label="Print a scannable label for this count"
                 onClick={() => {
-                  void doSave();
+                  ctx.open(
+                    'inventory.documents.label',
+                    {
+                      number: count.number,
+                      title: 'Stock count',
+                      subtitle: count.warehouseName ?? '',
+                    },
+                    { target: 'beside' }
+                  );
                 }}
               >
-                <Save className="size-4" aria-hidden />
-                Save
+                <Printer className="size-4" aria-hidden />
+              </Button>
+            </Tooltip>
+            {editable ? (
+              <>
+                {changed.length > 0 ? (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    color="neutral"
+                    className="ml-auto shrink-0 whitespace-nowrap"
+                    loading={enter.isPending}
+                    onClick={() => {
+                      void doSave();
+                    }}
+                  >
+                    <Save className="size-4" aria-hidden />
+                    Save
+                  </Button>
+                ) : null}
+                <Button
+                  size="sm"
+                  color="module"
+                  className={`shrink-0 whitespace-nowrap${changed.length > 0 ? '' : 'ml-auto'}`}
+                  disabled={!canFinish}
+                  loading={submit.isPending || enter.isPending}
+                  title={
+                    canFinish ? undefined : 'Enter a quantity for every item before you can finish.'
+                  }
+                  onClick={() => {
+                    void doFinish();
+                  }}
+                >
+                  <ClipboardCheck className="size-4" aria-hidden />
+                  Finish counting
+                </Button>
+              </>
+            ) : null}
+            {canApprove ? (
+              <Button
+                size="sm"
+                color="module"
+                className="ml-auto shrink-0 whitespace-nowrap"
+                loading={approve.isPending}
+                onClick={() => {
+                  void doApprove();
+                }}
+              >
+                <ShieldCheck className="size-4" aria-hidden />
+                Approve
               </Button>
             ) : null}
-            <Button
-              size="sm"
-              color="module"
-              className={`shrink-0 whitespace-nowrap${changed.length > 0 ? '' : 'ml-auto'}`}
-              disabled={!canFinish}
-              loading={submit.isPending || enter.isPending}
-              title={
-                canFinish ? undefined : 'Enter a quantity for every item before you can finish.'
-              }
-              onClick={() => {
-                void doFinish();
-              }}
-            >
-              <ClipboardCheck className="size-4" aria-hidden />
-              Finish counting
-            </Button>
-          </>
-        ) : null}
-
-        {canApprove ? (
-          <Button
-            size="sm"
-            color="module"
-            className="ml-auto shrink-0 whitespace-nowrap"
-            loading={approve.isPending}
-            onClick={() => {
-              void doApprove();
-            }}
-          >
-            <ShieldCheck className="size-4" aria-hidden />
-            Approve
-          </Button>
-        ) : null}
-
-        {canApply ? (
-          <Button
-            size="sm"
-            color="module"
-            className="ml-auto shrink-0 whitespace-nowrap"
-            loading={post.isPending}
-            onClick={() => {
-              void doApply();
-            }}
-          >
-            <ClipboardCheck className="size-4" aria-hidden />
-            Apply corrections
-          </Button>
-        ) : null}
-
-        {/* ALWAYS the last child of a toolbar — see RefreshButton. Picks up a
+            {canApply ? (
+              <Button
+                size="sm"
+                color="module"
+                className="ml-auto shrink-0 whitespace-nowrap"
+                loading={post.isPending}
+                onClick={() => {
+                  void doApply();
+                }}
+              >
+                <ClipboardCheck className="size-4" aria-hidden />
+                Apply corrections
+              </Button>
+            ) : null}
+            {/* ALWAYS the last child of a toolbar — see RefreshButton. Picks up a
             change someone else made to this count while it sat open. Carries the
             ml-auto itself when no primary action is present to push it over. */}
-        <RefreshButton
-          className={editable || canApprove || canApply ? undefined : 'ml-auto'}
-          isFetching={
-            isFetching || enter.isPending || submit.isPending || post.isPending || approve.isPending
-          }
-          updatedAt={updatedAt}
-          onRefresh={onRefresh}
-        />
-      </PaneToolbar>
+          </>
+        }
+        refresh={
+          <RefreshButton
+            className={editable || canApprove || canApply ? undefined : 'ml-auto'}
+            isFetching={
+              isFetching ||
+              enter.isPending ||
+              submit.isPending ||
+              post.isPending ||
+              approve.isPending
+            }
+            updatedAt={updatedAt}
+            onRefresh={onRefresh}
+          />
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className={COLUMN}>
@@ -1101,32 +1111,18 @@ function LoadedCount({ ctx, id }: { ctx: SurfaceContext; id: string }) {
     const gone = isCountNotFound(count.error);
     return (
       <div className={PANE_SHELL}>
-        <div className="flex h-full items-center justify-center p-8">
-          <Alert color={gone ? 'warning' : 'danger'} variant="soft" className="max-w-md">
-            <AlertContent>
-              <AlertTitle>
-                {gone ? 'This count no longer exists' : 'Could not load this count'}
-              </AlertTitle>
-              <AlertDescription>
-                {gone
-                  ? 'It may have been removed. Your stock and its movement history are unaffected.'
-                  : 'This is a problem reaching the server. The count is unaffected — it just could not be read just now.'}
-              </AlertDescription>
-            </AlertContent>
-            {gone ? null : (
-              <Button
-                size="sm"
-                color="danger"
-                variant="soft"
-                onClick={() => {
-                  void count.refetch();
-                }}
-              >
-                Try again
-              </Button>
-            )}
-          </Alert>
-        </div>
+        <PaneLoadError
+          reason={gone ? 'missing' : 'unreachable'}
+          title={gone ? 'This count no longer exists' : 'Could not load this count'}
+          description={
+            gone
+              ? 'It may have been removed. Your stock and its movement history are unaffected.'
+              : 'This is a problem reaching the server. The count is unaffected — it just could not be read just now.'
+          }
+          onRetry={() => {
+            void count.refetch();
+          }}
+        />
       </div>
     );
   }

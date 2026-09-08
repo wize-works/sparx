@@ -15,7 +15,20 @@
 // testable, and it is the part with the judgement in it.
 
 import type { Node } from '@wizeworks/silicaui-html';
+import { HOST_COMPONENTS } from '@wizeworks/silica-catalog';
 import { childNodes, isAddressable, isNodeChild, type AddressableNode } from '../../tree/walk';
+
+/** A live region's name in the author's words, looked up by its component key.
+ *
+ *  Looked up rather than STAMPED onto the node, which is the whole point of a host
+ *  core: the platform keeps improving what renders there, and the name is part of
+ *  what it renders. A stamped label freezes at insert, so renaming "Reviews and
+ *  ratings" in the registry would reach only sites built after the change — the
+ *  exact failure host cores exist to avoid. A label the author types wins over this,
+ *  because `rowLabel` checks `node.label` first. */
+const HOST_LABELS: Record<string, string> = Object.fromEntries(
+  HOST_COMPONENTS.map((core) => [core.key, core.label])
+);
 
 export type LayerDepth = 'simple' | 'all';
 
@@ -145,13 +158,32 @@ function screenSuffix(cls: string | undefined): string {
   return hiddenFrom ? ' on a phone' : ' on a bigger screen';
 }
 
-export function rowLabel(node: AddressableNode): string {
+/**
+ * What a row calls a node.
+ *
+ * `symbolName` is the master's own name, for an instance. Without it every saved
+ * piece on the page reads "Saved design", so an author who named hers "Send me a
+ * message" watched the name she had just typed be replaced by a category — and a
+ * page holding three different pieces showed three identical rows (issue 395).
+ * The name is already in the session's symbol map, which is where the canvas
+ * draws the design from; only this had no way to ask for it.
+ *
+ * It stays optional and still falls back: a master that has not loaded, or one
+ * that has been deleted, has no name to show and "Saved design" is then the
+ * honest answer rather than a blank.
+ */
+export function rowLabel(node: AddressableNode, symbolName?: string): string {
   if (node.label) return node.label;
-  if (node.instanceOf) return 'Saved design';
+  if (node.instanceOf) return symbolName ?? 'Saved design';
   const text = ownText(node);
   if (text) return truncate(text);
   if (node.kind === 'component') return node.component;
-  if (node.kind === 'host') return node.component;
+  // A live region's registry name, never its key. `commerce.product-reviews` in a
+  // list of rows called "Product name" and "Shipping & delivery" reads as something
+  // that leaked, and it was in the Inspector's identity header too — this function
+  // feeds both. An unregistered key still falls through to itself: that is a
+  // half-built core rather than a naming problem, and hiding it would hide the bug.
+  if (node.kind === 'host') return HOST_LABELS[node.component] ?? node.component;
   return (TAG_LABELS[node.tag.toLowerCase()] ?? 'Group') + screenSuffix(node.class);
 }
 
@@ -186,6 +218,9 @@ export interface LayerOptions {
   depth: LayerDepth;
   /** Ids the author may edit; null means all of them. */
   editableIds?: Set<string> | null;
+  /** Symbol id → the master's name, so an instance row wears the name its author
+   *  gave it rather than the word "Saved design". Omit it and rows fall back. */
+  symbolNames?: Readonly<Record<string, string>>;
 }
 
 /** The rows for a tree, parents before children. */
@@ -206,7 +241,7 @@ export function layerRows(root: Node, opts: LayerOptions): LayerRow[] {
     if (node.id) {
       rows.push({
         id: node.id,
-        label: rowLabel(node),
+        label: rowLabel(node, node.instanceOf ? opts.symbolNames?.[node.instanceOf] : undefined),
         icon: rowIcon(node),
         depth,
         hasChildren: children.length > 0,

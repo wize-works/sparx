@@ -57,6 +57,7 @@ import { useConfirm } from '../../lib/confirm';
 import { PaneScope } from '../../lib/dock/window-boundary';
 import type { SurfaceContext } from '../../lib/surfaces/registry';
 import { BookingTimeline } from './booking-timeline';
+import { SaveFailure } from '@/components/save-failure';
 import {
   bookingResourceLabel,
   bookingStateMeta,
@@ -339,14 +340,7 @@ function LoadedModal({
       </div>
 
       <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-1 py-2">
-        {actionError ? (
-          <Alert color="error">
-            <AlertContent>
-              <AlertTitle>That did not go through</AlertTitle>
-              <AlertDescription>{actionError}</AlertDescription>
-            </AlertContent>
-          </Alert>
-        ) : null}
+        <SaveFailure title="That did not go through" message={actionError} />
 
         {booking.status === 'cancelled' && booking.cancellationReason ? (
           <Alert color="error">

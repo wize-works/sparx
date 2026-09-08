@@ -196,62 +196,68 @@ export function ResourcesListSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="People & equipment list controls">
-        <NativeSelect
-          size="sm"
-          className="max-w-52 shrink"
-          aria-label="Show only one kind"
-          value={kind}
-          onChange={(event) => {
-            setKind(event.target.value);
-          }}
-        >
-          <option value="">Every kind</option>
-          {RESOURCE_KINDS.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </NativeSelect>
-
-        <ToggleGroup
-          size="sm"
-          color="module"
-          className="shrink-0"
-          value={activeOnly ? ['active'] : []}
-          onValueChange={(next: unknown[]) => {
-            setActiveOnly(next.includes('active'));
-          }}
-        >
-          <ToggleGroupItem
-            value="active"
-            aria-label="Hide switched-off ones"
-            title="Hide switched-off ones"
+      <PaneToolbar
+        label="People & equipment list controls"
+        primary={
+          <Button
+            color="module"
+            size="sm"
+            className="ml-auto shrink-0 whitespace-nowrap"
+            title="Add one — hold Shift to open alongside, Alt for a new window"
+            onClick={openNew}
           >
-            <EyeOff className="size-4" aria-hidden />
-            <span className="hidden @2xl:inline">In use only</span>
-          </ToggleGroupItem>
-        </ToggleGroup>
-
-        <Button
-          color="module"
-          size="sm"
-          className="ml-auto shrink-0 whitespace-nowrap"
-          title="Add one — hold Shift to open alongside, Alt for a new window"
-          onClick={openNew}
-        >
-          <Plus className="size-4" aria-hidden />
-          <span className="hidden @lg:inline">Add one</span>
-        </Button>
-
-        <RefreshButton
-          isFetching={isFetching}
-          updatedAt={data ? dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void refetch();
-          }}
-        />
-      </PaneToolbar>
+            <Plus className="size-4" aria-hidden />
+            <span className="hidden @lg:inline">Add one</span>
+          </Button>
+        }
+        controls={
+          <>
+            <NativeSelect
+              size="sm"
+              className="max-w-52 shrink"
+              aria-label="Show only one kind"
+              value={kind}
+              onChange={(event) => {
+                setKind(event.target.value);
+              }}
+            >
+              <option value="">Every kind</option>
+              {RESOURCE_KINDS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </NativeSelect>
+            <ToggleGroup
+              size="sm"
+              color="module"
+              className="shrink-0"
+              value={activeOnly ? ['active'] : []}
+              onValueChange={(next: unknown[]) => {
+                setActiveOnly(next.includes('active'));
+              }}
+            >
+              <ToggleGroupItem
+                value="active"
+                aria-label="Hide switched-off ones"
+                title="Hide switched-off ones"
+              >
+                <EyeOff className="size-4" aria-hidden />
+                <span className="hidden @2xl:inline">In use only</span>
+              </ToggleGroupItem>
+            </ToggleGroup>
+          </>
+        }
+        refresh={
+          <RefreshButton
+            isFetching={isFetching}
+            updatedAt={data ? dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void refetch();
+            }}
+          />
+        }
+      />
 
       <Card className="mx-auto min-h-0 w-full max-w-4xl flex-1 overflow-y-auto">{body()}</Card>
 

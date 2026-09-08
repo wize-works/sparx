@@ -1,7 +1,7 @@
 'use client';
 
-// The webhooks you have set up — where notifications are sent, and what they're
-// sent for.
+// The notifications you send other software — where they go, what triggers
+// them, and whether they are actually arriving.
 //
 // A table, matching every other workbench list: each row carries the same facts
 // (its endpoint, the events it listens for, whether it's active, when it was
@@ -88,12 +88,12 @@ export function WebhooksListSurface({ ctx }: { ctx: SurfaceContext }) {
   return (
     <div className={PANE_SHELL}>
       <PaneToolbar
-        label="Webhooks list controls"
+        label="Notification list controls"
         search={
           <div className="max-w-xs min-w-0 flex-1">
             <SearchInput
               size="sm"
-              aria-label="Search webhooks"
+              aria-label="Search notifications"
               placeholder="Name or address…"
               value={search}
               onValueChange={setSearch}
@@ -101,10 +101,10 @@ export function WebhooksListSurface({ ctx }: { ctx: SurfaceContext }) {
           </div>
         }
         primaryAction={{
-          label: 'New webhook',
+          label: 'Set one up',
           icon: faPlus,
           onClick: create,
-          title: 'Set up a new webhook — hold Shift to open alongside, Alt for a new window',
+          title: 'Set up a new notification — hold Shift to open alongside, Alt for a new window',
         }}
         views={{
           target: '/cms/webhooks',
@@ -150,8 +150,8 @@ export function WebhooksListSurface({ ctx }: { ctx: SurfaceContext }) {
         {error && !staleAfterFailure ? (
           <PaneLoadError
             icon={<Icon glyph={faWebhook} className="size-6" aria-hidden />}
-            title="Could not load your webhooks"
-            description="This is a problem reaching the server. None of your webhooks have been changed or lost."
+            title="Could not load these"
+            description="This is a problem reaching the server. Nothing you have set up has been changed or lost."
             onRetry={() => {
               void refetch();
             }}
@@ -166,12 +166,12 @@ export function WebhooksListSurface({ ctx }: { ctx: SurfaceContext }) {
               icon: <Icon glyph={faWebhook} className="size-6" aria-hidden />,
               title: 'Nothing matches that',
               description:
-                'No webhook has a name or address matching that. Clear the search to see them all.',
+                'Nothing here has a name or address matching that. Clear the search to see them all.',
             }}
             firstRun={{
-              title: 'No webhooks yet',
+              title: 'Nothing is being told yet',
               description:
-                'A webhook tells another system the moment something happens here — a page is published, a file is uploaded. It is useful when a developer is building on top of your content and wants to be notified automatically.',
+                'You can have us tell another system the moment something happens here — a page goes live, a file is uploaded, stock runs out. Useful when someone is building on top of your content and wants to know without having to keep checking.',
               actions: (
                 <Button
                   size="sm"
@@ -181,7 +181,7 @@ export function WebhooksListSurface({ ctx }: { ctx: SurfaceContext }) {
                   }}
                 >
                   <Icon glyph={faPlus} className="size-4" aria-hidden />
-                  Set up a webhook
+                  Set one up
                 </Button>
               ),
             }}
@@ -190,15 +190,15 @@ export function WebhooksListSurface({ ctx }: { ctx: SurfaceContext }) {
           <Table size="sm" hover>
             <thead>
               <tr>
-                <th>Endpoint</th>
-                <th className="hidden @xl:table-cell">Events</th>
-                <th className="hidden @4xl:table-cell">Added</th>
-                <th>Status</th>
+                <th>Where it goes</th>
+                <th className="hidden @xl:table-cell">What triggers it</th>
+                <th className="hidden @4xl:table-cell">Set up</th>
+                <th>How it is going</th>
               </tr>
             </thead>
             <tbody>
               {rows.map((webhook) => {
-                const state = webhookState(webhook.active);
+                const state = webhookState(webhook.active, webhook.health);
                 return (
                   <tr
                     key={webhook.id}

@@ -16,16 +16,7 @@
 // narrow pane on a wide monitor rendering six columns into 300px.
 
 import { useState } from 'react';
-import {
-  Badge,
-  Card,
-  EmptyState,
-  Filter,
-  FilterItem,
-  SearchInput,
-  Table,
-  ToolbarSeparator,
-} from '@wizeworks/silicaui-react';
+import { Badge, Card, EmptyState, SearchInput, Table } from '@wizeworks/silicaui-react';
 import { ArrowDown, ArrowUp, ShoppingBag } from 'lucide-react';
 import { ListPagination, MAX_TAKE, type PageSize } from '../../components/list-pagination';
 import { PaneToolbar, PANE_SHELL } from '../../components/pane-toolbar';
@@ -172,56 +163,46 @@ export function OrdersListSurface({ ctx }: { ctx: SurfaceContext }) {
     // base-100 cards lifted onto it. The gutter shrinks to nothing under 30rem —
     // in a pane docked beside an order, 12px a side is real column width.
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Order list controls" wrap>
-        {/* The width has to sit on a WRAPPER: SearchInput forwards className to
-            its inner <input>, so a sizing class aimed at the control never
-            reaches the element that actually lays out. */}
-        <div className="max-w-xs min-w-0 flex-1">
-          <SearchInput
-            size="sm"
-            aria-label="Search orders"
-            placeholder="Order number or customer…"
-            value={search}
-            onValueChange={(next) => {
-              setSearch(next);
+      <PaneToolbar
+        label="Order list controls"
+        search={
+          <div className="max-w-xs min-w-0 flex-1">
+            <SearchInput
+              size="sm"
+              aria-label="Search orders"
+              placeholder="Order number or customer…"
+              value={search}
+              onValueChange={(next) => {
+                setSearch(next);
+                resetWindow();
+              }}
+            />
+          </div>
+        }
+        filters={[
+          {
+            label: 'Show',
+            key: 'status',
+            value: filter,
+            onValueChange: (next) => {
+              setFilter((next as FilterValue | null) ?? 'all');
               resetWindow();
+            },
+            options: FILTERS.map((entry) => ({ value: entry.value, label: entry.label })),
+            neutralValue: 'all',
+          },
+        ]}
+        refresh={
+          <RefreshButton
+            className="ml-auto"
+            isFetching={isFetching}
+            updatedAt={data ? dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void refetch();
             }}
           />
-        </div>
-
-        <ToolbarSeparator className="hidden @xl:block" />
-
-        {/* `showReset={false}` because "All" already IS the reset; a × beside it
-            would be two controls for one idea. */}
-        <Filter
-          color="module"
-          value={filter}
-          onValueChange={(next) => {
-            setFilter((next as FilterValue | null) ?? 'all');
-            resetWindow();
-          }}
-          showReset={false}
-          aria-label="Filter orders"
-        >
-          {FILTERS.map((entry) => (
-            <FilterItem key={entry.value} value={entry.value}>
-              {entry.label}
-            </FilterItem>
-          ))}
-        </Filter>
-
-        {/* ALWAYS the last child of a list toolbar — see RefreshButton. `ml-auto`
-            because this list has no primary action to push it right: orders
-            arrive from customers, they are not something you create here. */}
-        <RefreshButton
-          className="ml-auto"
-          isFetching={isFetching}
-          updatedAt={data ? dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void refetch();
-          }}
-        />
-      </PaneToolbar>
+        }
+      />
 
       <Card className="min-h-0 flex-1 overflow-y-auto">
         {error ? (
@@ -253,7 +234,11 @@ export function OrdersListSurface({ ctx }: { ctx: SurfaceContext }) {
               <tr>
                 <th>Order</th>
                 <th className="hidden @lg:table-cell">Customer</th>
-                {header('placedAt', 'Placed', 'hidden @2xl:table-cell')}
+                {/* @3xl, not @2xl. Six columns need ~719px and @2xl let the sixth
+                    in at 672, so a docked pane rendered all of them and pushed the
+                    TOTAL off the right edge. Placed was already the last column to
+                    appear, so it is the one that waits a step longer. */}
+                {header('placedAt', 'Placed', 'hidden @3xl:table-cell')}
                 <th>Payment</th>
                 <th className="hidden @xl:table-cell">Delivery</th>
                 {header('total', 'Total', 'text-right')}
@@ -278,11 +263,18 @@ export function OrdersListSurface({ ctx }: { ctx: SurfaceContext }) {
                       open(order, event);
                     }}
                   >
-                    <td className="font-mono text-sm">{order.orderNumber}</td>
+                    {/* An order number is one token and must never be broken
+                        across lines. Auto table layout hands this column what is
+                        left after the others take theirs, and in a docked pane
+                        that was 83px — enough to render "O-000016" as "O-" over
+                        "000016". The identifier is what a row is read by, so it
+                        claims its width; the wrapper scrolls if the table ever
+                        genuinely outgrows the pane. */}
+                    <td className="font-mono text-sm whitespace-nowrap">{order.orderNumber}</td>
                     <td className="hidden max-w-48 truncate @lg:table-cell">
                       {customerName(order.customer)}
                     </td>
-                    <td className="hidden text-sm @2xl:table-cell">{formatDate(order.placedAt)}</td>
+                    <td className="hidden text-sm @3xl:table-cell">{formatDate(order.placedAt)}</td>
                     <td>
                       <Badge color={paid.tone} variant="soft" size="sm">
                         {paid.label}

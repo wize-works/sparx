@@ -12,7 +12,17 @@
 // A place with no rate, or one switched off, charges nothing: the calculator
 // only ever matches an ACTIVE place with a rate. So an off/rate-less place is
 // safe, and the surface says as much rather than implying tax is being charged.
+//
+// SWITCHING ON IS THE ONE THING HERE THAT MOVES MONEY, so it is the one thing
+// only a person may do. An industry starter once set three US states collecting
+// for a Denver studio that had never traded outside Colorado (issue 429), and
+// `isActive` on its own could not tell that apart from a decision the owner had
+// made. The server stamps `activatedAt` when a signed-in person turns a place
+// on, refuses to activate for anything else, and a database CHECK backs it up.
+// This pane reads `zoneIsCollecting` rather than the switch, so what it says and
+// what the till does cannot drift apart.
 
+import { shownInPlace } from '@wizeworks/query';
 import { useEffect, useMemo, useState } from 'react';
 import { PaneWaiting } from '../../components/pane-waiting';
 import { PaneLoadError } from '../../components/pane-load-error';
@@ -44,8 +54,10 @@ import { useDirtySource } from '../../lib/workbench/dirty';
 import { afterPaneChange } from '../../lib/defer';
 import type { SurfaceContext } from '../../lib/surfaces/registry';
 import { countryName, countryOptions, hasRegions, regionName, regionOptions } from './geo';
+import { SaveFailure } from '@/components/save-failure';
 import {
   formatBasisPoints,
+  formatDay,
   nexusLabel,
   percentToBasisPoints,
   taxErrorMessage,
@@ -56,6 +68,7 @@ import {
   useTaxZone,
   useUpdateTaxZone,
   useZoneTaxRates,
+  zoneIsCollecting,
   type NexusType,
   type TaxRate,
   type TaxZone,
@@ -87,13 +100,18 @@ function toDraft(zone: TaxZone): Draft {
   };
 }
 
+// A NEW PLACE STARTS OFF. The line above the form has always said "Nothing is
+// charged until you switch the place on", and with the switch pre-set to on it
+// was not true. Set the place up, put the rate in, look at it, then switch it
+// on: that is the order the copy describes and the only one that cannot start
+// charging a shopper for something nobody checked.
 function emptyDraft(): Draft {
   return {
     country: 'US',
     region: '',
     nexusType: 'physical',
     registrationNumber: '',
-    isActive: true,
+    isActive: false,
   };
 }
 
@@ -172,6 +190,10 @@ function ZoneEditor({
   const update = useUpdateTaxZone(id);
   const remove = useDeleteTaxZone(id);
 
+  // What the till would actually do, not what the switch says.
+  const collecting = zone ? zoneIsCollecting(zone) : false;
+  const chargingSince = collecting && zone ? formatDay(zone.activatedAt) : null;
+
   const saved = useMemo(() => (zone ? toDraft(zone) : emptyDraft()), [zone]);
   const [draft, setDraft] = useState<Draft>(saved);
   const [touched, setTouched] = useState(false);
@@ -229,6 +251,7 @@ function ZoneEditor({
             toast.add({ title: `${placeTitle} added`, type: 'success' });
           });
         },
+        onError: shownInPlace,
       });
       return;
     }
@@ -277,8 +300,8 @@ function ZoneEditor({
         label="Tax place actions"
         status={
           !isNew && zone ? (
-            <Badge color={zone.isActive ? 'success' : 'neutral'} variant="soft" size="sm">
-              {zone.isActive ? 'Collecting' : 'Off'}
+            <Badge color={collecting ? 'success' : 'neutral'} variant="soft" size="sm">
+              {collecting ? 'Collecting' : 'Off'}
             </Badge>
           ) : null
         }
@@ -310,24 +333,25 @@ function ZoneEditor({
           {isNew ? (
             <Text>
               Set up somewhere you have to collect tax. Choose the country (and a state or province
-              if the tax is set there), then add the rate. Nothing is charged until you switch the
-              place on.
+              if the tax is set there), then add the rate. It starts switched off, so nothing is
+              charged here until you come back and switch it on yourself.
             </Text>
           ) : (
             <Text className="text-sm">
+              {/* Why she collects here is only worth saying once she DOES. On a
+                  place charging nothing, "You have a shop, office, or staff
+                  here" is the screen asserting a fact about her business that
+                  nobody asked her, which is the whole of issue 429. The LIST row
+                  was fixed and this one was missed, and it showed: a Colorado
+                  place created seconds earlier, switched off, still claimed a
+                  presence. Reads the SAVED zone, not the draft, so it describes
+                  what is true now rather than what an unsaved switch intends. */}
               {draft.region ? `${countryName(draft.country)} · ` : ''}
-              {nexusLabel(draft.nexusType)}
+              {collecting ? nexusLabel(draft.nexusType) : 'Nothing is charged here yet'}
             </Text>
           )}
 
-          {failure ? (
-            <Alert color="error">
-              <AlertContent>
-                <AlertTitle>Could not save this place</AlertTitle>
-                <AlertDescription>{failure}</AlertDescription>
-              </AlertContent>
-            </Alert>
-          ) : null}
+          <SaveFailure title="Could not save this place" message={failure} />
 
           {isNew ? (
             <FormSection
@@ -413,25 +437,39 @@ function ZoneEditor({
                   />
                 }
               />
-            </Field>
-
-            <Field>
-              <FieldLabel>Collect tax here</FieldLabel>
-              <FieldControl
-                render={
-                  <Switch
-                    color="module"
-                    checked={draft.isActive}
-                    onCheckedChange={(next: boolean) => {
-                      set('isActive', next);
-                    }}
-                  />
-                }
-              />
               <FieldDescription>
-                While this is off, no tax is charged here — even if a rate is set below.
+                Your own record of what lets you collect here. Shoppers never see it, and it does
+                not change what they are charged.
               </FieldDescription>
             </Field>
+
+            {/* Not offered while adding. A place is always created switched off
+                and starting to collect is a separate act, both because it is the
+                honest order of work (add it, put the rate in, look at it, then
+                switch it on) and because a switch nothing but a person can reach
+                is what keeps a starter from setting a shop collecting in three
+                states nobody chose. The server refuses it too. */}
+            {isNew ? null : (
+              <Field>
+                <FieldLabel>Collect tax here</FieldLabel>
+                <FieldControl
+                  render={
+                    <Switch
+                      color="module"
+                      checked={draft.isActive}
+                      onCheckedChange={(next: boolean) => {
+                        set('isActive', next);
+                      }}
+                    />
+                  }
+                />
+                <FieldDescription>
+                  {chargingSince
+                    ? `Charging here since ${chargingSince}. Switch it off and nothing more is charged, whatever rate is set below.`
+                    : 'While this is off, nothing is charged here, whatever rate is set below. Only you can switch it on, and the day you do is kept on the record.'}
+                </FieldDescription>
+              </Field>
+            )}
           </FormSection>
 
           <FormSection
@@ -512,6 +550,7 @@ function ZoneTaxRatesEditor({ zoneId }: { zoneId: string }) {
           setAppliesToShipping(false);
           toast.add({ title: 'Rate added', type: 'success' });
         },
+        onError: shownInPlace,
       }
     );
   };
@@ -596,14 +635,7 @@ function ZoneTaxRatesEditor({ zoneId }: { zoneId: string }) {
         </div>
       )}
 
-      {failure ? (
-        <Alert color="error">
-          <AlertContent>
-            <AlertTitle>Could not add this rate</AlertTitle>
-            <AlertDescription>{failure}</AlertDescription>
-          </AlertContent>
-        </Alert>
-      ) : null}
+      <SaveFailure title="Could not add this rate" message={failure} />
 
       <div className="border-base-300 bg-base-200 flex flex-col gap-4 rounded-lg border p-4">
         <div className="flex flex-wrap items-end gap-3">

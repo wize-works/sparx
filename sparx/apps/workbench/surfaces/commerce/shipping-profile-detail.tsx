@@ -11,10 +11,6 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import {
-  Alert,
-  AlertContent,
-  AlertDescription,
-  AlertTitle,
   Badge,
   Button,
   Field,
@@ -36,6 +32,7 @@ import { FormSection } from '../../components/form-section';
 import { useDirtySource } from '../../lib/workbench/dirty';
 import { afterPaneChange } from '../../lib/defer';
 import type { SurfaceContext } from '../../lib/surfaces/registry';
+import { SaveFailure } from '@/components/save-failure';
 import {
   shippingErrorMessage,
   useCreateShippingProfile,
@@ -44,6 +41,7 @@ import {
   useUpdateShippingProfile,
   type ShippingProfile,
 } from './shipping-data';
+import { PaneLoadError } from '../../components/pane-load-error';
 
 const COLUMN = 'mx-auto flex w-full max-w-3xl flex-col gap-4';
 
@@ -73,30 +71,19 @@ export function ShippingProfileDetailSurface({ ctx }: { ctx: SurfaceContext }) {
 }
 
 function ProfileLoader({ ctx, id }: { ctx: SurfaceContext; id: string }) {
-  const { data: profile, isPending, isError, refetch } = useShippingProfile(id);
+  const { data: profile, isPending, isError, error, refetch } = useShippingProfile(id);
 
   if (isError) {
     return (
-      <div className="flex h-full items-center justify-center p-8">
-        <Alert color="error" className="max-w-md">
-          <AlertContent>
-            <AlertTitle>Could not load this product group</AlertTitle>
-            <AlertDescription>
-              This is a problem reaching the server. The group itself is unaffected.
-            </AlertDescription>
-          </AlertContent>
-          <Button
-            size="sm"
-            color="error"
-            variant="soft"
-            onClick={() => {
-              void refetch();
-            }}
-          >
-            Try again
-          </Button>
-        </Alert>
-      </div>
+      <PaneLoadError
+        error={error}
+        noun="product group"
+        title="Could not load this product group"
+        description="This is a problem reaching the server. The group itself is unaffected."
+        onRetry={() => {
+          void refetch();
+        }}
+      />
     );
   }
 
@@ -235,27 +222,36 @@ function ProfileEditor({
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Product group actions">
-        {!isNew ? (
-          <Badge color="neutral" variant="soft" size="sm">
-            {productCount === 0
-              ? 'No products yet'
-              : productCount === 1
-                ? '1 product'
-                : `${String(productCount)} products`}
-          </Badge>
-        ) : null}
-        <Button
-          color="module"
-          size="sm"
-          className="ml-auto"
-          loading={saving}
-          disabled={Boolean(nameError) || (!isNew && !dirty)}
-          onClick={submit}
-        >
-          {isNew ? 'Create group' : 'Save'}
-        </Button>
-      </PaneToolbar>
+      <PaneToolbar
+        label="Product group actions"
+        primary={
+          <Button
+            color="module"
+            size="sm"
+            className="ml-auto"
+            loading={saving}
+            disabled={Boolean(nameError) || (!isNew && !dirty)}
+            onClick={submit}
+          >
+            {isNew ? 'Create group' : 'Save'}
+          </Button>
+        }
+        controls={
+          <>
+            {!isNew ? (
+              <Badge variant="soft" size="sm">
+                {profile?.isDefault
+                  ? 'All other products'
+                  : productCount === 0
+                    ? 'Nothing in it yet'
+                    : productCount === 1
+                      ? '1 product'
+                      : `${String(productCount)} products`}
+              </Badge>
+            ) : null}
+          </>
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className={COLUMN}>
@@ -276,14 +272,7 @@ function ProfileEditor({
             </Heading>
           )}
 
-          {failure ? (
-            <Alert color="error">
-              <AlertContent>
-                <AlertTitle>Could not save this group</AlertTitle>
-                <AlertDescription>{failure}</AlertDescription>
-              </AlertContent>
-            </Alert>
-          ) : null}
+          <SaveFailure title="Could not save this group" message={failure} />
 
           <FormSection title="The group">
             <Field>

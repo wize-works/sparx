@@ -18,12 +18,16 @@ import { boxAtPoint, cascadeBox, type FloatPoint, type FloatViewport } from './w
 //
 //   WINDOWS let panes float and overlap, moved and sized freely, stacked the way
 //   paper is stacked on a desk. It is the friendlier answer, and it is what
-//   somebody who thinks in "things I have out" wants — which, for the audience
-//   Piggles is for, is most people.
+//   somebody who thinks in "things I have out" wants — which, for a business
+//   owner who has never used a tiling window manager, is most people.
 //
-// sparx never has to make this choice: its audience is a doer at a desk who
-// wants everything visible at once, so tiling is simply correct there. This is
-// Piggles chrome, and sparx is not offered it.
+// BOTH consoles offer it, and that is a change. This file used to say "sparx is
+// not offered it", on the reasoning that its audience is a doer at a desk who
+// wants everything visible at once and so tiling is simply correct there. That
+// reasoning described the DEFAULT well and did not survive contact with the
+// toggle: tiling remains what sparx opens on, and having tried windows in the
+// other console there was no argument left for withholding the choice. A
+// presentation somebody can switch back from is not a risk (2026-09-05).
 //
 // ── WHY THE TOGGLE HAD TO EXIST AT ALL ──────────────────────────────────────
 //

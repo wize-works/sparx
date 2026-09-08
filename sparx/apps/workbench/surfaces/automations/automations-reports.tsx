@@ -171,41 +171,48 @@ export function AutomationsReportsSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Automations report controls" wrap>
-        <BarChart3 className="size-4 shrink-0" aria-hidden />
-        <Heading level={2} className="min-w-0 truncate text-base font-semibold">
-          Activity &amp; reports
-        </Heading>
-        <div className="ml-auto w-32 shrink-0">
-          <Select
-            size="sm"
-            color="module"
-            aria-label="Which businesses"
-            value={scope}
-            items={{ this: 'This business', all: 'All businesses' }}
-            onValueChange={(next) => {
-              setScope((next as 'this' | 'all') || 'this');
-            }}
+      <PaneToolbar
+        label="Automations report controls"
+        controls={
+          <>
+            <BarChart3 className="size-4 shrink-0" aria-hidden />
+            <Heading level={2} className="min-w-0 truncate text-base font-semibold">
+              Activity &amp; reports
+            </Heading>
+            <div className="ml-auto w-32 shrink-0">
+              <Select
+                size="sm"
+                color="module"
+                aria-label="Which businesses"
+                value={scope}
+                items={{ this: 'This business', all: 'All businesses' }}
+                onValueChange={(next) => {
+                  setScope((next as 'this' | 'all') || 'this');
+                }}
+              />
+            </div>
+            <div className="w-36 shrink-0">
+              <Select
+                size="sm"
+                color="module"
+                aria-label="Time period"
+                value={preset}
+                items={{ '7': RANGE_LABEL['7'], '30': RANGE_LABEL['30'], '90': RANGE_LABEL['90'] }}
+                onValueChange={(next) => {
+                  setPreset((next as RangePreset) || '30');
+                }}
+              />
+            </div>
+          </>
+        }
+        refresh={
+          <RefreshButton
+            isFetching={isFetching}
+            updatedAt={series.data ? series.dataUpdatedAt : undefined}
+            onRefresh={refetchAll}
           />
-        </div>
-        <div className="w-36 shrink-0">
-          <Select
-            size="sm"
-            color="module"
-            aria-label="Time period"
-            value={preset}
-            items={{ '7': RANGE_LABEL['7'], '30': RANGE_LABEL['30'], '90': RANGE_LABEL['90'] }}
-            onValueChange={(next) => {
-              setPreset((next as RangePreset) || '30');
-            }}
-          />
-        </div>
-        <RefreshButton
-          isFetching={isFetching}
-          updatedAt={series.data ? series.dataUpdatedAt : undefined}
-          onRefresh={refetchAll}
-        />
-      </PaneToolbar>
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className="mx-auto flex w-full max-w-3xl flex-col gap-4">

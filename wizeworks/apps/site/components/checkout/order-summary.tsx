@@ -113,6 +113,22 @@ export function OrderSummary({
           <span>{formatMoney(surchargeCents, currency)}</span>
         </div>
       ) : null}
+      {/* Money already paid, taken off after tax because that is the order the
+          total is built in. Both of these are inside totalCents already; without
+          their own rows the summary silently failed to add up, and a shopper
+          checking the sum found the page wrong rather than the total explained. */}
+      {totals.giftCardAppliedCents > 0 ? (
+        <div className="text-success flex justify-between text-sm">
+          <span>Gift card</span>
+          <span>−{formatMoney(totals.giftCardAppliedCents, currency)}</span>
+        </div>
+      ) : null}
+      {totals.accountCreditAppliedCents > 0 ? (
+        <div className="text-success flex justify-between text-sm">
+          <span>Credit on your account</span>
+          <span>−{formatMoney(totals.accountCreditAppliedCents, currency)}</span>
+        </div>
+      ) : null}
       <div className="border-base-300 text-base-content flex justify-between border-t pt-3 text-lg font-semibold">
         <span>{shippingSettled ? 'Total' : 'Total so far'}</span>
         <span>{formatMoney(totals.totalCents, currency)}</span>

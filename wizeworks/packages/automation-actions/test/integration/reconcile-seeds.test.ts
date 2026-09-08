@@ -161,6 +161,15 @@ describe('reconcileSystemSeeds (backfill)', () => {
     expect(warns).toHaveLength(2);
   });
 
+  // TWO MINUTES, and the number is not padding. `reconcileSystemSeeds` is global
+  // by design — it discovers every tenant with each owning module active and
+  // upserts the whole catalog into all of them — so a test of it is O(the entire
+  // development database), and this one runs it TWICE. On a dev database that has
+  // grown to 111 tenants and 2,230 automations it takes about 30 seconds a pass,
+  // which is why it sat on the default 30s limit and failed for anyone whose data
+  // had grown. It is not slow because anything is wrong; it is slow because it is
+  // measuring the real thing. Raising the ceiling is the honest fix — narrowing
+  // the scan to the test tenant would stop the test proving what it is for.
   it('is idempotent — a second reconcile installs no duplicate', async () => {
     const tenantId = await makeTenant({ b2bEnabled: true });
 
@@ -171,5 +180,5 @@ describe('reconcileSystemSeeds (backfill)', () => {
     // pass adds no duplicate.
     const rows = await systemAutomations(tenantId);
     expect(rows).toHaveLength(9);
-  });
+  }, 120_000);
 });

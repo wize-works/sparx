@@ -39,7 +39,6 @@
 
 import type { ReactNode } from 'react';
 import { TabsList, TabsPanel, TabsTab } from '@wizeworks/silicaui-react';
-import { ScrollStrip } from '../../components/scroll-strip';
 import type { SurfaceContext } from '../../lib/surfaces/registry';
 import { TabValueProvider } from './product-tab-save';
 import { ProductOverviewTab } from './product-overview';
@@ -187,37 +186,35 @@ export function ProductTabStrip({
     // the capsule sits on a NON-scrolling wrapper and only the inner region
     // scrolls. Do not merge these back into one element.
     <div className="bg-base-300 shrink-0 rounded-full px-4 py-2">
-      <ScrollStrip label="tabs">
-        <TabsList>
-          {PRODUCT_TABS.map((entry) => (
-            // `text-base-content` is not decoration, it is a correction:
-            // silica's `.tabs-tab` ships its resting ink at 65% alpha, which is
-            // a faded token on text a person is meant to READ. Tab labels are
-            // navigation — they have to be legible before you click them. The
-            // selected tab is already distinguished by a filled pill.
-            <TabsTab key={entry.value} value={entry.value} className="flex items-center gap-1.5">
-              {entry.label}
-              {dirtyTabs.has(entry.value) ? (
-                <>
-                  <span
-                    // The selected pill is already a solid module fill, so a
-                    // `bg-module` dot would vanish into it. On the selected pill
-                    // the dot wears the pill's own ink; everywhere else it wears
-                    // the module hue against the plain strip.
-                    className={
-                      entry.value === activeTab
-                        ? 'bg-module-content size-1.5 shrink-0 rounded-full'
-                        : 'bg-module size-1.5 shrink-0 rounded-full'
-                    }
-                    aria-hidden
-                  />
-                  <span className="sr-only">(unsaved changes)</span>
-                </>
-              ) : null}
-            </TabsTab>
-          ))}
-        </TabsList>
-      </ScrollStrip>
+      <TabsList scrollable>
+        {PRODUCT_TABS.map((entry) => (
+          // `text-base-content` is not decoration, it is a correction:
+          // silica's `.tabs-tab` ships its resting ink at 65% alpha, which is
+          // a faded token on text a person is meant to READ. Tab labels are
+          // navigation — they have to be legible before you click them. The
+          // selected tab is already distinguished by a filled pill.
+          <TabsTab key={entry.value} value={entry.value} className="flex items-center gap-1.5">
+            {entry.label}
+            {dirtyTabs.has(entry.value) ? (
+              <>
+                <span
+                  // The selected pill is already a solid module fill, so a
+                  // `bg-module` dot would vanish into it. On the selected pill
+                  // the dot wears the pill's own ink; everywhere else it wears
+                  // the module hue against the plain strip.
+                  className={
+                    entry.value === activeTab
+                      ? 'bg-module-content size-1.5 shrink-0 rounded-full'
+                      : 'bg-module size-1.5 shrink-0 rounded-full'
+                  }
+                  aria-hidden
+                />
+                <span className="sr-only">(unsaved changes)</span>
+              </>
+            ) : null}
+          </TabsTab>
+        ))}
+      </TabsList>
     </div>
   );
 }

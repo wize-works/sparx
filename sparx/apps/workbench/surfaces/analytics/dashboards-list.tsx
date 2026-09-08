@@ -68,19 +68,26 @@ export function DashboardsListSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Dashboards">
-        <LayoutDashboard className="size-4 shrink-0" aria-hidden />
-        <Heading level={2} className="min-w-0 truncate text-base font-semibold">
-          Dashboards
-        </Heading>
-        <div className="ml-auto">
-          <RefreshButton
-            isFetching={dashboards.isFetching}
-            updatedAt={dashboards.data ? dashboards.dataUpdatedAt : undefined}
-            onRefresh={() => void dashboards.refetch()}
-          />
-        </div>
-      </PaneToolbar>
+      <PaneToolbar
+        label="Dashboards"
+        controls={
+          <>
+            <LayoutDashboard className="size-4 shrink-0" aria-hidden />
+            <Heading level={2} className="min-w-0 truncate text-base font-semibold">
+              Dashboards
+            </Heading>
+          </>
+        }
+        refresh={
+          <div className="ml-auto">
+            <RefreshButton
+              isFetching={dashboards.isFetching}
+              updatedAt={dashboards.data ? dashboards.dataUpdatedAt : undefined}
+              onRefresh={() => void dashboards.refetch()}
+            />
+          </div>
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className="mx-auto flex w-full max-w-2xl flex-col gap-3">

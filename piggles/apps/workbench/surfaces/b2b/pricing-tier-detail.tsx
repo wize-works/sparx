@@ -13,10 +13,6 @@ import { useEffect, useMemo, useState } from 'react';
 import { PaneWaiting } from '../../components/pane-waiting';
 import { PaneLoadError } from '../../components/pane-load-error';
 import {
-  Alert,
-  AlertContent,
-  AlertDescription,
-  AlertTitle,
   Badge,
   Button,
   Card,
@@ -44,6 +40,7 @@ import type { SurfaceContext } from '../../lib/surfaces/registry';
 import { MoneyInput } from '../../components/money-input';
 import { VariantPicker } from '../commerce/variant-picker';
 import type { VariantChoice } from '../commerce/bundles-data';
+import { SaveFailure } from '@/components/save-failure';
 import {
   formatCents,
   tierErrorMessage,
@@ -327,14 +324,7 @@ function TierEditor({
             </Text>
           ) : null}
 
-          {failure ? (
-            <Alert color="error">
-              <AlertContent>
-                <AlertTitle>Could not save this tier</AlertTitle>
-                <AlertDescription>{failure}</AlertDescription>
-              </AlertContent>
-            </Alert>
-          ) : null}
+          <SaveFailure title="Could not save this tier" message={failure} />
 
           <FormSection title="The tier">
             <Field>

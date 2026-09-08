@@ -137,58 +137,63 @@ export function FormSubmissionsListSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Submissions inbox controls" wrap>
-        <Filter
-          color="module"
-          value={statusFilter}
-          onValueChange={(next) => {
-            setStatusFilter((next as StatusFilterValue | null) ?? 'all');
-            resetWindow();
-          }}
-          showReset={false}
-          aria-label="Filter by status"
-        >
-          {STATUS_FILTERS.map((entry) => (
-            <FilterItem key={entry.value} value={entry.value}>
-              {entry.label}
-            </FilterItem>
-          ))}
-        </Filter>
-
-        {/* Only worth showing once more than one form has ever been submitted —
-            with a single form the picker chooses nothing. */}
-        {forms.length > 1 ? (
-          <label className="hidden items-center @xl:flex">
-            <span className="sr-only">Which form</span>
-            <NativeSelect
-              size="sm"
+      <PaneToolbar
+        label="Submissions inbox controls"
+        controls={
+          <>
+            <Filter
               color="module"
-              value={formNodeId}
-              aria-label="Which form"
-              onChange={(event) => {
-                setFormNodeId(event.target.value);
+              value={statusFilter}
+              onValueChange={(next) => {
+                setStatusFilter((next as StatusFilterValue | null) ?? 'all');
                 resetWindow();
               }}
+              showReset={false}
+              aria-label="Filter by status"
             >
-              <option value="">All forms</option>
-              {forms.map((form) => (
-                <option key={form.formNodeId} value={form.formNodeId}>
-                  {(form.formName ?? 'Untitled form') + ` (${String(form.count)})`}
-                </option>
+              {STATUS_FILTERS.map((entry) => (
+                <FilterItem key={entry.value} value={entry.value}>
+                  {entry.label}
+                </FilterItem>
               ))}
-            </NativeSelect>
-          </label>
-        ) : null}
-
-        <RefreshButton
-          className="ml-auto"
-          isFetching={isFetching}
-          updatedAt={data ? dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void refetch();
-          }}
-        />
-      </PaneToolbar>
+            </Filter>
+            {/* Only worth showing once more than one form has ever been submitted —
+            with a single form the picker chooses nothing. */}
+            {forms.length > 1 ? (
+              <label className="hidden items-center @xl:flex">
+                <span className="sr-only">Which form</span>
+                <NativeSelect
+                  size="sm"
+                  color="module"
+                  value={formNodeId}
+                  aria-label="Which form"
+                  onChange={(event) => {
+                    setFormNodeId(event.target.value);
+                    resetWindow();
+                  }}
+                >
+                  <option value="">All forms</option>
+                  {forms.map((form) => (
+                    <option key={form.formNodeId} value={form.formNodeId}>
+                      {(form.formName ?? 'Untitled form') + ` (${String(form.count)})`}
+                    </option>
+                  ))}
+                </NativeSelect>
+              </label>
+            ) : null}
+          </>
+        }
+        refresh={
+          <RefreshButton
+            className="ml-auto"
+            isFetching={isFetching}
+            updatedAt={data ? dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void refetch();
+            }}
+          />
+        }
+      />
 
       <Card className="min-h-0 flex-1 overflow-y-auto">
         {staleAfterFailure ? (

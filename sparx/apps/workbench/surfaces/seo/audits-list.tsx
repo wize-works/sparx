@@ -42,6 +42,7 @@ import {
   type Tone,
 } from './data';
 import { RowOpenHint } from '../../components/row-open-hint';
+import { PaneLoadError } from '../../components/pane-load-error';
 
 const COLUMN = 'mx-auto flex w-full max-w-4xl flex-col gap-4';
 
@@ -251,77 +252,80 @@ export function AuditsListSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Site checks controls">
-        <div className="max-w-xs min-w-0 flex-1">
-          <SearchInput
+      <PaneToolbar
+        label="Site checks controls"
+        search={
+          <div className="max-w-xs min-w-0 flex-1">
+            <SearchInput
+              size="sm"
+              aria-label="Search pages"
+              placeholder="Search pages…"
+              value={search}
+              onValueChange={setSearch}
+            />
+          </div>
+        }
+        status={
+          <p className="hidden shrink-0 text-sm whitespace-nowrap @2xl:block">
+            {needle || typeFilter
+              ? `${matches.length} of ${rows.length}`
+              : `${rows.length} ${rows.length === 1 ? 'page' : 'pages'}`}
+          </p>
+        }
+        primary={
+          <Button
+            color="module"
             size="sm"
-            aria-label="Search pages"
-            placeholder="Search pages…"
-            value={search}
-            onValueChange={setSearch}
+            className="ml-auto shrink-0 whitespace-nowrap"
+            title="Score every page on the site again"
+            loading={reindex.isPending}
+            onClick={rescan}
+          >
+            <RefreshCw className="size-4" aria-hidden />
+            <span className="hidden @lg:inline">Rescan the site</span>
+          </Button>
+        }
+        controls={
+          <>
+            <NativeSelect
+              size="sm"
+              className="hidden max-w-44 shrink @xl:block"
+              aria-label="Show only one kind of page"
+              value={typeFilter}
+              onChange={(event) => {
+                setTypeFilter(event.target.value);
+              }}
+            >
+              {TYPE_FILTERS.map((filter) => (
+                <option key={filter.value} value={filter.value}>
+                  {filter.label}
+                </option>
+              ))}
+            </NativeSelect>
+          </>
+        }
+        refresh={
+          <RefreshButton
+            isFetching={audits.isFetching || checklist.isFetching}
+            updatedAt={audits.data ? audits.dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void audits.refetch();
+              void checklist.refetch();
+            }}
           />
-        </div>
-        <NativeSelect
-          size="sm"
-          className="hidden max-w-44 shrink @xl:block"
-          aria-label="Show only one kind of page"
-          value={typeFilter}
-          onChange={(event) => {
-            setTypeFilter(event.target.value);
-          }}
-        >
-          {TYPE_FILTERS.map((filter) => (
-            <option key={filter.value} value={filter.value}>
-              {filter.label}
-            </option>
-          ))}
-        </NativeSelect>
-        <p className="hidden shrink-0 text-sm whitespace-nowrap @2xl:block">
-          {needle || typeFilter
-            ? `${matches.length} of ${rows.length}`
-            : `${rows.length} ${rows.length === 1 ? 'page' : 'pages'}`}
-        </p>
-        <Button
-          color="module"
-          size="sm"
-          className="ml-auto shrink-0 whitespace-nowrap"
-          title="Score every page on the site again"
-          loading={reindex.isPending}
-          onClick={rescan}
-        >
-          <RefreshCw className="size-4" aria-hidden />
-          <span className="hidden @lg:inline">Rescan the site</span>
-        </Button>
-        <RefreshButton
-          isFetching={audits.isFetching || checklist.isFetching}
-          updatedAt={audits.data ? audits.dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void audits.refetch();
-            void checklist.refetch();
-          }}
-        />
-      </PaneToolbar>
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         {audits.isError ? (
-          <div className="flex h-full items-center justify-center p-8">
-            <EmptyState
-              icon={<Search className="size-6" aria-hidden />}
-              title="Could not load your site checks"
-              description="This is a problem reaching the server. Your pages are unaffected — the scores just could not be read."
-              actions={
-                <Button
-                  size="sm"
-                  color="module"
-                  onClick={() => {
-                    void audits.refetch();
-                  }}
-                >
-                  Try again
-                </Button>
-              }
-            />
-          </div>
+          <PaneLoadError
+            icon={<Search className="size-6" aria-hidden />}
+            title="Could not load your site checks"
+            description="This is a problem reaching the server. Your pages are unaffected — the scores just could not be read."
+            onRetry={() => {
+              void audits.refetch();
+            }}
+          />
         ) : audits.isPending ? (
           <p className="p-4 text-sm" role="status">
             Loading your site checks…

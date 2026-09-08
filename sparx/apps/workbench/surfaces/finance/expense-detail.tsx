@@ -75,6 +75,7 @@ import {
   type ExpenseDraft,
 } from './spend-data';
 import { billState, formatCents, formatDate, kindColor, sourceLabel } from './format';
+import { PaneLoadError } from '../../components/pane-load-error';
 
 const COLUMN = 'mx-auto flex w-full max-w-3xl flex-col gap-4';
 
@@ -619,32 +620,18 @@ function ExpenseDetail({ ctx }: { ctx: SurfaceContext }) {
     const gone = isNotFound(expense.error);
     return (
       <div className={PANE_SHELL}>
-        <div className="flex h-full items-center justify-center p-8">
-          <Alert color={gone ? 'warning' : 'danger'} variant="soft" className="max-w-md">
-            <AlertContent>
-              <AlertTitle>
-                {gone ? 'This cost no longer exists' : 'Could not load this cost'}
-              </AlertTitle>
-              <AlertDescription>
-                {gone
-                  ? 'It may have been deleted. Your other records are unaffected.'
-                  : 'This is a problem reaching the server. The record itself is unaffected.'}
-              </AlertDescription>
-            </AlertContent>
-            {gone ? null : (
-              <Button
-                size="sm"
-                color="danger"
-                variant="soft"
-                onClick={() => {
-                  void expense.refetch();
-                }}
-              >
-                Try again
-              </Button>
-            )}
-          </Alert>
-        </div>
+        <PaneLoadError
+          reason={gone ? 'missing' : 'unreachable'}
+          title={gone ? 'This cost no longer exists' : 'Could not load this cost'}
+          description={
+            gone
+              ? 'It may have been deleted. Your other records are unaffected.'
+              : 'This is a problem reaching the server. The record itself is unaffected.'
+          }
+          onRetry={() => {
+            void expense.refetch();
+          }}
+        />
       </div>
     );
   }
@@ -665,64 +652,67 @@ function ExpenseDetail({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Cost actions" wrap>
-        {state ? (
-          <Badge color={state.tone} variant="soft" size="sm">
-            {state.label}
-          </Badge>
-        ) : (
-          <span className="inline-flex items-center gap-1.5">
-            <CircleDollarSign className="size-4" aria-hidden />
-            <Text as="span" className="text-sm font-medium">
-              New cost
-            </Text>
-          </span>
-        )}
-
-        {selectedCategory ? (
-          <Badge color={kindColor(selectedCategory.kind)} variant="soft" size="sm">
-            {selectedCategory.name}
-          </Badge>
-        ) : null}
-
-        {expense.data && !readOnly ? (
-          <Button
-            size="sm"
-            variant="outline"
-            color={expense.data.paidAt ? 'neutral' : 'success'}
-            loading={setPaid.isPending}
-            onClick={togglePaid}
-          >
-            <Banknote className="size-4" aria-hidden />
-            {expense.data.paidAt ? 'Mark as not paid' : 'Mark as paid'}
-          </Button>
-        ) : null}
-
-        {readOnly ? null : (
-          <Button
-            size="sm"
-            color="module"
-            className="ml-auto shrink-0"
-            disabled={!canSave}
-            loading={save.isPending}
-            onClick={onSave}
-          >
-            <Save className="size-4" aria-hidden />
-            {isNew ? 'Record cost' : 'Save'}
-          </Button>
-        )}
-
-        {isNew ? null : (
-          <RefreshButton
-            className={readOnly ? 'ml-auto' : undefined}
-            isFetching={expense.isFetching}
-            updatedAt={expense.data ? expense.dataUpdatedAt : undefined}
-            onRefresh={() => {
-              void expense.refetch();
-            }}
-          />
-        )}
-      </PaneToolbar>
+      <PaneToolbar
+        label="Cost actions"
+        controls={
+          <>
+            {state ? (
+              <Badge color={state.tone} variant="soft" size="sm">
+                {state.label}
+              </Badge>
+            ) : (
+              <span className="inline-flex items-center gap-1.5">
+                <CircleDollarSign className="size-4" aria-hidden />
+                <Text as="span" className="text-sm font-medium">
+                  New cost
+                </Text>
+              </span>
+            )}
+            {selectedCategory ? (
+              <Badge color={kindColor(selectedCategory.kind)} variant="soft" size="sm">
+                {selectedCategory.name}
+              </Badge>
+            ) : null}
+            {expense.data && !readOnly ? (
+              <Button
+                size="sm"
+                variant="outline"
+                color={expense.data.paidAt ? 'neutral' : 'success'}
+                loading={setPaid.isPending}
+                onClick={togglePaid}
+              >
+                <Banknote className="size-4" aria-hidden />
+                {expense.data.paidAt ? 'Mark as not paid' : 'Mark as paid'}
+              </Button>
+            ) : null}
+            {readOnly ? null : (
+              <Button
+                size="sm"
+                color="module"
+                className="ml-auto shrink-0"
+                disabled={!canSave}
+                loading={save.isPending}
+                onClick={onSave}
+              >
+                <Save className="size-4" aria-hidden />
+                {isNew ? 'Record cost' : 'Save'}
+              </Button>
+            )}
+          </>
+        }
+        refresh={
+          isNew ? null : (
+            <RefreshButton
+              className={readOnly ? 'ml-auto' : undefined}
+              isFetching={expense.isFetching}
+              updatedAt={expense.data ? expense.dataUpdatedAt : undefined}
+              onRefresh={() => {
+                void expense.refetch();
+              }}
+            />
+          )
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className={COLUMN}>

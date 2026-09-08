@@ -50,6 +50,7 @@ import {
   useSubscription,
   type SubscriptionDetail,
 } from './subscriptions-data';
+import { PaneLoadError } from '../../components/pane-load-error';
 
 const COLUMN = 'mx-auto flex w-full max-w-3xl flex-col gap-4';
 
@@ -481,7 +482,15 @@ function DetailBody({ sub }: { sub: SubscriptionDetail }) {
 
 export function SubscriptionDetailSurface({ ctx }: { ctx: SurfaceContext }) {
   const id = typeof ctx.params.id === 'string' ? ctx.params.id : '';
-  const { data: sub, isPending, isError, refetch, isFetching, dataUpdatedAt } = useSubscription(id);
+  const {
+    data: sub,
+    isPending,
+    isError,
+    error,
+    refetch,
+    isFetching,
+    dataUpdatedAt,
+  } = useSubscription(id);
 
   const customerName = sub?.customerName ?? null;
   useEffect(() => {
@@ -490,44 +499,39 @@ export function SubscriptionDetailSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Repeat order actions">
-        <Repeat2 className="size-4 shrink-0" aria-hidden />
-        <Heading level={2} className="min-w-0 truncate text-base font-semibold">
-          {sub?.customerName ?? 'Repeat order'}
-        </Heading>
-        <RefreshButton
-          className="ml-auto"
-          isFetching={isFetching}
-          updatedAt={sub ? dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void refetch();
-          }}
-        />
-      </PaneToolbar>
+      <PaneToolbar
+        label="Repeat order actions"
+        controls={
+          <>
+            <Repeat2 className="size-4 shrink-0" aria-hidden />
+            <Heading level={2} className="min-w-0 truncate text-base font-semibold">
+              {sub?.customerName ?? 'Repeat order'}
+            </Heading>
+          </>
+        }
+        refresh={
+          <RefreshButton
+            className="ml-auto"
+            isFetching={isFetching}
+            updatedAt={sub ? dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void refetch();
+            }}
+          />
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         {isError ? (
-          <div className="flex h-full items-center justify-center p-8">
-            <Alert color="error" className="max-w-md">
-              <AlertContent>
-                <AlertTitle>Could not load this repeat order</AlertTitle>
-                <AlertDescription>
-                  This is a problem reaching the server. The repeat order itself is unaffected —
-                  nothing has been changed or lost.
-                </AlertDescription>
-              </AlertContent>
-              <Button
-                size="sm"
-                color="error"
-                variant="soft"
-                onClick={() => {
-                  void refetch();
-                }}
-              >
-                Try again
-              </Button>
-            </Alert>
-          </div>
+          <PaneLoadError
+            error={error}
+            noun="repeat order"
+            title="Could not load this repeat order"
+            description="This is a problem reaching the server. The repeat order itself is unaffected — nothing has been changed or lost."
+            onRetry={() => {
+              void refetch();
+            }}
+          />
         ) : isPending || !sub ? (
           <p className="p-4 text-sm" role="status">
             Loading…

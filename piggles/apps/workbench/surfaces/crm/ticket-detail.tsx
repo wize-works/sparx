@@ -17,6 +17,7 @@
 // business's own timezone, skipping the days it is shut" is arithmetic the
 // server owns; this surface only chooses the color.
 
+import { shownInPlace } from '@wizeworks/query';
 import { useEffect, useMemo, useState } from 'react';
 import { PaneWaiting } from '../../components/pane-waiting';
 import { PaneLoadError } from '../../components/pane-load-error';
@@ -53,6 +54,7 @@ import { useCustomers } from './customers-data';
 import { customerName } from './customer-display';
 import { EngagementComposer } from './engagement-composer';
 import { usePipelines } from './pipelines-data';
+import { SaveFailure } from '@/components/save-failure';
 import {
   priorityLabel,
   priorityTone,
@@ -329,6 +331,7 @@ function TicketEditor({
               });
             });
           },
+          onError: shownInPlace,
         }
       );
       return;
@@ -498,14 +501,7 @@ function TicketEditor({
             </Text>
           ) : null}
 
-          {failure ? (
-            <Alert color="error">
-              <AlertContent>
-                <AlertTitle>Could not save this request</AlertTitle>
-                <AlertDescription>{failure}</AlertDescription>
-              </AlertContent>
-            </Alert>
-          ) : null}
+          <SaveFailure title="Could not save this request" message={failure} />
 
           <FormSection title="The request">
             <Field>

@@ -2,6 +2,7 @@
 //
 //   GET    /v1/redirects                 → list
 //   POST   /v1/redirects                 → create one
+//   PATCH  /v1/redirects/:id             → change where one points, or its kind
 //   POST   /v1/redirects/bulk            → CSV-style bulk import { rows: [...] }
 //   DELETE /v1/redirects/:id
 //
@@ -21,6 +22,7 @@ import { publish } from '@wizeworks/api-core/pubsub';
 import type { Prisma, Redirect, TxClient } from '@wizeworks/db';
 
 import { resolveListScope, resolvePropertyId } from '../../../lib/property.js';
+import { importRedirectRows } from './import-rows.js';
 
 const PathSchema = z.string().min(1).max(2048).startsWith('/', 'Paths must begin with "/".');
 
@@ -51,6 +53,32 @@ const CreateBody = z.object({
   // Omitted = the site being worked in, resolved at the route.
   property_id: z.string().uuid().nullable().optional(),
 });
+
+/**
+ * Changing an existing rule.
+ *
+ * WHY THIS EXISTS. There was no way to change a redirect at all, and the console
+ * refuses a duplicate with "A redirect from '/shipping' already exists" — a
+ * refusal whose only remedy was to delete the rule and write it again, through a
+ * confirm that warns her she is losing its search-engine standing. The message
+ * named the obstacle and the way past it did not exist (issue 396).
+ *
+ * `from_path` is deliberately NOT changeable. It is the rule's identity — the
+ * address people are still using — so editing it is not a correction, it is a
+ * different rule; the console offers delete-and-add for that, which is honest
+ * about the old address going dead. Everything a person actually wants to fix is
+ * here: where it points, and whether the move is permanent.
+ */
+const UpdateBody = z
+  .object({
+    to_path: PathSchema.optional(),
+    status_code: z
+      .union([z.literal(301), z.literal(302), z.literal(307), z.literal(308)])
+      .optional(),
+  })
+  .refine((b) => b.to_path !== undefined || b.status_code !== undefined, {
+    message: 'Nothing to change.',
+  });
 
 const BulkBody = z.object({
   rows: z.array(CreateBody).min(1).max(5000),
@@ -186,41 +214,87 @@ const redirectRoutes: FastifyPluginAsync = (app) => {
     );
 
     const result = await withRequestTenant(request, async (tx) => {
-      const inserted: string[] = [];
-      const skipped: { row: number; reason: string }[] = [];
-      for (let i = 0; i < input.rows.length; i++) {
-        const r = input.rows[i];
-        if (!r) continue;
-        const propertyId = r.property_id === undefined ? scopeId : r.property_id;
-        try {
-          await assertNoChain(tx, propertyId, r.from_path, r.to_path);
-          const row = await tx.redirect.create({
-            data: {
-              tenantId: auth.tenantId,
-              propertyId,
-              fromPath: r.from_path,
-              toPath: r.to_path,
-              statusCode: r.status_code,
-            },
-          });
-          inserted.push(row.id);
-        } catch (err) {
-          skipped.push({
-            row: i,
-            reason: err instanceof Error ? err.message : 'unknown',
-          });
-        }
-      }
+      // Savepoint-per-row lives in ./import-rows, with the reason why: a failed
+      // row used to abort the whole Postgres transaction, so one duplicate threw
+      // away every good row alongside it.
+      const outcome = await importRedirectRows(tx, {
+        tenantId: auth.tenantId,
+        rows: input.rows,
+        scopeId,
+        checkChain: assertNoChain,
+      });
       await writeAudit(tx, request, auth, {
         action: 'redirect.bulk_imported',
         entityType: 'redirect',
         entityId: null,
-        after: { inserted: inserted.length, skipped: skipped.length },
+        after: { inserted: outcome.imported.length, skipped: outcome.skipped.length },
       });
-      return { inserted: inserted.length, skipped };
+      return outcome;
     });
 
-    return ok(result);
+    // The same event the single create publishes, per row that actually landed.
+    // Without it an imported rule reached nobody: the storefront cache purge
+    // subscribes to `redirect.*`, and `redirect.added` is offered as a webhook —
+    // so a migration of 200 rules fired nothing while adding one by hand fired
+    // 200 times.
+    for (const row of result.imported) {
+      await publish(request.log, 'redirect.added', auth.tenantId, auth.actorId, {
+        id: row.id,
+        fromPath: row.fromPath,
+        toPath: row.toPath,
+      });
+    }
+
+    return ok({ inserted: result.imported.length, skipped: result.skipped });
+  });
+
+  app.patch('/v1/redirects/:id', async (request) => {
+    const auth = requireRole(request, 'editor');
+    const { id } = PathId.parse(request.params);
+    const input = UpdateBody.parse(request.body);
+
+    const updated = await withRequestTenant(request, async (tx) => {
+      const existing = await tx.redirect.findFirst({ where: { id } });
+      if (!existing) throw notFound('Redirect', id);
+
+      const toPath = input.to_path ?? existing.toPath;
+      // Walked with the row's OWN scope and its OWN from_path, which do not
+      // change here — so this asks exactly the question create asks, and the
+      // stale row still in the table cannot make its own new destination look
+      // like a loop (the self-check fires first on `from === to`).
+      if (toPath !== existing.toPath) {
+        await assertNoChain(tx, existing.propertyId, existing.fromPath, toPath);
+      }
+
+      const row = await tx.redirect.update({
+        where: { id },
+        data: {
+          toPath,
+          statusCode: input.status_code ?? existing.statusCode,
+          // The counter is about the OLD address, which is what people are still
+          // using — repointing it does not make those visits not have happened.
+        },
+      });
+      await writeAudit(tx, request, auth, {
+        action: 'redirect.changed',
+        entityType: 'redirect',
+        entityId: id,
+        before: { toPath: existing.toPath, statusCode: existing.statusCode },
+        after: { toPath: row.toPath, statusCode: row.statusCode },
+      });
+      return row;
+    });
+
+    // The storefront caches a resolved redirect under a per-tenant tag, so an
+    // edit has to purge it exactly as an add does — otherwise she changes where
+    // the link goes and visitors keep landing on the old page.
+    await publish(request.log, 'redirect.changed', auth.tenantId, auth.actorId, {
+      id: updated.id,
+      fromPath: updated.fromPath,
+      toPath: updated.toPath,
+    });
+
+    return ok(toApiRedirect(updated));
   });
 
   app.delete('/v1/redirects/:id', async (request, reply) => {

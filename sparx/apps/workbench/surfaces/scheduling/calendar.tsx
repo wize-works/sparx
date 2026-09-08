@@ -28,7 +28,6 @@ import {
   Text,
   ToggleGroup,
   ToggleGroupItem,
-  ToolbarSeparator,
   Tooltip,
 } from '@wizeworks/silicaui-react';
 import { CalendarOff, ChevronLeft, ChevronRight, Link2 } from 'lucide-react';
@@ -219,109 +218,109 @@ export function CalendarSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Calendar controls">
-        <Button
-          size="sm"
-          variant="outline"
-          color="neutral"
-          onClick={() => {
-            setAnchor(new Date());
-          }}
-        >
-          Today
-        </Button>
-        <Join>
-          <Button
-            size="sm"
-            variant="outline"
-            color="neutral"
-            shape="square"
-            aria-label={view === 'week' ? 'Previous week' : 'Previous day'}
-            onClick={() => {
-              step(-1);
-            }}
-          >
-            <ChevronLeft className="size-4" aria-hidden />
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            color="neutral"
-            shape="square"
-            aria-label={view === 'week' ? 'Next week' : 'Next day'}
-            onClick={() => {
-              step(1);
-            }}
-          >
-            <ChevronRight className="size-4" aria-hidden />
-          </Button>
-        </Join>
-
-        {/* The "where am I in time" anchor. In the day view especially — whose
+      <PaneToolbar
+        label="Calendar controls"
+        status={<Text className="hidden min-w-0 truncate font-medium @sm:block">{label}</Text>}
+        controls={
+          <>
+            <Button
+              size="sm"
+              variant="outline"
+              color="neutral"
+              onClick={() => {
+                setAnchor(new Date());
+              }}
+            >
+              Today
+            </Button>
+            <Join>
+              <Button
+                size="sm"
+                variant="outline"
+                color="neutral"
+                shape="square"
+                aria-label={view === 'week' ? 'Previous week' : 'Previous day'}
+                onClick={() => {
+                  step(-1);
+                }}
+              >
+                <ChevronLeft className="size-4" aria-hidden />
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                color="neutral"
+                shape="square"
+                aria-label={view === 'week' ? 'Next week' : 'Next day'}
+                onClick={() => {
+                  step(1);
+                }}
+              >
+                <ChevronRight className="size-4" aria-hidden />
+              </Button>
+            </Join>
+            {/* The "where am I in time" anchor. In the day view especially — whose
             columns are resource names, not dates — this is the only thing naming
             the day. Truncates rather than wraps the bar. */}
-        <Text className="hidden min-w-0 truncate font-medium @sm:block">{label}</Text>
-
-        <ToggleGroup
-          size="sm"
-          color="module"
-          className="ml-auto shrink-0"
-          value={[view]}
-          onValueChange={(next: unknown[]) => {
-            const picked = next.at(-1);
-            if (picked === 'week' || picked === 'day') setView(picked);
-          }}
-        >
-          <ToggleGroupItem value="day">Day</ToggleGroupItem>
-          <ToggleGroupItem value="week">Week</ToggleGroupItem>
-        </ToggleGroup>
-
-        <ToolbarSeparator className="hidden @lg:block" />
-
-        {/* People & equipment as a picker, not chips: a business can have twenty,
+            <ToggleGroup
+              size="sm"
+              color="module"
+              className="ml-auto shrink-0"
+              value={[view]}
+              onValueChange={(next: unknown[]) => {
+                const picked = next.at(-1);
+                if (picked === 'week' || picked === 'day') setView(picked);
+              }}
+            >
+              <ToggleGroupItem value="day">Day</ToggleGroupItem>
+              <ToggleGroupItem value="week">Week</ToggleGroupItem>
+            </ToggleGroup>
+            {/* People & equipment as a picker, not chips: a business can have twenty,
             and twenty chips is a bar taller than the grid. */}
-        <NativeSelect
-          size="sm"
-          className="hidden max-w-40 shrink @md:block"
-          aria-label="Show the diary for"
-          value={resourceId}
-          disabled={activeResources.length === 0}
-          onChange={(domEvent) => {
-            setResourceId(domEvent.target.value);
-          }}
-        >
-          <option value="">Everyone &amp; equipment</option>
-          {activeResources.map((resource) => (
-            <option key={resource.id} value={resource.id}>
-              {resource.name}
-            </option>
-          ))}
-        </NativeSelect>
-
-        <Tooltip content="Linked outside calendars" align="end">
-          <Button
-            size="sm"
-            variant="ghost"
-            color="neutral"
-            shape="square"
-            aria-label="Linked outside calendars"
-            onClick={() => {
-              ctx.open('scheduling.calendar.connections', {}, { target: 'beside' });
+            <NativeSelect
+              size="sm"
+              className="hidden max-w-40 shrink @md:block"
+              aria-label="Show the diary for"
+              value={resourceId}
+              disabled={activeResources.length === 0}
+              onChange={(domEvent) => {
+                setResourceId(domEvent.target.value);
+              }}
+            >
+              <option value="">Everyone &amp; equipment</option>
+              {activeResources.map((resource) => (
+                <option key={resource.id} value={resource.id}>
+                  {resource.name}
+                </option>
+              ))}
+            </NativeSelect>
+            <Tooltip content="Linked outside calendars" align="end">
+              <Button
+                size="sm"
+                variant="ghost"
+                color="neutral"
+                shape="square"
+                aria-label="Linked outside calendars"
+                onClick={() => {
+                  ctx.open('scheduling.calendar.connections', {}, { target: 'beside' });
+                }}
+              >
+                <Link2 className="size-4" aria-hidden />
+              </Button>
+            </Tooltip>
+            {/* ALWAYS the last child of a list toolbar — see RefreshButton. */}
+          </>
+        }
+        refresh={
+          <RefreshButton
+            isFetching={isFetching}
+            updatedAt={data ? dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void refetch();
             }}
-          >
-            <Link2 className="size-4" aria-hidden />
-          </Button>
-        </Tooltip>
-
-        {/* ALWAYS the last child of a list toolbar — see RefreshButton. */}
-        <RefreshButton
-          isFetching={isFetching}
-          updatedAt={data ? dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void refetch();
-          }}
-        />
-      </PaneToolbar>
+          />
+        }
+      />
 
       {/* One recessed card holding the whole grid. Capped nowhere on purpose: the
           diary earns the full width it is given — more of the day and more

@@ -135,6 +135,80 @@ export function scoreQuery(entry: Entry, query: string): number {
 }
 
 /**
+ * How well one RECORD answers a single word.
+ *
+ * Records do not go through `score` and must not: that ladder rates a surface,
+ * where a GROUP match is weak evidence worth keeping ("typing customers should
+ * reach the Customers app"). On a record the group is the entity's own name, so
+ * "orders" would score every order in the shop equally and say nothing.
+ *
+ * What matters here is the row's own NAME, then the line under it — a customer's
+ * email, an order's buyer — and nothing else. A row the ladder cannot score at
+ * all returns 0 and keeps its place in the SERVER's order, because the server
+ * matched it for a reason the client cannot see.
+ */
+function recordWordRank(entry: Entry, query: string): number {
+  const label = entry.label.toLowerCase();
+  if (label === query) return 100;
+  if (label.startsWith(query)) return 80;
+  if (startsAWord(label, query)) return 60;
+  if (label.includes(query)) return 40;
+  const subtitle = (entry.subtitle ?? '').toLowerCase();
+  if (subtitle.startsWith(query)) return 30;
+  if (startsAWord(subtitle, query)) return 25;
+  if (subtitle.includes(query)) return 15;
+  return 0;
+}
+
+/** The record ladder against everything typed, with the same weakest-word rule
+ *  `scoreQuery` uses for surfaces so a phrase behaves the same in both halves. */
+export function recordRank(entry: Entry, query: string): number {
+  const whole = recordWordRank(entry, query);
+  if (whole > 0) return whole;
+  const words = meaningfulWords(query);
+  if (words.length < 2) return 0;
+  let weakest = Number.POSITIVE_INFINITY;
+  for (const word of words) {
+    const each = recordWordRank(entry, word);
+    if (each === 0) return 0;
+    weakest = Math.min(weakest, each);
+  }
+  return weakest;
+}
+
+/**
+ * Records, re-ranked against what was actually typed.
+ *
+ * Record hits arrive in the SEARCH SERVER's order, across several collections at
+ * once, and its relevance is typo-tolerant by design. That is right for FINDING
+ * things and wrong for deciding what Enter opens, because the highlight starts on
+ * the first row and Enter is the contract the panel prints along its own foot.
+ *
+ * Two measurements, both from typing a customer's name:
+ *
+ *   "Priya"      → Privacy Policy first (two edits away), then a segment, and the
+ *                  three customers actually called Priya below both.
+ *   "Marguerite" → the text of a review first, and Marguerite herself second.
+ *
+ * Both times Enter opened something the person had not asked for. So a literal
+ * match on the row's own name wins, then one on the line under it, then
+ * everything else in the server's own order. `sort` is stable, so rows the client
+ * cannot tell apart never shuffle between keystrokes.
+ *
+ * Nothing is FILTERED OUT. Typo tolerance is why "Privacy Policy" is a useful
+ * answer to a mistyped "privacy", and dropping it would trade one wrong result
+ * for one missing one.
+ */
+export function rankRecords(entries: Entry[], query: string): Entry[] {
+  const q = query.trim().toLowerCase();
+  if (!q) return entries;
+  return entries
+    .map((entry, index) => ({ entry, index, rank: recordRank(entry, q) }))
+    .sort((a, b) => b.rank - a.rank || a.index - b.index)
+    .map((row) => row.entry);
+}
+
+/**
  * The matching rows, best first, with each module's screens kept together.
  *
  * Groups are ranked by their BEST member, then members within a group by their

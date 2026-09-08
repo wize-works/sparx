@@ -43,6 +43,7 @@ import { PaneToolbar, PANE_SHELL } from '../../components/pane-toolbar';
 import { FormSection } from '../../components/form-section';
 import type { OpenTarget, SurfaceContext } from '../../lib/surfaces/registry';
 import { useSites } from '../sites/data';
+import { SaveFailure } from '@/components/save-failure';
 import {
   dropshipErrorMessage,
   supplierState,
@@ -463,69 +464,74 @@ function SupplierEditor({
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Supplier actions" wrap>
-        {state ? (
-          <Badge color={state.tone} variant="soft" size="sm">
-            {state.label}
-          </Badge>
-        ) : null}
-
-        {supplier ? (
+      <PaneToolbar
+        label="Supplier actions"
+        primary={
+          <Button
+            color="module"
+            size="sm"
+            className={supplier ? 'shrink-0' : 'ml-auto shrink-0'}
+            loading={saving}
+            disabled={Boolean(blocked) || (!isNew && !dirty)}
+            onClick={submit}
+          >
+            {isNew ? (
+              <>
+                <Plug className="size-4" aria-hidden />
+                Connect
+              </>
+            ) : (
+              'Save'
+            )}
+          </Button>
+        }
+        controls={
           <>
-            <Button
-              size="sm"
-              variant="outline"
-              color="neutral"
-              className="ml-auto shrink-0"
-              onClick={(event) => {
-                ctx.open(
-                  'dropship.products.list',
-                  { supplierId: supplier.id },
-                  { target: targetFor(event) }
-                );
-              }}
-            >
-              <PackageSearch className="size-4" aria-hidden />
-              Browse products
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              color="neutral"
-              className="shrink-0"
-              loading={sync.isPending}
-              disabled={supplier.status === 'error'}
-              title={
-                supplier.status === 'error'
-                  ? 'Fix the connection before syncing'
-                  : 'Refresh this supplier’s catalog now'
-              }
-              onClick={onSync}
-            >
-              <RefreshCw className="size-4" aria-hidden />
-              Sync now
-            </Button>
+            {state ? (
+              <Badge color={state.tone} variant="soft" size="sm">
+                {state.label}
+              </Badge>
+            ) : null}
+            {supplier ? (
+              <>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  color="neutral"
+                  className="ml-auto shrink-0"
+                  onClick={(event) => {
+                    ctx.open(
+                      'dropship.products.list',
+                      { supplierId: supplier.id },
+                      { target: targetFor(event) }
+                    );
+                  }}
+                >
+                  <PackageSearch className="size-4" aria-hidden />
+                  Browse products
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  color="neutral"
+                  className="shrink-0"
+                  loading={sync.isPending}
+                  disabled={supplier.status === 'error'}
+                  title={
+                    supplier.status === 'error'
+                      ? 'Fix the connection before syncing'
+                      : 'Refresh this supplier’s catalog now'
+                  }
+                  onClick={onSync}
+                >
+                  <RefreshCw className="size-4" aria-hidden />
+                  Sync now
+                </Button>
+              </>
+            ) : null}
           </>
-        ) : null}
-
-        <Button
-          color="module"
-          size="sm"
-          className={supplier ? 'shrink-0' : 'ml-auto shrink-0'}
-          loading={saving}
-          disabled={Boolean(blocked) || (!isNew && !dirty)}
-          onClick={submit}
-        >
-          {isNew ? (
-            <>
-              <Plug className="size-4" aria-hidden />
-              Connect
-            </>
-          ) : (
-            'Save'
-          )}
-        </Button>
-      </PaneToolbar>
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className={COLUMN}>
@@ -541,14 +547,7 @@ function SupplierEditor({
             </div>
           ) : null}
 
-          {failure ? (
-            <Alert color="error">
-              <AlertContent>
-                <AlertTitle>Could not save this supplier</AlertTitle>
-                <AlertDescription>{failure}</AlertDescription>
-              </AlertContent>
-            </Alert>
-          ) : null}
+          <SaveFailure title="Could not save this supplier" message={failure} />
 
           {/* On edit, the one status message — the most specific true thing about
               the connection right now. */}

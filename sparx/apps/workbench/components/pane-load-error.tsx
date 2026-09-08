@@ -69,12 +69,22 @@
 import type { ReactNode } from 'react';
 import { AlertTriangle } from 'lucide-react';
 import { Button, EmptyState } from '@wizeworks/silicaui-react';
+import { paneLoadReason } from '../lib/api-error';
+
+/** What a record pane says when the record is not this business's to see. It
+ *  never confirms that the thing exists somewhere else. */
+const GONE =
+  'It has been deleted, or the address points at something that is not in this business. Nothing of yours has been lost.';
 
 export function PaneLoadError({
   icon,
   title,
   description,
-  reason = 'unreachable',
+  error,
+  noun,
+  missingTitle,
+  missingDescription,
+  reason,
   onRetry,
   retryLabel = 'Try again',
   actions,
@@ -108,8 +118,28 @@ export function PaneLoadError({
    *
    * `onRetry` is IGNORED when the reason is 'missing' — the component owns that
    * rule, so a caller cannot accidentally offer a retry that cannot work.
+   *
+   * Pass `error` instead and this is worked out; pass this to overrule it.
    */
   reason?: 'unreachable' | 'missing';
+  /**
+   * The query's error, so the reason above is READ rather than assumed.
+   *
+   * It used to default to 'unreachable', which is a claim: a 404 arrived in
+   * milliseconds and the pane said the server could not be reached, over a
+   * retry that could only ever fail. Every pane that loads one record by id
+   * should pass this — a deleted record, a saved layout pinned to one, and a
+   * link to another business all arrive as a 404.
+   */
+  error?: unknown;
+  /** The thing, in the operator's words — "product", "order". Only used to word
+   *  the not-there state, which is why it is separate from `title`. */
+  noun?: string;
+  /** Overrides for the not-there wording, where the generic is too vague. A
+   *  caller that sets `reason` explicitly is already saying which state it is
+   *  in, so its own `title`/`description` are used and these are not needed. */
+  missingTitle?: ReactNode;
+  missingDescription?: ReactNode;
   /** Re-runs the query. Omitted only where nothing can be retried from here. */
   onRetry?: () => void;
   /** Overridden only when "Try again" would be the wrong verb. */
@@ -118,11 +148,21 @@ export function PaneLoadError({
    *  Rendered after the retry button, so retry stays the obvious move. */
   actions?: ReactNode;
 }) {
-  const missing = reason === 'missing';
+  const missing = (reason ?? paneLoadReason(error)) === 'missing';
   // Suppressed HERE rather than trusted to every call site: a retry against a
   // record that no longer exists fails every single time, and a button that
   // cannot work is worse than no button.
   const retry = missing ? undefined : onRetry;
+  // The caller's `description` is written about the OTHER case — it says the
+  // server could not be reached — so it must not survive into this one. A
+  // caller with no `noun` and no override has said nothing about being missing,
+  // and keeping its own words is the only honest option left.
+  const shownTitle = missing
+    ? (missingTitle ?? (noun ? `That ${noun} is no longer here` : title))
+    : title;
+  const shownDescription = missing
+    ? (missingDescription ?? (noun ? GONE : description))
+    : description;
 
   return (
     <div className="flex h-full min-h-72 flex-col items-center justify-center gap-1 px-6 py-10">
@@ -147,8 +187,8 @@ export function PaneLoadError({
             {icon ?? <AlertTriangle className="size-6" aria-hidden />}
           </span>
         }
-        title={title}
-        description={description}
+        title={shownTitle}
+        description={shownDescription}
         actions={
           retry || actions ? (
             <>

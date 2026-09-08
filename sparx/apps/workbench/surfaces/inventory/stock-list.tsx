@@ -38,18 +38,13 @@ import {
   Button,
   Card,
   EmptyState,
-  NativeSelect,
   SearchInput,
   Table,
-  ToggleGroup,
-  ToggleGroupItem,
-  ToolbarSeparator,
   Tooltip,
 } from '@wizeworks/silicaui-react';
 import { ArrowDown, ArrowUp, Boxes, ShieldCheck, TrendingDown } from 'lucide-react';
 import { ListPagination, MAX_TAKE, type PageSize } from '../../components/list-pagination';
 import { PaneToolbar, PANE_SHELL } from '../../components/pane-toolbar';
-import { SavedViewsBar } from '../../components/saved-views';
 import { RefreshButton } from '../../components/refresh-button';
 import type { OpenTarget, SurfaceContext } from '../../lib/surfaces/registry';
 import {
@@ -57,6 +52,7 @@ import {
   locationLabel,
   sellable,
   useCatalogMatches,
+  useUncountedVariants,
   useStockLevels,
   useStockLocations,
   type SortDirection,
@@ -66,6 +62,7 @@ import {
 import { openProductFacet } from '../commerce/product-scope';
 import { humanDuration, stockAgeTone } from './integrity-data';
 import { RowOpenHint } from '../../components/row-open-hint';
+import { StockUncountedBand } from './stock-uncounted-band';
 
 /** Same modifier contract as every other list in the app. */
 function targetFor(event: { shiftKey: boolean; altKey: boolean }): OpenTarget {
@@ -134,6 +131,14 @@ export function StockListSurface({ ctx }: { ctx: SurfaceContext }) {
     take,
     skip,
   });
+
+  // Asked ALONGSIDE the list, not instead of it and not only when it is empty.
+  // A version nobody has counted is not a row this list can hold, so the only
+  // way it gets mentioned is if something asks separately (issue 444). Held back
+  // while a location is chosen: an uncounted version is at no location, so
+  // "nothing counted at the Main Warehouse" would be answering a question the
+  // person did not ask.
+  const uncounted = useUncountedVariants(search.trim(), locationId === '' && !isError);
 
   const rows = data?.items ?? [];
   const total = data?.total;
@@ -411,98 +416,83 @@ export function StockListSurface({ ctx }: { ctx: SurfaceContext }) {
           button carries the `ml-auto` that a primary action normally would.
           Nothing wraps: the location picker sheds to a narrow control and the
           search box absorbs whatever is left. */}
-      <PaneToolbar label="Stock list controls">
-        {/* The width has to sit on a WRAPPER: SearchInput forwards className to
-            its inner <input>, so a sizing class aimed at the control never
-            reaches the element that actually lays out. */}
-        <div className="max-w-xs min-w-0 flex-1">
-          <SearchInput
-            size="sm"
-            aria-label="Search stock"
-            placeholder="Product name or code…"
-            value={search}
-            onValueChange={(next) => {
-              setSearch(next);
+      <PaneToolbar
+        label="Stock list controls"
+        search={
+          <div className="max-w-xs min-w-0 flex-1">
+            <SearchInput
+              size="sm"
+              aria-label="Search stock"
+              placeholder="Product name or code…"
+              value={search}
+              onValueChange={(next) => {
+                setSearch(next);
+                resetWindow();
+              }}
+            />
+          </div>
+        }
+        filters={[
+          {
+            label: 'Kept at',
+            key: 'location',
+            value: locationId,
+            onValueChange: (next) => {
+              setLocationId(next);
               resetWindow();
-            }}
-          />
-        </div>
-
-        <ToolbarSeparator className="hidden @xl:block" />
-
-        {/* A picker rather than chips: a business can have twenty locations, and
-            twenty chips is a toolbar that is taller than the table. */}
-        <NativeSelect
-          size="sm"
-          className="max-w-40 shrink"
-          aria-label="Show stock kept at"
-          value={locationId}
-          onChange={(event) => {
-            setLocationId(event.target.value);
-            resetWindow();
-          }}
-        >
-          <option value="">Every location</option>
-          {activeLocations.map((location) => (
-            <option key={location.id} value={location.id}>
-              {location.name}
-            </option>
-          ))}
-        </NativeSelect>
-
-        {/* One pressed button, not a chip pair: this is a single yes/no question,
-            and "All / Running low" as two chips reads as two categories of
-            stock. It sheds its label below @2xl — the falling arrow plus the
-            tooltip carries it, and search is used far more often than this. */}
-        <ToggleGroup
-          size="sm"
-          color="module"
-          className="shrink-0"
-          value={lowOnly ? ['low'] : []}
-          onValueChange={(next: unknown[]) => {
-            setLowOnly(next.includes('low'));
-            resetWindow();
-          }}
-        >
-          <ToggleGroupItem
-            value="low"
-            aria-label="Only show what is running low"
-            title="Only show what is running low"
-          >
-            <TrendingDown className="size-4" aria-hidden />
-            <span className="hidden @2xl:inline">Running low</span>
-          </ToggleGroupItem>
-        </ToggleGroup>
-
-        {/* Saved views (docs/146 Phase 10.2). A person who has got this list
-            exactly right — one location, running low, sorted by what to sell —
-            should not rebuild it tomorrow. `ml-auto` moves here so the views
-            control and refresh sit together on the right. */}
-        <SavedViewsBar
-          target="/inventory/stock"
-          params={viewParams}
-          className="ml-auto"
-          onApply={(next) => {
+            },
+            options: [
+              { value: '', label: 'Every location' },
+              ...activeLocations.map((location) => ({ value: location.id, label: location.name })),
+            ],
+            neutralValue: '',
+            present: 'select',
+          },
+          {
+            label: 'Stock level',
+            key: 'lowOnly',
+            value: lowOnly ? 'low' : 'all',
+            onValueChange: (next) => {
+              setLowOnly(next === 'low');
+              resetWindow();
+            },
+            options: [
+              { value: 'all', label: 'All stock' },
+              { value: 'low', label: 'Running low' },
+            ],
+            neutralValue: 'all',
+          },
+        ]}
+        views={{
+          target: '/inventory/stock',
+          params: viewParams,
+          onApply: (next) => {
             setSearch(next.q ?? '');
-            setLocationId(next.warehouse ?? '');
-            setLowOnly(next.low === '1');
             const [key, dir] = (next.sort ?? '').split(':');
             if (key && (dir === 'asc' || dir === 'desc')) {
               setSort({ key: key as StockSortKey, dir });
             }
             resetWindow();
-          }}
-        />
+          },
+        }}
+        refresh={
+          <RefreshButton
+            isFetching={isFetching}
+            updatedAt={data ? dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void refetch();
+            }}
+          />
+        }
+      />
 
-        {/* ALWAYS the last child of a list toolbar — see RefreshButton. */}
-        <RefreshButton
-          isFetching={isFetching}
-          updatedAt={data ? dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void refetch();
-          }}
-        />
-      </PaneToolbar>
+      {/* Above the table, because it is about what the table is NOT showing. */}
+      <StockUncountedBand
+        ctx={ctx}
+        items={uncounted.data?.items ?? []}
+        total={uncounted.data?.total ?? 0}
+        searching={search.trim() !== ''}
+      />
 
       {/* Full width — matches the house list convention: the table fills the pane. */}
       <Card className="min-h-0 flex-1 overflow-y-auto">{body()}</Card>

@@ -64,6 +64,10 @@ export interface ShippingProfile {
   requiresFreight: boolean;
   productCount: number;
   variantCount: number;
+  /** True for the ONE group everything not filed elsewhere ships under. Read
+   *  this instead of testing for a member count of zero: two empty groups look
+   *  identical, and only one of them is the default. */
+  isDefault: boolean;
   collectionCount: number;
   updatedAt: string;
 }

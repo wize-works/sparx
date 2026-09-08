@@ -160,6 +160,9 @@ const BILLING_SELECT = {
   companyId: true,
   workflow: { select: { slug: true } },
   stage: { select: { stageType: true, name: true } },
+  // Whether the customer has actually been given this document. There is no
+  // `sent_at` column, so the send route records it in the metadata bag.
+  metadata: true,
 } as const;
 
 interface BillingLike {
@@ -176,6 +179,7 @@ interface BillingLike {
   companyId: string | null;
   workflow: { slug: string };
   stage: { stageType: string; name: string };
+  metadata: unknown;
 }
 
 /** Field map for a billing document. `overdueDays` / `daysUntilDue` are COMPUTED
@@ -198,7 +202,26 @@ function billingFields(d: BillingLike, now: number): ResolvedFields {
     'invoice.assignedUserId': d.assignedUserId,
     'invoice.workflowSlug': d.workflow.slug,
     'invoice.stageType': d.stage.stageType,
+    // ── HAS THE CUSTOMER ACTUALLY BEEN GIVEN THIS? ──────────────────────────
+    //
+    // Raising an invoice and sending it are two different acts, and the whole
+    // dunning ladder was written as though they were one. Every reminder and
+    // overdue notice keyed on `dueAt` alone, so a bill that never left the
+    // building was chased four times: a friendly reminder three days before it
+    // was due, then overdue, then a second notice, then a final notice — to a
+    // customer who had never seen it. There is no `sent_at` column; the send
+    // route records it here, and this is what lets a seed require it.
+    'invoice.sentAt': sentAt(d.metadata),
   };
+}
+
+/** When the send route last emailed this document, or null. */
+function sentAt(metadata: unknown): string | null {
+  if (metadata && typeof metadata === 'object' && !Array.isArray(metadata)) {
+    const value = (metadata as Record<string, unknown>).sentAt;
+    if (typeof value === 'string' && value.trim()) return value;
+  }
+  return null;
 }
 
 /** `quote.*` fields — same document, a template-facing alias namespace.

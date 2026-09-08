@@ -5,8 +5,16 @@
 //   POST   /v1/public/commerce/cart/:cartId/items         ?tenant=  { variantId, quantity }
 //   PATCH  /v1/public/commerce/cart/:cartId/items/:itemId ?tenant=  { quantity }
 //   DELETE /v1/public/commerce/cart/:cartId/items/:itemId ?tenant=
-//   POST   /v1/public/commerce/cart/:cartId/discount      ?tenant=  { code }
+//   POST   /v1/public/commerce/cart/:cartId/code          ?tenant=  { code }
+//   POST   /v1/public/commerce/cart/:cartId/discount      ?tenant=  { code }  (older name)
 //   DELETE /v1/public/commerce/cart/:cartId/discount/:code?tenant=
+//   DELETE /v1/public/commerce/cart/:cartId/gift-card     ?tenant=
+//
+// A shopper has A CODE. She does not know, and should not have to know, whether
+// what is printed on it is a discount or a gift card — so `/code` takes either
+// and reports back which one it turned out to be. `/discount` is the older name
+// for the same handler, kept so an existing client keeps working; both run the
+// one implementation, so they cannot drift apart.
 //
 // Ownership: cart creation issues an opaque guest token returned in the body
 // AND surfaced for the client to store; every later call must echo it via the
@@ -19,7 +27,7 @@
 
 import { randomUUID } from 'node:crypto';
 
-import type { FastifyPluginAsync } from 'fastify';
+import type { FastifyPluginAsync, FastifyRequest } from 'fastify';
 import { z } from 'zod';
 
 import {
@@ -82,6 +90,7 @@ async function serializePublicCart(
   currency: string;
   items: PublicCartLine[];
   appliedDiscountCodes: string[];
+  appliedGiftCardCodes: string[];
   totals: ReturnType<typeof totalsView>;
   /** Made to order (issue 026) — the day the basket can be collected and how
    *  the money splits between now and then. Passed straight through from the
@@ -168,6 +177,10 @@ async function serializePublicCart(
     currency: snapshot.currency,
     items,
     appliedDiscountCodes: snapshot.appliedDiscountCodes,
+    // The card reserved against this basket. Without its code the storefront can
+    // show the money coming off and nothing that says which card did it, and no
+    // way to take it back off again.
+    appliedGiftCardCodes: snapshot.appliedGiftCardCodes,
     totals: totalsView(snapshot.totals),
     madeToOrder: snapshot.madeToOrder,
   };
@@ -178,6 +191,8 @@ function totalsView(t: {
   discountTotalCents: number;
   shippingTotalCents: number;
   taxTotalCents: number;
+  giftCardAppliedCents: number;
+  accountCreditAppliedCents: number;
   totalCents: number;
 }) {
   return {
@@ -185,6 +200,12 @@ function totalsView(t: {
     discountTotalCents: t.discountTotalCents,
     shippingTotalCents: t.shippingTotalCents,
     taxTotalCents: t.taxTotalCents,
+    // Both of these are already SUBTRACTED inside totalCents. Leaving them out
+    // of the view is what makes a basket summary fail to add up on the page: the
+    // rows a shopper can see sum to more than the total under them, and the
+    // money that closed the gap has no name.
+    giftCardAppliedCents: t.giftCardAppliedCents,
+    accountCreditAppliedCents: t.accountCreditAppliedCents,
     totalCents: t.totalCents,
   };
 }
@@ -289,17 +310,67 @@ const publicCartRoutes: FastifyPluginAsync = async (app) => {
     return ok(await serializePublicCart(ctx, tenantId, cartId));
   });
 
-  app.post('/v1/public/commerce/cart/:cartId/discount', async (request) => {
+  // One box, either kind of code.
+  //
+  // A shopper who is handed a gift card types its code into the only code box on
+  // the page. That box used to be a discount box, so a live card came back "No
+  // active discount for code …" and the money on it was unreachable — the whole
+  // gift-card feature ended at that sentence. So: try the discount table, and
+  // when the code is not one, try the cards before giving up.
+  //
+  // Order matters. A discount is checked FIRST because it is the cheaper thing
+  // to be wrong about: an unknown discount code costs the shopper nothing, while
+  // reserving the wrong gift card takes money off somebody's balance.
+  const applyCode = async (request: FastifyRequest) => {
     const { cartId } = CartParam.parse(request.params);
     const body = DiscountBody.parse(request.body);
     const { tenantId, ctx } = await publicCommerceContext(request);
     await assertCartTokenForWrite(request, ctx, tenantId, cartId);
+
+    let discountError: Error | null = null;
     try {
       await discountService.redeemCode(ctx, { cartId, code: body.code });
+      return ok({ ...(await serializePublicCart(ctx, tenantId, cartId)), kind: 'discount' });
     } catch (err) {
-      // Surface a clean 400 for an invalid/expired code rather than a 500.
-      throw badRequest((err as Error).message || 'That code can’t be applied.');
+      discountError = err as Error;
     }
+
+    try {
+      const applied = await discountService.applyGiftCardToCart(ctx, {
+        cartId,
+        code: body.code,
+      });
+      return ok({
+        ...(await serializePublicCart(ctx, tenantId, cartId)),
+        kind: 'gift_card',
+        giftCard: {
+          code: applied.code,
+          appliedCents: applied.appliedCents,
+          remainingBalanceCents: applied.remainingBalanceCents,
+        },
+      });
+    } catch {
+      // The DISCOUNT failure is the one worth reporting. "No gift card with that
+      // code" would be a confusing thing to tell somebody holding a mistyped
+      // discount code, and the discount attempt is the one that ran first.
+      throw badRequest(discountError?.message || 'That code can’t be applied.');
+    }
+  };
+
+  app.post('/v1/public/commerce/cart/:cartId/code', applyCode);
+
+  // The older name for the same handler. Kept working rather than broken; it
+  // shares the implementation above so the two can never answer differently.
+  app.post('/v1/public/commerce/cart/:cartId/discount', applyCode);
+
+  app.delete('/v1/public/commerce/cart/:cartId/gift-card', async (request) => {
+    const { cartId } = CartParam.parse(request.params);
+    const { tenantId, ctx } = await publicCommerceContext(request);
+    await assertCartTokenForWrite(request, ctx, tenantId, cartId);
+    // Nothing has been debited yet — the card is only reserved until the order is
+    // placed — so taking it off is the cart scalar and the trace entry, and the
+    // balance is untouched either way.
+    await discountService.removeGiftCardFromCart(ctx, { cartId });
     return ok(await serializePublicCart(ctx, tenantId, cartId));
   });
 

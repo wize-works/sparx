@@ -243,6 +243,20 @@ export interface ComponentUsageDto {
   pages: { id: string; name: string }[];
   layouts: { id: string; name: string }[];
   total: number;
+  /**
+   * How many of those placements would REFUSE a delete.
+   *
+   * Two placement systems answer "what happens if I delete this" differently. A
+   * legacy `custom:<key>` reference is resolved at draw time and cannot be
+   * inlined, so it blocks. A silica `instanceOf` placement DETACHES — the page
+   * keeps the design exactly as it looks and simply stops following the master.
+   *
+   * `total` and this are therefore different numbers on purpose: the first says
+   * where the piece is, the second says what stands in the way. Reporting one as
+   * the other is how a screen ends up refusing a delete the server would allow,
+   * or offering one it would refuse.
+   */
+  blocking: number;
   /** The distinct versions this component is pinned to across all placements
    *  (docs/53 P-E). Lets the detail page tell whether a bulk "update all
    *  placements" would actually move anything (any value below `latestVersion`). */

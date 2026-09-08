@@ -47,7 +47,7 @@ import type { OpenTarget, SurfaceContext } from '../../lib/surfaces/registry';
 import { useUploadMedia } from './media';
 import {
   assetStatusState,
-  formatBytes,
+  sizeLabel,
   useMediaAssetsList,
   useRefreshMediaLibrary,
   type MediaAsset,
@@ -390,7 +390,7 @@ export function MediaListSurface({ ctx }: { ctx: SurfaceContext }) {
                       </span>
                       <span className="flex items-center gap-1 text-sm">
                         {kindIcon(asset.kind, 'size-3.5 shrink-0')}
-                        {formatBytes(asset.byteSize)}
+                        {sizeLabel(asset)}
                       </span>
                     </span>
                   </button>

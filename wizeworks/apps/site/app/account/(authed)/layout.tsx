@@ -80,10 +80,18 @@ export default function AuthedAccountLayout({ children }: { children: React.Reac
           aria-label="Account"
         >
           {/* Whose account this is heads the list at either width, so `w-full`:
-              in a wrapping row it would otherwise sit in the line as one more chip. */}
-          <div className="border-base-300 mb-2 flex w-full flex-col gap-[0.15rem] border-b px-3 pt-2 pb-4">
-            <strong>{displayName}</strong>
-            {customer.email ? <span className="text-base-content">{customer.email}</span> : null}
+              in a wrapping row it would otherwise sit in the line as one more chip.
+              `min-w-0` + `break-all` because an email address is ONE unbreakable
+              token: at 220px this column fits about 24 characters, and anything
+              longer was painted straight out of the sidebar and over the sentence
+              in the next column. `marguerite.adeyemi@example.com` overlapped
+              "Manage your orders and details here." by 11px (issue 379). Both
+              lines take it — `displayName` falls back to the email too. */}
+          <div className="border-base-300 mb-2 flex w-full min-w-0 flex-col gap-[0.15rem] border-b px-3 pt-2 pb-4">
+            <strong className="break-all">{displayName}</strong>
+            {customer.email ? (
+              <span className="text-base-content break-all">{customer.email}</span>
+            ) : null}
           </div>
           {NAV.filter((item) => item.offered?.(offers) ?? true).map((item) => {
             const active =

@@ -19,7 +19,12 @@ export * from '@tanstack/react-query';
 // that called `mutate` passed its own `onError`. A global failed-write reporter
 // cannot tell otherwise, and announces failures somebody has already announced.
 // Shadowing the export is what makes that free for all 147 call sites.
-export { useMutation, callerHandledError } from './mutation';
+// `shownInPlace` is the other half of the same fact: a surface that renders the
+// error itself has spoken, but it spoke by rendering, which no watcher can see.
+// `writeIdentity` lets one connect a failure to the retry that fixed it.
+export { useMutation, callerHandledError, shownInPlace, writeIdentity } from './mutation';
+export { createWriteAnnouncements } from './announcements';
+export type { WriteAnnouncements } from './announcements';
 
 export { makeQueryClient, DEFAULT_QUERY_OPTIONS } from './query-client';
 export { getQueryClient } from './get-query-client';

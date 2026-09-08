@@ -14,6 +14,10 @@ import { Uuid } from './common';
 // counter, a bank machine — money sparx never touched. `stripe`/`paypal` mean a
 // gateway processed it and wrote its own record, so calling a counter sale one
 // of those claims a charge that exists nowhere.
+// `gift_card` is money the shop was ALREADY paid, when the card was bought,
+// now being spent. It belongs here and not in the discount total: a discount
+// reduces what the goods cost, while a gift card settles part of the bill —
+// putting it in the wrong one understates revenue and the tax base with it.
 export const PaymentProcessor = z.enum([
   'stripe',
   'paypal',
@@ -22,6 +26,7 @@ export const PaymentProcessor = z.enum([
   'check',
   'wire',
   'net_terms',
+  'gift_card',
 ]);
 export type PaymentProcessor = z.infer<typeof PaymentProcessor>;
 

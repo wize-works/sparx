@@ -21,6 +21,7 @@
 
 import { withTenant } from '@wizeworks/db';
 import { discountService, productService } from '@wizeworks/commerce';
+import { carrierLabel } from '@wizeworks/commerce-schemas';
 import { ALL_MODULES, listEnabledModules, type ModuleSlug } from '@wizeworks/modules';
 import {
   collectSilicaEmailSourceKeys,
@@ -482,7 +483,10 @@ async function resolveShipping(
   if (!f) return {};
   return {
     status: f.status,
-    carrier: f.carrier ?? '',
+    // The stored code is lowercase (`usps`, `dropship`). Bound raw, the email
+    // told a customer their parcel went by "usps" — the one place this fact
+    // reaches somebody outside the business was the only one not translating it.
+    carrier: carrierLabel(f.carrier),
     service: f.service ?? '',
     trackingNumber: f.trackingNumber ?? '',
     // The carrier's tracking page when known; else the customer's order detail so

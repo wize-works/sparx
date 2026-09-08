@@ -59,6 +59,7 @@ import {
   type OperatingHours,
 } from './data';
 import { productCopy } from '../../lib/product';
+import { SaveFailure } from '@/components/save-failure';
 
 const COLUMN = 'mx-auto flex w-full max-w-3xl flex-col gap-4';
 
@@ -363,14 +364,7 @@ export function ChatSettingsSurface({ ctx }: { ctx: SurfaceContext }) {
 
           {/* One message, the most specific one — the server's own reason a save
               failed (a rejected AI key names itself) beats a generic banner. */}
-          {failure ? (
-            <Alert color="error">
-              <AlertContent>
-                <AlertTitle>Could not save your settings</AlertTitle>
-                <AlertDescription>{failure}</AlertDescription>
-              </AlertContent>
-            </Alert>
-          ) : null}
+          <SaveFailure title="Could not save your settings" message={failure} />
 
           <FormSection title="The chat box">
             <Field>

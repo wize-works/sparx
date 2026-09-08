@@ -732,43 +732,49 @@ function FitmentBody({
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Fitment actions">
-        <Puzzle className="size-4 shrink-0" aria-hidden />
-        <Heading level={2} className="min-w-0 truncate text-base font-semibold">
-          {scope.product.title}
-        </Heading>
-        {scope.isFollowing ? (
-          <Badge color="info" variant="soft" size="sm">
-            Following
-          </Badge>
-        ) : null}
-
-        {/* This pane's primary action, in this pane's own toolbar — not floating
+      <PaneToolbar
+        label="Fitment actions"
+        controls={
+          <>
+            <Puzzle className="size-4 shrink-0" aria-hidden />
+            <Heading level={2} className="min-w-0 truncate text-base font-semibold">
+              {scope.product.title}
+            </Heading>
+            {scope.isFollowing ? (
+              <Badge color="info" variant="soft" size="sm">
+                Following
+              </Badge>
+            ) : null}
+            {/* This pane's primary action, in this pane's own toolbar — not floating
             at the bottom of the list where it would read as belonging to the
             last card rather than to the pane. Its label sheds first when the
             pane is docked narrow; the icon carries it. */}
-        {rules.length > 0 && domains.length > 0 ? (
-          <Button
-            size="sm"
-            color="module"
-            className="ml-auto"
-            onClick={() => {
-              setPicking(true);
+            {rules.length > 0 && domains.length > 0 ? (
+              <Button
+                size="sm"
+                color="module"
+                className="ml-auto"
+                onClick={() => {
+                  setPicking(true);
+                }}
+              >
+                <Plus className="size-4" aria-hidden />
+                <span className="hidden @md:inline">Add what it fits</span>
+              </Button>
+            ) : null}
+          </>
+        }
+        refresh={
+          <RefreshButton
+            className={rules.length > 0 && domains.length > 0 ? undefined : 'ml-auto'}
+            isFetching={fitment.isFetching}
+            updatedAt={fitment.dataUpdatedAt}
+            onRefresh={() => {
+              void fitment.refetch();
             }}
-          >
-            <Plus className="size-4" aria-hidden />
-            <span className="hidden @md:inline">Add what it fits</span>
-          </Button>
-        ) : null}
-        <RefreshButton
-          className={rules.length > 0 && domains.length > 0 ? undefined : 'ml-auto'}
-          isFetching={fitment.isFetching}
-          updatedAt={fitment.dataUpdatedAt}
-          onRefresh={() => {
-            void fitment.refetch();
-          }}
-        />
-      </PaneToolbar>
+          />
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className={COLUMN}>

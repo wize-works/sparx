@@ -79,52 +79,63 @@ export function AccountsListSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Trade account controls">
-        <div className="max-w-xs min-w-0 flex-1">
-          <SearchInput
+      <PaneToolbar
+        label="Trade account controls"
+        search={
+          <div className="max-w-xs min-w-0 flex-1">
+            <SearchInput
+              size="sm"
+              aria-label="Search trade accounts"
+              placeholder="Company name or tax number…"
+              value={search}
+              onValueChange={(next) => {
+                setSearch(next);
+                resetWindow();
+              }}
+            />
+          </div>
+        }
+        primary={
+          <Button
+            data-tour="b2b-add-account"
+            color="module"
             size="sm"
-            aria-label="Search trade accounts"
-            placeholder="Company name or tax number…"
-            value={search}
-            onValueChange={(next) => {
-              setSearch(next);
-              resetWindow();
+            className="ml-auto"
+            title="Add a trade account — hold Shift to open alongside, Alt for a new window"
+            onClick={(event) => {
+              ctx.open('b2b.account.detail', { id: 'new' }, { target: targetFor(event) });
+            }}
+          >
+            <Plus className="size-4" aria-hidden />
+            Add a trade account
+          </Button>
+        }
+        controls={
+          <>
+            <div className="hidden w-44 shrink-0 @md:block">
+              <Select
+                size="sm"
+                aria-label="Show which accounts"
+                value={filter}
+                items={FILTERS.map((entry) => ({ value: entry.value, label: entry.label }))}
+                onValueChange={(next) => {
+                  setFilter((next as FilterValue | null) ?? 'all');
+                  resetWindow();
+                }}
+              />
+            </div>
+          </>
+        }
+        refresh={
+          <RefreshButton
+            isFetching={isFetching}
+            updatedAt={data ? dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void refetch();
             }}
           />
-        </div>
-        <div className="hidden w-44 shrink-0 @md:block">
-          <Select
-            size="sm"
-            aria-label="Show which accounts"
-            value={filter}
-            items={FILTERS.map((entry) => ({ value: entry.value, label: entry.label }))}
-            onValueChange={(next) => {
-              setFilter((next as FilterValue | null) ?? 'all');
-              resetWindow();
-            }}
-          />
-        </div>
-        <Button
-          data-tour="b2b-add-account"
-          color="module"
-          size="sm"
-          className="ml-auto"
-          title="Add a trade account — hold Shift to open alongside, Alt for a new window"
-          onClick={(event) => {
-            ctx.open('b2b.account.detail', { id: 'new' }, { target: targetFor(event) });
-          }}
-        >
-          <Plus className="size-4" aria-hidden />
-          Add a trade account
-        </Button>
-        <RefreshButton
-          isFetching={isFetching}
-          updatedAt={data ? dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void refetch();
-          }}
-        />
-      </PaneToolbar>
+        }
+      />
 
       <Card className="min-h-0 flex-1 overflow-y-auto">
         {isError ? (

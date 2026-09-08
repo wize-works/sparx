@@ -322,99 +322,103 @@ export function SpendingListSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Spending list controls" wrap>
-        <div className="max-w-xs min-w-0 flex-1">
-          <SearchInput
-            size="sm"
-            aria-label="Search what you spent on, a reference, or a supplier"
-            placeholder="Search costs…"
-            value={search}
-            onValueChange={(next) => {
-              setSearch(next);
-              setLimit(PAGE);
+      <PaneToolbar
+        label="Spending list controls"
+        search={
+          <div className="max-w-xs min-w-0 flex-1">
+            <SearchInput
+              size="sm"
+              aria-label="Search what you spent on, a reference, or a supplier"
+              placeholder="Search costs…"
+              value={search}
+              onValueChange={(next) => {
+                setSearch(next);
+                setLimit(PAGE);
+              }}
+            />
+          </div>
+        }
+        controls={
+          <>
+            <NativeSelect
+              size="sm"
+              color="module"
+              value={period}
+              aria-label="Period"
+              onChange={(event) => {
+                setPeriod(event.target.value as PeriodKey);
+                setLimit(PAGE);
+              }}
+            >
+              {PERIOD_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </NativeSelect>
+            <NativeSelect
+              size="sm"
+              color="module"
+              value={categoryId}
+              aria-label="Filter by category"
+              onChange={(event) => {
+                setCategoryId(event.target.value);
+                setLimit(PAGE);
+              }}
+            >
+              <option value="">Every category</option>
+              {(categories.data ?? []).map((category) => (
+                <option key={category.id} value={category.id}>
+                  {category.name}
+                </option>
+              ))}
+            </NativeSelect>
+            <NativeSelect
+              size="sm"
+              color="module"
+              value={vendorId}
+              aria-label="Filter by who you paid"
+              onChange={(event) => {
+                setVendorId(event.target.value);
+                setLimit(PAGE);
+              }}
+            >
+              <option value="">Everyone you pay</option>
+              {(vendors.data ?? []).map((vendor) => (
+                <option key={vendor.id} value={vendor.id}>
+                  {vendor.name}
+                </option>
+              ))}
+            </NativeSelect>
+            <Filter
+              color="module"
+              value={paid}
+              onValueChange={(next) => {
+                setPaid(typeof next === 'string' ? next : 'all');
+                setLimit(PAGE);
+              }}
+              showReset={false}
+              aria-label="Filter by whether it has been paid"
+            >
+              {PAID_FILTERS.map((filter) => (
+                <FilterItem key={filter.value} value={filter.value}>
+                  {filter.label}
+                </FilterItem>
+              ))}
+            </Filter>
+          </>
+        }
+        refresh={
+          <RefreshButton
+            className="ml-auto"
+            isFetching={isFetching}
+            updatedAt={data ? dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void refetch();
             }}
           />
-        </div>
-
-        <NativeSelect
-          size="sm"
-          color="module"
-          value={period}
-          aria-label="Period"
-          onChange={(event) => {
-            setPeriod(event.target.value as PeriodKey);
-            setLimit(PAGE);
-          }}
-        >
-          {PERIOD_OPTIONS.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </NativeSelect>
-
-        <NativeSelect
-          size="sm"
-          color="module"
-          value={categoryId}
-          aria-label="Filter by category"
-          onChange={(event) => {
-            setCategoryId(event.target.value);
-            setLimit(PAGE);
-          }}
-        >
-          <option value="">Every category</option>
-          {(categories.data ?? []).map((category) => (
-            <option key={category.id} value={category.id}>
-              {category.name}
-            </option>
-          ))}
-        </NativeSelect>
-
-        <NativeSelect
-          size="sm"
-          color="module"
-          value={vendorId}
-          aria-label="Filter by who you paid"
-          onChange={(event) => {
-            setVendorId(event.target.value);
-            setLimit(PAGE);
-          }}
-        >
-          <option value="">Everyone you pay</option>
-          {(vendors.data ?? []).map((vendor) => (
-            <option key={vendor.id} value={vendor.id}>
-              {vendor.name}
-            </option>
-          ))}
-        </NativeSelect>
-
-        <Filter
-          color="module"
-          value={paid}
-          onValueChange={(next) => {
-            setPaid(typeof next === 'string' ? next : 'all');
-            setLimit(PAGE);
-          }}
-          showReset={false}
-          aria-label="Filter by whether it has been paid"
-        >
-          {PAID_FILTERS.map((filter) => (
-            <FilterItem key={filter.value} value={filter.value}>
-              {filter.label}
-            </FilterItem>
-          ))}
-        </Filter>
-
-        <RefreshButton
-          className="ml-auto"
-          isFetching={isFetching}
-          updatedAt={data ? dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void refetch();
-          }}
-        />
-      </PaneToolbar>
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         {isError ? (

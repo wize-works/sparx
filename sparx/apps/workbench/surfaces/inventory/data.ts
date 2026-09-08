@@ -197,6 +197,53 @@ export function useCatalogMatches(search: string, enabled: boolean) {
   });
 }
 
+/**
+ * A version on sale that has NO count anywhere.
+ *
+ * Not a stock position, which is why it cannot come from the list above: that
+ * endpoint reads `inventory_levels`, and a version nobody has counted has no row
+ * in it. It is its own question and its own route.
+ */
+export interface UncountedVariant {
+  variantId: string;
+  sku: string;
+  variantTitle: string | null;
+  productId: string;
+  productTitle: string;
+  /** What it says should happen when it runs out. `deny` here is the sharp case:
+   *  the setting says stop selling, and it never fires because there is nothing
+   *  to run out of. */
+  inventoryPolicy: string;
+}
+
+/**
+ * How many versions the current search covers that nobody has counted, and which.
+ *
+ * Asked ALONGSIDE the level list rather than instead of it. The catalog fallback
+ * beside this one only fires when the list comes back EMPTY, so a search that
+ * matched fifteen counted versions of a twenty-version shirt reported
+ * "Showing 1-15 of 15" and said nothing at all about the other five (issue 444).
+ *
+ * The window is wider than the three codes the band names, because the band also
+ * decides whether ONE product accounts for all of them — the ordinary case, and
+ * the only one where a single button can finish the job. That is knowable only
+ * when the whole set is in hand, so it asks for enough to usually have it and
+ * falls back to naming when it does not. `total` is the number that matters and
+ * the server sends it whatever the window.
+ */
+export function useUncountedVariants(search: string, enabled: boolean) {
+  return useQuery({
+    queryKey: [...stockKeys.all, 'uncounted', search] as const,
+    queryFn: () =>
+      api.list<UncountedVariant>('/v1/inventory/uncounted', {
+        ...(search ? { q: search } : {}),
+        take: 25,
+        skip: 0,
+      }),
+    enabled,
+  });
+}
+
 /** Just enough of a product to name it and open its stock panel. */
 export interface CatalogMatch {
   id: string;
@@ -405,13 +452,7 @@ export function useSetSafetyBuffer() {
  * what neutral has to be earned against.
  */
 export type Tone =
-  | 'success'
-  | 'warning'
-  | 'danger'
-  | 'info'
-  | 'neutral'
-  | 'module-inventory'
-  | 'module-crm';
+  'success' | 'warning' | 'danger' | 'info' | 'neutral' | 'module-inventory' | 'module-crm';
 
 /**
  * How many a shopper could actually buy right now.
@@ -468,6 +509,25 @@ export function overallState(levels: StockLevel[]): StockState {
     return { label: 'Running low', tone: 'warning' };
   }
   return { label: 'In stock', tone: 'success' };
+}
+
+/**
+ * Name a few things inside a sentence, and stop before the sentence turns into a
+ * list.
+ *
+ * WHICH ones is the useful part when there are three; past that the number is
+ * the news and the product is where to go. `total` is the server's count, not
+ * `codes.length` — the band holds a window, so counting what it happens to be
+ * holding would report the window instead of the answer.
+ */
+export function listCodes(codes: string[], total: number): string {
+  if (codes.length === 0) return '';
+  const shown = codes.slice(0, 3);
+  if (total > shown.length) {
+    return `${shown.join(', ')} and ${String(total - shown.length)} more.`;
+  }
+  if (shown.length === 1) return `${String(shown[0])}.`;
+  return `${shown.slice(0, -1).join(', ')} and ${String(shown[shown.length - 1])}.`;
 }
 
 /** The ledger's stored reason said in plain words. The stored words are the

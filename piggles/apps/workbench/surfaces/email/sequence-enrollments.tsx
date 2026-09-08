@@ -402,7 +402,7 @@ function EnrollModal({
                 ) : (
                   <Text className="text-sm">
                     We will send the sequence to this address. If it matches a customer, their
-                    details are used to personalise the emails.
+                    details are used to personalize the emails.
                   </Text>
                 )}
               </Field>

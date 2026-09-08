@@ -39,7 +39,7 @@ import { BillTo } from './bill-to';
 import { LineItems } from './line-items';
 import { InvoiceSummary } from './invoice-summary';
 import { HistorySection } from './history';
-import { DocumentActions, StageControl, useDocumentWorkflow } from './lifecycle';
+import { DocumentActions, SendButton, StageControl, useDocumentWorkflow } from './lifecycle';
 import { PaymentsSection } from './payments';
 import { SignaturesSection } from './signatures';
 import { InvoiceValidationError, listDocumentWorkflows, saveInvoice } from './save';
@@ -233,38 +233,50 @@ export function InvoiceEditorSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Editor actions" wrap>
-        <Button
-          color="neutral"
-          variant="outline"
-          size="sm"
-          onClick={() => {
-            // 'beside' is a suggestion, not a layout: it splits the current group
-            // once. The operator can move it anywhere afterwards and it stays put.
-            ctx.open('invoicing.invoice.preview', { id }, { target: 'beside' });
-          }}
-        >
-          <Eye className="size-4" aria-hidden />
-          Preview
-        </Button>
-        <div className="flex-1" />
-        {/* Lifecycle lives in the header (docs/86 §5.1): the stage control IS
+      <PaneToolbar
+        label="Editor actions"
+        primary={
+          <Button
+            color="module"
+            size="sm"
+            disabled={!dirty || save.isPending || readOnly}
+            onClick={() => {
+              save.mutate();
+            }}
+          >
+            <Save className="size-4" aria-hidden />
+            {save.isPending ? 'Saving…' : 'Save'}
+          </Button>
+        }
+        controls={
+          <>
+            <Button
+              color="neutral"
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                // 'beside' is a suggestion, not a layout: it splits the current group
+                // once. The operator can move it anywhere afterwards and it stays put.
+                ctx.open('invoicing.invoice.preview', { id }, { target: 'beside' });
+              }}
+            >
+              <Eye className="size-4" aria-hidden />
+              Preview
+            </Button>
+            <div className="flex-1" />
+            {/* Lifecycle lives in the header (docs/86 §5.1): the stage control IS
             the document's status and its actions, one control. Only for saved
             documents — a new draft has no stage until it enters its workflow. */}
-        {doc && docWorkflow ? <StageControl doc={doc} stages={docWorkflow.stages} /> : null}
-        {doc ? <DocumentActions doc={doc} stage={currentStage} ctx={ctx} /> : null}
-        <Button
-          color="module"
-          size="sm"
-          disabled={!dirty || save.isPending || readOnly}
-          onClick={() => {
-            save.mutate();
-          }}
-        >
-          <Save className="size-4" aria-hidden />
-          {save.isPending ? 'Saving…' : 'Save'}
-        </Button>
-      </PaneToolbar>
+            {/* Giving the document to the customer is the other half of making
+            one, so it sits beside the stage control rather than behind the
+            overflow menu. Saved documents only — an unsaved draft would send a
+            different invoice from the one on screen. */}
+            {doc ? <SendButton doc={doc} dirty={dirty} /> : null}
+            {doc && docWorkflow ? <StageControl doc={doc} stages={docWorkflow.stages} /> : null}
+            {doc ? <DocumentActions doc={doc} stage={currentStage} ctx={ctx} /> : null}
+          </>
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         {/* A bento, laid out by container width — never viewport. A narrow
@@ -373,6 +385,8 @@ export function InvoiceEditorSurface({ ctx }: { ctx: SurfaceContext }) {
                   onTaxRateChange={(taxRate) => {
                     update({ taxRate });
                   }}
+                  shippingTotal={doc?.shippingTotal ?? 0}
+                  surchargeTotal={doc?.surchargeTotal ?? 0}
                   {...(doc
                     ? {
                         saved: {

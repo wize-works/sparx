@@ -11,10 +11,6 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import {
-  Alert,
-  AlertContent,
-  AlertDescription,
-  AlertTitle,
   Badge,
   Button,
   Field,
@@ -38,6 +34,7 @@ import type { SurfaceContext } from '../../lib/surfaces/registry';
 import { useTeamRoster } from '../../lib/api/team';
 import { useViewer } from '../../lib/api/shell-data';
 import { customerName, useCustomers } from './customers-data';
+import { SaveFailure } from '@/components/save-failure';
 import {
   TASK_PRIORITIES,
   TASK_STATUSES,
@@ -54,6 +51,7 @@ import {
   type TaskPriority,
   type TaskStatus,
 } from './tasks-data';
+import { PaneLoadError } from '../../components/pane-load-error';
 
 const COLUMN = 'mx-auto flex w-full max-w-3xl flex-col gap-4';
 
@@ -126,31 +124,19 @@ export function TaskDetailSurface({ ctx }: { ctx: SurfaceContext }) {
 }
 
 function TaskLoader({ ctx, id }: { ctx: SurfaceContext; id: string }) {
-  const { data: task, isPending, isError, refetch } = useTask(id);
+  const { data: task, isPending, isError, error, refetch } = useTask(id);
 
   if (isError) {
     return (
-      <div className="flex h-full items-center justify-center p-8">
-        <Alert color="error" className="max-w-md">
-          <AlertContent>
-            <AlertTitle>Could not load this task</AlertTitle>
-            <AlertDescription>
-              This is a problem reaching the server, or the task has been removed. Nothing has been
-              changed.
-            </AlertDescription>
-          </AlertContent>
-          <Button
-            size="sm"
-            color="error"
-            variant="soft"
-            onClick={() => {
-              void refetch();
-            }}
-          >
-            Try again
-          </Button>
-        </Alert>
-      </div>
+      <PaneLoadError
+        error={error}
+        noun="task"
+        title="Could not load this task"
+        description="This is a problem reaching the server, or the task has been removed. Nothing has been changed."
+        onRetry={() => {
+          void refetch();
+        }}
+      />
     );
   }
 
@@ -325,34 +311,41 @@ function TaskEditor({ ctx, id, task }: { ctx: SurfaceContext; id: string; task?:
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Task actions">
-        <Badge color={meta.tone} variant="soft" size="sm">
-          {meta.label}
-        </Badge>
-        {!isNew && !isDone ? (
+      <PaneToolbar
+        label="Task actions"
+        primary={
           <Button
+            color="module"
             size="sm"
-            variant="outline"
-            color="success"
-            className="ml-auto shrink-0"
-            loading={complete.isPending}
-            onClick={onComplete}
+            className={isNew || isDone ? 'ml-auto shrink-0' : 'shrink-0'}
+            loading={saving}
+            disabled={Boolean(blocked) || (!isNew && !dirty)}
+            onClick={submit}
           >
-            <CheckCircle2 className="size-4" aria-hidden />
-            Mark done
+            {isNew ? 'Add task' : 'Save'}
           </Button>
-        ) : null}
-        <Button
-          color="module"
-          size="sm"
-          className={isNew || isDone ? 'ml-auto shrink-0' : 'shrink-0'}
-          loading={saving}
-          disabled={Boolean(blocked) || (!isNew && !dirty)}
-          onClick={submit}
-        >
-          {isNew ? 'Add task' : 'Save'}
-        </Button>
-      </PaneToolbar>
+        }
+        controls={
+          <>
+            <Badge color={meta.tone} variant="soft" size="sm">
+              {meta.label}
+            </Badge>
+            {!isNew && !isDone ? (
+              <Button
+                size="sm"
+                variant="outline"
+                color="success"
+                className="ml-auto shrink-0"
+                loading={complete.isPending}
+                onClick={onComplete}
+              >
+                <CheckCircle2 className="size-4" aria-hidden />
+                Mark done
+              </Button>
+            ) : null}
+          </>
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className={COLUMN}>
@@ -368,14 +361,7 @@ function TaskEditor({ ctx, id, task }: { ctx: SurfaceContext; id: string; task?:
             </div>
           ) : null}
 
-          {failure ? (
-            <Alert color="error">
-              <AlertContent>
-                <AlertTitle>Could not save this task</AlertTitle>
-                <AlertDescription>{failure}</AlertDescription>
-              </AlertContent>
-            </Alert>
-          ) : null}
+          <SaveFailure title="Could not save this task" message={failure} />
 
           <FormSection title="The task">
             <Field>

@@ -53,7 +53,7 @@ import {
   faTrashCan,
 } from '@fortawesome/pro-solid-svg-icons';
 import { Icon } from '@piggles/ui';
-import { useQuery } from '@wizeworks/query';
+import { useQuery, shownInPlace } from '@wizeworks/query';
 import { api } from '../../lib/api/client';
 import { useDirtySource } from '../../lib/workbench/dirty';
 import { afterPaneChange } from '../../lib/defer';
@@ -62,6 +62,7 @@ import { FormSection } from '../../components/form-section';
 import { MoneyTextInput, moneyCents } from '../../components/money-input';
 import { RefreshButton } from '../../components/refresh-button';
 import type { SurfaceContext } from '../../lib/surfaces/registry';
+import { SaveFailure } from '@/components/save-failure';
 import {
   formatCents,
   productErrorMessage,
@@ -462,6 +463,7 @@ function Editor({
               toast.add({ title: 'Build set up', type: 'success' });
             });
           },
+          onError: shownInPlace,
         }
       );
       return;
@@ -482,6 +484,7 @@ function Editor({
             toast.add({ title: 'Build saved', type: 'success' });
           });
         },
+        onError: shownInPlace,
       }
     );
   };
@@ -572,14 +575,7 @@ function Editor({
             For {draft.productTitle}. {status.detail}
           </Text>
 
-          {failure ? (
-            <Alert color="error">
-              <AlertContent>
-                <AlertTitle>Could not save this build</AlertTitle>
-                <AlertDescription>{failure}</AlertDescription>
-              </AlertContent>
-            </Alert>
-          ) : null}
+          <SaveFailure title="Could not save this build" message={failure} />
 
           {blocked !== null && dirty ? (
             <Alert color="warning">
@@ -1084,6 +1080,7 @@ function TryItPanel({
         onSuccess: (next) => {
           setResult(next);
         },
+        onError: shownInPlace,
       }
     );
   };

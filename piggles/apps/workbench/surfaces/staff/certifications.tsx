@@ -120,7 +120,7 @@ export function CertificationsSurface({ ctx }: { ctx: SurfaceContext }) {
               title="Nothing recorded yet"
               description={productCopy(
                 'staff.certifications.description',
-                'If the people who work for you need licences, tickets or certificates, record them on each person and Piggles will warn you before any of them run out — with as much notice as you ask for.'
+                'If the people who work for you need licenses, tickets or certificates, record them on each person and Piggles will warn you before any of them run out — with as much notice as you ask for.'
               )}
               actions={
                 <Button

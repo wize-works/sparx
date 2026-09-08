@@ -47,6 +47,7 @@ import {
   useSite,
   useUpdateSite,
 } from './data';
+import { PaneLoadError } from '../../components/pane-load-error';
 
 /** Modules a site can be told not to show. `builder` is absent on purpose — it
  *  is what BUILDS the site, so hiding it from one site is meaningless. */
@@ -119,17 +120,20 @@ function CreateSite({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="New site actions">
-        <Button
-          color="module"
-          size="sm"
-          className="ml-auto"
-          disabled={Boolean(nameError) || create.isPending}
-          onClick={submit}
-        >
-          {create.isPending ? 'Creating…' : 'Create site'}
-        </Button>
-      </PaneToolbar>
+      <PaneToolbar
+        label="New site actions"
+        primary={
+          <Button
+            color="module"
+            size="sm"
+            className="ml-auto"
+            disabled={Boolean(nameError) || create.isPending}
+            onClick={submit}
+          >
+            {create.isPending ? 'Creating…' : 'Create site'}
+          </Button>
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className="mx-auto flex max-w-xl flex-col gap-4">
@@ -210,7 +214,7 @@ function ManageSite({ ctx, id }: { ctx: SurfaceContext; id: string }) {
   const toast = useToast();
   const confirm = useConfirm();
   const { controller } = useWorkbench();
-  const { data: site, isError, isPending, refetch } = useSite(id);
+  const { data: site, isError, error, isPending, refetch } = useSite(id);
   const { data: modules } = useModuleStates();
   const { data: activeSite } = useActiveSiteId();
   const { data: domains } = useDomains();
@@ -255,26 +259,15 @@ function ManageSite({ ctx, id }: { ctx: SurfaceContext; id: string }) {
 
   if (isError) {
     return (
-      <div className="flex h-full items-center justify-center p-8">
-        <Alert color="error" className="max-w-md">
-          <AlertContent>
-            <AlertTitle>Could not load this site</AlertTitle>
-            <AlertDescription>
-              This is a problem reaching the server. Nothing about the site has changed.
-            </AlertDescription>
-          </AlertContent>
-          <Button
-            size="sm"
-            color="error"
-            variant="soft"
-            onClick={() => {
-              void refetch();
-            }}
-          >
-            Try again
-          </Button>
-        </Alert>
-      </div>
+      <PaneLoadError
+        error={error}
+        noun="site"
+        title="Could not load this site"
+        description="This is a problem reaching the server. Nothing about the site has changed."
+        onRetry={() => {
+          void refetch();
+        }}
+      />
     );
   }
 
@@ -354,54 +347,61 @@ function ManageSite({ ctx, id }: { ctx: SurfaceContext; id: string }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Site actions" wrap>
-        <div className="flex flex-wrap items-center gap-1">
-          {site.isPrimary ? (
-            <Badge color="module" variant="soft" size="sm">
-              Primary
-            </Badge>
-          ) : null}
-          {isActive ? (
-            <Badge color="success" variant="soft" size="sm">
-              You are here
-            </Badge>
-          ) : null}
-        </div>
-        <div className="flex-1" />
-        {isActive ? null : (
+      <PaneToolbar
+        label="Site actions"
+        primary={
           <Button
+            color="module"
             size="sm"
-            variant="outline"
-            color="neutral"
+            disabled={!dirty || update.isPending}
             onClick={() => {
-              void onSwitch();
+              update.mutate(
+                { name: name.trim() },
+                {
+                  onSuccess: () => {
+                    toast.add({ title: 'Site name saved', type: 'success' });
+                  },
+                  onError: () => {
+                    toast.add({ title: 'Could not save the name', type: 'error' });
+                  },
+                }
+              );
             }}
           >
-            Work on this site
+            <Save className="size-4" aria-hidden />
+            {update.isPending ? 'Saving…' : 'Save'}
           </Button>
-        )}
-        <Button
-          color="module"
-          size="sm"
-          disabled={!dirty || update.isPending}
-          onClick={() => {
-            update.mutate(
-              { name: name.trim() },
-              {
-                onSuccess: () => {
-                  toast.add({ title: 'Site name saved', type: 'success' });
-                },
-                onError: () => {
-                  toast.add({ title: 'Could not save the name', type: 'error' });
-                },
-              }
-            );
-          }}
-        >
-          <Save className="size-4" aria-hidden />
-          {update.isPending ? 'Saving…' : 'Save'}
-        </Button>
-      </PaneToolbar>
+        }
+        controls={
+          <>
+            <div className="flex flex-wrap items-center gap-1">
+              {site.isPrimary ? (
+                <Badge color="module" variant="soft" size="sm">
+                  Primary
+                </Badge>
+              ) : null}
+              {isActive ? (
+                <Badge color="success" variant="soft" size="sm">
+                  You are here
+                </Badge>
+              ) : null}
+            </div>
+            <div className="flex-1" />
+            {isActive ? null : (
+              <Button
+                size="sm"
+                variant="outline"
+                color="neutral"
+                onClick={() => {
+                  void onSwitch();
+                }}
+              >
+                Work on this site
+              </Button>
+            )}
+          </>
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className="mx-auto flex w-full max-w-3xl flex-col gap-4">

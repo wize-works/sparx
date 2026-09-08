@@ -63,7 +63,6 @@ import { useDirtySource } from '../../lib/workbench/dirty';
 import { afterPaneChange } from '../../lib/defer';
 import { PaneToolbar, PANE_SHELL } from '../../components/pane-toolbar';
 import { FormSection } from '../../components/form-section';
-import { ScrollStrip } from '../../components/scroll-strip';
 import { CustomPropertiesPanel } from './custom-properties-panel';
 import { AssociationsPanel } from './associations-panel';
 import type { SurfaceContext } from '../../lib/surfaces/registry';
@@ -104,6 +103,7 @@ import {
   type LeadStatus,
   type LifecycleStage,
 } from './customers-data';
+import { PaneLoadError } from '../../components/pane-load-error';
 
 // The focused single column a NEW customer is created in — no profile to show yet.
 const COLUMN = 'mx-auto flex w-full max-w-3xl flex-col gap-4';
@@ -214,31 +214,19 @@ export function CustomerDetailSurface({ ctx }: { ctx: SurfaceContext }) {
 }
 
 function CustomerLoader({ ctx, id }: { ctx: SurfaceContext; id: string }) {
-  const { data: customer, isPending, isError, refetch } = useCustomer(id);
+  const { data: customer, isPending, isError, error, refetch } = useCustomer(id);
 
   if (isError) {
     return (
-      <div className="flex h-full items-center justify-center p-8">
-        <Alert color="error" className="max-w-md">
-          <AlertContent>
-            <AlertTitle>Could not load this customer</AlertTitle>
-            <AlertDescription>
-              This is a problem reaching the server, or the customer has been removed. Nothing has
-              been changed.
-            </AlertDescription>
-          </AlertContent>
-          <Button
-            size="sm"
-            color="error"
-            variant="soft"
-            onClick={() => {
-              void refetch();
-            }}
-          >
-            Try again
-          </Button>
-        </Alert>
-      </div>
+      <PaneLoadError
+        error={error}
+        noun="customer"
+        title="Could not load this customer"
+        description="This is a problem reaching the server, or the customer has been removed. Nothing has been changed."
+        onRetry={() => {
+          void refetch();
+        }}
+      />
     );
   }
 
@@ -776,64 +764,71 @@ function CustomerEditor({
   /* ── Toolbar (shared) ─────────────────────────────────────────────────── */
 
   const toolbar = (
-    <PaneToolbar label="Customer actions">
-      {/* The toolbar leads with the lifecycle stage — the primary "where are
+    <PaneToolbar
+      label="Customer actions"
+      primary={
+        <Button
+          color="module"
+          size="sm"
+          className={!isNew && customer ? 'shrink-0' : 'ml-auto shrink-0'}
+          loading={saving}
+          disabled={Boolean(blocked) || (!isNew && !dirty)}
+          onClick={submit}
+        >
+          {isNew ? 'Add customer' : 'Save'}
+        </Button>
+      }
+      controls={
+        <>
+          {/* The toolbar leads with the lifecycle stage — the primary "where are
           they" signal; the relationship + lead status sit on the rail/form. */}
-      <Badge color={lifecycleMeta.color} variant="soft" size="sm">
-        {lifecycleMeta.label}
-      </Badge>
-      {/* The things you DO to a customer live in the toolbar, not on the profile
+          <Badge color={lifecycleMeta.color} variant="soft" size="sm">
+            {lifecycleMeta.label}
+          </Badge>
+          {/* The things you DO to a customer live in the toolbar, not on the profile
           card: start a deal or a task pre-linked to them. The label gives way to
           the icon on a narrow pane; the aria-label carries the full name always. */}
-      {!isNew && customer ? (
-        <>
-          <Button
-            size="sm"
-            variant="ghost"
-            color="module"
-            className="ml-auto shrink-0"
-            aria-label="New deal for this customer"
-            onClick={() => {
-              ctx.open(
-                'crm.deal.detail',
-                { id: 'new', customerId: customer.id },
-                { target: 'tab' }
-              );
-            }}
-          >
-            <Plus className="size-4" aria-hidden />
-            <span className="hidden @md:inline">Deal</span>
-          </Button>
-          <Button
-            size="sm"
-            variant="ghost"
-            color="module"
-            className="shrink-0"
-            aria-label="New task for this customer"
-            onClick={() => {
-              ctx.open(
-                'crm.task.detail',
-                { id: 'new', customerId: customer.id },
-                { target: 'tab' }
-              );
-            }}
-          >
-            <Plus className="size-4" aria-hidden />
-            <span className="hidden @md:inline">Task</span>
-          </Button>
+          {!isNew && customer ? (
+            <>
+              <Button
+                size="sm"
+                variant="ghost"
+                color="module"
+                className="ml-auto shrink-0"
+                aria-label="New deal for this customer"
+                onClick={() => {
+                  ctx.open(
+                    'crm.deal.detail',
+                    { id: 'new', customerId: customer.id },
+                    { target: 'tab' }
+                  );
+                }}
+              >
+                <Plus className="size-4" aria-hidden />
+                <span className="hidden @md:inline">Deal</span>
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                color="module"
+                className="shrink-0"
+                aria-label="New task for this customer"
+                onClick={() => {
+                  ctx.open(
+                    'crm.task.detail',
+                    { id: 'new', customerId: customer.id },
+                    { target: 'tab' }
+                  );
+                }}
+              >
+                <Plus className="size-4" aria-hidden />
+                <span className="hidden @md:inline">Task</span>
+              </Button>
+            </>
+          ) : null}
         </>
-      ) : null}
-      <Button
-        color="module"
-        size="sm"
-        className={!isNew && customer ? 'shrink-0' : 'ml-auto shrink-0'}
-        loading={saving}
-        disabled={Boolean(blocked) || (!isNew && !dirty)}
-        onClick={submit}
-      >
-        {isNew ? 'Add customer' : 'Save'}
-      </Button>
-    </PaneToolbar>
+      }
+    />
   );
 
   /* ── Add: one focused column ──────────────────────────────────────────── */
@@ -895,36 +890,34 @@ function CustomerEditor({
                     alone hid Documents and Details behind an edge with nothing
                     to say they were there. */}
                 <div className="bg-base-300 shrink-0 rounded-full px-2 py-2">
-                  <ScrollStrip label="tabs">
-                    <TabsList>
-                      {TABS.map((entry) => (
-                        <TabsTab
-                          key={entry.value}
-                          value={entry.value}
-                          className="flex items-center gap-1.5"
-                        >
-                          {entry.label}
-                          {/* The dirty dot makes a toolbar Save honest: it says
+                  <TabsList scrollable>
+                    {TABS.map((entry) => (
+                      <TabsTab
+                        key={entry.value}
+                        value={entry.value}
+                        className="flex items-center gap-1.5"
+                      >
+                        {entry.label}
+                        {/* The dirty dot makes a toolbar Save honest: it says
                             "Details has unsaved work" while you stand on Overview.
                             On the selected pill it wears the pill's own ink so it
                             stays visible against the fill. */}
-                          {entry.value === 'details' && dirty ? (
-                            <>
-                              <span
-                                className={
-                                  entry.value === tab
-                                    ? 'bg-module-content size-1.5 shrink-0 rounded-full'
-                                    : 'bg-module size-1.5 shrink-0 rounded-full'
-                                }
-                                aria-hidden
-                              />
-                              <span className="sr-only">(unsaved changes)</span>
-                            </>
-                          ) : null}
-                        </TabsTab>
-                      ))}
-                    </TabsList>
-                  </ScrollStrip>
+                        {entry.value === 'details' && dirty ? (
+                          <>
+                            <span
+                              className={
+                                entry.value === tab
+                                  ? 'bg-module-content size-1.5 shrink-0 rounded-full'
+                                  : 'bg-module size-1.5 shrink-0 rounded-full'
+                              }
+                              aria-hidden
+                            />
+                            <span className="sr-only">(unsaved changes)</span>
+                          </>
+                        ) : null}
+                      </TabsTab>
+                    ))}
+                  </TabsList>
                 </div>
 
                 <TabsPanel value="overview">

@@ -233,47 +233,55 @@ export function RecipeGallerySurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Recipe library controls">
-        <div className="max-w-xs min-w-0 flex-1">
-          <SearchInput
-            size="sm"
-            aria-label="Search recipes"
-            placeholder="Search recipes…"
-            value={search}
-            onValueChange={setSearch}
-          />
-        </div>
-
-        <div className="ml-auto hidden w-40 shrink-0 @md:block">
-          <Select
-            size="sm"
-            aria-label="Show"
-            value={state}
-            items={{
-              all: 'All recipes',
-              on: 'On',
-              off: 'Off',
-              error: 'Needs attention',
+      <PaneToolbar
+        label="Recipe library controls"
+        search={
+          <div className="max-w-xs min-w-0 flex-1">
+            <SearchInput
+              size="sm"
+              aria-label="Search recipes"
+              placeholder="Search recipes…"
+              value={search}
+              onValueChange={setSearch}
+            />
+          </div>
+        }
+        status={
+          <p className="hidden shrink-0 text-sm whitespace-nowrap @xl:block">
+            {joined.length > 0 ? `${String(onCount)} of ${String(joined.length)} on` : ''}
+          </p>
+        }
+        controls={
+          <>
+            <div className="ml-auto hidden w-40 shrink-0 @md:block">
+              <Select
+                size="sm"
+                aria-label="Show"
+                value={state}
+                items={{
+                  all: 'All recipes',
+                  on: 'On',
+                  off: 'Off',
+                  error: 'Needs attention',
+                }}
+                onValueChange={(next) => {
+                  setState((next as string) || 'all');
+                }}
+              />
+            </div>
+          </>
+        }
+        refresh={
+          <RefreshButton
+            className="ml-auto @md:ml-0"
+            isFetching={isFetching}
+            updatedAt={data ? dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void refetch();
             }}
-            onValueChange={(next) => {
-              setState((next as string) || 'all');
-            }}
           />
-        </div>
-
-        <p className="hidden shrink-0 text-sm whitespace-nowrap @xl:block">
-          {joined.length > 0 ? `${String(onCount)} of ${String(joined.length)} on` : ''}
-        </p>
-
-        <RefreshButton
-          className="ml-auto @md:ml-0"
-          isFetching={isFetching}
-          updatedAt={data ? dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void refetch();
-          }}
-        />
-      </PaneToolbar>
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className={COLUMN}>

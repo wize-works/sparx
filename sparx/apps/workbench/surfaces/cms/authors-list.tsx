@@ -11,7 +11,7 @@
 
 import { useMemo, useState } from 'react';
 import Image from 'next/image';
-import { Button, Card, EmptyState, SearchInput, Table } from '@wizeworks/silicaui-react';
+import { Button, Card, SearchInput, Table } from '@wizeworks/silicaui-react';
 import { Plus, User, UserPlus } from 'lucide-react';
 import { PaneToolbar, PANE_SHELL } from '../../components/pane-toolbar';
 import { ListEmptyState } from '../../components/list-empty-state';
@@ -22,6 +22,7 @@ import type { OpenTarget, SurfaceContext } from '../../lib/surfaces/registry';
 import { useMediaAssets, type MediaAsset } from './media';
 import { authorName, useAuthorsList, type Author } from './authors-data';
 import { RowOpenHint } from '../../components/row-open-hint';
+import { PaneLoadError } from '../../components/pane-load-error';
 
 /** Same modifier contract as every other list in the app. */
 function targetFor(event: { shiftKey: boolean; altKey: boolean }): OpenTarget {
@@ -142,24 +143,14 @@ export function AuthorsListSurface({ ctx }: { ctx: SurfaceContext }) {
     // A failed load REPLACES the list — "no authors yet" over a connection
     // failure is a lie about their work, and the worst one to tell.
     return (
-      <div className="flex h-full items-center justify-center p-8">
-        <EmptyState
-          icon={<User className="size-6" aria-hidden />}
-          title="Could not load your authors"
-          description="This is a problem reaching the server. None of your authors have been lost."
-          actions={
-            <Button
-              size="sm"
-              color="module"
-              onClick={() => {
-                void refetch();
-              }}
-            >
-              Try again
-            </Button>
-          }
-        />
-      </div>
+      <PaneLoadError
+        icon={<User className="size-6" aria-hidden />}
+        title="Could not load your authors"
+        description="This is a problem reaching the server. None of your authors have been lost."
+        onRetry={() => {
+          void refetch();
+        }}
+      />
     );
   }
 
@@ -168,42 +159,50 @@ export function AuthorsListSurface({ ctx }: { ctx: SurfaceContext }) {
       {/* Search, a count and the primary action fit one line; below @xl the count
           gives way first, since search is used constantly and the count is a
           glance. The bar does not wrap. */}
-      <PaneToolbar label="Author list controls">
-        <div className="max-w-xs min-w-0 flex-1">
-          <SearchInput
+      <PaneToolbar
+        label="Author list controls"
+        search={
+          <div className="max-w-xs min-w-0 flex-1">
+            <SearchInput
+              size="sm"
+              aria-label="Search authors"
+              placeholder="Search by name…"
+              value={search}
+              onValueChange={setSearch}
+            />
+          </div>
+        }
+        status={
+          <p className="hidden shrink-0 text-sm whitespace-nowrap @xl:block">
+            {needle
+              ? `${String(matches.length)} of ${String(authors.length)}`
+              : authors.length === 1
+                ? '1 author'
+                : `${String(authors.length)} authors`}
+          </p>
+        }
+        primary={
+          <Button
+            color="module"
             size="sm"
-            aria-label="Search authors"
-            placeholder="Search by name…"
-            value={search}
-            onValueChange={setSearch}
+            className="ml-auto shrink-0 whitespace-nowrap"
+            title="Add an author — hold Shift to open alongside, Alt for a new window"
+            onClick={create}
+          >
+            <Plus className="size-4" aria-hidden />
+            <span className="hidden @sm:inline">New author</span>
+          </Button>
+        }
+        refresh={
+          <RefreshButton
+            isFetching={isFetching}
+            updatedAt={data ? dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void refetch();
+            }}
           />
-        </div>
-        <p className="hidden shrink-0 text-sm whitespace-nowrap @xl:block">
-          {needle
-            ? `${String(matches.length)} of ${String(authors.length)}`
-            : authors.length === 1
-              ? '1 author'
-              : `${String(authors.length)} authors`}
-        </p>
-        <Button
-          color="module"
-          size="sm"
-          className="ml-auto shrink-0 whitespace-nowrap"
-          title="Add an author — hold Shift to open alongside, Alt for a new window"
-          onClick={create}
-        >
-          <Plus className="size-4" aria-hidden />
-          <span className="hidden @sm:inline">New author</span>
-        </Button>
-        {/* ALWAYS the last child of a list toolbar — see RefreshButton. */}
-        <RefreshButton
-          isFetching={isFetching}
-          updatedAt={data ? dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void refetch();
-          }}
-        />
-      </PaneToolbar>
+        }
+      />
 
       <Card className="min-h-0 flex-1 overflow-y-auto">
         {isPending ? (

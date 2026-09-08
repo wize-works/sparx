@@ -52,6 +52,7 @@ import { mergeOptionAxes } from '../../../lib/option-axes.js';
 import { tryVerifyProductPreview } from '../../../lib/preview.js';
 import { requireTenantIdBySlug } from '../../../lib/tenant-slug.js';
 import { optionalCustomer } from '../../../lib/customer-session.js';
+import { applyTranslation, LocaleParam, translationSelect } from './product-locale.js';
 
 // `property` (a stable site slug) scopes catalog reads to one web PROPERTY
 // (docs/49 Model B). The storefront passes it for non-primary sites; omitted →
@@ -60,6 +61,9 @@ import { optionalCustomer } from '../../../lib/customer-session.js';
 const TenantQuery = z.object({
   tenant: z.string().min(1).max(63),
   property: z.string().min(1).max(63).optional(),
+  // The language the reader asked for. Absent means the shop's own words, which
+  // is what every request sent before translations were ever read back.
+  locale: LocaleParam,
 });
 
 const PagingQuery = z.object({
@@ -67,6 +71,7 @@ const PagingQuery = z.object({
   property: z.string().min(1).max(63).optional(),
   page: z.coerce.number().int().min(1).default(1),
   perPage: z.coerce.number().int().min(1).max(100).default(24),
+  locale: LocaleParam,
 });
 
 const ProductListQuery = PagingQuery.extend({
@@ -163,6 +168,7 @@ const HandleParams = z.object({ handle: z.string().min(1).max(255) });
 const IdsQuery = z.object({
   tenant: z.string().min(1).max(63),
   ids: z.string().optional(),
+  locale: LocaleParam,
 });
 
 /** Parse a `?ids=a,b,c` list into valid uuids (deduped order kept, capped at 48). */
@@ -465,7 +471,7 @@ const publicCommerceRoutes: FastifyPluginAsync = (app) => {
           orderBy: { updatedAt: 'desc' },
           take: q.perPage,
           skip: (q.page - 1) * q.perPage,
-          select: productSelect(propertyId),
+          select: productSelect(propertyId, q.locale),
         }),
         tx.product.count({ where }),
       ]);
@@ -474,7 +480,11 @@ const publicCommerceRoutes: FastifyPluginAsync = (app) => {
     if (!result) throw notFound('Collection', handle);
     const viewerB2bAccountId = await resolveViewerB2bAccountId(request, tenantId);
     return paged(
-      await withYourPrices(tenantId, result.rows.map(publicProduct), viewerB2bAccountId),
+      await withYourPrices(
+        tenantId,
+        result.rows.map((r) => publicProduct(applyTranslation(r, q.locale))),
+        viewerB2bAccountId
+      ),
       {
         page: q.page,
         per_page: q.perPage,
@@ -578,7 +588,7 @@ const publicCommerceRoutes: FastifyPluginAsync = (app) => {
           orderBy: PLP_ORDER_BY[q.sort] ?? PLP_ORDER_BY.relevance,
           take: q.perPage,
           skip: (q.page - 1) * q.perPage,
-          select: productSelect(propertyId),
+          select: productSelect(propertyId, q.locale),
         }),
         tx.product.count({ where }),
       ]);
@@ -588,7 +598,11 @@ const publicCommerceRoutes: FastifyPluginAsync = (app) => {
     if (!result) throw notFound('Collection or category', q.collection ?? q.category ?? '');
     const viewerB2bAccountId = await resolveViewerB2bAccountId(request, tenantId);
     return paged(
-      await withYourPrices(tenantId, result.rows.map(publicProduct), viewerB2bAccountId),
+      await withYourPrices(
+        tenantId,
+        result.rows.map((r) => publicProduct(applyTranslation(r, q.locale))),
+        viewerB2bAccountId
+      ),
       {
         page: q.page,
         per_page: q.perPage,
@@ -698,13 +712,13 @@ const publicCommerceRoutes: FastifyPluginAsync = (app) => {
             deletedAt: null,
             ...productSiteVisibilityWhere(propertyId),
           },
-          select: productSelect(propertyId),
+          select: productSelect(propertyId, q.locale),
         })
       );
       const byId = new Map(rows.map((r) => [r.id, r]));
       ordered = ids.flatMap((id) => {
         const row = byId.get(id);
-        return row ? [publicProduct(row)] : [];
+        return row ? [publicProduct(applyTranslation(row, q.locale))] : [];
       });
     }
 
@@ -732,6 +746,7 @@ const publicCommerceRoutes: FastifyPluginAsync = (app) => {
       .object({
         tenant: z.string().min(1).max(63),
         ids: z.string().min(1),
+        locale: LocaleParam,
       })
       .parse(request.query);
     const ids = q.ids
@@ -744,14 +759,14 @@ const publicCommerceRoutes: FastifyPluginAsync = (app) => {
     const rows = await withTenant({ tenantId }, (tx) =>
       tx.product.findMany({
         where: { id: { in: ids }, status: 'active', deletedAt: null },
-        select: productSelect(),
+        select: productSelect(undefined, q.locale),
       })
     );
     // Preserve caller-requested order (Prisma's `in` does not guarantee it).
     const byId = new Map(rows.map((r) => [r.id, r]));
     const ordered = ids.flatMap((id) => {
       const row = byId.get(id);
-      return row ? [publicProduct(row)] : [];
+      return row ? [publicProduct(applyTranslation(row, q.locale))] : [];
     });
     return ok(ordered);
   });
@@ -777,6 +792,7 @@ const publicCommerceRoutes: FastifyPluginAsync = (app) => {
         // instead of from the catalog — a different list, and a quietly wrong one.
         sort: z.enum(['newest', 'price-asc', 'price-desc', 'title-asc', 'title-desc']).optional(),
         tag: z.string().max(64).optional(),
+        locale: LocaleParam,
       })
       .parse(request.query);
     const tenantId = await resolveTenantBySlug(q.tenant);
@@ -823,7 +839,7 @@ const publicCommerceRoutes: FastifyPluginAsync = (app) => {
           orderBy,
           // An id pin returns every requested product; a source is capped.
           take: ids ? undefined : q.limit,
-          select: fullProductSelect(propertyId),
+          select: fullProductSelect(propertyId, q.locale),
         })
       ),
       isModuleEnabled(tenantId, 'inventory'),
@@ -834,7 +850,9 @@ const publicCommerceRoutes: FastifyPluginAsync = (app) => {
       tenantId,
       rows.map((r) => r.productTypeKey).filter((k): k is string => !!k)
     );
-    let list = rows.map((r) => mapFullProduct(r, inventoryActive, undefined, schemasByKey));
+    let list = rows.map((r) =>
+      mapFullProduct(applyTranslation(r, q.locale), inventoryActive, undefined, schemasByKey)
+    );
     // Preserve the requested id order (Prisma's `in` does not guarantee it).
     if (ids) {
       const byId = new Map(list.map((p) => [p.id, p]));
@@ -867,7 +885,7 @@ const publicCommerceRoutes: FastifyPluginAsync = (app) => {
               ? {}
               : { status: 'active', ...productSiteVisibilityWhere(propertyId) }),
           },
-          select: fullProductSelect(propertyId),
+          select: fullProductSelect(propertyId, q.locale),
         })
       ),
       isModuleEnabled(tenantId, 'inventory'),
@@ -934,7 +952,15 @@ const publicCommerceRoutes: FastifyPluginAsync = (app) => {
           })
         : undefined;
 
-    return ok(mapFullProduct(result, inventoryActive, yourPrices, schemasByKey, madeToOrder));
+    return ok(
+      mapFullProduct(
+        applyTranslation(result, q.locale),
+        inventoryActive,
+        yourPrices,
+        schemasByKey,
+        madeToOrder
+      )
+    );
   });
 
   // ─── Categories ────────────────────────────────────────────────────
@@ -1077,7 +1103,7 @@ const publicCommerceRoutes: FastifyPluginAsync = (app) => {
           orderBy: { updatedAt: 'desc' },
           take: q.perPage,
           skip: (q.page - 1) * q.perPage,
-          select: productSelect(propertyId),
+          select: productSelect(propertyId, q.locale),
         }),
         tx.product.count({ where }),
       ]);
@@ -1086,7 +1112,11 @@ const publicCommerceRoutes: FastifyPluginAsync = (app) => {
     if (!result) throw notFound('Category', handle);
     const viewerB2bAccountId = await resolveViewerB2bAccountId(request, tenantId);
     return paged(
-      await withYourPrices(tenantId, result.rows.map(publicProduct), viewerB2bAccountId),
+      await withYourPrices(
+        tenantId,
+        result.rows.map((r) => publicProduct(applyTranslation(r, q.locale))),
+        viewerB2bAccountId
+      ),
       {
         page: q.page,
         per_page: q.perPage,
@@ -1258,8 +1288,11 @@ function reviewRollupsSelect(propertyId: string) {
   } satisfies Prisma.Product$reviewRollupsArgs;
 }
 
-function productSelect(propertyId?: string) {
+function productSelect(propertyId?: string, locale?: string) {
   return {
+    // Candidate translations for the reader's language; `applyTranslation`
+    // overlays the best one and drops the rest before anything is returned.
+    ...translationSelect(locale),
     id: true,
     title: true,
     handle: true,
@@ -1310,8 +1343,9 @@ function productSelect(propertyId?: string) {
 // pinned/looped product hydrates the same interactive buy-box (docs/98 Pillar 7).
 // A function (not a const) so the per-site rating rollup (docs/131 §4) is scoped to
 // the active site — the PDP star average must be this business's, not the blend.
-function fullProductSelect(propertyId: string) {
+function fullProductSelect(propertyId: string, locale?: string) {
   return {
+    ...translationSelect(locale),
     id: true,
     title: true,
     handle: true,

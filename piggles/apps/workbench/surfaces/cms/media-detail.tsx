@@ -59,7 +59,8 @@ import {
   assetStatusState,
   dimensionsLabel,
   durationLabel,
-  formatBytes,
+  sizeLabel,
+  usedInLabel,
   formatDateTime,
   mediaErrorMessage,
   useDeleteAsset,
@@ -354,7 +355,7 @@ function ManageAsset({
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className={COLUMN}>
           <Text>
-            {KIND_NOUN[asset.kind]} · {formatBytes(asset.byteSize)}
+            {KIND_NOUN[asset.kind]} · {sizeLabel(asset)}
             {dimensions ? ` · ${dimensions}` : ''}
           </Text>
 
@@ -431,14 +432,22 @@ function ManageAsset({
               <Fact label="File type">
                 <span className="font-mono">{asset.mimeType}</span>
               </Fact>
-              <Fact label="Size">{formatBytes(asset.byteSize)}</Fact>
+              <Fact label="Size">{sizeLabel(asset)}</Fact>
+              {asset.byteSize === null && asset.linked ? (
+                // WHY there is no size, next to where the size would be. Without
+                // it "Stored somewhere else" reads as a fault in her library
+                // rather than as what a linked picture is.
+                <Fact label="Where it lives">
+                  Linked from another website, so it was never copied here and there is nothing of
+                  yours to measure.
+                </Fact>
+              ) : null}
               {dimensions ? <Fact label="Dimensions">{dimensions}</Fact> : null}
               {duration ? <Fact label="Length">{duration}</Fact> : null}
               <Fact label="Uploaded">{formatDateTime(asset.createdAt)}</Fact>
               <Fact label="Used in">
-                {inUse
-                  ? `${String(asset.usageCount)} ${asset.usageCount === 1 ? 'place' : 'places'} on your site`
-                  : 'Not used anywhere yet'}
+                {usedInLabel(asset) ??
+                  'Nothing we can see. A picture placed straight into a page in the site editor is not counted here, so check there before deleting it.'}
               </Fact>
               {asset.previewUrl ? (
                 <Fact label="Original">
@@ -464,8 +473,8 @@ function ManageAsset({
               <Text className="font-medium">Delete this file</Text>
               <Text className="text-sm">
                 {inUse
-                  ? `It is used in ${String(asset.usageCount)} ${asset.usageCount === 1 ? 'place' : 'places'}. Remove it from there first, then you can delete it.`
-                  : 'Removes it from your library for good. This cannot be undone.'}
+                  ? `It is used by ${usedInLabel(asset) ?? 'something on your site'}. Remove it from there first, then you can delete it.`
+                  : 'Removes it from your library for good. This cannot be undone. Check the site editor first — a picture placed straight into a page is not counted above.'}
               </Text>
             </div>
             <Button

@@ -232,3 +232,108 @@ describe('resolveSilicaEmailData — invoice template', () => {
     expect((data.invoice as Record<string, unknown>).balance).toBe(999);
   });
 });
+
+// The shipping source, against the real `shipping-confirmation` template. Two
+// things were wrong at once and both are customer-facing:
+//
+//   • `carrier` is stored as a lowercase code, and the template binds
+//     `{{shipping.carrier}}` straight to it — so the one place this fact left the
+//     business told a customer their parcel went by "usps", while the owner's
+//     console and the shopper's own order page both said "USPS".
+//   • With no `fulfillmentId` in the refs the resolver falls back to "the latest
+//     parcel on this order", which is the wrong box the moment an order ships in
+//     two. The automation path could not supply that ref at all until the trigger
+//     resolver stopped dropping it.
+describe('resolveSilicaEmailData — shipping confirmation', () => {
+  let fixture: TestTenant;
+  let customerId: string;
+  let orderId: string;
+  let firstParcelId: string;
+  let secondParcelId: string;
+
+  beforeAll(async () => {
+    fixture = await createTestTenant();
+    await withTenant({ tenantId: fixture.tenantId }, async (tx) => {
+      const customer = await tx.customer.create({
+        data: { tenantId: fixture.tenantId, type: 'retail', email: 'buyer@parcel.test' },
+        select: { id: true },
+      });
+      customerId = customer.id;
+      const order = await tx.order.create({
+        data: {
+          tenantId: fixture.tenantId,
+          customerId,
+          orderNumber: 'SO-PARCEL',
+          status: 'fulfilled',
+          total: 180,
+          subtotal: 180,
+          placedAt: new Date(),
+        },
+        select: { id: true },
+      });
+      orderId = order.id;
+      const first = await tx.orderFulfillment.create({
+        data: {
+          tenantId: fixture.tenantId,
+          orderId,
+          status: 'shipped',
+          carrier: 'usps',
+          trackingNumber: 'FIRST-BOX',
+          shippedAt: new Date(Date.now() - 60_000),
+        },
+        select: { id: true },
+      });
+      firstParcelId = first.id;
+      const second = await tx.orderFulfillment.create({
+        data: {
+          tenantId: fixture.tenantId,
+          orderId,
+          status: 'shipped',
+          carrier: 'dropship',
+          trackingNumber: 'SECOND-BOX',
+          shippedAt: new Date(),
+        },
+        select: { id: true },
+      });
+      secondParcelId = second.id;
+    });
+  });
+
+  afterAll(async () => {
+    await dropTestTenant(fixture.tenantId);
+  });
+
+  const resolve = async (fulfillmentId?: string): Promise<Record<string, unknown>> => {
+    const tpl = getDefaultEmailTemplate('shipping-confirmation')!;
+    const data = await resolveSilicaEmailData(
+      { tenantId: fixture.tenantId },
+      tpl.doc,
+      {
+        email: 'buyer@parcel.test',
+        customerId,
+        orderId,
+        ...(fulfillmentId ? { fulfillmentId } : {}),
+      },
+      [tpl.subject, tpl.preheader]
+    );
+    return data.shipping as Record<string, unknown>;
+  };
+
+  it('names the carrier in words a customer reads, never the stored code', async () => {
+    expect((await resolve(firstParcelId)).carrier).toBe('USPS');
+    // The one that reads worst raw: a shopper told their order went by "dropship".
+    expect((await resolve(secondParcelId)).carrier).toBe('Sent by the supplier');
+  });
+
+  it('reports the parcel the send is about, not whichever shipped most recently', async () => {
+    expect((await resolve(firstParcelId)).trackingNumber).toBe('FIRST-BOX');
+    expect((await resolve(secondParcelId)).trackingNumber).toBe('SECOND-BOX');
+  });
+
+  it('falls back to the latest parcel when the send names none', async () => {
+    // Documented, not endorsed: this is what every send did before the refs
+    // carried a fulfillment, and it is why the first box could be announced with
+    // the second box's tracking number.
+    expect((await resolve()).trackingNumber).toBe('SECOND-BOX');
+  });
+});

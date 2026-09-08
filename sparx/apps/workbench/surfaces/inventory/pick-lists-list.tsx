@@ -27,7 +27,6 @@ import {
   SearchInput,
   Table,
   Timestamp,
-  ToolbarSeparator,
 } from '@wizeworks/silicaui-react';
 import { ClipboardList, Route, TriangleAlert } from 'lucide-react';
 import { ListPagination, MAX_TAKE, type PageSize } from '../../components/list-pagination';
@@ -250,79 +249,84 @@ export function PickListsListSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Walk controls">
-        <div className="max-w-xs min-w-0 flex-1">
-          <SearchInput
+      <PaneToolbar
+        label="Walk controls"
+        search={
+          <div className="max-w-xs min-w-0 flex-1">
+            <SearchInput
+              size="sm"
+              aria-label="Search walks"
+              placeholder="Walk or order number…"
+              value={search}
+              onValueChange={(next) => {
+                setSearch(next);
+                resetWindow();
+              }}
+            />
+          </div>
+        }
+        primary={
+          <Button
             size="sm"
-            aria-label="Search walks"
-            placeholder="Walk or order number…"
-            value={search}
-            onValueChange={(next) => {
-              setSearch(next);
-              resetWindow();
+            color="module-inventory"
+            variant="outline"
+            className="ml-auto shrink-0 whitespace-nowrap"
+            onClick={(event) => {
+              ctx.open('inventory.picking.throughput', {}, { target: targetFor(event) });
+            }}
+          >
+            <ClipboardList className="size-4" aria-hidden />
+            <span className="hidden @md:inline">How the floor is running</span>
+          </Button>
+        }
+        controls={
+          <>
+            <NativeSelect
+              size="sm"
+              className="max-w-44 shrink"
+              aria-label="Show walks that are"
+              value={status}
+              onChange={(event) => {
+                setStatus(event.target.value as '' | PickListStatus);
+                resetWindow();
+              }}
+            >
+              <option value="">Any state</option>
+              {STATUS_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </NativeSelect>
+            <NativeSelect
+              size="sm"
+              className="max-w-40 shrink"
+              aria-label="Show walks at"
+              value={locationId}
+              onChange={(event) => {
+                setLocationId(event.target.value);
+                resetWindow();
+              }}
+            >
+              <option value="">Every location</option>
+              {activeLocations.map((location) => (
+                <option key={location.id} value={location.id}>
+                  {location.name}
+                </option>
+              ))}
+            </NativeSelect>
+          </>
+        }
+        refresh={
+          <RefreshButton
+            isFetching={isFetching}
+            updatedAt={data ? dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void refetch();
             }}
           />
-        </div>
-
-        <ToolbarSeparator className="hidden @xl:block" />
-
-        <NativeSelect
-          size="sm"
-          className="max-w-44 shrink"
-          aria-label="Show walks that are"
-          value={status}
-          onChange={(event) => {
-            setStatus(event.target.value as '' | PickListStatus);
-            resetWindow();
-          }}
-        >
-          <option value="">Any state</option>
-          {STATUS_OPTIONS.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </NativeSelect>
-
-        <NativeSelect
-          size="sm"
-          className="max-w-40 shrink"
-          aria-label="Show walks at"
-          value={locationId}
-          onChange={(event) => {
-            setLocationId(event.target.value);
-            resetWindow();
-          }}
-        >
-          <option value="">Every location</option>
-          {activeLocations.map((location) => (
-            <option key={location.id} value={location.id}>
-              {location.name}
-            </option>
-          ))}
-        </NativeSelect>
-
-        <Button
-          size="sm"
-          color="module-inventory"
-          variant="outline"
-          className="ml-auto shrink-0 whitespace-nowrap"
-          onClick={(event) => {
-            ctx.open('inventory.picking.throughput', {}, { target: targetFor(event) });
-          }}
-        >
-          <ClipboardList className="size-4" aria-hidden />
-          <span className="hidden @md:inline">How the floor is running</span>
-        </Button>
-
-        <RefreshButton
-          isFetching={isFetching}
-          updatedAt={data ? dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void refetch();
-          }}
-        />
-      </PaneToolbar>
+        }
+      />
 
       <Card className="min-h-0 flex-1 overflow-y-auto">{body()}</Card>
 

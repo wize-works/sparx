@@ -23,6 +23,8 @@ import {
   storeWebhookSecret,
 } from '@wizeworks/api-core/webhook-secret-crypto';
 
+import { webhookHealth } from './deliveries.js';
+
 // The events a tenant may subscribe to.
 //
 // This is an ALLOW-LIST, not the event registry: `publish()` fans every
@@ -50,8 +52,18 @@ const EVENT_KEYS = [
   'content.entry.deleted',
   'media.uploaded',
   'media.processed',
+  'form.submitted',
   'redirect.added',
+  'redirect.changed',
   'redirect.removed',
+  // ── Selling (persona issue 407) ──────────────────────────────────────────
+  // The four above and these three were absent for one reason: the check holds
+  // this list against a picker in EVERY brand console, and adding a key needs
+  // both edited together. `order.placed` is still absent, and stays absent —
+  // it is declared in the registry and published by nothing, which is rule 1.
+  'order.paid',
+  'payment.captured',
+  'payment.failed',
   // ── Inventory (docs/146 Phase 12.3) ──────────────────────────────────────
   // Stock itself.
   'inventory.adjusted',
@@ -105,13 +117,25 @@ function redact(stored: string): string {
 const webhookRoutes: FastifyPluginAsync = (app) => {
   app.get('/v1/webhooks/subscriptions', async (request) => {
     requireRole(request, 'viewer');
-    const rows = await withRequestTenant(request, (tx) =>
-      tx.webhookSubscription.findMany({ orderBy: { createdAt: 'desc' } })
-    );
+    // `health` rides along rather than needing a second call, because the LIST
+    // is where the lie was loudest: a column reading "Active" beside an address
+    // that has rejected every message for a week. `active` is a setting the
+    // tenant chose; this is what came back. See ./deliveries.ts.
+    const rows = await withRequestTenant(request, async (tx) => {
+      const subscriptions = await tx.webhookSubscription.findMany({
+        orderBy: { createdAt: 'desc' },
+      });
+      const health = await webhookHealth(
+        tx,
+        subscriptions.map((s) => s.id)
+      );
+      return subscriptions.map((r) => ({ row: r, health: health.get(r.id) }));
+    });
     return ok(
-      rows.map((r) => ({
-        ...r,
-        signingSecret: redact(r.signingSecret),
+      rows.map(({ row, health }) => ({
+        ...row,
+        signingSecret: redact(row.signingSecret),
+        health,
       }))
     );
   });

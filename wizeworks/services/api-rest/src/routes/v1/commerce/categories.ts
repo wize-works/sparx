@@ -72,10 +72,18 @@ const categoryRoutes: FastifyPluginAsync = async (app) => {
   });
 
   app.get('/v1/commerce/categories/:id', async (request) => {
-    requireRole(request, 'viewer');
+    const auth = requireRole(request, 'viewer');
     await requireCommerceModule(request);
     const { id } = PathId.parse(request.params);
-    return ok(await categoryService.get(toCommerceContext(request), id));
+    // Same site scope as the list, so the detail's product counts agree with the
+    // row the reader clicked. Without it the two screens would answer different
+    // questions about the same category on a multi-site tenant.
+    const propertyId = await resolveListScope(
+      auth,
+      undefined,
+      request.headers['x-sparx-property-id']
+    );
+    return ok(await categoryService.get(toCommerceContext(request), id, propertyId));
   });
 
   app.post('/v1/commerce/categories', async (request, reply) => {

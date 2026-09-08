@@ -18,7 +18,6 @@ import {
   FilterItem,
   SearchInput,
   Table,
-  ToolbarSeparator,
 } from '@wizeworks/silicaui-react';
 import { Plus, Receipt, X } from 'lucide-react';
 import { ListPagination, MAX_TAKE, type PageSize } from '../../components/list-pagination';
@@ -97,61 +96,67 @@ export function InvoicesListSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Wholesale invoice controls" wrap>
-        <div className="max-w-xs min-w-0 flex-1">
-          <SearchInput
+      <PaneToolbar
+        label="Wholesale invoice controls"
+        search={
+          <div className="max-w-xs min-w-0 flex-1">
+            <SearchInput
+              size="sm"
+              aria-label="Search invoices on screen"
+              placeholder="Invoice number or company…"
+              value={search}
+              onValueChange={setSearch}
+            />
+          </div>
+        }
+        primary={
+          <Button
+            color="module"
             size="sm"
-            aria-label="Search invoices on screen"
-            placeholder="Invoice number or company…"
-            value={search}
-            onValueChange={setSearch}
+            className="ml-auto"
+            title="Raise an invoice — hold Shift to open alongside, Alt for a new window"
+            onClick={(event) => {
+              ctx.open(
+                'b2b.invoice.detail',
+                { id: 'new', ...(accountId ? { accountId } : {}) },
+                { target: targetFor(event) }
+              );
+            }}
+          >
+            <Plus className="size-4" aria-hidden />
+            Raise an invoice
+          </Button>
+        }
+        controls={
+          <>
+            <Filter
+              color="module"
+              value={filter}
+              onValueChange={(next) => {
+                setFilter((next as FilterValue | null) ?? 'all');
+                resetWindow();
+              }}
+              showReset={false}
+              aria-label="Filter invoices"
+            >
+              {FILTERS.map((entry) => (
+                <FilterItem key={entry.value} value={entry.value}>
+                  {entry.label}
+                </FilterItem>
+              ))}
+            </Filter>
+          </>
+        }
+        refresh={
+          <RefreshButton
+            isFetching={isFetching}
+            updatedAt={data ? dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void refetch();
+            }}
           />
-        </div>
-
-        <ToolbarSeparator className="hidden @xl:block" />
-
-        <Filter
-          color="module"
-          value={filter}
-          onValueChange={(next) => {
-            setFilter((next as FilterValue | null) ?? 'all');
-            resetWindow();
-          }}
-          showReset={false}
-          aria-label="Filter invoices"
-        >
-          {FILTERS.map((entry) => (
-            <FilterItem key={entry.value} value={entry.value}>
-              {entry.label}
-            </FilterItem>
-          ))}
-        </Filter>
-
-        <Button
-          color="module"
-          size="sm"
-          className="ml-auto"
-          title="Raise an invoice — hold Shift to open alongside, Alt for a new window"
-          onClick={(event) => {
-            ctx.open(
-              'b2b.invoice.detail',
-              { id: 'new', ...(accountId ? { accountId } : {}) },
-              { target: targetFor(event) }
-            );
-          }}
-        >
-          <Plus className="size-4" aria-hidden />
-          Raise an invoice
-        </Button>
-
-        <RefreshButton
-          isFetching={isFetching}
-          updatedAt={data ? dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void refetch();
-          }}
-        />
-      </PaneToolbar>
+        }
+      />
 
       {accountId && accountName ? (
         <div className="flex items-center gap-2">

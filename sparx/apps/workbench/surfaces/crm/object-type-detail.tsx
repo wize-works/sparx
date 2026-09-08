@@ -296,49 +296,56 @@ export function ObjectTypeDetailSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Record type actions">
-        {isBuiltin ? (
-          <Badge color="info" variant="soft" size="sm">
-            Comes with sparx
-          </Badge>
-        ) : null}
-        <Button
-          color="module"
-          size="sm"
-          className="ml-auto shrink-0"
-          disabled={blocked !== null || saving}
-          title={blocked ?? undefined}
-          onClick={() => {
-            void save();
-          }}
-        >
-          {saving ? 'Saving…' : 'Save'}
-        </Button>
-        {isBuiltin || isNew ? null : (
+      <PaneToolbar
+        label="Record type actions"
+        primary={
           <Button
-            color="danger"
-            variant="ghost"
+            color="module"
             size="sm"
+            className="ml-auto shrink-0"
+            disabled={blocked !== null || saving}
+            title={blocked ?? undefined}
             onClick={() => {
-              void (async () => {
-                const ok = await confirm({
-                  title: `Put away ${draft.labelPlural || draft.label}?`,
-                  description:
-                    'It stops appearing in your sidebar and search. Everything already recorded is kept and comes back if you restore it.',
-                  confirmLabel: 'Put it away',
-                  cancelLabel: 'Keep it',
-                  color: 'warning',
-                });
-                if (!ok) return;
-                await archive.mutateAsync();
-                toast.add({ title: 'Put away', type: 'success' });
-              })();
+              void save();
             }}
           >
-            Put away
+            {saving ? 'Saving…' : 'Save'}
           </Button>
-        )}
-      </PaneToolbar>
+        }
+        controls={
+          <>
+            {isBuiltin ? (
+              <Badge color="info" variant="soft" size="sm">
+                Comes with sparx
+              </Badge>
+            ) : null}
+            {isBuiltin || isNew ? null : (
+              <Button
+                color="danger"
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  void (async () => {
+                    const ok = await confirm({
+                      title: `Put away ${draft.labelPlural || draft.label}?`,
+                      description:
+                        'It stops appearing in your sidebar and search. Everything already recorded is kept and comes back if you restore it.',
+                      confirmLabel: 'Put it away',
+                      cancelLabel: 'Keep it',
+                      color: 'warning',
+                    });
+                    if (!ok) return;
+                    await archive.mutateAsync();
+                    toast.add({ title: 'Put away', type: 'success' });
+                  })();
+                }}
+              >
+                Put away
+              </Button>
+            )}
+          </>
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className="mx-auto flex w-full max-w-3xl flex-col gap-4 p-4">

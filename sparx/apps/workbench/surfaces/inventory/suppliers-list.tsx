@@ -211,60 +211,66 @@ export function SuppliersListSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Supplier list controls">
-        <div className="max-w-xs min-w-0 flex-1">
-          <SearchInput
-            size="sm"
-            aria-label="Search suppliers"
-            placeholder="Supplier name or code…"
-            value={search}
-            onValueChange={(next) => {
-              setSearch(next);
-              resetWindow();
+      <PaneToolbar
+        label="Supplier list controls"
+        search={
+          <div className="max-w-xs min-w-0 flex-1">
+            <SearchInput
+              size="sm"
+              aria-label="Search suppliers"
+              placeholder="Supplier name or code…"
+              value={search}
+              onValueChange={(next) => {
+                setSearch(next);
+                resetWindow();
+              }}
+            />
+          </div>
+        }
+        controls={
+          <>
+            <ToggleGroup
+              size="sm"
+              color="module"
+              className="ml-auto shrink-0"
+              value={includeArchived ? ['archived'] : []}
+              onValueChange={(next: unknown[]) => {
+                setIncludeArchived(next.includes('archived'));
+                resetWindow();
+              }}
+            >
+              <ToggleGroupItem
+                value="archived"
+                aria-label="Include archived suppliers"
+                title="Include archived suppliers"
+              >
+                <Archive className="size-4" aria-hidden />
+                <span className="hidden @2xl:inline">Archived</span>
+              </ToggleGroupItem>
+            </ToggleGroup>
+            <Button
+              size="sm"
+              color="module"
+              className="shrink-0 whitespace-nowrap"
+              onClick={() => {
+                ctx.open('inventory.suppliers.detail', { id: 'new' }, { target: 'tab' });
+              }}
+            >
+              <Plus className="size-4" aria-hidden />
+              <span className="hidden @lg:inline">New supplier</span>
+            </Button>
+          </>
+        }
+        refresh={
+          <RefreshButton
+            isFetching={isFetching}
+            updatedAt={data ? dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void refetch();
             }}
           />
-        </div>
-
-        <ToggleGroup
-          size="sm"
-          color="module"
-          className="ml-auto shrink-0"
-          value={includeArchived ? ['archived'] : []}
-          onValueChange={(next: unknown[]) => {
-            setIncludeArchived(next.includes('archived'));
-            resetWindow();
-          }}
-        >
-          <ToggleGroupItem
-            value="archived"
-            aria-label="Include archived suppliers"
-            title="Include archived suppliers"
-          >
-            <Archive className="size-4" aria-hidden />
-            <span className="hidden @2xl:inline">Archived</span>
-          </ToggleGroupItem>
-        </ToggleGroup>
-
-        <Button
-          size="sm"
-          color="module"
-          className="shrink-0 whitespace-nowrap"
-          onClick={() => {
-            ctx.open('inventory.suppliers.detail', { id: 'new' }, { target: 'tab' });
-          }}
-        >
-          <Plus className="size-4" aria-hidden />
-          <span className="hidden @lg:inline">New supplier</span>
-        </Button>
-
-        <RefreshButton
-          isFetching={isFetching}
-          updatedAt={data ? dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void refetch();
-          }}
-        />
-      </PaneToolbar>
+        }
+      />
 
       {/* Full width — base-100 card lifted off the recessed pane. Matches the
           house list convention: the table fills the pane. */}

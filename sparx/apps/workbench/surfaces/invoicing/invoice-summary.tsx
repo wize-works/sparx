@@ -39,6 +39,12 @@ interface InvoiceSummaryProps {
   currency: string;
   readOnly?: boolean;
   onTaxRateChange: (rate: number) => void;
+  /** Document-level charges that are not lines and are not taxed: the delivery
+   *  charge and any surcharge, carried across from the order. They are part of
+   *  what the customer is asked for, so they belong in this block -- leaving
+   *  them out made Total disagree with Amount due right beside it. */
+  shippingTotal?: number;
+  surchargeTotal?: number;
   /** The server's settled figures, once the document has been saved at least once. */
   saved?: SavedFigures;
 }
@@ -76,9 +82,11 @@ export function InvoiceSummary({
   currency,
   readOnly,
   onTaxRateChange,
+  shippingTotal = 0,
+  surchargeTotal = 0,
   saved,
 }: InvoiceSummaryProps) {
-  const totals = computeTotals(lines, taxRate);
+  const totals = computeTotals(lines, taxRate, shippingTotal, surchargeTotal);
   const taxPct = (taxRate * 100).toFixed(2).replace(/\.?0+$/, '');
   const differs = saved !== undefined && Math.abs(saved.total - totals.total) >= 0.01;
 
@@ -122,6 +130,17 @@ export function InvoiceSummary({
           label={taxRate > 0 ? `Tax (${taxPct}%)` : 'Tax'}
           value={formatMoney(totals.taxTotal, currency)}
         />
+        {/* Only when there is one, the same rule the printed invoice follows: a
+            "Delivery $0.00" row on a shop that does not deliver is a number
+            nobody set. A charge that IS on the bill has to be visible, though --
+            it was on none of these screens, so nine dollars simply appeared in
+            the total with nothing to point at. */}
+        {totals.shippingTotal > 0 ? (
+          <Row label="Delivery" value={formatMoney(totals.shippingTotal, currency)} />
+        ) : null}
+        {totals.surchargeTotal > 0 ? (
+          <Row label="Surcharge" value={formatMoney(totals.surchargeTotal, currency)} />
+        ) : null}
         <div className="border-base-300 mt-1 border-t pt-2">
           <Row label="Total" value={formatMoney(totals.total, currency)} strong />
         </div>

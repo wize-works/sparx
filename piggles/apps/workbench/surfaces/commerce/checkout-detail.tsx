@@ -247,6 +247,25 @@ export function CheckoutSessionDetailSurface({ ctx }: { ctx: SurfaceContext }) {
                   currency={session.currency}
                 />
               ) : null}
+              {/* Money already paid, and already SUBTRACTED inside the total
+                  below. Both were fetched here and drawn nowhere, so a checkout
+                  part-paid by a gift card showed rows that came to more than the
+                  total under them — the screen read as broken arithmetic rather
+                  than as a card being spent. */}
+              {session.totals.giftCardAppliedCents > 0 ? (
+                <MoneyRow
+                  label="Gift card"
+                  cents={-session.totals.giftCardAppliedCents}
+                  currency={session.currency}
+                />
+              ) : null}
+              {session.totals.accountCreditAppliedCents > 0 ? (
+                <MoneyRow
+                  label="Credit on account"
+                  cents={-session.totals.accountCreditAppliedCents}
+                  currency={session.currency}
+                />
+              ) : null}
               <MoneyRow
                 label="Total"
                 cents={session.totals.totalCents}

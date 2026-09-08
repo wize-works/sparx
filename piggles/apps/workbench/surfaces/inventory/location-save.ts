@@ -4,6 +4,7 @@
 // because each is a several-branch decision about what to send and what to say
 // afterwards, and neither is about how the form looks.
 
+import { shownInPlace } from '@wizeworks/query';
 import { useToast } from '@wizeworks/silicaui-react';
 import { useConfirm } from '../../lib/confirm';
 import { afterPaneChange } from '../../lib/defer';
@@ -56,6 +57,7 @@ export function useLocationSave({
             toast.add({ title: `${draft.name.trim()} added`, type: 'success' });
           });
         },
+        onError: shownInPlace,
       }
     );
   };
@@ -80,6 +82,9 @@ export function useLocationSave({
         onSuccess: () => {
           toast.add({ title: 'Location saved', type: 'success' });
         },
+        // The editor draws both failures in its own banner, with the code
+        // conflict moved under the field it belongs to.
+        onError: shownInPlace,
       }
     );
   };

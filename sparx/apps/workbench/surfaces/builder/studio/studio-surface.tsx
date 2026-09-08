@@ -50,15 +50,7 @@ import {
   toSilicaDataSources,
   type DataSource,
 } from '@wizeworks/builder-schemas';
-import {
-  Alert,
-  AlertContent,
-  AlertDescription,
-  AlertTitle,
-  Badge,
-  Button,
-  useToast,
-} from '@wizeworks/silicaui-react';
+import { Badge, Button, useToast } from '@wizeworks/silicaui-react';
 import { Eye, Save } from 'lucide-react';
 import { useQueryClient } from '@wizeworks/query';
 import { useConfirm } from '../../../lib/confirm';
@@ -116,6 +108,7 @@ import {
 } from './saved-pieces';
 import { makeRenderHostNode } from './host-cores';
 import { buildPreviewRoot, type SitePreviewData } from './preview-data';
+import { PaneLoadError } from '../../../components/pane-load-error';
 
 /** The editor's four surfaces (silicaui `BuilderProps['initialMode']`). Named here so a
  *  deep link carrying a typo opens the editor normally instead of handing silica a mode
@@ -206,27 +199,13 @@ export function StudioSurface({ ctx }: { ctx: SurfaceContext }) {
   // ask for must never be able to close it.
   if (site.isError && site.data === undefined) {
     return (
-      <div className="flex h-full items-center justify-center p-8">
-        <Alert color="error" className="max-w-md">
-          <AlertContent>
-            <AlertTitle>Could not load your site</AlertTitle>
-            <AlertDescription>
-              This is a problem reaching the server, or the site builder is switched off for this
-              account. Your site itself is unaffected.
-            </AlertDescription>
-          </AlertContent>
-          <Button
-            size="sm"
-            color="error"
-            variant="soft"
-            onClick={() => {
-              void site.refetch();
-            }}
-          >
-            Try again
-          </Button>
-        </Alert>
-      </div>
+      <PaneLoadError
+        title="Could not load your site"
+        description="This is a problem reaching the server, or the site builder is switched off for this account. Your site itself is unaffected."
+        onRetry={() => {
+          void site.refetch();
+        }}
+      />
     );
   }
 

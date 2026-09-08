@@ -5,6 +5,7 @@
 // A PANE, and creating one is the same pane with `{id:'new'}`. The report sits
 // ABOVE the setup because a campaign is configured once and looked at for months.
 
+import { shownInPlace } from '@wizeworks/query';
 import { useEffect } from 'react';
 import { useToast } from '@wizeworks/silicaui-react';
 import { PANE_SHELL } from '../../components/pane-toolbar';
@@ -89,7 +90,10 @@ function ExistingCampaign({ ctx, id }: { ctx: SurfaceContext; id: string }) {
         entryFormNodeId: draft.entryFormNodeId,
         stallAfterHours: draft.stallAfterHours,
       },
-      { onSuccess: () => toast.add({ title: 'Campaign saved', type: 'success' }) }
+      {
+        onSuccess: () => toast.add({ title: 'Campaign saved', type: 'success' }),
+        onError: shownInPlace,
+      }
     );
   };
 
@@ -105,6 +109,7 @@ function ExistingCampaign({ ctx, id }: { ctx: SurfaceContext; id: string }) {
               : 'It keeps everything it has already recorded.',
             type: 'success',
           }),
+        onError: shownInPlace,
       }
     );
   };

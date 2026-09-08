@@ -35,6 +35,7 @@ import {
 import type { ServiceContext } from '../errors';
 import { indexCommerceEntity, publishCommerceEvent } from '../events';
 import { recomputeCartTotals } from './cart-service';
+import { giftCardOnCart, giftCardReservation } from './gift-card-reservation';
 import {
   discountWindowState,
   eligibleBaseCents,
@@ -77,13 +78,7 @@ export interface DiscountRow {
  * would hand back "the biggest discount" from page 2.
  */
 export type DiscountSortField =
-  | 'name'
-  | 'code'
-  | 'status'
-  | 'valueCents'
-  | 'valuePercent'
-  | 'createdAt'
-  | 'updatedAt';
+  'name' | 'code' | 'status' | 'valueCents' | 'valuePercent' | 'createdAt' | 'updatedAt';
 
 export async function listDiscounts(
   ctx: ServiceContext,
@@ -647,12 +642,7 @@ export async function issueGiftCard(
  * answer the moment there is a second window.
  */
 export type GiftCardSortField =
-  | 'code'
-  | 'balanceCents'
-  | 'initialBalanceCents'
-  | 'status'
-  | 'expiresAt'
-  | 'createdAt';
+  'code' | 'balanceCents' | 'initialBalanceCents' | 'status' | 'expiresAt' | 'createdAt';
 
 export async function listGiftCards(
   ctx: ServiceContext,
@@ -751,16 +741,26 @@ export async function getGiftCard(ctx: ServiceContext, id: string): Promise<Gift
 }
 
 /**
- * Apply a gift card to a cart. Reserves the lesser of (cart total, gift
- * card balance) as a CartDiscount with code='giftcard:<id>'. Real
- * balance debit happens at order placement via redeemGiftCard.
+ * Apply a gift card to a basket, so that a shopper can actually spend one.
+ *
+ * The card is RESERVED here, never debited: `giftCardAppliedCents` on the cart
+ * is what the totals subtract, and the balance itself only moves at order
+ * placement, through `redeemGiftCard`. That ordering is deliberate — a basket
+ * that is abandoned leaves the card whole, so there is no reversal step to get
+ * wrong.
+ *
+ * The reservation is capped at what is actually OWED (lines minus discounts),
+ * not at the raw line prices. The old cap read `sumCartLineSubtotals`, which
+ * ignores every discount on the basket, so it reserved more of the card than the
+ * shopper could possibly spend and then returned that inflated figure to its
+ * caller while `recomputeCartTotals` quietly trimmed the stored one.
  */
 export async function applyGiftCardToCart(
   ctx: ServiceContext,
   rawInput: unknown
-): Promise<{ appliedCents: number; remainingBalanceCents: number }> {
+): Promise<{ code: string; appliedCents: number; remainingBalanceCents: number }> {
   const input = RedeemGiftCardInput.parse(rawInput);
-  const upper = input.code.toUpperCase();
+  const upper = input.code.trim().toUpperCase();
   return withTenant(ctx, async (tx) => {
     const cart = await tx.cart.findFirst({
       // `abandonedAt` deliberately NOT filtered here - see markAbandoned.
@@ -773,30 +773,80 @@ export async function applyGiftCardToCart(
     if (!card) throw new CommerceNotFoundError('GiftCard', upper);
     assertGiftCardSpendable(card, cart.currency);
 
-    const cartTotal = await sumCartLineSubtotals(tx, input.cartId);
-    const appliedCents = Math.min(card.balanceCents, cartTotal);
+    // Settle the basket first, so the cap below is taken against today's lines
+    // and today's discounts rather than whatever was last written.
+    await recomputeCartTotals(tx, ctx, input.cartId);
+    const settled = await tx.cart.findFirstOrThrow({
+      where: { id: input.cartId },
+      select: { subtotalCents: true, discountTotalCents: true, pricingTrace: true },
+    });
 
-    // Stored on the cart as a scalar — the Phase 3 cart models one
-    // applied gift card. Multi-card support lands when a merchant
-    // actually asks for it. The card id is recorded in pricingTrace so
-    // the storefront can render it; the actual balance debit happens at
-    // order placement via redeemGiftCard.
+    const appliedCents = giftCardReservation(
+      card.balanceCents,
+      settled.subtotalCents,
+      settled.discountTotalCents
+    );
+    if (appliedCents <= 0) {
+      throw new CommercePricingError('There is nothing left to pay on this basket.');
+    }
+
+    // One card per basket (the cart models a single scalar). The id and the code
+    // go into pricingTrace because the scalar cannot say WHICH card was used and
+    // placement has to debit that exact one. MERGED into the existing trace
+    // rather than replacing it — the column belongs to pricing as a whole.
+    const trace = (settled.pricingTrace ?? {}) as Prisma.JsonObject;
     await tx.cart.update({
       where: { id: input.cartId },
       data: {
         giftCardAppliedCents: appliedCents,
-        pricingTrace: {
-          giftCard: { id: card.id, code: card.code, appliedCents },
-        },
+        pricingTrace: { ...trace, giftCard: { id: card.id, code: card.code, appliedCents } },
       },
     });
+    // Fold the reservation into `totalCents`. Without this the scalar moved and
+    // nothing added the basket up again, so a shopper applied a card and watched
+    // the price not change.
+    await recomputeCartTotals(tx, ctx, input.cartId);
 
     return {
+      code: card.code,
       appliedCents,
       remainingBalanceCents: card.balanceCents - appliedCents,
     };
   });
 }
+
+/**
+ * Take an applied gift card back off a basket.
+ *
+ * Nothing has been debited at this point, so removing one is only the cart
+ * scalar and the trace entry coming off. A shopper who changes their mind has to
+ * be able to undo this; a code that can go on and not come off is a trap.
+ */
+export async function removeGiftCardFromCart(
+  ctx: ServiceContext,
+  input: { cartId: string }
+): Promise<void> {
+  await withTenant(ctx, async (tx) => {
+    const cart = await tx.cart.findFirst({
+      where: { id: input.cartId },
+      select: { id: true, pricingTrace: true },
+    });
+    if (!cart) throw new CommerceNotFoundError('Cart', input.cartId);
+    const trace = { ...((cart.pricingTrace ?? {}) as Prisma.JsonObject) };
+    delete trace.giftCard;
+    await tx.cart.update({
+      where: { id: input.cartId },
+      data: { giftCardAppliedCents: 0, pricingTrace: trace },
+    });
+    await recomputeCartTotals(tx, ctx, input.cartId);
+  });
+}
+
+// The cap and the trace reader live in ./gift-card-reservation, where they can
+// be tested without a database. Re-exported here because this service is where
+// callers look for anything to do with a gift card.
+export { giftCardOnCart, giftCardReservation };
+export type { ReservedGiftCard } from './gift-card-reservation';
 
 /**
  * Debit a gift card. Called from checkout on order placement (NOT from

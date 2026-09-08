@@ -51,7 +51,7 @@ function Identity({
   return (
     <FormSection
       title="What this campaign is"
-      description="The name is yours, to recognise it by. Nobody outside your team sees either of these."
+      description="The name is yours, to recognize it by. Nobody outside your team sees either of these."
     >
       <Field>
         <FieldLabel>Name</FieldLabel>

@@ -163,38 +163,43 @@ export function ReceivingListSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Receiving list controls">
-        <div className="max-w-xs min-w-0 flex-1">
-          <SearchInput
+      <PaneToolbar
+        label="Receiving list controls"
+        search={
+          <div className="max-w-xs min-w-0 flex-1">
+            <SearchInput
+              size="sm"
+              aria-label="Search deliveries"
+              placeholder="Receipt, order or packing slip…"
+              value={search}
+              onValueChange={(next) => {
+                setSearch(next);
+                resetWindow();
+              }}
+            />
+          </div>
+        }
+        primary={
+          <Button
             size="sm"
-            aria-label="Search deliveries"
-            placeholder="Receipt, order or packing slip…"
-            value={search}
-            onValueChange={(next) => {
-              setSearch(next);
-              resetWindow();
+            color="module"
+            className="ml-auto shrink-0 whitespace-nowrap"
+            onClick={startReceiving}
+          >
+            <Plus className="size-4" aria-hidden />
+            <span className="hidden @lg:inline">Receive a delivery</span>
+          </Button>
+        }
+        refresh={
+          <RefreshButton
+            isFetching={isFetching}
+            updatedAt={data ? dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void refetch();
             }}
           />
-        </div>
-
-        <Button
-          size="sm"
-          color="module"
-          className="ml-auto shrink-0 whitespace-nowrap"
-          onClick={startReceiving}
-        >
-          <Plus className="size-4" aria-hidden />
-          <span className="hidden @lg:inline">Receive a delivery</span>
-        </Button>
-
-        <RefreshButton
-          isFetching={isFetching}
-          updatedAt={data ? dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void refetch();
-          }}
-        />
-      </PaneToolbar>
+        }
+      />
 
       <Card className="min-h-0 flex-1 overflow-y-auto">{body()}</Card>
 

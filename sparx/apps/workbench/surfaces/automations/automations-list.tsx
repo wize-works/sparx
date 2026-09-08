@@ -22,7 +22,6 @@ import {
   Select,
   Table,
   Timestamp,
-  ToolbarSeparator,
 } from '@wizeworks/silicaui-react';
 import { AlertTriangle, ArrowDown, ArrowUp, Plus, Workflow } from 'lucide-react';
 import { RefreshButton } from '../../components/refresh-button';
@@ -136,69 +135,75 @@ export function AutomationsListSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Automations list controls" wrap>
-        <div className="max-w-xs min-w-0 flex-1">
-          <SearchInput
+      <PaneToolbar
+        label="Automations list controls"
+        search={
+          <div className="max-w-xs min-w-0 flex-1">
+            <SearchInput
+              size="sm"
+              aria-label="Search automations"
+              placeholder="Search automations…"
+              value={search}
+              onValueChange={setSearch}
+            />
+          </div>
+        }
+        primary={
+          <Button
+            color="module"
             size="sm"
-            aria-label="Search automations"
-            placeholder="Search automations…"
-            value={search}
-            onValueChange={setSearch}
-          />
-        </div>
-
-        <ToolbarSeparator className="hidden @xl:block" />
-
-        <div className="hidden w-36 shrink-0 @md:block">
-          <Select
-            size="sm"
-            aria-label="Filter by status"
-            value={status}
-            items={{
-              all: 'Any status',
-              active: 'On',
-              paused: 'Paused',
-              draft: 'Draft',
-              error: 'Needs attention',
+            className="ml-auto shrink-0"
+            title="New automation — hold Shift to open alongside, Alt for a new window"
+            onClick={(event) => {
+              ctx.open('automations.detail', { id: 'new' }, { target: targetFor(event) });
             }}
-            onValueChange={(next) => {
-              setStatus((next as string) || 'all');
+          >
+            <Plus className="size-4" aria-hidden />
+            <span className="hidden @lg:inline">New automation</span>
+          </Button>
+        }
+        controls={
+          <>
+            <div className="hidden w-36 shrink-0 @md:block">
+              <Select
+                size="sm"
+                aria-label="Filter by status"
+                value={status}
+                items={{
+                  all: 'Any status',
+                  active: 'On',
+                  paused: 'Paused',
+                  draft: 'Draft',
+                  error: 'Needs attention',
+                }}
+                onValueChange={(next) => {
+                  setStatus((next as string) || 'all');
+                }}
+              />
+            </div>
+            <div className="hidden w-36 shrink-0 @2xl:block">
+              <Select
+                size="sm"
+                aria-label="Filter by who made it"
+                value={origin}
+                items={{ all: 'Anyone', user: 'Made by you', system: 'Set up by sparx' }}
+                onValueChange={(next) => {
+                  setOrigin((next as string) || 'all');
+                }}
+              />
+            </div>
+          </>
+        }
+        refresh={
+          <RefreshButton
+            isFetching={isFetching}
+            updatedAt={data ? dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void refetch();
             }}
           />
-        </div>
-        <div className="hidden w-36 shrink-0 @2xl:block">
-          <Select
-            size="sm"
-            aria-label="Filter by who made it"
-            value={origin}
-            items={{ all: 'Anyone', user: 'Made by you', system: 'Set up by sparx' }}
-            onValueChange={(next) => {
-              setOrigin((next as string) || 'all');
-            }}
-          />
-        </div>
-
-        <Button
-          color="module"
-          size="sm"
-          className="ml-auto shrink-0"
-          title="New automation — hold Shift to open alongside, Alt for a new window"
-          onClick={(event) => {
-            ctx.open('automations.detail', { id: 'new' }, { target: targetFor(event) });
-          }}
-        >
-          <Plus className="size-4" aria-hidden />
-          <span className="hidden @lg:inline">New automation</span>
-        </Button>
-
-        <RefreshButton
-          isFetching={isFetching}
-          updatedAt={data ? dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void refetch();
-          }}
-        />
-      </PaneToolbar>
+        }
+      />
 
       <Card className="min-h-0 flex-1 overflow-y-auto">
         {isError ? (

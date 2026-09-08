@@ -143,80 +143,87 @@ export function ContentListSurface({ ctx }: { ctx: SurfaceContext }) {
       {/* `wrap` after reducing what can reduce: below @2xl the primary action
           sheds its label to the icon, and the kind picker hides on the narrowest
           panes. At a normal width this is one line. */}
-      <PaneToolbar label="Content list controls" wrap>
-        <div className="max-w-xs min-w-0 flex-1">
-          <SearchInput
+      <PaneToolbar
+        label="Content list controls"
+        search={
+          <div className="max-w-xs min-w-0 flex-1">
+            <SearchInput
+              size="sm"
+              aria-label="Search content"
+              placeholder="Title or web address…"
+              value={search}
+              onValueChange={(next) => {
+                setSearch(next);
+                resetWindow();
+              }}
+            />
+          </div>
+        }
+        primary={
+          <Button
+            data-tour="cms-new"
+            color="module"
             size="sm"
-            aria-label="Search content"
-            placeholder="Title or web address…"
-            value={search}
-            onValueChange={(next) => {
-              setSearch(next);
-              resetWindow();
+            className="ml-auto shrink-0 whitespace-nowrap"
+            title="Write something new — hold Shift to open alongside, Alt for a new window"
+            onClick={create}
+          >
+            <Plus className="size-4" aria-hidden />
+            <span className="hidden @2xl:inline">New</span>
+          </Button>
+        }
+        controls={
+          <>
+            <Filter
+              color="module"
+              value={statusFilter}
+              onValueChange={(next) => {
+                setStatusFilter((next as StatusFilterValue | null) ?? 'all');
+                resetWindow();
+              }}
+              showReset={false}
+              aria-label="Filter by status"
+            >
+              {STATUS_FILTERS.map((entry) => (
+                <FilterItem key={entry.value} value={entry.value}>
+                  {entry.label}
+                </FilterItem>
+              ))}
+            </Filter>
+            {/* Hidden on the narrowest panes: it is the least-used control here, and
+            search + status answer most questions on their own. */}
+            <label className="hidden items-center @xl:flex">
+              <span className="sr-only">Kind of content</span>
+              <NativeSelect
+                size="sm"
+                color="module"
+                value={typeKey}
+                aria-label="Kind of content"
+                onChange={(event) => {
+                  setTypeKey(event.target.value);
+                  resetWindow();
+                }}
+              >
+                <option value="">All kinds</option>
+                {(types ?? []).map((type) => (
+                  <option key={type.key} value={type.key}>
+                    {type.name}
+                  </option>
+                ))}
+              </NativeSelect>
+            </label>
+          </>
+        }
+        refresh={
+          <RefreshButton
+            isFetching={isFetching}
+            updatedAt={data ? dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void refetch();
             }}
           />
-        </div>
-
-        <Filter
-          color="module"
-          value={statusFilter}
-          onValueChange={(next) => {
-            setStatusFilter((next as StatusFilterValue | null) ?? 'all');
-            resetWindow();
-          }}
-          showReset={false}
-          aria-label="Filter by status"
-        >
-          {STATUS_FILTERS.map((entry) => (
-            <FilterItem key={entry.value} value={entry.value}>
-              {entry.label}
-            </FilterItem>
-          ))}
-        </Filter>
-
-        {/* Hidden on the narrowest panes: it is the least-used control here, and
-            search + status answer most questions on their own. */}
-        <label className="hidden items-center @xl:flex">
-          <span className="sr-only">Kind of content</span>
-          <NativeSelect
-            size="sm"
-            color="module"
-            value={typeKey}
-            aria-label="Kind of content"
-            onChange={(event) => {
-              setTypeKey(event.target.value);
-              resetWindow();
-            }}
-          >
-            <option value="">All kinds</option>
-            {(types ?? []).map((type) => (
-              <option key={type.key} value={type.key}>
-                {type.name}
-              </option>
-            ))}
-          </NativeSelect>
-        </label>
-
-        <Button
-          data-tour="cms-new"
-          color="module"
-          size="sm"
-          className="ml-auto shrink-0 whitespace-nowrap"
-          title="Write something new — hold Shift to open alongside, Alt for a new window"
-          onClick={create}
-        >
-          <Plus className="size-4" aria-hidden />
-          <span className="hidden @2xl:inline">New</span>
-        </Button>
-
-        <RefreshButton
-          isFetching={isFetching}
-          updatedAt={data ? dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void refetch();
-          }}
-        />
-      </PaneToolbar>
+        }
+      />
 
       <Card className="min-h-0 flex-1 overflow-y-auto">
         {staleAfterFailure ? (

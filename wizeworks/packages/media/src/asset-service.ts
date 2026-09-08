@@ -25,6 +25,7 @@
 
 import { withTenant } from '@wizeworks/db';
 import { createPublisher, publishEvent, type PublisherLogger } from '@wizeworks/events';
+import { countOneAssetUsage, describeUsage } from './asset-usage.js';
 import { getStorage, originalKey, safeFilename } from './storage.js';
 import { storageEnv } from './env.js';
 import { mintUploadToken } from './upload-token.js';
@@ -425,15 +426,17 @@ export async function deleteMediaAsset(
   await withTenant({ tenantId: ctx.tenantId }, async (tx) => {
     const existing = await tx.mediaAsset.findFirst({
       where: { id: assetId, deletedAt: null },
-      select: { usageCount: true },
+      select: { id: true },
     });
     if (!existing) {
       throw new MediaValidationError(`Media asset ${assetId} not found (or already deleted).`);
     }
-    if (existing.usageCount > 0) {
-      const n = existing.usageCount;
+    // COUNTED, for the same reason as the api-rest route's guard: `usageCount` is
+    // a column nothing has ever written, so this refusal never fired (issue 381).
+    const usage = await countOneAssetUsage(tx, assetId);
+    if (usage.total > 0) {
       throw new MediaValidationError(
-        `Asset is still referenced by ${n} ${n === 1 ? 'entry' : 'entries'} — detach it first.`
+        `Asset is still used by ${describeUsage(usage)} — detach it first.`
       );
     }
     await tx.mediaAsset.update({ where: { id: assetId }, data: { deletedAt: new Date() } });

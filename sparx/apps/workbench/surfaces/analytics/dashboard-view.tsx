@@ -152,49 +152,56 @@ export function DashboardViewSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <ModuleScope module={module} className={PANE_SHELL}>
-      <PaneToolbar label="Dashboard controls">
-        <LayoutDashboard className="size-4 shrink-0" aria-hidden />
-        <Heading level={2} className="min-w-0 truncate text-base font-semibold">
-          {config?.title ?? 'Dashboard'}
-        </Heading>
-        <div className="ml-auto flex items-center gap-2">
-          <ToggleGroup
-            value={[grain]}
-            aria-label="Group by"
-            onValueChange={(value: string[]) => {
-              const next = value[value.length - 1];
-              if (next) setGrain(next as Grain);
-            }}
-          >
-            {GRAINS.map((g) => (
-              <ToggleGroupItem key={g.value} value={g.value}>
-                {g.label}
-              </ToggleGroupItem>
-            ))}
-          </ToggleGroup>
-          <div className="w-36">
-            <Select
-              size="sm"
-              color="module"
-              aria-label="Time period"
-              value={preset}
-              items={[
-                { value: '7', label: RANGE_LABEL['7'] },
-                { value: '30', label: RANGE_LABEL['30'] },
-                { value: '90', label: RANGE_LABEL['90'] },
-              ]}
-              onValueChange={(next) => {
-                setPreset((next as RangePreset) ?? '30');
+      <PaneToolbar
+        label="Dashboard controls"
+        controls={
+          <>
+            <LayoutDashboard className="size-4 shrink-0" aria-hidden />
+            <Heading level={2} className="min-w-0 truncate text-base font-semibold">
+              {config?.title ?? 'Dashboard'}
+            </Heading>
+          </>
+        }
+        refresh={
+          <div className="ml-auto flex items-center gap-2">
+            <ToggleGroup
+              value={[grain]}
+              aria-label="Group by"
+              onValueChange={(value: string[]) => {
+                const next = value[value.length - 1];
+                if (next) setGrain(next as Grain);
               }}
+            >
+              {GRAINS.map((g) => (
+                <ToggleGroupItem key={g.value} value={g.value}>
+                  {g.label}
+                </ToggleGroupItem>
+              ))}
+            </ToggleGroup>
+            <div className="w-36">
+              <Select
+                size="sm"
+                color="module"
+                aria-label="Time period"
+                value={preset}
+                items={[
+                  { value: '7', label: RANGE_LABEL['7'] },
+                  { value: '30', label: RANGE_LABEL['30'] },
+                  { value: '90', label: RANGE_LABEL['90'] },
+                ]}
+                onValueChange={(next) => {
+                  setPreset((next as RangePreset) ?? '30');
+                }}
+              />
+            </div>
+            <RefreshButton
+              isFetching={dashboard.isFetching || query.isFetching}
+              updatedAt={query.data ? query.dataUpdatedAt : undefined}
+              onRefresh={refetch}
             />
           </div>
-          <RefreshButton
-            isFetching={dashboard.isFetching || query.isFetching}
-            updatedAt={query.data ? query.dataUpdatedAt : undefined}
-            onRefresh={refetch}
-          />
-        </div>
-      </PaneToolbar>
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className="@container mx-auto flex w-full max-w-[1600px] flex-col gap-4 p-4">

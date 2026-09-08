@@ -24,7 +24,6 @@ import { useEffect, useState } from 'react';
 import {
   Badge,
   Button,
-  EmptyState,
   Field,
   FieldControl,
   FieldDescription,
@@ -65,6 +64,7 @@ import {
   type FunnelKind,
   type FunnelStage,
 } from './data';
+import { PaneLoadError } from '../../components/pane-load-error';
 
 const RANGE_DAYS = [7, 30, 90] as const;
 
@@ -306,16 +306,16 @@ function ExistingCampaign({ ctx, id }: { ctx: SurfaceContext; id: string }) {
   if (funnel.isError || !funnel.data) {
     return (
       <div className={PANE_SHELL}>
-        <div className="flex h-full items-center justify-center p-8">
-          <EmptyState
-            icon={<ServerCrash className="size-6" aria-hidden />}
-            title="Could not open this campaign"
-            description={funnelErrorMessage(
-              funnel.error,
-              'It may have been deleted, or this is a problem reaching the server.'
-            )}
-          />
-        </div>
+        <PaneLoadError
+          icon={<ServerCrash className="size-6" aria-hidden />}
+          error={funnel.error}
+          noun="campaign"
+          title="Could not open this campaign"
+          description="This is a problem reaching the server. The campaign itself is unaffected — nothing has been changed or lost."
+          onRetry={() => {
+            void funnel.refetch();
+          }}
+        />
       </div>
     );
   }
@@ -388,60 +388,65 @@ function ExistingCampaign({ ctx, id }: { ctx: SurfaceContext; id: string }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Campaign controls" wrap>
-        <Badge color={meta.tone} variant="soft" size="sm">
-          {meta.label}
-        </Badge>
-        <Text className="text-sm">{meta.note}</Text>
-        <div className="ml-auto flex flex-wrap items-center gap-2">
-          {canEdit ? (
-            <>
-              <Button
-                size="sm"
-                color={running ? 'warning' : 'module'}
-                variant={running ? 'outline' : 'solid'}
-                disabled={update.isPending || (!running && blockedReason !== null)}
-                title={!running && blockedReason ? blockedReason : undefined}
-                onClick={() => {
-                  setRunning(!running);
-                }}
-              >
-                {running ? (
-                  <>
-                    <Pause className="size-4" aria-hidden />
-                    Pause it
-                  </>
-                ) : (
-                  <>
-                    <Play className="size-4" aria-hidden />
-                    Turn it on
-                  </>
-                )}
-              </Button>
-              <Button
-                size="sm"
-                color="module"
-                disabled={!changed || update.isPending}
-                onClick={save}
-              >
-                Save
-              </Button>
-              <Button
-                size="sm"
-                color="danger"
-                variant="ghost"
-                shape="square"
-                aria-label="Delete this campaign"
-                onClick={() => {
-                  void onDelete();
-                }}
-              >
-                <Trash2 className="size-4" aria-hidden />
-              </Button>
-            </>
-          ) : null}
-        </div>
-      </PaneToolbar>
+      <PaneToolbar
+        label="Campaign controls"
+        status={<Text className="text-sm">{meta.note}</Text>}
+        controls={
+          <>
+            <Badge color={meta.tone} variant="soft" size="sm">
+              {meta.label}
+            </Badge>
+            <div className="ml-auto flex flex-wrap items-center gap-2">
+              {canEdit ? (
+                <>
+                  <Button
+                    size="sm"
+                    color={running ? 'warning' : 'module'}
+                    variant={running ? 'outline' : 'solid'}
+                    disabled={update.isPending || (!running && blockedReason !== null)}
+                    title={!running && blockedReason ? blockedReason : undefined}
+                    onClick={() => {
+                      setRunning(!running);
+                    }}
+                  >
+                    {running ? (
+                      <>
+                        <Pause className="size-4" aria-hidden />
+                        Pause it
+                      </>
+                    ) : (
+                      <>
+                        <Play className="size-4" aria-hidden />
+                        Turn it on
+                      </>
+                    )}
+                  </Button>
+                  <Button
+                    size="sm"
+                    color="module"
+                    disabled={!changed || update.isPending}
+                    onClick={save}
+                  >
+                    Save
+                  </Button>
+                  <Button
+                    size="sm"
+                    color="danger"
+                    variant="ghost"
+                    shape="square"
+                    aria-label="Delete this campaign"
+                    onClick={() => {
+                      void onDelete();
+                    }}
+                  >
+                    <Trash2 className="size-4" aria-hidden />
+                  </Button>
+                </>
+              ) : null}
+            </div>
+          </>
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto p-4">
         <div className={COLUMN}>

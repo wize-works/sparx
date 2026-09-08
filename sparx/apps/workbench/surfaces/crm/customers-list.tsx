@@ -158,85 +158,96 @@ export function CustomersListSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Customer list controls">
-        <div className="max-w-xs min-w-0 flex-1">
-          <SearchInput
+      <PaneToolbar
+        label="Customer list controls"
+        search={
+          <div className="max-w-xs min-w-0 flex-1">
+            <SearchInput
+              color="module"
+              size="sm"
+              aria-label="Search customers"
+              placeholder="Search name, company or email…"
+              value={search}
+              onValueChange={setSearch}
+            />
+          </div>
+        }
+        primary={
+          <Button
+            data-tour="crm-add-customer"
             color="module"
             size="sm"
-            aria-label="Search customers"
-            placeholder="Search name, company or email…"
-            value={search}
-            onValueChange={setSearch}
-          />
-        </div>
-        {/* Filters hide as the pane narrows — search is used constantly, these
+            className="ml-auto shrink-0"
+            title="Add a customer — hold Shift to open alongside, Alt for a new window"
+            onClick={(event) => {
+              ctx.open('crm.customer.detail', { id: 'new' }, { target: targetFor(event) });
+            }}
+          >
+            <Plus className="size-4" aria-hidden />
+            Add a customer
+          </Button>
+        }
+        controls={
+          <>
+            {/* Filters hide as the pane narrows — search is used constantly, these
             occasionally; lifecycle stage (the primary signal) outlives the rest. */}
-        <div className="hidden w-40 shrink-0 @md:block">
-          <Select
-            color="module"
-            size="sm"
-            aria-label="Filter by lifecycle stage"
-            value={stage}
-            items={stageItems}
-            onValueChange={(next) => {
-              setStage(next as 'all' | LifecycleStage);
+            <div className="hidden w-40 shrink-0 @md:block">
+              <Select
+                color="module"
+                size="sm"
+                aria-label="Filter by lifecycle stage"
+                value={stage}
+                items={stageItems}
+                onValueChange={(next) => {
+                  setStage(next as 'all' | LifecycleStage);
+                }}
+              />
+            </div>
+            <div className="hidden w-36 shrink-0 @lg:block">
+              <Select
+                color="module"
+                size="sm"
+                aria-label="Filter by relationship type"
+                value={type}
+                items={typeItems}
+                onValueChange={(next) => {
+                  setType(next as 'all' | CustomerType);
+                }}
+              />
+            </div>
+            <div className="hidden w-40 shrink-0 @xl:block">
+              <Select
+                color="module"
+                size="sm"
+                aria-label="Sort customers by"
+                value={sortBy}
+                items={sortItems}
+                onValueChange={(next) => {
+                  setSortBy(next as CustomerSort);
+                }}
+              />
+            </div>
+            <SavedViewsMenu
+              objectKey="contact"
+              current={currentFilters}
+              baseline={viewFilters([])}
+              sort={{ field: sortBy, direction: 'desc' }}
+              nameHint="New enquiries"
+              selectedId={viewId}
+              onApply={applyView}
+            />
+          </>
+        }
+        refresh={
+          <RefreshButton
+            isFetching={isFetching}
+            updatedAt={data ? dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void refetch();
             }}
           />
-        </div>
-        <div className="hidden w-36 shrink-0 @lg:block">
-          <Select
-            color="module"
-            size="sm"
-            aria-label="Filter by relationship type"
-            value={type}
-            items={typeItems}
-            onValueChange={(next) => {
-              setType(next as 'all' | CustomerType);
-            }}
-          />
-        </div>
-        <div className="hidden w-40 shrink-0 @xl:block">
-          <Select
-            color="module"
-            size="sm"
-            aria-label="Sort customers by"
-            value={sortBy}
-            items={sortItems}
-            onValueChange={(next) => {
-              setSortBy(next as CustomerSort);
-            }}
-          />
-        </div>
-        <Button
-          data-tour="crm-add-customer"
-          color="module"
-          size="sm"
-          className="ml-auto shrink-0"
-          title="Add a customer — hold Shift to open alongside, Alt for a new window"
-          onClick={(event) => {
-            ctx.open('crm.customer.detail', { id: 'new' }, { target: targetFor(event) });
-          }}
-        >
-          <Plus className="size-4" aria-hidden />
-          Add a customer
-        </Button>
-        <SavedViewsMenu
-          objectKey="contact"
-          current={currentFilters}
-          baseline={viewFilters([])}
-          sort={{ field: sortBy, direction: 'desc' }}
-          nameHint="New enquiries"
-          selectedId={viewId}
-          onApply={applyView}
-        />
-        <RefreshButton
-          isFetching={isFetching}
-          updatedAt={data ? dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void refetch();
-          }}
-        />
-      </PaneToolbar>
+        }
+      />
 
       <Card className="min-h-0 flex-1 overflow-y-auto">
         {isError ? (

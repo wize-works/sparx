@@ -72,19 +72,24 @@ export function ClientsListSurface(_props: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Clients list controls">
-        <Text className="text-sm whitespace-nowrap">
-          {clients.length === 1 ? '1 client' : `${String(clients.length)} clients`}
-        </Text>
-        <RefreshButton
-          className="ml-auto"
-          isFetching={isFetching}
-          updatedAt={data ? dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void refetch();
-          }}
-        />
-      </PaneToolbar>
+      <PaneToolbar
+        label="Clients list controls"
+        status={
+          <Text className="text-sm whitespace-nowrap">
+            {clients.length === 1 ? '1 client' : `${String(clients.length)} clients`}
+          </Text>
+        }
+        refresh={
+          <RefreshButton
+            className="ml-auto"
+            isFetching={isFetching}
+            updatedAt={data ? dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void refetch();
+            }}
+          />
+        }
+      />
 
       {isError ? (
         <PartnerLoadError

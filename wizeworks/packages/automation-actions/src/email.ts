@@ -52,6 +52,16 @@ function entityRefsFromFields(fields: EffectInput['fields']): Record<string, str
     companyId: optionalEntityId(fields, 'b2bAccount.id') ?? null,
     subscriptionId: optionalEntityId(fields, 'subscription.id') ?? null,
     returnId: optionalEntityId(fields, 'return.id') ?? null,
+    // The parcel, not just the order. `shipping-confirmation` asks for this ref
+    // by name; without it the render falls back to the latest parcel on the
+    // order, which is the wrong tracking number for an order that ships in two.
+    fulfillmentId: optionalEntityId(fields, 'fulfillment.id') ?? null,
+    // The booking. The console offers "Somebody books an appointment" as a
+    // trigger and the resolver hydrates the booking, so CONDITIONS on it work —
+    // but the booking email sources resolve from this ref alone, with no fallback.
+    // Without it an owner's own "when someone books, email them" automation sends
+    // a confirmation with the date, the time and the service all blank.
+    bookingId: optionalEntityId(fields, 'booking.id') ?? null,
   };
 }
 

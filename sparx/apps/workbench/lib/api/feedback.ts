@@ -23,13 +23,7 @@ export type FeedbackSource = 'button' | 'pulse' | 'command';
 /** Triage lifecycle. The workbench only ever READS these — the admin app owns
  *  every transition (docs/apps/admin/feedback.md §6). */
 export type FeedbackStatus =
-  | 'new'
-  | 'triaged'
-  | 'planned'
-  | 'in_progress'
-  | 'shipped'
-  | 'declined'
-  | 'answered';
+  'new' | 'triaged' | 'planned' | 'in_progress' | 'shipped' | 'declined' | 'answered';
 
 export type FeedbackAuthorKind = 'staff' | 'user';
 

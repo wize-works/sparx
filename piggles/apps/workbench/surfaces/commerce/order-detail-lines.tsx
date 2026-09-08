@@ -73,6 +73,10 @@ function OrderTotals({ order }: { order: Order }) {
       {order.taxTotal > 0 ? (
         <MoneyRow label="Tax" amount={order.taxTotal} currency={currency} />
       ) : null}
+      {/* No gift-card line here on purpose. A card is money IN, not a discount,
+          so it is an OrderPayment and shows under "Money in" with its code — and
+          the order's own total stays the value of what was sold. Repeating it as
+          a negative here would take the same $150 off twice on one screen. */}
       <MoneyRow label="Order total" amount={order.total} currency={currency} emphasis />
       {order.amountPaid > 0 ? (
         <MoneyRow label="Paid so far" amount={order.amountPaid} currency={currency} />

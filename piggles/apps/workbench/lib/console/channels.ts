@@ -8,7 +8,7 @@
 //
 // `storefront` and `b2b_portal` had disagreed too. The console already learned
 // this once for payment method: `methodLabel` in surfaces/finance/format.ts is
-// shared for exactly this reason, after one pane spelled a cheque "Check" and
+// shared for exactly this reason, after one pane spelled a check "Check" and
 // called a cash sale "Recorded by hand". Channel never got the same treatment.
 
 import { productCopy } from '../product';

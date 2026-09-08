@@ -20,7 +20,14 @@ import {
   type Variant,
 } from '../products-data';
 
-export function useVariantActions(product: Product, all: Variant[], live: Variant[]) {
+export function useVariantActions(
+  product: Product,
+  all: Variant[],
+  live: Variant[],
+  /** The code this product already carries. Worked out once in
+   *  `useVariantsTab` and handed down, never re-derived here. */
+  stem: string
+) {
   const toast = useToast();
   const confirm = useConfirm();
 
@@ -118,7 +125,7 @@ export function useVariantActions(product: Product, all: Variant[], live: Varian
     const taken = new Set(all.map((variant) => variant.sku.toLowerCase()));
     let made = 0;
     for (const slot of empty) {
-      const sku = suggestSlotSku(product, slot, taken);
+      const sku = suggestSlotSku(stem, slot, taken);
       taken.add(sku.toLowerCase());
       try {
         await create.mutateAsync({

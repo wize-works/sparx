@@ -61,54 +61,62 @@ export function SeriesListSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Repeating booking controls">
-        <div className="max-w-xs min-w-0 flex-1">
-          <SearchInput
+      <PaneToolbar
+        label="Repeating booking controls"
+        search={
+          <div className="max-w-xs min-w-0 flex-1">
+            <SearchInput
+              size="sm"
+              aria-label="Search repeating bookings"
+              placeholder="Search by service…"
+              value={search}
+              onValueChange={setSearch}
+            />
+          </div>
+        }
+        primary={
+          <Button
+            color="module"
             size="sm"
-            aria-label="Search repeating bookings"
-            placeholder="Search by service…"
-            value={search}
-            onValueChange={setSearch}
+            className="ml-auto"
+            title="Set up a repeating booking — hold Shift to open alongside, Alt for a new window"
+            onClick={(event) => {
+              ctx.open('scheduling.series.detail', { id: 'new' }, { target: targetFor(event) });
+            }}
+          >
+            <Plus className="size-4" aria-hidden />
+            Repeating booking
+          </Button>
+        }
+        controls={
+          <>
+            <NativeSelect
+              size="sm"
+              aria-label="Filter by state"
+              className="w-auto"
+              value={status}
+              onChange={(event) => {
+                setStatus(event.target.value as SeriesStatus | '');
+              }}
+            >
+              {STATUS_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </NativeSelect>
+          </>
+        }
+        refresh={
+          <RefreshButton
+            isFetching={isFetching}
+            updatedAt={data ? dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void refetch();
+            }}
           />
-        </div>
-
-        <NativeSelect
-          size="sm"
-          aria-label="Filter by state"
-          className="w-auto"
-          value={status}
-          onChange={(event) => {
-            setStatus(event.target.value as SeriesStatus | '');
-          }}
-        >
-          {STATUS_OPTIONS.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </NativeSelect>
-
-        <Button
-          color="module"
-          size="sm"
-          className="ml-auto"
-          title="Set up a repeating booking — hold Shift to open alongside, Alt for a new window"
-          onClick={(event) => {
-            ctx.open('scheduling.series.detail', { id: 'new' }, { target: targetFor(event) });
-          }}
-        >
-          <Plus className="size-4" aria-hidden />
-          Repeating booking
-        </Button>
-
-        <RefreshButton
-          isFetching={isFetching}
-          updatedAt={data ? dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void refetch();
-          }}
-        />
-      </PaneToolbar>
+        }
+      />
 
       <Card className="min-h-0 flex-1 overflow-y-auto">
         {error ? (

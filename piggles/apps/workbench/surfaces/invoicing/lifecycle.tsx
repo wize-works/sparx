@@ -254,11 +254,22 @@ export function SendButton({ doc, dirty }: { doc: BillingDocument; dirty: boolea
     : null;
 
   const onSend = async () => {
-    const to = (doc.billTo?.email ?? '').trim();
+    // The server's answer, not a second guess at it: an invoice with no address
+    // of its own still goes to the customer on it. A blank string counts as no
+    // address, which is why this is a first-non-empty rather than a `??` chain.
+    const to =
+      [doc.billTo?.email, doc.billedToEmail]
+        .map((value) => (value ?? '').trim())
+        .find((value) => value.length > 0) ?? '';
     const ok = await confirm({
       title: sentAt ? 'Send this invoice again?' : 'Send this invoice?',
       description: to
         ? `${doc.number ?? 'This invoice'} goes to ${to}, with its lines, its total and anything you wrote in Notes.` +
+          // Sending fills in an empty deadline, so say so BEFORE she clicks. A
+          // date she never typed appearing in a field she can see is a small
+          // surprise, and a deadline is the one thing on a bill she may want to
+          // choose herself.
+          (doc.dueAt ? '' : ' It has no deadline yet, so it will be due when they get it.') +
           (sentAt ? ' They already have a copy; this sends another.' : '')
         : 'There is no email address on this invoice yet. Add one under Bill to first.',
       confirmLabel: sentAt ? 'Send it again' : 'Send it',

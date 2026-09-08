@@ -3,19 +3,12 @@
 // The pane's own furniture: the action bar above the form, and the two things
 // that sit at the top of it.
 
-import {
-  Alert,
-  AlertContent,
-  AlertDescription,
-  AlertTitle,
-  Badge,
-  Button,
-  Text,
-} from '@wizeworks/silicaui-react';
+import { Badge, Button, Text } from '@wizeworks/silicaui-react';
 import { faFloppyDisk } from '@fortawesome/pro-solid-svg-icons';
 import { Icon } from '@piggles/ui';
 import { PaneToolbar } from '../../components/pane-toolbar';
 import type { BusinessLocation } from './setup-data';
+import { SaveFailure } from '@/components/save-failure';
 
 export function EditorToolbar({
   isNew,
@@ -76,14 +69,7 @@ export function EditorHeader({
           {existing.counts.bookings} bookings
         </Text>
       ) : null}
-      {saveError ? (
-        <Alert color="error">
-          <AlertContent>
-            <AlertTitle>Could not save this</AlertTitle>
-            <AlertDescription>{saveError}</AlertDescription>
-          </AlertContent>
-        </Alert>
-      ) : null}
+      <SaveFailure title="Could not save this" message={saveError} />
     </>
   );
 }

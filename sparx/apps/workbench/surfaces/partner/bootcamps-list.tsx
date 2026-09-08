@@ -91,32 +91,41 @@ export function BootcampsListSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Bootcamps list controls">
-        <Text className="text-sm whitespace-nowrap">
-          {bootcamps.length === 1 ? '1 bootcamp' : `${String(bootcamps.length)} bootcamps`}
-        </Text>
-        {canHost ? (
-          <Button
-            color="module"
-            size="sm"
-            className="ml-auto shrink-0 whitespace-nowrap"
-            title="New bootcamp — hold Shift to open alongside, Alt for a new window"
-            onClick={openNew}
-          >
-            <Plus className="size-4" aria-hidden />
-            New bootcamp
-          </Button>
-        ) : (
-          <span className="ml-auto" />
-        )}
-        <RefreshButton
-          isFetching={isFetching}
-          updatedAt={data ? dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void refetch();
-          }}
-        />
-      </PaneToolbar>
+      <PaneToolbar
+        label="Bootcamps list controls"
+        status={
+          <Text className="text-sm whitespace-nowrap">
+            {bootcamps.length === 1 ? '1 bootcamp' : `${String(bootcamps.length)} bootcamps`}
+          </Text>
+        }
+        controls={
+          <>
+            {canHost ? (
+              <Button
+                color="module"
+                size="sm"
+                className="ml-auto shrink-0 whitespace-nowrap"
+                title="New bootcamp — hold Shift to open alongside, Alt for a new window"
+                onClick={openNew}
+              >
+                <Plus className="size-4" aria-hidden />
+                New bootcamp
+              </Button>
+            ) : (
+              <span className="ml-auto" />
+            )}
+          </>
+        }
+        refresh={
+          <RefreshButton
+            isFetching={isFetching}
+            updatedAt={data ? dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void refetch();
+            }}
+          />
+        }
+      />
 
       {isError ? (
         <PartnerLoadError

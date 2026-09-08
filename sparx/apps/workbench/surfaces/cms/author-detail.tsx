@@ -17,10 +17,6 @@
 
 import { useEffect, useRef, useState } from 'react';
 import {
-  Alert,
-  AlertContent,
-  AlertDescription,
-  AlertTitle,
   Button,
   Field,
   FieldControl,
@@ -43,6 +39,7 @@ import type { SurfaceContext } from '../../lib/surfaces/registry';
 // Read-only imports: the shared media browser, exactly as the content editor
 // wraps its form and renders its asset fields.
 import { MediaPickerProvider, AssetField } from './media-picker';
+import { SaveFailure } from '@/components/save-failure';
 import {
   authorErrorMessage,
   authorName,
@@ -52,6 +49,7 @@ import {
   useUpdateAuthor,
   type Author,
 } from './authors-data';
+import { PaneLoadError } from '../../components/pane-load-error';
 
 const COLUMN = 'mx-auto flex w-full max-w-2xl flex-col gap-4';
 
@@ -229,18 +227,21 @@ function CreateAuthor({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="New author actions">
-        <Button
-          color="module"
-          size="sm"
-          className="ml-auto"
-          disabled={!nameFilled}
-          loading={create.isPending}
-          onClick={submit}
-        >
-          Add author
-        </Button>
-      </PaneToolbar>
+      <PaneToolbar
+        label="New author actions"
+        primary={
+          <Button
+            color="module"
+            size="sm"
+            className="ml-auto"
+            disabled={!nameFilled}
+            loading={create.isPending}
+            onClick={submit}
+          >
+            Add author
+          </Button>
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className={COLUMN}>
@@ -254,14 +255,7 @@ function CreateAuthor({ ctx }: { ctx: SurfaceContext }) {
             </Text>
           </div>
 
-          {failure ? (
-            <Alert color="error">
-              <AlertContent>
-                <AlertTitle>Could not add this author</AlertTitle>
-                <AlertDescription>{failure}</AlertDescription>
-              </AlertContent>
-            </Alert>
-          ) : null}
+          <SaveFailure title="Could not add this author" message={failure} />
 
           <AuthorFields draft={draft} onChange={patch} />
         </div>
@@ -273,7 +267,15 @@ function CreateAuthor({ ctx }: { ctx: SurfaceContext }) {
 /* ── Edit / manage ──────────────────────────────────────────────────────── */
 
 function EditAuthor({ ctx, id }: { ctx: SurfaceContext; id: string }) {
-  const { data: author, isPending, isError, isFetching, dataUpdatedAt, refetch } = useAuthor(id);
+  const {
+    data: author,
+    isPending,
+    isError,
+    error,
+    isFetching,
+    dataUpdatedAt,
+    refetch,
+  } = useAuthor(id);
 
   const [draft, setDraft] = useState<Draft | null>(null);
   const initialRef = useRef<string>('');
@@ -302,26 +304,15 @@ function EditAuthor({ ctx, id }: { ctx: SurfaceContext; id: string }) {
   if (isError) {
     // A failed load replaces the form — never an empty form beside a dead Save.
     return (
-      <div className="flex h-full items-center justify-center p-8">
-        <Alert color="error" className="max-w-md">
-          <AlertContent>
-            <AlertTitle>Could not load this author</AlertTitle>
-            <AlertDescription>
-              This is a problem reaching the server. The author itself is unaffected.
-            </AlertDescription>
-          </AlertContent>
-          <Button
-            size="sm"
-            color="error"
-            variant="soft"
-            onClick={() => {
-              void refetch();
-            }}
-          >
-            Try again
-          </Button>
-        </Alert>
-      </div>
+      <PaneLoadError
+        error={error}
+        noun="author"
+        title="Could not load this author"
+        description="This is a problem reaching the server. The author itself is unaffected."
+        onRetry={() => {
+          void refetch();
+        }}
+      />
     );
   }
 
@@ -448,19 +439,24 @@ function ManageBody({
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Author actions">
-        <Button
-          size="sm"
-          color="module"
-          className="ml-auto"
-          disabled={!dirty || !nameFilled}
-          loading={update.isPending}
-          onClick={save}
-        >
-          Save
-        </Button>
-        <RefreshButton isFetching={isFetching} updatedAt={dataUpdatedAt} onRefresh={refetch} />
-      </PaneToolbar>
+      <PaneToolbar
+        label="Author actions"
+        primary={
+          <Button
+            size="sm"
+            color="module"
+            className="ml-auto"
+            disabled={!dirty || !nameFilled}
+            loading={update.isPending}
+            onClick={save}
+          >
+            Save
+          </Button>
+        }
+        refresh={
+          <RefreshButton isFetching={isFetching} updatedAt={dataUpdatedAt} onRefresh={refetch} />
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className={COLUMN}>

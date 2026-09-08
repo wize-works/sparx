@@ -13,10 +13,6 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import {
-  Alert,
-  AlertContent,
-  AlertDescription,
-  AlertTitle,
   Badge,
   Button,
   Checkbox,
@@ -40,6 +36,7 @@ import { useDirtySource } from '../../lib/workbench/dirty';
 import { afterPaneChange } from '../../lib/defer';
 import type { SurfaceContext } from '../../lib/surfaces/registry';
 import { useBusinessTimezone } from '../../lib/business-timezone';
+import { SaveFailure } from '@/components/save-failure';
 import {
   TIMEZONE_OPTIONS,
   isNotFound,
@@ -51,6 +48,7 @@ import {
   type BusinessLocation,
   type LocationInput,
 } from './setup-data';
+import { PaneLoadError } from '../../components/pane-load-error';
 
 const COLUMN = 'mx-auto flex w-full max-w-2xl flex-col gap-4';
 const DETAIL_KEY = 'scheduling.locations.detail';
@@ -154,30 +152,18 @@ function LocationLoader({ ctx, id }: { ctx: SurfaceContext; id: string }) {
   if (isError) {
     const missing = isNotFound(error);
     return (
-      <div className="flex h-full items-center justify-center p-8">
-        <Alert color={missing ? 'warning' : 'error'} variant="soft" className="max-w-md">
-          <AlertContent>
-            <AlertTitle>{missing ? 'This place is gone' : 'Could not load this place'}</AlertTitle>
-            <AlertDescription>
-              {missing
-                ? 'It was removed, or the link is out of date.'
-                : 'This is a problem reaching the server. The place itself is unaffected — nothing has been lost.'}
-            </AlertDescription>
-          </AlertContent>
-          {missing ? null : (
-            <Button
-              size="sm"
-              color="error"
-              variant="soft"
-              onClick={() => {
-                void refetch();
-              }}
-            >
-              Try again
-            </Button>
-          )}
-        </Alert>
-      </div>
+      <PaneLoadError
+        reason={missing ? 'missing' : 'unreachable'}
+        title={missing ? 'This place is gone' : 'Could not load this place'}
+        description={
+          missing
+            ? 'It was removed, or the link is out of date.'
+            : 'This is a problem reaching the server. The place itself is unaffected — nothing has been lost.'
+        }
+        onRetry={() => {
+          void refetch();
+        }}
+      />
     );
   }
 
@@ -325,24 +311,31 @@ function LocationEditor({
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label={isNew ? 'New place actions' : 'Place actions'}>
-        {existing ? (
-          <Badge color={existing.isActive ? 'success' : 'neutral'} variant="soft" size="sm">
-            {existing.isActive ? 'In use' : 'Off'}
-          </Badge>
-        ) : null}
-        <Button
-          color="module"
-          size="sm"
-          className="ml-auto shrink-0"
-          disabled={!canSave}
-          loading={busy}
-          onClick={submit}
-        >
-          <Save className="size-4" aria-hidden />
-          {isNew ? 'Create' : 'Save'}
-        </Button>
-      </PaneToolbar>
+      <PaneToolbar
+        label={isNew ? 'New place actions' : 'Place actions'}
+        primary={
+          <Button
+            color="module"
+            size="sm"
+            className="ml-auto shrink-0"
+            disabled={!canSave}
+            loading={busy}
+            onClick={submit}
+          >
+            <Save className="size-4" aria-hidden />
+            {isNew ? 'Create' : 'Save'}
+          </Button>
+        }
+        controls={
+          <>
+            {existing ? (
+              <Badge color={existing.isActive ? 'success' : 'neutral'} variant="soft" size="sm">
+                {existing.isActive ? 'In use' : 'Off'}
+              </Badge>
+            ) : null}
+          </>
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className={COLUMN}>
@@ -359,14 +352,7 @@ function LocationEditor({
             </div>
           ) : null}
 
-          {saveError ? (
-            <Alert color="error">
-              <AlertContent>
-                <AlertTitle>Could not save this</AlertTitle>
-                <AlertDescription>{saveError}</AlertDescription>
-              </AlertContent>
-            </Alert>
-          ) : null}
+          <SaveFailure title="Could not save this" message={saveError} />
 
           <FormSection
             title={isNew ? 'The new place' : 'What it is called'}

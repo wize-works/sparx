@@ -125,62 +125,69 @@ export function AutomationRunsSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Run history controls">
-        <ListChecks className="size-4 shrink-0" aria-hidden />
-        <Heading level={2} className="min-w-0 truncate text-base font-semibold">
-          {automation ? `${automation.name} — runs` : 'Runs'}
-        </Heading>
-        <div className="ml-auto flex shrink-0 items-center gap-1">
-          <Button
-            size="sm"
-            variant={view === 'results' ? 'soft' : 'ghost'}
-            color={view === 'results' ? 'module' : 'neutral'}
-            onClick={() => {
-              setView('results');
-            }}
-          >
-            <Target className="size-4" aria-hidden />
-            Results
-          </Button>
-          <Button
-            size="sm"
-            variant={view === 'runs' ? 'soft' : 'ghost'}
-            color={view === 'runs' ? 'module' : 'neutral'}
-            onClick={() => {
-              setView('runs');
-            }}
-          >
-            <History className="size-4" aria-hidden />
-            Every run
-          </Button>
-        </div>
-        <div className={`w-40 shrink-0 ${view === 'runs' ? '' : 'hidden'}`}>
-          <Select
-            size="sm"
-            color="module"
-            aria-label="Filter by result"
-            value={status}
-            items={{
-              all: 'Any result',
-              completed: 'Finished',
-              failed: 'Failed',
-              running: 'Running',
-              waiting: 'Waiting',
-              skipped: 'Skipped',
-            }}
-            onValueChange={(next) => {
-              setStatus((next as string) || 'all');
+      <PaneToolbar
+        label="Run history controls"
+        controls={
+          <>
+            <ListChecks className="size-4 shrink-0" aria-hidden />
+            <Heading level={2} className="min-w-0 truncate text-base font-semibold">
+              {automation ? `${automation.name} — runs` : 'Runs'}
+            </Heading>
+            <div className="ml-auto flex shrink-0 items-center gap-1">
+              <Button
+                size="sm"
+                variant={view === 'results' ? 'soft' : 'ghost'}
+                color={view === 'results' ? 'module' : 'neutral'}
+                onClick={() => {
+                  setView('results');
+                }}
+              >
+                <Target className="size-4" aria-hidden />
+                Results
+              </Button>
+              <Button
+                size="sm"
+                variant={view === 'runs' ? 'soft' : 'ghost'}
+                color={view === 'runs' ? 'module' : 'neutral'}
+                onClick={() => {
+                  setView('runs');
+                }}
+              >
+                <History className="size-4" aria-hidden />
+                Every run
+              </Button>
+            </div>
+            <div className={`w-40 shrink-0 ${view === 'runs' ? '' : 'hidden'}`}>
+              <Select
+                size="sm"
+                color="module"
+                aria-label="Filter by result"
+                value={status}
+                items={{
+                  all: 'Any result',
+                  completed: 'Finished',
+                  failed: 'Failed',
+                  running: 'Running',
+                  waiting: 'Waiting',
+                  skipped: 'Skipped',
+                }}
+                onValueChange={(next) => {
+                  setStatus((next as string) || 'all');
+                }}
+              />
+            </div>
+          </>
+        }
+        refresh={
+          <RefreshButton
+            isFetching={isFetching}
+            updatedAt={runs ? dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void refetch();
             }}
           />
-        </div>
-        <RefreshButton
-          isFetching={isFetching}
-          updatedAt={runs ? dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void refetch();
-          }}
-        />
-      </PaneToolbar>
+        }
+      />
 
       {/* "Results" is the DEFAULT view, and that is the point of the pair: the
           run list says a hundred things happened; the funnel says whether any of

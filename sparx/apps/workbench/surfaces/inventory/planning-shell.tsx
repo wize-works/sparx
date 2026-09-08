@@ -127,54 +127,62 @@ export function PlanningShell({
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label={label}>
-        {filters}
-
-        {scope === 'location' ? (
+      <PaneToolbar
+        label={label}
+        status={
+          <Text className="hidden text-sm @2xl:block">
+            {lastSweepAt ? (
+              <>
+                Worked out <Timestamp value={lastSweepAt} format="relative" />
+              </>
+            ) : (
+              'Not worked out yet'
+            )}
+          </Text>
+        }
+        primary={
+          <Button
+            className="ml-auto"
+            size="sm"
+            color="module"
+            loading={recompute.isPending}
+            onClick={onRecompute}
+          >
+            <Calculator className="size-4" aria-hidden />
+            Work it out now
+          </Button>
+        }
+        controls={
           <>
-            <NativeSelect
-              size="sm"
-              className="max-w-48 shrink"
-              aria-label="Plan for stock kept at"
-              value={locationId}
-              onChange={(event) => {
-                setLocationId(event.target.value);
-              }}
-            >
-              <option value="">Every location</option>
-              {activeLocations.map((location) => (
-                <option key={location.id} value={location.id}>
-                  {location.name}
-                </option>
-              ))}
-            </NativeSelect>
+            {filters}
+            {scope === 'location' ? (
+              <>
+                <NativeSelect
+                  size="sm"
+                  className="max-w-48 shrink"
+                  aria-label="Plan for stock kept at"
+                  value={locationId}
+                  onChange={(event) => {
+                    setLocationId(event.target.value);
+                  }}
+                >
+                  <option value="">Every location</option>
+                  {activeLocations.map((location) => (
+                    <option key={location.id} value={location.id}>
+                      {location.name}
+                    </option>
+                  ))}
+                </NativeSelect>
 
-            <ToolbarSeparator className="hidden @xl:block" />
+                <ToolbarSeparator className="hidden @xl:block" />
+              </>
+            ) : null}
           </>
-        ) : null}
-
-        <Text className="hidden text-sm @2xl:block">
-          {lastSweepAt ? (
-            <>
-              Worked out <Timestamp value={lastSweepAt} format="relative" />
-            </>
-          ) : (
-            'Not worked out yet'
-          )}
-        </Text>
-
-        <Button
-          className="ml-auto"
-          size="sm"
-          color="module"
-          loading={recompute.isPending}
-          onClick={onRecompute}
-        >
-          <Calculator className="size-4" aria-hidden />
-          Work it out now
-        </Button>
-        <RefreshButton isFetching={isFetching} updatedAt={updatedAt} onRefresh={onRefresh} />
-      </PaneToolbar>
+        }
+        refresh={
+          <RefreshButton isFetching={isFetching} updatedAt={updatedAt} onRefresh={onRefresh} />
+        }
+      />
 
       {/* Worth more than any figure below it: with no run behind them, the
           numbers on these screens are ABSENT rather than wrong, and saying so

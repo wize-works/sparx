@@ -24,7 +24,6 @@ import {
   SearchInput,
   Table,
   Timestamp,
-  ToolbarSeparator,
   Tooltip,
   useToast,
 } from '@wizeworks/silicaui-react';
@@ -204,61 +203,67 @@ export function QaListSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Questions list controls" wrap>
-        <div className="max-w-xs min-w-0 flex-1">
-          <SearchInput
+      <PaneToolbar
+        label="Questions list controls"
+        search={
+          <div className="max-w-xs min-w-0 flex-1">
+            <SearchInput
+              size="sm"
+              aria-label="Search questions"
+              placeholder="Search questions…"
+              value={search}
+              onValueChange={(next) => {
+                setSearch(next);
+                resetWindow();
+              }}
+            />
+          </div>
+        }
+        primary={
+          <Button
+            color="module"
+            variant="soft"
             size="sm"
-            aria-label="Search questions"
-            placeholder="Search questions…"
-            value={search}
-            onValueChange={(next) => {
-              setSearch(next);
-              resetWindow();
+            className="ml-auto"
+            title="Work the queue — read and answer questions one at a time. Hold Shift to open alongside, Alt for a new window"
+            onClick={(event) => {
+              openQueue(event);
+            }}
+          >
+            <ListChecks className="size-4" aria-hidden />
+            <span className="hidden @lg:inline">Work the queue</span>
+          </Button>
+        }
+        controls={
+          <>
+            <Filter
+              color="module"
+              value={status}
+              onValueChange={(next) => {
+                setStatus(next ?? 'pending');
+                resetWindow();
+              }}
+              showReset={false}
+              aria-label="Filter by status"
+            >
+              {STATUS_FILTERS.map((filter) => (
+                <FilterItem key={filter.value} value={filter.value}>
+                  {filter.label}
+                </FilterItem>
+              ))}
+            </Filter>
+          </>
+        }
+        refresh={
+          <RefreshButton
+            isFetching={isFetching}
+            updatedAt={data ? dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void refetch();
             }}
           />
-        </div>
-
-        <ToolbarSeparator className="hidden @xl:block" />
-
-        <Filter
-          color="module"
-          value={status}
-          onValueChange={(next) => {
-            setStatus(next ?? 'pending');
-            resetWindow();
-          }}
-          showReset={false}
-          aria-label="Filter by status"
-        >
-          {STATUS_FILTERS.map((filter) => (
-            <FilterItem key={filter.value} value={filter.value}>
-              {filter.label}
-            </FilterItem>
-          ))}
-        </Filter>
-
-        <Button
-          color="module"
-          variant="soft"
-          size="sm"
-          className="ml-auto"
-          title="Work the queue — read and answer questions one at a time. Hold Shift to open alongside, Alt for a new window"
-          onClick={(event) => {
-            openQueue(event);
-          }}
-        >
-          <ListChecks className="size-4" aria-hidden />
-          <span className="hidden @lg:inline">Work the queue</span>
-        </Button>
-
-        <RefreshButton
-          isFetching={isFetching}
-          updatedAt={data ? dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void refetch();
-          }}
-        />
-      </PaneToolbar>
+        }
+      />
 
       {selectedIds.length > 0 ? (
         <div className="bg-base-100 border-base-300 flex flex-wrap items-center gap-2 rounded-lg border p-2">

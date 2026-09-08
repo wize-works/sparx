@@ -25,7 +25,9 @@ import { WorkbenchProvider } from '../lib/workbench/context';
 import { BackNavigation } from '../lib/workbench/nav-history';
 import { readDeepLink, tidyLegacyParams } from '../lib/workbench/deep-link';
 import { loadNavState, saveNavState } from '../lib/workbench/persistence';
-import { Dock } from '../lib/dock/dock';
+import { ConsoleDock } from '../lib/dock/console-dock';
+import { readWindowMode, writeWindowMode, type WindowMode } from '../lib/window-mode';
+import { DEFAULT_ZOOM, readZoom, writeZoom, type ZoomLevel } from '../lib/window-zoom';
 import { useIsCompact } from '../lib/use-compact';
 import { ChromeBoundary } from './chrome-boundary';
 import { MobileShell } from './mobile-shell';
@@ -91,6 +93,44 @@ export function WorkbenchShell({
   const [pinned, setPinned] = useState(false);
   const [railExpanded, setRailExpanded] = useState(false);
   const [navOpen, setNavOpen] = useState(false);
+
+  /**
+   * Windows or tabs — NULL until the stored preference has been read.
+   *
+   * The null state is load-bearing, not defensive. Defaulting to 'tabs' for the
+   * one render before localStorage is read would tile a returning windows user's
+   * restored floating layout and then re-float it — and the tiled intermediate
+   * gets saved over their real arrangement on the way past. A presentation
+   * nobody has chosen yet is not 'tabs'; it is unknown.
+   */
+  const [windowMode, setWindowMode] = useState<WindowMode | null>(null);
+  // Unlike the presentation, an unknown zoom is safe to guess at: 100% is what
+  // an unzoomed workspace looks like either way.
+  const [zoom, setZoom] = useState<ZoomLevel>(DEFAULT_ZOOM);
+
+  // Both in ONE effect, and that matters: the dock is gated on the presentation
+  // being known and treats the first zoom it is handed as the one its restored
+  // layout was already saved at. Resolving the zoom a render later looks like
+  // somebody just zoomed, and every window is scaled a second time. React
+  // batches these into one commit. Do not split them.
+  useEffect(() => {
+    setWindowMode(readWindowMode() ?? 'tabs');
+    setZoom(readZoom());
+  }, []);
+
+  // The shell owns the CHOICE and nothing else. Acting on it — photographing the
+  // arrangement being left, restoring the one returned to — needs the dockview
+  // api, the controller and the site key, so it lives in lib/dock/console-dock.tsx
+  // and reacts to this prop.
+  const onChangeWindowMode = useCallback((next: WindowMode) => {
+    setWindowMode(next);
+    writeWindowMode(next);
+  }, []);
+
+  const onChangeZoom = useCallback((next: ZoomLevel) => {
+    setZoom(next);
+    writeZoom(next);
+  }, []);
   const isCompact = useIsCompact(initialCompact);
 
   // Capture the address this page load arrived with, HERE, in the outermost
@@ -301,6 +341,8 @@ export function WorkbenchShell({
               siteKey={siteKey ?? 'default'}
               onSetTheme={setThemeChoice}
               onOpenLauncher={openLauncher}
+              windowMode={windowMode}
+              onChangeWindowMode={onChangeWindowMode}
             />
           </ChromeBoundary>
 
@@ -405,8 +447,13 @@ export function WorkbenchShell({
                 for returning operators; only a genuine first visit lands here,
                 and it gets a spinner rather than an empty void so the shell
                 still reads as loading its work, not as broken chrome. */}
-              {siteKey ? (
-                <Dock siteKey={siteKey} />
+              {siteKey && windowMode ? (
+                <ConsoleDock
+                  siteKey={siteKey}
+                  mode={windowMode}
+                  zoom={zoom}
+                  onChangeZoom={onChangeZoom}
+                />
               ) : (
                 <PaneWaiting label="Loading your workspace" />
               )}

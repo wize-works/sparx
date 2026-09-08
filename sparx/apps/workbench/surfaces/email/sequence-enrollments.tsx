@@ -101,50 +101,58 @@ export function SequenceEnrollmentsSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label={`People in ${sequenceName}`}>
-        <span className="inline-flex min-w-0 items-center gap-2">
-          <Users className="text-module size-4 shrink-0" aria-hidden />
-          <span className="truncate font-medium">{sequenceName}</span>
-        </span>
-
-        <div className="ml-auto hidden w-44 shrink-0 @md:block">
-          <Select
+      <PaneToolbar
+        label={`People in ${sequenceName}`}
+        status={
+          <span className="inline-flex min-w-0 items-center gap-2">
+            <Users className="text-module size-4 shrink-0" aria-hidden />
+            <span className="truncate font-medium">{sequenceName}</span>
+          </span>
+        }
+        primary={
+          <Button
             size="sm"
-            aria-label="Filter by where they are"
-            value={status}
-            items={{
-              all: 'Everyone',
-              active: 'In progress',
-              completed: 'Finished',
-              exited: 'Left early',
-              cancelled: 'Cancelled',
+            color="module"
+            className="ml-auto shrink-0 @md:ml-0"
+            onClick={() => {
+              setEnrollOpen(true);
             }}
-            onValueChange={(next) => {
-              setStatus((next as string) || 'all');
+          >
+            <UserPlus className="size-4" aria-hidden />
+            <span className="hidden @lg:inline">Enrol someone</span>
+          </Button>
+        }
+        controls={
+          <>
+            <div className="ml-auto hidden w-44 shrink-0 @md:block">
+              <Select
+                size="sm"
+                aria-label="Filter by where they are"
+                value={status}
+                items={{
+                  all: 'Everyone',
+                  active: 'In progress',
+                  completed: 'Finished',
+                  exited: 'Left early',
+                  cancelled: 'Cancelled',
+                }}
+                onValueChange={(next) => {
+                  setStatus((next as string) || 'all');
+                }}
+              />
+            </div>
+          </>
+        }
+        refresh={
+          <RefreshButton
+            isFetching={isFetching}
+            updatedAt={data ? dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void refetch();
             }}
           />
-        </div>
-
-        <Button
-          size="sm"
-          color="module"
-          className="ml-auto shrink-0 @md:ml-0"
-          onClick={() => {
-            setEnrollOpen(true);
-          }}
-        >
-          <UserPlus className="size-4" aria-hidden />
-          <span className="hidden @lg:inline">Enrol someone</span>
-        </Button>
-
-        <RefreshButton
-          isFetching={isFetching}
-          updatedAt={data ? dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void refetch();
-          }}
-        />
-      </PaneToolbar>
+        }
+      />
 
       <Card className="min-h-0 flex-1 overflow-y-auto">
         {isError ? (

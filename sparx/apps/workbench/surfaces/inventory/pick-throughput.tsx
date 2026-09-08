@@ -22,15 +22,7 @@
 // dashboard and buys a number nobody has to caveat.
 
 import { useState } from 'react';
-import {
-  Badge,
-  Card,
-  EmptyState,
-  NativeSelect,
-  Table,
-  Text,
-  ToolbarSeparator,
-} from '@wizeworks/silicaui-react';
+import { Badge, Card, EmptyState, NativeSelect, Table, Text } from '@wizeworks/silicaui-react';
 import { BarChart3, Gauge, ScanLine, TriangleAlert } from 'lucide-react';
 import { PaneToolbar, PANE_SHELL } from '../../components/pane-toolbar';
 import { RefreshButton } from '../../components/refresh-button';
@@ -315,51 +307,54 @@ export function PickThroughputSurface({ ctx: _ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Throughput controls">
-        <NativeSelect
-          size="sm"
-          className="max-w-40 shrink"
-          aria-label="Period"
-          value={windowKey}
-          onChange={(event) => {
-            setWindowKey(event.target.value);
-          }}
-        >
-          {WINDOWS.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </NativeSelect>
-
-        <ToolbarSeparator className="hidden @lg:block" />
-
-        <NativeSelect
-          size="sm"
-          className="max-w-40 shrink"
-          aria-label="Location"
-          value={locationId}
-          onChange={(event) => {
-            setLocationId(event.target.value);
-          }}
-        >
-          <option value="">Every location</option>
-          {activeLocations.map((location) => (
-            <option key={location.id} value={location.id}>
-              {location.name}
-            </option>
-          ))}
-        </NativeSelect>
-
-        <RefreshButton
-          isFetching={isFetching}
-          updatedAt={data ? dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void refetch();
-          }}
-          className="ml-auto"
-        />
-      </PaneToolbar>
+      <PaneToolbar
+        label="Throughput controls"
+        controls={
+          <>
+            <NativeSelect
+              size="sm"
+              className="max-w-40 shrink"
+              aria-label="Period"
+              value={windowKey}
+              onChange={(event) => {
+                setWindowKey(event.target.value);
+              }}
+            >
+              {WINDOWS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </NativeSelect>
+            <NativeSelect
+              size="sm"
+              className="max-w-40 shrink"
+              aria-label="Location"
+              value={locationId}
+              onChange={(event) => {
+                setLocationId(event.target.value);
+              }}
+            >
+              <option value="">Every location</option>
+              {activeLocations.map((location) => (
+                <option key={location.id} value={location.id}>
+                  {location.name}
+                </option>
+              ))}
+            </NativeSelect>
+          </>
+        }
+        refresh={
+          <RefreshButton
+            isFetching={isFetching}
+            updatedAt={data ? dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void refetch();
+            }}
+            className="ml-auto"
+          />
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">{body()}</div>
     </div>

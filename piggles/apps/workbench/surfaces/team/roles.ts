@@ -52,7 +52,7 @@ const ROLE_DESCRIPTIONS: Record<OrgRole, string> = {
   support:
     'Looks after customers — finds their orders, answers their questions and makes small fixes. Cannot change your products or your prices.',
   partner:
-    'Runs your partner and referral programme: who sends you business and what they are owed. Can only look, not change, everywhere else.',
+    'Runs your partner and referral program: who sends you business and what they are owed. Can only look, not change, everywhere else.',
   scanner:
     'Works the stock: receives deliveries, counts shelves, moves things between locations and looks items up. Cannot see what anything cost you, change a price, or adjust a quantity outside a count.',
   viewer:

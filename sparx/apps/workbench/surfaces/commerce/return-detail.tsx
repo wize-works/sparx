@@ -58,6 +58,7 @@ import {
   InspectReturnModal,
   RefundReturnModal,
 } from './return-actions';
+import { PaneLoadError } from '../../components/pane-load-error';
 
 const COLUMN = 'mx-auto flex w-full max-w-3xl flex-col gap-4';
 
@@ -107,7 +108,7 @@ function ReturnIdentity({ detail }: { detail: ReturnDetail }) {
 
 export function ReturnDetailSurface({ ctx }: { ctx: SurfaceContext }) {
   const id = typeof ctx.params.id === 'string' ? ctx.params.id : '';
-  const { data: detail, isPending, isError, refetch } = useReturn(id);
+  const { data: detail, isPending, isError, error, refetch } = useReturn(id);
 
   const orderNumber = detail?.orderNumber ?? null;
   useEffect(() => {
@@ -116,27 +117,15 @@ export function ReturnDetailSurface({ ctx }: { ctx: SurfaceContext }) {
 
   if (isError) {
     return (
-      <div className="flex h-full items-center justify-center p-8">
-        <Alert color="error" className="max-w-md">
-          <AlertContent>
-            <AlertTitle>Could not load this return</AlertTitle>
-            <AlertDescription>
-              This is a problem reaching the server. The return itself is unaffected — nothing has
-              been changed or lost.
-            </AlertDescription>
-          </AlertContent>
-          <Button
-            size="sm"
-            color="error"
-            variant="soft"
-            onClick={() => {
-              void refetch();
-            }}
-          >
-            Try again
-          </Button>
-        </Alert>
-      </div>
+      <PaneLoadError
+        error={error}
+        noun="return"
+        title="Could not load this return"
+        description="This is a problem reaching the server. The return itself is unaffected — nothing has been changed or lost."
+        onRetry={() => {
+          void refetch();
+        }}
+      />
     );
   }
 
@@ -225,13 +214,18 @@ function ReturnDetailBody({ detail }: { detail: ReturnDetail }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Return actions" wrap>
-        <Badge color={state.tone} variant="soft" size="sm">
-          {state.label}
-        </Badge>
-        <div className="flex-1" />
-        <Text className="text-sm">Order {detail.orderNumber ?? '—'}</Text>
-      </PaneToolbar>
+      <PaneToolbar
+        label="Return actions"
+        status={<Text className="text-sm">Order {detail.orderNumber ?? '—'}</Text>}
+        controls={
+          <>
+            <Badge color={state.tone} variant="soft" size="sm">
+              {state.label}
+            </Badge>
+            <div className="flex-1" />
+          </>
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto p-4">
         <div className={COLUMN}>

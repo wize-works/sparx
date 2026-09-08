@@ -484,7 +484,7 @@ function OpenSomethingJob({
           job === 'count'
             ? `No stock count has the number ${found.scanned}.`
             : job === 'pack'
-              ? `Nothing in the catalogue matches ${found.scanned}.`
+              ? `Nothing in the catalog matches ${found.scanned}.`
               : `No purchase order has the number ${found.scanned}.`
         );
         playScanFeedback('not_found');

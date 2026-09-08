@@ -58,6 +58,7 @@ import {
   type AiActivityItem,
   type AiTopTool,
 } from './data';
+import { PaneLoadError } from '../../components/pane-load-error';
 
 const COLUMN = 'mx-auto flex w-full max-w-5xl flex-col gap-4';
 const CONNECTIONS_SURFACE = 'platform.settings.ai';
@@ -149,24 +150,14 @@ export function AiOverviewSurface({ ctx }: { ctx: SurfaceContext }) {
   const body = () => {
     if (summary.isError) {
       return (
-        <div className="flex h-full items-center justify-center p-8">
-          <EmptyState
-            icon={<Server className="size-6" aria-hidden />}
-            title="Could not load your AI usage"
-            description="This is a problem reaching the server. Your connected apps and keys are unaffected."
-            actions={
-              <Button
-                size="sm"
-                color="module"
-                onClick={() => {
-                  void summary.refetch();
-                }}
-              >
-                Try again
-              </Button>
-            }
-          />
-        </div>
+        <PaneLoadError
+          icon={<Server className="size-6" aria-hidden />}
+          title="Could not load your AI usage"
+          description="This is a problem reaching the server. Your connected apps and keys are unaffected."
+          onRetry={() => {
+            void summary.refetch();
+          }}
+        />
       );
     }
 
@@ -386,34 +377,43 @@ export function AiOverviewSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="AI overview controls">
-        <Badge color="success" variant="soft" size="sm">
-          <span className="bg-success mr-1 inline-block size-2 rounded-full" aria-hidden />
-          Bridge online
-        </Badge>
-        <Button
-          size="sm"
-          variant="outline"
-          color="neutral"
-          className="ml-auto shrink-0"
-          onClick={(event) => {
-            open(CONNECTIONS_SURFACE, event);
-          }}
-        >
-          <KeyRound className="size-4" aria-hidden />
-          AI connections
-        </Button>
-        <RefreshButton
-          isFetching={
-            summary.isFetching ||
-            timeseries.isFetching ||
-            topTools.isFetching ||
-            activity.isFetching
-          }
-          updatedAt={summary.data ? summary.dataUpdatedAt : undefined}
-          onRefresh={refreshAll}
-        />
-      </PaneToolbar>
+      <PaneToolbar
+        label="AI overview controls"
+        primary={
+          <Button
+            size="sm"
+            variant="outline"
+            color="neutral"
+            className="ml-auto shrink-0"
+            onClick={(event) => {
+              open(CONNECTIONS_SURFACE, event);
+            }}
+          >
+            <KeyRound className="size-4" aria-hidden />
+            AI connections
+          </Button>
+        }
+        controls={
+          <>
+            <Badge color="success" variant="soft" size="sm">
+              <span className="bg-success mr-1 inline-block size-2 rounded-full" aria-hidden />
+              Bridge online
+            </Badge>
+          </>
+        }
+        refresh={
+          <RefreshButton
+            isFetching={
+              summary.isFetching ||
+              timeseries.isFetching ||
+              topTools.isFetching ||
+              activity.isFetching
+            }
+            updatedAt={summary.data ? summary.dataUpdatedAt : undefined}
+            onRefresh={refreshAll}
+          />
+        }
+      />
       <div className="min-h-0 flex-1 overflow-y-auto">{body()}</div>
     </div>
   );

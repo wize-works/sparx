@@ -174,55 +174,61 @@ export function AiPromptsListSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Instructions list controls" wrap>
-        <div className="max-w-xs min-w-0 flex-1">
-          <SearchInput
-            size="sm"
-            aria-label="Search instructions"
-            placeholder="Search by name or wording…"
-            value={search}
-            onValueChange={setSearch}
-          />
-        </div>
-
-        <div className="w-44 shrink-0">
-          <Select
-            color="module"
-            size="sm"
-            aria-label="Filter by what it is for"
-            value={categoryValue}
-            items={{
-              all: 'Every kind',
-              ...Object.fromEntries(PROMPT_CATEGORIES.map((c) => [c, categoryLabel(c)])),
+      <PaneToolbar
+        label="Instructions list controls"
+        search={
+          <div className="max-w-xs min-w-0 flex-1">
+            <SearchInput
+              size="sm"
+              aria-label="Search instructions"
+              placeholder="Search by name or wording…"
+              value={search}
+              onValueChange={setSearch}
+            />
+          </div>
+        }
+        controls={
+          <>
+            <div className="w-44 shrink-0">
+              <Select
+                color="module"
+                size="sm"
+                aria-label="Filter by what it is for"
+                value={categoryValue}
+                items={{
+                  all: 'Every kind',
+                  ...Object.fromEntries(PROMPT_CATEGORIES.map((c) => [c, categoryLabel(c)])),
+                }}
+                onValueChange={(next) => {
+                  setCategoryValue(next as 'all' | PromptCategory);
+                }}
+              />
+            </div>
+            {canEdit ? (
+              <Button
+                color="module"
+                size="sm"
+                className="ml-auto shrink-0"
+                title="Write a new instruction — hold Shift to open alongside, Alt for a new window"
+                onClick={openNew}
+              >
+                <Plus className="size-4" aria-hidden />
+                New instruction
+              </Button>
+            ) : null}
+          </>
+        }
+        refresh={
+          <RefreshButton
+            className={canEdit ? undefined : 'ml-auto'}
+            isFetching={isFetching}
+            updatedAt={data ? dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void refetch();
             }}
-            onValueChange={(next) => {
-              setCategoryValue(next as 'all' | PromptCategory);
-            }}
           />
-        </div>
-
-        {canEdit ? (
-          <Button
-            color="module"
-            size="sm"
-            className="ml-auto shrink-0"
-            title="Write a new instruction — hold Shift to open alongside, Alt for a new window"
-            onClick={openNew}
-          >
-            <Plus className="size-4" aria-hidden />
-            New instruction
-          </Button>
-        ) : null}
-
-        <RefreshButton
-          className={canEdit ? undefined : 'ml-auto'}
-          isFetching={isFetching}
-          updatedAt={data ? dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void refetch();
-          }}
-        />
-      </PaneToolbar>
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className="mx-auto flex w-full max-w-3xl flex-col gap-4">

@@ -21,6 +21,7 @@
 // rail — so a bento would float a near-empty rail beside the work. One centred,
 // capped column instead, with the fields as the hero.
 
+import { shownInPlace } from '@wizeworks/query';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { PaneWaiting } from '../../components/pane-waiting';
 import { PaneLoadError } from '../../components/pane-load-error';
@@ -64,6 +65,7 @@ import type { SurfaceContext } from '../../lib/surfaces/registry';
 import { BodyFields } from './schema-form';
 import { MediaPickerProvider } from './media-picker';
 import { PolicyPageNotice } from './policy-page-notice';
+import { SaveFailure } from '@/components/save-failure';
 import {
   contentErrorMessage,
   entryStatusState,
@@ -221,14 +223,14 @@ function EntryFields({
                   color="module"
                   rows={2}
                   value={seoString('description')}
-                  placeholder="A sentence or two summarising this page"
+                  placeholder="A sentence or two summarizing this page"
                   onChange={(event) => {
                     onSeo('description', event.target.value);
                   }}
                 />
               }
             />
-            <FieldDescription>The grey summary shown under the link.</FieldDescription>
+            <FieldDescription>The gray summary shown under the link.</FieldDescription>
           </Field>
           <Field>
             <FieldLabel>Preferred web address</FieldLabel>
@@ -305,6 +307,7 @@ function CreateEntry({ ctx }: { ctx: SurfaceContext }) {
             toast.add({ title: `${entryTitle(entry)} created`, type: 'success' });
           });
         },
+        onError: shownInPlace,
       }
     );
   };
@@ -334,14 +337,7 @@ function CreateEntry({ ctx }: { ctx: SurfaceContext }) {
             decide when to publish it.
           </Text>
 
-          {failure ? (
-            <Alert color="error">
-              <AlertContent>
-                <AlertTitle>Could not create this</AlertTitle>
-                <AlertDescription>{failure}</AlertDescription>
-              </AlertContent>
-            </Alert>
-          ) : null}
+          <SaveFailure title="Could not create this" message={failure} />
 
           {typesError ? (
             <Alert color="error">

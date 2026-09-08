@@ -672,42 +672,49 @@ export function AvailabilitySurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Availability actions">
-        {resourceList.length > 0 ? (
-          <NativeSelect
+      <PaneToolbar
+        label="Availability actions"
+        primary={
+          <Button
+            color="module"
             size="sm"
-            className="max-w-60 shrink"
-            aria-label="Whose hours to set"
-            value={resourceId ?? ''}
-            onChange={(event) => {
-              void switchResource(event.target.value);
-            }}
+            className="ml-auto shrink-0"
+            disabled={!dirty || !valid}
+            loading={save.isPending}
+            onClick={submit}
           >
-            {resourceList.map((resource) => (
-              <option key={resource.id} value={resource.id}>
-                {resource.name} · {resourceKindLabel(resource.kind)}
-              </option>
-            ))}
-          </NativeSelect>
-        ) : null}
-
-        <Button
-          color="module"
-          size="sm"
-          className="ml-auto shrink-0"
-          disabled={!dirty || !valid}
-          loading={save.isPending}
-          onClick={submit}
-        >
-          {dirty && !valid ? 'Fix the times' : 'Save hours'}
-        </Button>
-
-        <RefreshButton
-          isFetching={windowsQuery.isFetching || exceptionsQuery.isFetching}
-          updatedAt={windowsQuery.data ? windowsQuery.dataUpdatedAt : undefined}
-          onRefresh={refreshAll}
-        />
-      </PaneToolbar>
+            {dirty && !valid ? 'Fix the times' : 'Save hours'}
+          </Button>
+        }
+        controls={
+          <>
+            {resourceList.length > 0 ? (
+              <NativeSelect
+                size="sm"
+                className="max-w-60 shrink"
+                aria-label="Whose hours to set"
+                value={resourceId ?? ''}
+                onChange={(event) => {
+                  void switchResource(event.target.value);
+                }}
+              >
+                {resourceList.map((resource) => (
+                  <option key={resource.id} value={resource.id}>
+                    {resource.name} · {resourceKindLabel(resource.kind)}
+                  </option>
+                ))}
+              </NativeSelect>
+            ) : null}
+          </>
+        }
+        refresh={
+          <RefreshButton
+            isFetching={windowsQuery.isFetching || exceptionsQuery.isFetching}
+            updatedAt={windowsQuery.data ? windowsQuery.dataUpdatedAt : undefined}
+            onRefresh={refreshAll}
+          />
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className={COLUMN}>

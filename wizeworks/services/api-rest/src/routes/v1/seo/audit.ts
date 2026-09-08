@@ -18,6 +18,8 @@ import { notFound } from '@wizeworks/api-core/errors';
 import type { EntityType } from '@wizeworks/seo-audit';
 
 import { auditAndStore, storedPath } from '../../../lib/seo-audit.js';
+import { resolveListScope } from '../../../lib/property.js';
+import { auditsOnSite } from './site-scope.js';
 
 const ENTITY_TYPES = ['builder_page', 'cms_page', 'product', 'collection'] as const;
 
@@ -48,11 +50,18 @@ const seoAuditRoutes: FastifyPluginAsync = (app) => {
 
   // ── Stored snapshots for the overview ─────────────────────────────────────
   app.get('/v1/seo/audits', async (request) => {
-    requireRole(request, 'viewer');
+    const auth = requireRole(request, 'viewer');
     const { type } = ListQuery.parse(request.query);
+    // The overview's four tiles are computed from THIS list, so an unscoped read
+    // put another site's pages into her score (issue 391).
+    const propertyId = await resolveListScope(
+      auth,
+      undefined,
+      request.headers['x-sparx-property-id']
+    );
     const rows = await withRequestTenant(request, (tx) =>
       tx.seoAudit.findMany({
-        where: type ? { entityType: type } : {},
+        where: { ...auditsOnSite(propertyId), ...(type ? { entityType: type } : {}) },
         select: {
           id: true,
           entityType: true,

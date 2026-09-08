@@ -152,64 +152,68 @@ export function JobProfitSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Job profitability controls" wrap>
-        <NativeSelect
-          size="sm"
-          color="module"
-          value={period}
-          aria-label="Period"
-          onChange={(event) => {
-            setPeriod(event.target.value as PeriodKey);
-          }}
-        >
-          {PERIOD_OPTIONS.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </NativeSelect>
-
-        <NativeSelect
-          size="sm"
-          color="module"
-          value={sort}
-          aria-label="Order the list by"
-          onChange={(event) => {
-            setSort(event.target.value as (typeof SORTS)[number]['value']);
-          }}
-        >
-          {SORTS.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </NativeSelect>
-
-        <Filter
-          color="module"
-          value={type}
-          onValueChange={(next) => {
-            setType(typeof next === 'string' ? next : 'all');
-          }}
-          showReset={false}
-          aria-label="Filter by kind of work"
-        >
-          {TYPE_FILTERS.map((filter) => (
-            <FilterItem key={filter.value} value={filter.value}>
-              {filter.label}
-            </FilterItem>
-          ))}
-        </Filter>
-
-        <RefreshButton
-          className="ml-auto"
-          isFetching={isFetching}
-          updatedAt={data ? dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void refetch();
-          }}
-        />
-      </PaneToolbar>
+      <PaneToolbar
+        label="Job profitability controls"
+        controls={
+          <>
+            <NativeSelect
+              size="sm"
+              color="module"
+              value={period}
+              aria-label="Period"
+              onChange={(event) => {
+                setPeriod(event.target.value as PeriodKey);
+              }}
+            >
+              {PERIOD_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </NativeSelect>
+            <NativeSelect
+              size="sm"
+              color="module"
+              value={sort}
+              aria-label="Order the list by"
+              onChange={(event) => {
+                setSort(event.target.value as (typeof SORTS)[number]['value']);
+              }}
+            >
+              {SORTS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </NativeSelect>
+            <Filter
+              color="module"
+              value={type}
+              onValueChange={(next) => {
+                setType(typeof next === 'string' ? next : 'all');
+              }}
+              showReset={false}
+              aria-label="Filter by kind of work"
+            >
+              {TYPE_FILTERS.map((filter) => (
+                <FilterItem key={filter.value} value={filter.value}>
+                  {filter.label}
+                </FilterItem>
+              ))}
+            </Filter>
+          </>
+        }
+        refresh={
+          <RefreshButton
+            className="ml-auto"
+            isFetching={isFetching}
+            updatedAt={data ? dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void refetch();
+            }}
+          />
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         {isError ? (

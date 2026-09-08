@@ -98,11 +98,16 @@ export function FeedbackThreadSurface({ ctx }: { ctx: SurfaceContext }) {
       {/* Sized to the pane chrome, not to a document heading. The tab already
           carries this subject but truncates it, so the full text earns its place
           here — at the weight of a pane header, matching the list surface. */}
-      <PaneToolbar label="Conversation header">
-        <Icon className="mt-0.5 size-4 shrink-0" aria-hidden />
-        <h2 className="min-w-0 flex-1 text-base font-medium">{deriveTitle(data)}</h2>
-        <FeedbackStatusBadge status={data.status} />
-      </PaneToolbar>
+      <PaneToolbar
+        label="Conversation header"
+        controls={
+          <>
+            <Icon className="mt-0.5 size-4 shrink-0" aria-hidden />
+            <h2 className="min-w-0 flex-1 text-base font-medium">{deriveTitle(data)}</h2>
+            <FeedbackStatusBadge status={data.status} />
+          </>
+        }
+      />
 
       <ol className="min-h-0 flex-1 space-y-3 overflow-y-auto p-4">
         <ThreadEntry author="You" when={describeAgo(data.createdAt)} body={data.body} />

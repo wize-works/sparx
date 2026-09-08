@@ -189,29 +189,35 @@ export function LegalListSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Legal pages controls">
-        {completeness ? (
-          <Badge
-            color={allRequiredReady ? 'success' : 'info'}
-            variant="soft"
-            size="sm"
-            className="whitespace-nowrap"
-          >
-            {allRequiredReady
-              ? 'All required pages ready'
-              : `${completeness.requiredComplete} of ${completeness.requiredTotal} required ready`}
-          </Badge>
-        ) : null}
-
-        <RefreshButton
-          className="ml-auto"
-          isFetching={checklist.isFetching}
-          updatedAt={checklist.data ? checklist.dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void checklist.refetch();
-          }}
-        />
-      </PaneToolbar>
+      <PaneToolbar
+        label="Legal pages controls"
+        controls={
+          <>
+            {completeness ? (
+              <Badge
+                color={allRequiredReady ? 'success' : 'info'}
+                variant="soft"
+                size="sm"
+                className="whitespace-nowrap"
+              >
+                {allRequiredReady
+                  ? 'All required pages ready'
+                  : `${completeness.requiredComplete} of ${completeness.requiredTotal} required ready`}
+              </Badge>
+            ) : null}
+          </>
+        }
+        refresh={
+          <RefreshButton
+            className="ml-auto"
+            isFetching={checklist.isFetching}
+            updatedAt={checklist.data ? checklist.dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void checklist.refetch();
+            }}
+          />
+        }
+      />
 
       <Card className="min-h-0 flex-1 overflow-y-auto">
         {checklist.isError ? (

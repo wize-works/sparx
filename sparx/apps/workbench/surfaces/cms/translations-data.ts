@@ -174,14 +174,20 @@ export function useProductTranslations(id: string) {
  * flashing "Not translated" under a product that simply hasn't loaded yet.
  */
 export function useCoverage(ids: string[]): {
-  byProduct: Map<string, string[]>;
+  byProduct: Map<string, ProductTranslation[]>;
   loading: boolean;
 } {
   const results = useQueries({
     queries: ids.map((id) => translationsQuery(id)),
   });
 
-  const byProduct = new Map<string, string[]>();
+  // The WHOLE row per language, not just its tag. The tag alone answers "does a
+  // language exist here", and a language exists the moment its NAME is saved —
+  // the one required field — so a barely-started translation and a finished one
+  // came back identical. Everything needed to tell them apart (the description,
+  // both search fields, and when the language was last written) is already in
+  // this response; only the `.map(row => row.locale)` threw it away.
+  const byProduct = new Map<string, ProductTranslation[]>();
   let loading = false;
   ids.forEach((id, index) => {
     const result = results[index];
@@ -189,7 +195,7 @@ export function useCoverage(ids: string[]): {
     if (result.data) {
       byProduct.set(
         id,
-        result.data.map((row) => row.locale).sort((a, b) => a.localeCompare(b))
+        [...result.data].sort((a, b) => a.locale.localeCompare(b.locale))
       );
     } else if (result.isLoading) {
       loading = true;
@@ -276,56 +282,19 @@ export function useDeleteTranslation(productId: string) {
   });
 }
 
-/* ── Locale helpers ─────────────────────────────────────────────────────── */
+/* ── Locale + coverage ──────────────────────────────────────────────────── */
 
-/**
- * Canonicalize a language tag the way the server does — language lowercase,
- * script Titlecase, region UPPERCASE.
- *
- * Done here as well so the editor can key a DRAFT row on the same string the
- * server will store. Without it, typing `en-us` creates a draft under `en-us`
- * that comes back from the save as `en-US`, and the language appears twice with
- * the operator's edit apparently lost.
- */
-export function canonicalLocale(raw: string): string {
-  const parts = raw.trim().replace(/_/g, '-').split('-').filter(Boolean);
-  return parts
-    .map((part, index) => {
-      if (index === 0) return part.toLowerCase();
-      // Four letters is a SCRIPT (Hans, Cyrl) — Titlecase; two or three in a
-      // later position is a REGION — uppercase.
-      if (part.length === 4) return part.charAt(0).toUpperCase() + part.slice(1).toLowerCase();
-      if (part.length === 2 || part.length === 3) return part.toUpperCase();
-      return part.toLowerCase();
-    })
-    .join('-');
-}
-
-/** A language tag in the reader's own language ("Spanish (Mexico)"), falling
- *  back to the tag itself when the browser has no name for it. */
-export function localeName(locale: string): string {
-  try {
-    return new Intl.DisplayNames(undefined, { type: 'language' }).of(locale) ?? locale;
-  } catch {
-    return locale;
-  }
-}
-
-/** Would the server accept this tag? Mirrors the BCP-47 shape the Locale schema
- *  enforces, so the editor can refuse it before spending a round trip. */
-export function isValidLocale(raw: string): boolean {
-  return /^[a-z]{2,3}(-[A-Z][a-z]{3})?(-([A-Z]{2}|\d{3}))?$/.test(canonicalLocale(raw));
-}
-
-/** A product's coverage as one readable phrase: "Not translated", "Spanish", or
- *  "Spanish, French +2". Names the first two languages and counts the rest so a
- *  row stays one line on a narrow pane. */
-export function coverageSummary(locales: string[]): string {
-  if (locales.length === 0) return 'Not translated';
-  const names = locales.map(localeName);
-  if (names.length <= 2) return names.join(', ');
-  return `${names.slice(0, 2).join(', ')} +${String(names.length - 2)}`;
-}
+// Moved to `translations-locale.ts` (pure, no server) and re-exported here so
+// the cluster still has one front door.
+export {
+  canonicalLocale,
+  coverageSummary,
+  isValidLocale,
+  lastTranslatedAt,
+  localeName,
+  unfinishedLanguages,
+  unfinishedNote,
+} from './translations-locale';
 
 /* ── Errors ─────────────────────────────────────────────────────────────── */
 

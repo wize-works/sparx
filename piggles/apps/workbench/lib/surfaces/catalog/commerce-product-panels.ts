@@ -124,7 +124,7 @@ export const PRODUCT_PANEL_SURFACES: SurfaceDefinition[] = [
     icon: faTruck,
     section: 'Product panels',
     order: 21,
-    keywords: ['supplier', 'source', 'fulfilment', 'vendor'],
+    keywords: ['supplier', 'source', 'fulfillment', 'fulfilment', 'vendor'],
     besideWidth: 0.4,
     component: ProductDropshipSurface,
   },

@@ -17,6 +17,7 @@
 // "DKIM" or "DMARC" without saying what it DOES in the same breath, and every
 // value is presented as a thing to copy rather than a thing to understand.
 
+import { shownInPlace } from '@wizeworks/query';
 import { useEffect, useState } from 'react';
 import { PaneWaiting } from '../../components/pane-waiting';
 import { PaneLoadError } from '../../components/pane-load-error';
@@ -64,6 +65,7 @@ import {
   type SendingRegion,
 } from './domains-data';
 import { productCopy, productCopyWith } from '../../lib/product';
+import { SaveFailure } from '@/components/save-failure';
 
 /** The one column everything in this pane sits in — centred and capped, because
  *  a pane torn onto a second monitor is otherwise 2000px of dead grey. */
@@ -146,6 +148,7 @@ function AddSendingAddress({ ctx }: { ctx: SurfaceContext }) {
             });
           });
         },
+        onError: shownInPlace,
       }
     );
   };
@@ -182,14 +185,7 @@ function AddSendingAddress({ ctx }: { ctx: SurfaceContext }) {
             )}
           </Text>
 
-          {failure ? (
-            <Alert color="error">
-              <AlertContent>
-                <AlertTitle>Could not add that address</AlertTitle>
-                <AlertDescription>{failure}</AlertDescription>
-              </AlertContent>
-            </Alert>
-          ) : null}
+          <SaveFailure title="Could not add that address" message={failure} />
 
           <FormSection title="The address">
             <Field>

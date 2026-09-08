@@ -8,9 +8,10 @@
 //
 //   • ZONES — a place you are registered to collect tax (a country, optionally
 //             narrowed to one state/province). A zone is only charged when it is
-//             switched ON. "Nexus" is the legal word for "somewhere you have to
-//             collect tax" — usually because you have a shop, an office, staff,
-//             or enough sales there.
+//             switched ON **by a person** — see `zoneIsCollecting`, which is the
+//             server's own rule imported rather than repeated. "Nexus" is the
+//             legal word for "somewhere you have to collect tax" — usually
+//             because you have a shop, an office, staff, or enough sales there.
 //   • RATES — inside a zone, a named percentage ("California Sales Tax", 8.25%).
 //             A zone can carry several (state + county, say); they add together.
 //
@@ -26,10 +27,14 @@
 import { useMutation, useQuery, useQueryClient } from '@wizeworks/query';
 import { ApiError } from '@wizeworks/api-client';
 import { apiErrorMessage } from '../../lib/api-error';
-import type { NexusType } from '@wizeworks/commerce-schemas';
+import { zoneIsCollecting, type NexusType } from '@wizeworks/commerce-schemas';
 import { api } from '../../lib/api/client';
 
 export type { NexusType };
+// The one definition of "is this place actually charging anything", shared with
+// the checkout calculator. Drawing a badge from `isActive` alone is how a screen
+// comes to say "Collecting" about a place that takes nothing.
+export { zoneIsCollecting };
 
 /* ── Shapes ─────────────────────────────────────────────────────────────── */
 
@@ -41,6 +46,9 @@ export interface TaxZone {
   registrationNumber: string | null;
   registeredAt: string | null;
   isActive: boolean;
+  /** When a signed-in person switched collection on here, if one ever did.
+   *  Set by the server, never sent up. A place without it charges nothing. */
+  activatedAt: string | null;
   rateCount: number;
 }
 
@@ -211,4 +219,14 @@ const NEXUS_LABEL: Record<string, string> = {
 
 export function nexusLabel(nexusType: string): string {
   return NEXUS_LABEL[nexusType] ?? nexusType;
+}
+
+/** A stored date as a day a shop owner would say out loud: "5 September 2026".
+ *  Deliberately not a timestamp — the minute a switch was flipped is not a fact
+ *  anybody running a shop needs. */
+export function formatDay(iso: string | null): string | null {
+  if (!iso) return null;
+  const at = new Date(iso);
+  if (Number.isNaN(at.getTime())) return null;
+  return at.toLocaleDateString(undefined, { dateStyle: 'long' });
 }

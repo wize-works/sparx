@@ -249,57 +249,63 @@ export function WorkflowEditorSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Workflow editor actions">
-        {original?.archivedAt ? (
-          <Badge color="neutral" variant="soft" size="sm">
-            Archived
-          </Badge>
-        ) : null}
-        {draft.isDefault ? (
-          <Badge color="module" variant="soft" size="sm">
-            Default
-          </Badge>
-        ) : null}
-
-        {original ? (
-          <DropdownMenu>
-            <DropdownMenuTrigger>
-              <Button
-                size="sm"
-                variant="ghost"
-                color="neutral"
-                className="ml-auto shrink-0"
-                aria-label="More actions"
-              >
-                <MoreHorizontal className="size-4" aria-hidden />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              <DropdownMenuItem
-                onClick={() => {
-                  void onArchive();
-                }}
-              >
-                <Archive className="size-4" aria-hidden />
-                Archive workflow
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        ) : null}
-        <Button
-          color="module"
-          size="sm"
-          className={original ? 'shrink-0' : 'ml-auto shrink-0'}
-          disabled={!dirty || save.isPending}
-          loading={save.isPending}
-          onClick={() => {
-            save.mutate();
-          }}
-        >
-          <Save className="size-4" aria-hidden />
-          Save
-        </Button>
-      </PaneToolbar>
+      <PaneToolbar
+        label="Workflow editor actions"
+        primary={
+          <Button
+            color="module"
+            size="sm"
+            className={original ? 'shrink-0' : 'ml-auto shrink-0'}
+            disabled={!dirty || save.isPending}
+            loading={save.isPending}
+            onClick={() => {
+              save.mutate();
+            }}
+          >
+            <Save className="size-4" aria-hidden />
+            Save
+          </Button>
+        }
+        controls={
+          <>
+            {original?.archivedAt ? (
+              <Badge color="neutral" variant="soft" size="sm">
+                Archived
+              </Badge>
+            ) : null}
+            {draft.isDefault ? (
+              <Badge color="module" variant="soft" size="sm">
+                Default
+              </Badge>
+            ) : null}
+            {original ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    color="neutral"
+                    className="ml-auto shrink-0"
+                    aria-label="More actions"
+                  >
+                    <MoreHorizontal className="size-4" aria-hidden />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      void onArchive();
+                    }}
+                  >
+                    <Archive className="size-4" aria-hidden />
+                    Archive workflow
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : null}
+          </>
+        }
+      />
 
       {failure ? (
         <Alert color="danger" variant="soft" className="shrink-0">

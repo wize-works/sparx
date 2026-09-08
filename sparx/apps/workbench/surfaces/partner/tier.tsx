@@ -88,22 +88,29 @@ export function TierSurface(_props: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Tier controls">
-        <Badge color="module" variant="soft" size="sm">
-          {TIERS[partner.tier].label} partner
-        </Badge>
-        <Badge color={status.tone} variant="soft" size="sm">
-          {status.label}
-        </Badge>
-        <RefreshButton
-          className="ml-auto"
-          isFetching={overview.isFetching}
-          updatedAt={overview.data ? overview.dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void overview.refetch();
-          }}
-        />
-      </PaneToolbar>
+      <PaneToolbar
+        label="Tier controls"
+        controls={
+          <>
+            <Badge color="module" variant="soft" size="sm">
+              {TIERS[partner.tier].label} partner
+            </Badge>
+            <Badge color={status.tone} variant="soft" size="sm">
+              {status.label}
+            </Badge>
+          </>
+        }
+        refresh={
+          <RefreshButton
+            className="ml-auto"
+            isFetching={overview.isFetching}
+            updatedAt={overview.data ? overview.dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void overview.refetch();
+            }}
+          />
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className={COLUMN}>

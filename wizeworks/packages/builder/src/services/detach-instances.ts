@@ -57,7 +57,7 @@ export function detachInstances(
       // nodes with one id on a single page, which is the state that silently
       // disables drag-reorder and trips React's duplicate-key guard.
       const inlined = ensureUniqueIds(stripIds(structuredClone(master))) as unknown as Instance;
-      const merged = [candidate.class, inlined.class].filter(Boolean).join(' ');
+      const merged = mergeClasses(candidate.class, inlined.class);
       return { ...(inlined as unknown as SilicaNode), ...(merged ? { class: merged } : {}) };
     }
 
@@ -72,6 +72,27 @@ export function detachInstances(
 
   const result = rewrite(root);
   return touched ? result : undefined;
+}
+
+/**
+ * The instance's own classes plus the master's, each kept once.
+ *
+ * Save-as-piece leaves the instance wearing the very classes it just handed to
+ * the master, so a plain join wrote every one of them twice — a detached section
+ * came back as `bg-base-100 @container px-6 py-16 text-center bg-base-100
+ * @container px-6 py-16 text-center`. Harmless to render and not harmless to
+ * live with: each save-and-delete round doubles it again, and the author opens
+ * the class field on a block she never touched.
+ *
+ * Order is the instance's first, because a later utility wins in Tailwind and the
+ * instance's classes are the ones this copy was given deliberately.
+ */
+function mergeClasses(instance: string | undefined, master: string | undefined): string {
+  const seen = new Set<string>();
+  for (const word of `${master ?? ''} ${instance ?? ''}`.split(/\s+/)) {
+    if (word) seen.add(word);
+  }
+  return [...seen].join(' ');
 }
 
 /** A copy with every id removed, ready to be given fresh ones. */

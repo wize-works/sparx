@@ -212,6 +212,21 @@ model BillingDocument {
   convertedAt     DateTime? @map("converted_at") @db.Timestamptz
   createdByUserId String?   @map("created_by_user_id") @db.Uuid
 
+  // THE ORDER THIS INVOICE BILLS — the opposite direction to `convertedOrder`
+  // below, and not a duplicate of it. That one means "this QUOTE became that
+  // order"; this one means "this invoice is asking for the money on that order".
+  //
+  // Without it a shop that takes no payment at checkout could not chase what it
+  // was owed. It could raise an invoice, but only by retyping every line by hand,
+  // and paying that invoice settled nothing: the order it was for stayed `unpaid`
+  // forever, because no column joined the two. A pay-later shop is exactly the
+  // shop that needs this most.
+  //
+  // Nullable, because most invoices are not for an order — a consulting bill, a
+  // deposit, a repair. SetNull rather than Cascade: a finalized invoice is a
+  // financial record and outlives the order it refers to.
+  orderId         String?   @map("order_id") @db.Uuid
+
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz
   updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz
   deletedAt DateTime? @map("deleted_at") @db.Timestamptz
@@ -233,6 +248,9 @@ model BillingDocument {
   // Reverse side of Order.convertedFromDocument — no FK column here, the FK
   // lives on Order (see comment on `convertedAt` above).
   convertedOrder Order?                     @relation("DocumentConvertedToOrder")
+  // The order this invoice bills. A DIFFERENT relation to the one above, in the
+  // other direction — see the comment on `orderId`.
+  order          Order?                     @relation("OrderBillingDocuments", fields: [orderId], references: [id], onDelete: SetNull)
   lines          BillingDocumentLine[]
   snapshots      BillingDocumentSnapshot[]
   signatures     BillingDocumentSignature[]
@@ -247,6 +265,9 @@ model BillingDocument {
   @@index([tenantId, workflowId, stageId])
   @@index([tenantId, customerId])
   @@index([tenantId, companyId])
+  // Answers "what has been billed on this order" on the order pane, every time
+  // it opens.
+  @@index([tenantId, orderId])
   @@index([tenantId, status, dueAt])
   @@index([tenantId, updatedAt(sort: Desc)])
   @@map("billing_documents")

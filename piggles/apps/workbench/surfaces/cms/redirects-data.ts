@@ -4,10 +4,10 @@
 // THE REDIRECTS DATA LAYER
 //
 // A redirect sends anyone who follows an old link to the new page instead of
-// hitting a dead end. There is no "edit a redirect" on this platform — a rule is
-// created, imported in bulk, or deleted, never changed in place (the server has
-// no PATCH). So this module is deliberately small: one list, three writes, and
-// the pure text parser the bulk-import pane leans on.
+// hitting a dead end. A rule can be created, imported in bulk, REPOINTED, or
+// deleted. This module said there was no "edit a redirect" on this platform and
+// no PATCH on the server, and both were true until the refusal for a duplicate
+// turned out to have no remedy behind it (issue 396).
 //
 // api-rest is snake_case on the wire (see `toApiRedirect` in
 // wizeworks/services/api-rest/src/routes/v1/redirects) and `hit_count` arrives as a plain
@@ -16,16 +16,15 @@
 // between the server and the screen.
 // ══════════════════════════════════════════════════════════════════════════
 
+import { useMemo } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@wizeworks/query';
-import { apiErrorMessage } from '../../lib/api-error';
 import { api } from '../../lib/api/client';
+import { useActivePropertyId } from '../../lib/api/shell-data';
+import { useDomains } from '../domains/data';
+import type { RedirectStatusCode } from './redirects-format';
+import type { RedirectParseContext } from './redirects-parse';
 
 /* ── Shapes ─────────────────────────────────────────────────────────────── */
-
-/** The HTTP status codes api-rest accepts. 301/308 mean "moved for good",
- *  302/307 mean "moved for now"; the 307/308 pair additionally preserves the
- *  request method, which matters for form and API paths. */
-export type RedirectStatusCode = 301 | 302 | 307 | 308;
 
 /** One redirect rule, exactly as api-rest serialises it. `property_id` is the
  *  site whose address this fires on, or `null` for a rule shared across every
@@ -82,7 +81,8 @@ export function useRedirects(query: RedirectQuery) {
 /* ── Invalidation ───────────────────────────────────────────────────────── */
 
 /** The one way anything here says "that changed": refresh every list window.
- *  There are no detail panes to touch — a redirect has no editable surface. */
+ *  There are no detail panes to touch — a rule is edited in a dialog over the
+ *  list, so the list is the only thing holding it. */
 function useInvalidateRedirects() {
   const queryClient = useQueryClient();
   return () => {
@@ -104,6 +104,25 @@ export function useCreateRedirect() {
   const invalidate = useInvalidateRedirects();
   return useMutation({
     mutationFn: (input: CreateRedirectInput) => api.post<Redirect>('/v1/redirects', input),
+    onSuccess: () => {
+      invalidate();
+    },
+  });
+}
+
+/**
+ * Change where one redirect points, or whether the move is permanent.
+ *
+ * The old address is NOT editable. It is the rule's identity — the link people
+ * are still following — so changing it is a different rule rather than a
+ * correction, and the honest way to do that is to remove this one and add the
+ * new one, which says out loud that the old address goes dead.
+ */
+export function useUpdateRedirect(id: string) {
+  const invalidate = useInvalidateRedirects();
+  return useMutation({
+    mutationFn: (input: { to_path: string; status_code: RedirectStatusCode }) =>
+      api.patch<Redirect>(`/v1/redirects/${id}`, input),
     onSuccess: () => {
       invalidate();
     },
@@ -136,175 +155,42 @@ export function useDeleteRedirect() {
   });
 }
 
-/* ── Saying what a redirect type means ──────────────────────────────────── */
+/* ── The words, and the parsing ─────────────────────────────────────────── */
 
-export type Tone = 'success' | 'warning' | 'error' | 'info' | 'neutral';
+// Re-exported so every caller keeps importing from one place: what a redirect
+// MEANS and how its text is parsed moved to `redirects-format.ts` under RULE
+// #0.5, and neither is a different concept from the reader's point of view.
+export * from './redirects-format';
+// And how a pasted list becomes rows: same reason, same reader's view of it.
+export * from './redirects-parse';
 
-export interface RedirectTypeMeta {
-  /** The word an owner would use, not the number. */
-  label: string;
-  /** The color that word wears on a `<Badge>`. */
-  tone: Tone;
-  /** One plain sentence on what choosing this actually does. */
-  detail: string;
-}
+/* ── What the bulk import is allowed to know ────────────────────────────── */
 
 /**
- * What a status code means, in the words a business owner would use.
+ * The two facts that stop the import preview promising something the server
+ * will turn down: which web addresses are this business's, and which old
+ * addresses already have a rule.
  *
- * Permanent (301/308) reads as a settled fact — info. Temporary (302/307) is a
- * transient state that someone will come back and undo — warning, so it stands
- * out in a list as the one that is not meant to last. 307/308 additionally keep
- * the request method; the list only ever needs the plain distinction, so both
- * fold into Permanent/Temporary.
- */
-export function redirectTypeMeta(code: number): RedirectTypeMeta {
-  switch (code) {
-    case 302:
-      return {
-        label: 'Temporary',
-        tone: 'warning',
-        detail:
-          'A short-term move. Search engines keep the old address on file and expect it back, so use this while a page is briefly away.',
-      };
-    case 307:
-      return {
-        label: 'Temporary',
-        tone: 'warning',
-        detail:
-          'A short-term move that keeps the request exactly as it was — for form and checkout paths that are briefly away.',
-      };
-    case 308:
-      return {
-        label: 'Permanent',
-        tone: 'info',
-        detail:
-          'A permanent move that keeps the request exactly as it was — for form and checkout paths that have moved for good.',
-      };
-    case 301:
-      return {
-        label: 'Permanent',
-        tone: 'info',
-        detail:
-          'The old address has moved for good. Search engines update to the new one and pass on its standing.',
-      };
-    default:
-      return {
-        label: `Code ${String(code)}`,
-        tone: 'neutral',
-        detail: 'An uncommon redirect type set up elsewhere.',
-      };
-  }
-}
-
-/* ── Errors ─────────────────────────────────────────────────────────────── */
-
-/**
- * The server's own sentence for a 4xx, shown verbatim: the redirect routes
- * explain the real problem ("A redirect from "/x" already exists", "A redirect
- * cannot point to itself", "Redirect would create a loop via …") far better than
- * a status code can. A 5xx carries no such sentence, so it falls back to the
- * caller's wording.
- */
-export function redirectErrorMessage(error: unknown, fallback: string): string {
-  return apiErrorMessage(error, fallback);
-}
-
-/* ── Formatting + paths ─────────────────────────────────────────────────── */
-
-/** Medium date, or an em dash for nothing. */
-export function formatDate(value: string | null | undefined): string {
-  if (!value) return '—';
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return '—';
-  return date.toLocaleDateString(undefined, { dateStyle: 'medium' });
-}
-
-/**
- * Nudge a typed address towards what the server accepts.
+ * Both are already on screen elsewhere, so neither is a new request in any
+ * meaningful sense — and without them the preview marked a line "Ready" that it
+ * could already tell would be refused (issue 400).
  *
- * Both paths must begin with "/". Someone typing "old-pricing" means "/old-pricing",
- * so we add the slash for them rather than bouncing the form. A full URL
- * (anything with "://") is left untouched so it can be flagged honestly — the
- * platform only redirects between paths on the same site, never off to another
- * address.
+ * ONE PAGE of existing rules, not all of them. It is an advisory pre-check; the
+ * server is the authority and now skips a colliding row on its own with a
+ * sentence naming where the rule points. A business past 250 rules gets the
+ * server's answer rather than a wrong one.
  */
-export function normalizePath(value: string): string {
-  const trimmed = value.trim();
-  if (trimmed === '') return '';
-  if (trimmed.includes('://')) return trimmed;
-  return trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
-}
+export function useRedirectImportContext(): RedirectParseContext {
+  const propertyId = useActivePropertyId();
+  const { data: domains } = useDomains();
+  const { data: rules } = useRedirects({ take: 250, skip: 0 });
 
-/** One parsed line of a pasted import, ready to preview before it is sent. */
-export interface ParsedRedirectRow {
-  /** 1-based line number in the pasted text, for pointing at the problem. */
-  line: number;
-  from: string;
-  to: string;
-  statusCode: RedirectStatusCode;
-  /** Why this row cannot be sent, or null when it is good to go. */
-  error: string | null;
-}
-
-/** Read a type hint from a third column: a word or a raw code, else Permanent. */
-function statusFromHint(hint: string | undefined): RedirectStatusCode {
-  const value = (hint ?? '').trim().toLowerCase();
-  if (value === 'temporary' || value === 'temp' || value === '302' || value === '307') return 302;
-  return 301;
-}
-
-/**
- * Turn pasted text into preview rows.
- *
- * One redirect per line, "old, new" — a comma, a tab (what a spreadsheet paste
- * gives), or an arrow between them, with an optional third column saying
- * permanent or temporary. Blank lines are ignored so a padded paste is fine.
- * Every row is validated here so the preview can show exactly what will and will
- * not import BEFORE anything is sent, and duplicate old addresses within the one
- * paste are caught locally rather than bounced one-by-one by the server.
- */
-export function parseRedirectRows(text: string): ParsedRedirectRow[] {
-  const rows: ParsedRedirectRow[] = [];
-  const seen = new Map<string, number>();
-  const lines = text.split(/\r?\n/);
-
-  for (let i = 0; i < lines.length; i++) {
-    const raw = lines[i] ?? '';
-    if (raw.trim() === '') continue;
-
-    // Prefer a tab or comma; fall back to an arrow, then to plain whitespace, so
-    // "old → new", "old,new" and "old   new" all read the same way.
-    const parts = raw.includes('\t')
-      ? raw.split('\t')
-      : raw.includes(',')
-        ? raw.split(',')
-        : raw.includes('→') || raw.includes('->')
-          ? raw.split(/→|->/)
-          : raw.trim().split(/\s+/);
-
-    const from = normalizePath(parts[0] ?? '');
-    const to = normalizePath(parts[1] ?? '');
-    const statusCode = statusFromHint(parts[2]);
-
-    let error: string | null = null;
-    if (from === '' || to === '') {
-      error = 'Give both an old address and where it should go.';
-    } else if (!from.startsWith('/') || !to.startsWith('/')) {
-      error = 'Both addresses must be a path on your site, starting with a slash.';
-    } else if (from === to) {
-      error = 'The old and new addresses are the same.';
-    } else {
-      const earlier = seen.get(from);
-      if (earlier) {
-        error = `Same old address as line ${String(earlier)} — only the first will be kept.`;
-      } else {
-        seen.set(from, i + 1);
-      }
-    }
-
-    rows.push({ line: i + 1, from, to, statusCode, error });
-  }
-
-  return rows;
+  return useMemo(() => {
+    const ownHosts = (domains ?? [])
+      .filter((domain) => domain.propertyId === propertyId)
+      .map((domain) => domain.host.toLowerCase());
+    const existing = new Map<string, string>();
+    for (const rule of rules?.items ?? []) existing.set(rule.from_path, rule.to_path);
+    return { ownHosts, existing };
+  }, [domains, rules, propertyId]);
 }

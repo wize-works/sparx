@@ -23,6 +23,7 @@
 
 import { Button, Timestamp, Tooltip } from '@wizeworks/silicaui-react';
 import { RefreshCw } from 'lucide-react';
+import { MENU_ROW, type ToolbarPresentation } from './toolbar-presentation';
 
 interface RefreshButtonProps {
   /** `isFetching` from the query — true for a background refetch too, which is
@@ -36,9 +37,49 @@ interface RefreshButtonProps {
    *  normally carries the `ml-auto` that pushes the right-hand group over, so
    *  without one this has to carry it itself or it sits against the filters. */
   className?: string;
+  /**
+   * `bar` (default) is the icon in the toolbar. `menu` is the same action inside
+   * PaneToolbar's overflow popover.
+   *
+   * These cannot be the same control. In a bar an icon works because POSITION
+   * carries it — always right-most, always the same place — with a tooltip for
+   * anyone who needs the word. In a menu there is no position to read and no
+   * hover on a touch screen, so a bare glyph is a button with no meaning. It
+   * gets its label, and the freshness that hid in the tooltip becomes visible,
+   * because a menu row has somewhere to put it.
+   */
+  presentation?: ToolbarPresentation;
 }
 
-export function RefreshButton({ isFetching, updatedAt, onRefresh, className }: RefreshButtonProps) {
+export function RefreshButton({
+  isFetching,
+  updatedAt,
+  onRefresh,
+  className,
+  presentation = 'bar',
+}: RefreshButtonProps) {
+  if (presentation === 'menu') {
+    return (
+      // No `color`: this is chrome, and a bare `.btn` resolves to `base-content`,
+      // which is the theme-correct answer for an untyped action.
+      <Button
+        size="sm"
+        variant="ghost"
+        className={MENU_ROW}
+        loading={isFetching}
+        onClick={onRefresh}
+      >
+        <RefreshCw className="size-4" aria-hidden />
+        <span>Refresh this list</span>
+        {updatedAt ? (
+          <span className="ml-auto text-sm [&_time]:text-inherit">
+            <Timestamp value={updatedAt} format="relative" />
+          </span>
+        ) : null}
+      </Button>
+    );
+  }
+
   return (
     <Tooltip
       // This button is always the right-most control, so a centred tooltip would
@@ -71,7 +112,6 @@ export function RefreshButton({ isFetching, updatedAt, onRefresh, className }: R
       <Button
         size="sm"
         variant="ghost"
-        color="neutral"
         shape="square"
         className={className}
         aria-label="Refresh this list"

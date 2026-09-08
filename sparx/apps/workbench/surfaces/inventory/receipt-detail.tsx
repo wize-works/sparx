@@ -88,6 +88,7 @@ import {
 } from './costing-data';
 import { describeQuantityShort } from './assembly-data';
 import { ReceiptBillPanel } from './receipt-bill-panel';
+import { PaneLoadError } from '../../components/pane-load-error';
 
 const COLUMN = 'mx-auto flex w-full max-w-4xl flex-col gap-4';
 
@@ -346,28 +347,32 @@ function BookDelivery({ ctx, preTargetPoId }: { ctx: SurfaceContext; preTargetPo
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Receive a delivery actions">
-        <span className="inline-flex items-center gap-1.5">
-          <PackageCheck className="size-4" aria-hidden />
-          <Text as="span" className="text-sm font-medium">
-            Receive a delivery
-          </Text>
-        </span>
-
-        <Button
-          size="sm"
-          color="module"
-          className="ml-auto shrink-0"
-          disabled={!canPost}
-          loading={createReceipt.isPending}
-          onClick={() => {
-            void post();
-          }}
-        >
-          <PackageCheck className="size-4" aria-hidden />
-          Book it in
-        </Button>
-      </PaneToolbar>
+      <PaneToolbar
+        label="Receive a delivery actions"
+        status={
+          <span className="inline-flex items-center gap-1.5">
+            <PackageCheck className="size-4" aria-hidden />
+            <Text as="span" className="text-sm font-medium">
+              Receive a delivery
+            </Text>
+          </span>
+        }
+        primary={
+          <Button
+            size="sm"
+            color="module"
+            className="ml-auto shrink-0"
+            disabled={!canPost}
+            loading={createReceipt.isPending}
+            onClick={() => {
+              void post();
+            }}
+          >
+            <PackageCheck className="size-4" aria-hidden />
+            Book it in
+          </Button>
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className={COLUMN}>
@@ -1047,32 +1052,18 @@ function ViewReceipt({ ctx, id }: { ctx: SurfaceContext; id: string }) {
     const gone = isNotFound(receipt.error);
     return (
       <div className={PANE_SHELL}>
-        <div className="flex h-full items-center justify-center p-8">
-          <Alert color={gone ? 'warning' : 'danger'} variant="soft" className="max-w-md">
-            <AlertContent>
-              <AlertTitle>
-                {gone ? 'This receipt no longer exists' : 'Could not load this receipt'}
-              </AlertTitle>
-              <AlertDescription>
-                {gone
-                  ? 'It may have been removed.'
-                  : 'This is a problem reaching the server. The record is unaffected.'}
-              </AlertDescription>
-            </AlertContent>
-            {gone ? null : (
-              <Button
-                size="sm"
-                color="danger"
-                variant="soft"
-                onClick={() => {
-                  void receipt.refetch();
-                }}
-              >
-                Try again
-              </Button>
-            )}
-          </Alert>
-        </div>
+        <PaneLoadError
+          reason={gone ? 'missing' : 'unreachable'}
+          title={gone ? 'This receipt no longer exists' : 'Could not load this receipt'}
+          description={
+            gone
+              ? 'It may have been removed.'
+              : 'This is a problem reaching the server. The record is unaffected.'
+          }
+          onRetry={() => {
+            void receipt.refetch();
+          }}
+        />
       </div>
     );
   }
@@ -1091,65 +1082,71 @@ function ViewReceipt({ ctx, id }: { ctx: SurfaceContext; id: string }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Receipt actions">
-        <Badge color="success" variant="soft" size="sm">
-          Booked in
-        </Badge>
-
-        {/* A receipt is history, so this is for TRACING rather than for a
+      <PaneToolbar
+        label="Receipt actions"
+        controls={
+          <>
+            <Badge color="success" variant="soft" size="sm">
+              Booked in
+            </Badge>
+            {/* A receipt is history, so this is for TRACING rather than for a
             workflow: stick it on the carton that came in and a scan months later
             says which delivery it arrived on. */}
-        <Tooltip content="Print a scannable label so this delivery can be traced later">
-          <Button
-            size="sm"
-            variant="ghost"
-            color="neutral"
-            shape="square"
-            className="shrink-0"
-            aria-label="Print a scannable label for this delivery"
-            onClick={() => {
-              ctx.open(
-                'inventory.documents.label',
-                {
-                  number: data.number,
-                  title: 'Goods receipt',
-                  subtitle: data.warehouseName ?? '',
-                },
-                { target: 'beside' }
-              );
+            <Tooltip content="Print a scannable label so this delivery can be traced later">
+              <Button
+                size="sm"
+                variant="ghost"
+                color="neutral"
+                shape="square"
+                className="shrink-0"
+                aria-label="Print a scannable label for this delivery"
+                onClick={() => {
+                  ctx.open(
+                    'inventory.documents.label',
+                    {
+                      number: data.number,
+                      title: 'Goods receipt',
+                      subtitle: data.warehouseName ?? '',
+                    },
+                    { target: 'beside' }
+                  );
+                }}
+              >
+                <Printer className="size-4" aria-hidden />
+              </Button>
+            </Tooltip>
+            {data.purchaseOrderId ? (
+              <Button
+                size="sm"
+                variant="outline"
+                color="neutral"
+                className="ml-auto shrink-0"
+                onClick={(event) => {
+                  ctx.open(
+                    'inventory.purchase-orders.detail',
+                    { id: data.purchaseOrderId },
+                    { target: event.shiftKey ? 'beside' : 'tab' }
+                  );
+                }}
+              >
+                <ClipboardList className="size-4" aria-hidden />
+                <span className="hidden @lg:inline">Open the order</span>
+              </Button>
+            ) : (
+              <span className="ml-auto" />
+            )}
+          </>
+        }
+        refresh={
+          <RefreshButton
+            isFetching={receipt.isFetching}
+            updatedAt={receipt.dataUpdatedAt}
+            onRefresh={() => {
+              void receipt.refetch();
             }}
-          >
-            <Printer className="size-4" aria-hidden />
-          </Button>
-        </Tooltip>
-        {data.purchaseOrderId ? (
-          <Button
-            size="sm"
-            variant="outline"
-            color="neutral"
-            className="ml-auto shrink-0"
-            onClick={(event) => {
-              ctx.open(
-                'inventory.purchase-orders.detail',
-                { id: data.purchaseOrderId },
-                { target: event.shiftKey ? 'beside' : 'tab' }
-              );
-            }}
-          >
-            <ClipboardList className="size-4" aria-hidden />
-            <span className="hidden @lg:inline">Open the order</span>
-          </Button>
-        ) : (
-          <span className="ml-auto" />
-        )}
-        <RefreshButton
-          isFetching={receipt.isFetching}
-          updatedAt={receipt.dataUpdatedAt}
-          onRefresh={() => {
-            void receipt.refetch();
-          }}
-        />
-      </PaneToolbar>
+          />
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className={COLUMN}>

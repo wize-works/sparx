@@ -194,6 +194,21 @@ export function resolveTitle(definition: SurfaceDefinition, params: SurfaceParam
   return typeof definition.title === 'function' ? definition.title(params) : definition.title;
 }
 
+/**
+ * What the console calls the screen at `key`, for a sentence or a button that
+ * points at it. Null when the key is unknown, which is the caller's cue to not
+ * offer the pointer at all rather than to name a screen that is not there.
+ *
+ * Read rather than typed: a screen's name is settled in the registry, so prose
+ * that hard-codes it goes stale the moment the registry moves. A FUNCTION title
+ * is naming a record, not a screen, so there is nothing static to hand back.
+ */
+export function surfaceTitle(key: string): string | null {
+  const definition = registry.get(key);
+  if (!definition || typeof definition.title === 'function') return null;
+  return definition.title;
+}
+
 /** Tab label for a descriptor, preferring an operator-set title. */
 export function titleFor(descriptor: PaneDescriptor): string {
   if (descriptor.title) return descriptor.title;

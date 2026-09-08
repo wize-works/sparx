@@ -57,6 +57,7 @@ import {
   type ActivityRun,
   type Tone,
 } from './data';
+import { PaneLoadError } from '../../components/pane-load-error';
 
 const COLUMN = 'mx-auto flex w-full max-w-5xl flex-col gap-4';
 
@@ -87,7 +88,7 @@ function ConnectPrompt({ configured, onOpen }: { configured: boolean; onOpen: ()
       <Text className="text-sm">
         {configured
           ? 'These are the real numbers Google records — how many people saw your site in search and how many clicked. Connect Search Console, the free tool from Google, to see them here.'
-          : 'Real search numbers from Google will appear here once this connection is switched on for your account.'}
+          : 'Google’s own search numbers are not ready on this side yet. It is nothing to do with your account or your plan, and there is nothing for you to switch on. Everything measured here — how each page scores, and what is worth fixing — is up to date.'}
       </Text>
       <Button size="sm" color="module" variant="outline" onClick={onOpen}>
         <Link2 className="size-4" aria-hidden />
@@ -211,24 +212,14 @@ export function PerformanceSurface({ ctx }: { ctx: SurfaceContext }) {
   const body = () => {
     if (audits.isError) {
       return (
-        <div className="flex h-full items-center justify-center p-8">
-          <EmptyState
-            icon={<Gauge className="size-6" aria-hidden />}
-            title="Could not load your search performance"
-            description="This is a problem reaching the server. Your site and its scores are unaffected."
-            actions={
-              <Button
-                size="sm"
-                color="module"
-                onClick={() => {
-                  void audits.refetch();
-                }}
-              >
-                Try again
-              </Button>
-            }
-          />
-        </div>
+        <PaneLoadError
+          icon={<Gauge className="size-6" aria-hidden />}
+          title="Could not load your search performance"
+          description="This is a problem reaching the server. Your site and its scores are unaffected."
+          onRetry={() => {
+            void audits.refetch();
+          }}
+        />
       );
     }
 
@@ -489,27 +480,35 @@ export function PerformanceSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Search performance controls">
-        <Button
-          color="module"
-          size="sm"
-          variant="outline"
-          className="ml-auto shrink-0 whitespace-nowrap"
-          title="Score every page on the site again"
-          loading={reindex.isPending}
-          onClick={rescan}
-        >
-          <Search className="size-4" aria-hidden />
-          <span className="hidden @lg:inline">Rescan the site</span>
-        </Button>
-        <RefreshButton
-          isFetching={
-            audits.isFetching || checklist.isFetching || activity.isFetching || scStatus.isFetching
-          }
-          updatedAt={audits.data ? audits.dataUpdatedAt : undefined}
-          onRefresh={refreshAll}
-        />
-      </PaneToolbar>
+      <PaneToolbar
+        label="Search performance controls"
+        primary={
+          <Button
+            color="module"
+            size="sm"
+            variant="outline"
+            className="ml-auto shrink-0 whitespace-nowrap"
+            title="Score every page on the site again"
+            loading={reindex.isPending}
+            onClick={rescan}
+          >
+            <Search className="size-4" aria-hidden />
+            <span className="hidden @lg:inline">Rescan the site</span>
+          </Button>
+        }
+        refresh={
+          <RefreshButton
+            isFetching={
+              audits.isFetching ||
+              checklist.isFetching ||
+              activity.isFetching ||
+              scStatus.isFetching
+            }
+            updatedAt={audits.data ? audits.dataUpdatedAt : undefined}
+            onRefresh={refreshAll}
+          />
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">{body()}</div>
     </div>

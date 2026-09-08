@@ -26,12 +26,14 @@ import {
   useCatalogMatches,
   useStockLevels,
   useStockLocations,
+  useUncountedVariants,
   type SortDirection,
   type StockLevel,
   type StockSortKey,
 } from './data';
 import { RowOpenHint } from '../../components/row-open-hint';
 import { StockListBody } from './stock-list-body';
+import { StockUncountedBand } from './stock-uncounted-band';
 import {
   StockListToolbar,
   parseLevel,
@@ -111,6 +113,14 @@ export function StockListSurface({ ctx }: { ctx: SurfaceContext }) {
     searchOnly && !isLoading && !isError && rowCount === 0
   );
 
+  // Asked ALONGSIDE the list, not instead of it and not only when it is empty.
+  // A version nobody has counted is not a row this list can hold, so the only
+  // way it gets mentioned is if something asks separately (issue 444). Held back
+  // while a location is chosen: an uncounted version is at no location, so
+  // "nothing counted at the Main Warehouse" would be answering a question the
+  // person did not ask.
+  const uncounted = useUncountedVariants(search.trim(), locationId === '' && !isError);
+
   const rows = data?.items ?? [];
   const total = data?.total;
   const narrowed = search.trim() !== '' || locationId !== '' || level !== '';
@@ -181,6 +191,14 @@ export function StockListSurface({ ctx }: { ctx: SurfaceContext }) {
         onRefresh={() => {
           void refetch();
         }}
+      />
+
+      {/* Above the table, because it is about what the table is NOT showing. */}
+      <StockUncountedBand
+        ctx={ctx}
+        items={uncounted.data?.items ?? []}
+        total={uncounted.data?.total ?? 0}
+        searching={search.trim() !== ''}
       />
 
       {/* Full width — matches the house list convention: the table fills the pane. */}

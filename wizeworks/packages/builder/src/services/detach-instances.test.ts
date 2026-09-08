@@ -52,6 +52,30 @@ describe('deleting a piece that is still on a page', () => {
     expect(kids(out)[1]?.class).toContain('bg-primary');
   });
 
+  it('writes each class once, however many times the two sides share it', () => {
+    // Save-as-piece leaves the instance wearing the very classes it handed to the
+    // master, so a plain join wrote all of them twice — and every save-and-delete
+    // round doubled it again.
+    const shared = {
+      kind: 'element',
+      tag: 'div',
+      id: 'r',
+      children: [
+        {
+          kind: 'element',
+          tag: 'div',
+          id: 'i1',
+          class: 'bg-primary px-6',
+          instanceOf: 'tenant:hours',
+        },
+      ],
+    } as unknown as SilicaNode;
+    const out = detachInstances(shared, 'tenant:hours', master())!;
+    const words = (kids(out)[0]?.class ?? '').split(' ');
+    expect(words.filter((w) => w === 'bg-primary')).toHaveLength(1);
+    expect(words).toContain('px-6');
+  });
+
   it('gives each copy its own ids', () => {
     // The same piece twice on one page sharing ids is what silently disables
     // drag-reorder and trips React's duplicate-key guard.

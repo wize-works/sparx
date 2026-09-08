@@ -524,48 +524,57 @@ export function TeamSurface({ ctx }: { ctx: SurfaceContext }) {
           also has to keep the real size of the team visible, because that is the
           fact someone came here for. Saying both is the only version that is
           true in either reading. */}
-      <PaneToolbar label="Team list controls">
-        {/* `min-w-0` lets the search box give up width as the pane narrows.
+      <PaneToolbar
+        label="Team list controls"
+        search={
+          <SearchInput
+            size="sm"
+            aria-label="Search your team by name, email address or role"
+            placeholder="Search people…"
+            value={search}
+            onValueChange={changeSearch}
+            className="max-w-xs min-w-0"
+          />
+        }
+        status={
+          <p className="shrink-0 text-sm whitespace-nowrap">
+            {query === ''
+              ? people.length === 1
+                ? '1 person'
+                : `${String(people.length)} people`
+              : `${String(visible.length)} of ${String(people.length)} ${people.length === 1 ? 'person' : 'people'}`}
+          </p>
+        }
+        controls={
+          <>
+            {/* `min-w-0` lets the search box give up width as the pane narrows.
             Without it a flex item refuses to shrink below its content, so the
             box holds its size and everything to its right gets squeezed
             instead — which is what made the count wrap. */}
-        <SearchInput
-          size="sm"
-          aria-label="Search your team by name, email address or role"
-          placeholder="Search people…"
-          value={search}
-          onValueChange={changeSearch}
-          className="max-w-xs min-w-0"
-        />
-        {/* Never wraps and never shrinks: "12 of 33 people" breaking across two
+            {/* Never wraps and never shrinks: "12 of 33 people" breaking across two
             lines makes the toolbar taller than the rows it describes, and this
             is a pane the operator can drag to any width they like. The search
             box above yields space first. */}
-        <p className="shrink-0 text-sm whitespace-nowrap">
-          {query === ''
-            ? people.length === 1
-              ? '1 person'
-              : `${String(people.length)} people`
-            : `${String(visible.length)} of ${String(people.length)} ${people.length === 1 ? 'person' : 'people'}`}
-        </p>
-        <div className="flex-1" />
-        {canManage ? (
-          // Same reasoning as the count: the label stays on one line and the
-          // button keeps its width, so a narrow pane shrinks the search box
-          // rather than turning the primary action into two stacked words.
-          <Button
-            color="module"
-            size="sm"
-            className="shrink-0 whitespace-nowrap"
-            onClick={() => {
-              setInviting(true);
-            }}
-          >
-            <Plus className="size-4" aria-hidden />
-            Invite someone
-          </Button>
-        ) : null}
-      </PaneToolbar>
+            <div className="flex-1" />
+            {canManage ? (
+              // Same reasoning as the count: the label stays on one line and the
+              // button keeps its width, so a narrow pane shrinks the search box
+              // rather than turning the primary action into two stacked words.
+              <Button
+                color="module"
+                size="sm"
+                className="shrink-0 whitespace-nowrap"
+                onClick={() => {
+                  setInviting(true);
+                }}
+              >
+                <Plus className="size-4" aria-hidden />
+                Invite someone
+              </Button>
+            ) : null}
+          </>
+        }
+      />
 
       {/* Mounted for the whole life of the surface rather than swapped in when
           `inviting` flips, so the roster refetching underneath cannot take a

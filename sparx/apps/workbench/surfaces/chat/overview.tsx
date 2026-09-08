@@ -44,6 +44,7 @@ import {
   type ChatActivityItem,
   type ChatSource,
 } from './data';
+import { PaneLoadError } from '../../components/pane-load-error';
 
 const COLUMN = 'mx-auto flex w-full max-w-5xl flex-col gap-4';
 
@@ -185,24 +186,14 @@ export function ChatOverviewSurface({ ctx }: { ctx: SurfaceContext }) {
   const body = () => {
     if (summary.isError) {
       return (
-        <div className="flex h-full items-center justify-center p-8">
-          <EmptyState
-            icon={<MessageCircle className="size-6" aria-hidden />}
-            title="Could not load your chat report"
-            description="This is a problem reaching the server. Your conversations are unaffected."
-            actions={
-              <Button
-                size="sm"
-                color="module"
-                onClick={() => {
-                  void summary.refetch();
-                }}
-              >
-                Try again
-              </Button>
-            }
-          />
-        </div>
+        <PaneLoadError
+          icon={<MessageCircle className="size-6" aria-hidden />}
+          title="Could not load your chat report"
+          description="This is a problem reaching the server. Your conversations are unaffected."
+          onRetry={() => {
+            void summary.refetch();
+          }}
+        />
       );
     }
 
@@ -460,16 +451,22 @@ export function ChatOverviewSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Messages overview controls">
-        <RefreshButton
-          className="ml-auto"
-          isFetching={
-            summary.isFetching || timeseries.isFetching || agents.isFetching || activity.isFetching
-          }
-          updatedAt={summary.data ? summary.dataUpdatedAt : undefined}
-          onRefresh={refreshAll}
-        />
-      </PaneToolbar>
+      <PaneToolbar
+        label="Messages overview controls"
+        refresh={
+          <RefreshButton
+            className="ml-auto"
+            isFetching={
+              summary.isFetching ||
+              timeseries.isFetching ||
+              agents.isFetching ||
+              activity.isFetching
+            }
+            updatedAt={summary.data ? summary.dataUpdatedAt : undefined}
+            onRefresh={refreshAll}
+          />
+        }
+      />
       <div className="min-h-0 flex-1 overflow-y-auto">{body()}</div>
     </div>
   );

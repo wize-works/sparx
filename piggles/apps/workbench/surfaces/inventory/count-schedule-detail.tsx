@@ -327,8 +327,8 @@ export function CountScheduleDetailSurface({ ctx }: { ctx: SurfaceContext }) {
           What it covers
         </Heading>
         <Text className="text-sm">
-          Counting where the money is often, and the long tail rarely, covers a whole catalogue for
-          a fraction of the effort of a full stocktake.
+          Counting where the money is often, and the long tail rarely, covers a whole catalog for a
+          fraction of the effort of a full stocktake.
         </Text>
 
         <label className="flex flex-col gap-1">

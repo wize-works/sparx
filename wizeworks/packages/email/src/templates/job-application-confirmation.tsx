@@ -16,7 +16,11 @@ export function JobApplicationConfirmationEmail({
   roleTitle,
 }: JobApplicationConfirmationEmailProps) {
   return (
-    <EmailLayout preview={`We got your application — ${roleTitle}`}>
+    <EmailLayout
+      // Somebody applying to work at WizeWorks.
+      audience="platform"
+      preview={`We got your application — ${roleTitle}`}
+    >
       <Section>
         <EmailHeading>Thanks — we&rsquo;ve got it</EmailHeading>
         <EmailParagraph>{applicantName ? `Hi ${applicantName},` : 'Hi there,'}</EmailParagraph>

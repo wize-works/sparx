@@ -27,6 +27,7 @@ import { withRequestTenant } from '@wizeworks/api-core/db';
 import { requireAuth, requireRole } from '@wizeworks/api-core/auth';
 import {
   parseTypeSchema,
+  publishTimestamp,
   resolveType,
   validateAndNormalizeBody,
   recordRevision,
@@ -352,6 +353,9 @@ const resolvers = {
             typeKey: type.key,
             slug,
             status: input.status ?? 'draft',
+            // A create that names `published` is a publish, and a published row without
+            // a date sorts above every dated one and renders a blank date (issue 376).
+            publishedAt: publishTimestamp(input.status ?? 'draft'),
             body: body as Json,
             seoJson: seo as Json,
             authorId: input.authorId ?? null,

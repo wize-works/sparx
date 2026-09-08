@@ -18,11 +18,6 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import {
-  Alert,
-  AlertActions,
-  AlertContent,
-  AlertDescription,
-  AlertTitle,
   Button,
   Heading,
   NativeSelect,
@@ -50,6 +45,7 @@ import {
   type NotificationChannel,
   type NotificationPreferences,
 } from './data';
+import { PaneLoadError } from '../../components/pane-load-error';
 
 /** Centred and capped — a preferences pane torn onto a second monitor is
  *  otherwise a column of controls pinned to the left edge of 2000px of grey. */
@@ -131,29 +127,13 @@ export function NotificationsSurface({ ctx }: { ctx: SurfaceContext }) {
   // category at a default the person never chose.
   if (isError) {
     return (
-      <div className="flex h-full items-center justify-center p-8">
-        <Alert color="error" className="max-w-md">
-          <AlertContent>
-            <AlertTitle>Could not load your notification choices</AlertTitle>
-            <AlertDescription>
-              Nothing has changed — this is a problem reaching the server, not with your saved
-              choices.
-            </AlertDescription>
-          </AlertContent>
-          <AlertActions>
-            <Button
-              size="sm"
-              color="error"
-              variant="soft"
-              onClick={() => {
-                void refetch();
-              }}
-            >
-              Try again
-            </Button>
-          </AlertActions>
-        </Alert>
-      </div>
+      <PaneLoadError
+        title="Could not load your notification choices"
+        description="Nothing has changed — this is a problem reaching the server, not with your saved choices."
+        onRetry={() => {
+          void refetch();
+        }}
+      />
     );
   }
 
@@ -188,25 +168,30 @@ export function NotificationsSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Notification preference actions">
-        <Button
-          color="module"
-          size="sm"
-          className="ml-auto"
-          disabled={!dirty || isPending || save.isPending}
-          onClick={onSave}
-        >
-          <Save className="size-4" aria-hidden />
-          {save.isPending ? 'Saving…' : 'Save'}
-        </Button>
-        <RefreshButton
-          isFetching={isFetching}
-          updatedAt={data ? dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void refetch();
-          }}
-        />
-      </PaneToolbar>
+      <PaneToolbar
+        label="Notification preference actions"
+        primary={
+          <Button
+            color="module"
+            size="sm"
+            className="ml-auto"
+            disabled={!dirty || isPending || save.isPending}
+            onClick={onSave}
+          >
+            <Save className="size-4" aria-hidden />
+            {save.isPending ? 'Saving…' : 'Save'}
+          </Button>
+        }
+        refresh={
+          <RefreshButton
+            isFetching={isFetching}
+            updatedAt={data ? dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void refetch();
+            }}
+          />
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         {isPending || !form ? (

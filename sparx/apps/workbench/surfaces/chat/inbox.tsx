@@ -24,7 +24,6 @@ import {
   Filter,
   FilterItem,
   SearchInput,
-  ToolbarSeparator,
 } from '@wizeworks/silicaui-react';
 import { Globe, Inbox, UserCheck } from 'lucide-react';
 import { useSites } from '../../lib/api/shell-data';
@@ -178,81 +177,85 @@ export function ChatInboxSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Inbox controls" wrap>
-        <div className="max-w-xs min-w-0 flex-1">
-          <SearchInput
-            size="sm"
-            aria-label="Search conversations"
-            placeholder="Name, email or subject…"
-            value={search}
-            onValueChange={(next) => {
-              setSearch(next);
-              resetWindow();
-            }}
-          />
-        </div>
-
-        <ToolbarSeparator className="hidden @xl:block" />
-
-        <Filter
-          color="module"
-          value={statusValue}
-          onValueChange={(next) => {
-            setStatusValue((next as string | null) ?? 'all');
-            resetWindow();
-          }}
-          showReset={false}
-          aria-label="Filter by status"
-        >
-          {STATUS_FILTERS.map((entry) => (
-            <FilterItem key={entry.value} value={entry.value}>
-              {entry.label}
-            </FilterItem>
-          ))}
-        </Filter>
-
-        {/* Two scope toggles, phrased as questions the operator actually asks:
+      <PaneToolbar
+        label="Inbox controls"
+        search={
+          <div className="max-w-xs min-w-0 flex-1">
+            <SearchInput
+              size="sm"
+              aria-label="Search conversations"
+              placeholder="Name, email or subject…"
+              value={search}
+              onValueChange={(next) => {
+                setSearch(next);
+                resetWindow();
+              }}
+            />
+          </div>
+        }
+        controls={
+          <>
+            <Filter
+              color="module"
+              value={statusValue}
+              onValueChange={(next) => {
+                setStatusValue((next as string | null) ?? 'all');
+                resetWindow();
+              }}
+              showReset={false}
+              aria-label="Filter by status"
+            >
+              {STATUS_FILTERS.map((entry) => (
+                <FilterItem key={entry.value} value={entry.value}>
+                  {entry.label}
+                </FilterItem>
+              ))}
+            </Filter>
+            {/* Two scope toggles, phrased as questions the operator actually asks:
             "just mine?" and "across all my sites?". Soft-filled when on so the
             active scope reads at a glance. */}
-        <Button
-          size="sm"
-          variant={mine ? 'soft' : 'ghost'}
-          color={mine ? 'module' : 'neutral'}
-          aria-pressed={mine}
-          className="shrink-0"
-          onClick={() => {
-            setMine((v) => !v);
-            resetWindow();
-          }}
-        >
-          <UserCheck className="size-4" aria-hidden />
-          Mine
-        </Button>
-        <Button
-          size="sm"
-          variant={allSites ? 'soft' : 'ghost'}
-          color={allSites ? 'module' : 'neutral'}
-          aria-pressed={allSites}
-          className="shrink-0"
-          title="Show conversations from every one of your sites"
-          onClick={() => {
-            setAllSites((v) => !v);
-            resetWindow();
-          }}
-        >
-          <Globe className="size-4" aria-hidden />
-          All sites
-        </Button>
-
-        <RefreshButton
-          className="ml-auto"
-          isFetching={isFetching}
-          updatedAt={data ? dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void refetch();
-          }}
-        />
-      </PaneToolbar>
+            <Button
+              size="sm"
+              variant={mine ? 'soft' : 'ghost'}
+              color={mine ? 'module' : 'neutral'}
+              aria-pressed={mine}
+              className="shrink-0"
+              onClick={() => {
+                setMine((v) => !v);
+                resetWindow();
+              }}
+            >
+              <UserCheck className="size-4" aria-hidden />
+              Mine
+            </Button>
+            <Button
+              size="sm"
+              variant={allSites ? 'soft' : 'ghost'}
+              color={allSites ? 'module' : 'neutral'}
+              aria-pressed={allSites}
+              className="shrink-0"
+              title="Show conversations from every one of your sites"
+              onClick={() => {
+                setAllSites((v) => !v);
+                resetWindow();
+              }}
+            >
+              <Globe className="size-4" aria-hidden />
+              All sites
+            </Button>
+          </>
+        }
+        refresh={
+          <RefreshButton
+            className="ml-auto"
+            isFetching={isFetching}
+            updatedAt={data ? dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void refetch();
+            }}
+          />
+        }
+      />
 
       <Card className="min-h-0 flex-1 overflow-y-auto">
         {error ? (

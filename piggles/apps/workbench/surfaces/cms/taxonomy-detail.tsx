@@ -19,6 +19,7 @@
 // rail to sit beside it, so a bento would float a near-empty column. One
 // centred, capped column instead, with the labels as the hero.
 
+import { shownInPlace } from '@wizeworks/query';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { PaneWaiting } from '../../components/pane-waiting';
 import { PaneLoadError } from '../../components/pane-load-error';
@@ -57,6 +58,7 @@ import { PaneToolbar, PANE_SHELL } from '../../components/pane-toolbar';
 import { FormSection } from '../../components/form-section';
 import { RefreshButton } from '../../components/refresh-button';
 import type { SurfaceContext } from '../../lib/surfaces/registry';
+import { SaveFailure } from '@/components/save-failure';
 import {
   buildTermTree,
   collectDescendants,
@@ -135,6 +137,7 @@ function CreateTaxonomy({ ctx }: { ctx: SurfaceContext }) {
             toast.add({ title: `${created.plural_name} created`, type: 'success' });
           });
         },
+        onError: shownInPlace,
       }
     );
   };
@@ -164,14 +167,7 @@ function CreateTaxonomy({ ctx }: { ctx: SurfaceContext }) {
             labels that go inside it.
           </Text>
 
-          {failure ? (
-            <Alert color="error">
-              <AlertContent>
-                <AlertTitle>Could not create this</AlertTitle>
-                <AlertDescription>{failure}</AlertDescription>
-              </AlertContent>
-            </Alert>
-          ) : null}
+          <SaveFailure title="Could not create this" message={failure} />
 
           <FormSection title="Name">
             <Field>
@@ -436,13 +432,21 @@ function ManageBody({
   };
 
   const onDelete = async () => {
-    const count = taxonomy.term_count;
+    // The count that matters here is EVERY site's, not this one's. A way of
+    // filing is shared across a business's websites while its labels are not,
+    // so deleting it from one site destroys the labels on all of them — and the
+    // site being worked in is routinely the one holding none of them (issue 385).
+    const count = taxonomy.all_sites_term_count;
+    const here = taxonomy.term_count;
+    const elsewhere = count - here;
     const ok = await confirm({
       title: `Delete “${taxonomy.plural_name}”?`,
       description:
-        count > 0
-          ? `This removes this way of filing and all ${String(count)} of its labels, and takes those labels off any content using them. This cannot be undone.`
-          : 'This removes this way of filing content. This cannot be undone.',
+        count === 0
+          ? 'This removes this way of filing content. This cannot be undone.'
+          : elsewhere > 0
+            ? `This removes this way of filing from every one of your websites, along with all ${String(count)} of its labels — ${String(elsewhere)} of ${elsewhere === 1 ? 'them is' : 'them are'} on your other sites — and takes those labels off any content using them. This cannot be undone.`
+            : `This removes this way of filing and all ${String(count)} of its labels, and takes those labels off any content using them. This cannot be undone.`,
       confirmLabel: 'Delete it',
       cancelLabel: 'Keep it',
       color: 'danger',
@@ -1027,6 +1031,7 @@ function AddTermForm({
           setName('');
           setParent('');
         },
+        onError: shownInPlace,
       }
     );
   };

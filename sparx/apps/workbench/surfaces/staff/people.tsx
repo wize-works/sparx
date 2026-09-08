@@ -205,54 +205,62 @@ export function PeopleSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Roster controls" wrap>
-        <Filter
-          color="module"
-          value={status}
-          onValueChange={(next) => {
-            setStatus(typeof next === 'string' ? next : 'active');
-          }}
-          showReset={false}
-          aria-label="Filter by who is here"
-        >
-          {STATUS_FILTERS.map((filter) => (
-            <FilterItem key={filter.value} value={filter.value}>
-              {filter.label}
-            </FilterItem>
-          ))}
-        </Filter>
-
-        <div className="max-w-xs min-w-0 flex-1">
-          <SearchInput
+      <PaneToolbar
+        label="Roster controls"
+        search={
+          <div className="max-w-xs min-w-0 flex-1">
+            <SearchInput
+              size="sm"
+              aria-label="Search the roster"
+              placeholder="Find someone…"
+              value={search}
+              onValueChange={setSearch}
+            />
+          </div>
+        }
+        primary={
+          <Button
             size="sm"
-            aria-label="Search the roster"
-            placeholder="Find someone…"
-            value={search}
-            onValueChange={setSearch}
+            color="module"
+            className="ml-auto"
+            onClick={() => {
+              ctx.open('staff.person', { id: 'new' });
+            }}
+          >
+            <Plus className="size-4" aria-hidden />
+            <span className="hidden @lg:inline">Add someone</span>
+          </Button>
+        }
+        controls={
+          <>
+            <Filter
+              color="module"
+              value={status}
+              onValueChange={(next) => {
+                setStatus(typeof next === 'string' ? next : 'active');
+              }}
+              showReset={false}
+              aria-label="Filter by who is here"
+            >
+              {STATUS_FILTERS.map((filter) => (
+                <FilterItem key={filter.value} value={filter.value}>
+                  {filter.label}
+                </FilterItem>
+              ))}
+            </Filter>
+          </>
+        }
+        refresh={
+          <RefreshButton
+            isFetching={isFetching}
+            updatedAt={data ? dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void refetch();
+              void open.refetch();
+            }}
           />
-        </div>
-
-        <Button
-          size="sm"
-          color="module"
-          className="ml-auto"
-          onClick={() => {
-            ctx.open('staff.person', { id: 'new' });
-          }}
-        >
-          <Plus className="size-4" aria-hidden />
-          <span className="hidden @lg:inline">Add someone</span>
-        </Button>
-
-        <RefreshButton
-          isFetching={isFetching}
-          updatedAt={data ? dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void refetch();
-            void open.refetch();
-          }}
-        />
-      </PaneToolbar>
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         {isError ? (

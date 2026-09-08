@@ -212,7 +212,7 @@ export const CMS_SURFACES: SurfaceDefinition[] = [
     keywords: ['notify', 'api', 'developer', 'integration', 'webhook'],
     component: WebhooksListSurface,
     createSurface: 'cms.webhooks.detail',
-    createLabel: 'Set up a webhook',
+    createLabel: 'Set one up',
   },
   {
     key: 'cms.webhooks.detail',

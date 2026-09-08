@@ -26,7 +26,6 @@ import { slotLabel, suggestSlotSku, type Slot } from './slots';
 import {
   formatCents,
   productErrorMessage,
-  type Product,
   type Variant,
   type useCreateVariant,
 } from '../products-data';
@@ -88,11 +87,16 @@ export function RetiredSlotRows({
 /** A combination nobody can buy yet, and nobody ever could. */
 export function EmptySlotRow({
   slot,
-  product,
+  stem,
+  taken,
   create,
 }: {
   slot: Slot;
-  product: Product;
+  /** The code this product already carries — see `skuStem`. */
+  stem: string;
+  /** Every code this product already holds, live or retired. Offering one that
+   *  is taken pre-fills the field with a code the server will refuse. */
+  taken: Set<string>;
   create: ReturnType<typeof useCreateVariant>;
 }) {
   const toast = useToast();
@@ -112,7 +116,7 @@ export function EmptySlotRow({
           variant="outline"
           color="module"
           onClick={() => {
-            setSku(suggestSlotSku(product, slot, new Set()));
+            setSku(suggestSlotSku(stem, slot, taken));
             setAdding(true);
           }}
         >

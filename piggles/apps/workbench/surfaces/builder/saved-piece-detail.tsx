@@ -38,7 +38,7 @@ import {
   Textarea,
   useToast,
 } from '@wizeworks/silicaui-react';
-import { faFileText, faPencil, faTableLayout, faTrashCan } from '@fortawesome/pro-solid-svg-icons';
+import { faPencil, faTrashCan } from '@fortawesome/pro-solid-svg-icons';
 import { Icon } from '@piggles/ui';
 import { useConfirm } from '../../lib/confirm';
 import { useDirtySource } from '../../lib/workbench/dirty';
@@ -46,6 +46,7 @@ import { afterPaneChange } from '../../lib/defer';
 import { PaneToolbar, PANE_SHELL } from '../../components/pane-toolbar';
 import { FormSection } from '../../components/form-section';
 import { RefreshButton } from '../../components/refresh-button';
+import { UsagePanel } from './saved-piece-usage';
 import type { SurfaceContext } from '../../lib/surfaces/registry';
 import { tenantSymbolId } from '../../lib/studio/saved-pieces';
 import {
@@ -59,7 +60,6 @@ import {
   useSavedPieceUsage,
   useUpdatePiece,
   type Piece,
-  type PieceUsage,
 } from './saved-pieces-data';
 
 const COLUMN = 'mx-auto flex w-full max-w-3xl flex-col gap-4';
@@ -192,6 +192,13 @@ function ManagePiece({
   // stale 0 is showing is how a live placement gets orphaned.
   const usageKnown = usage.isSuccess;
   const inUse = usageKnown && usageTotal > 0;
+  // BEING USED AND BEING BLOCKED ARE DIFFERENT. A piece the current editor placed
+  // detaches on delete — the page keeps the design and stops following the master
+  // — so it is used without standing in the way. Only an old-style placement
+  // refuses. Reading `total` as the block is how this pane would tell her she
+  // cannot delete something the server would delete happily.
+  const blockedTotal = usage.data?.blocking ?? 0;
+  const blocked = usageKnown && blockedTotal > 0;
 
   const save = () => {
     if (nameEmpty) return;
@@ -226,14 +233,21 @@ function ManagePiece({
   };
 
   const onDelete = async () => {
-    // The server refuses a delete while the piece is placed, so we never offer a
-    // proceed path that would just 400. Deletion is only presented when reach is
-    // known to be zero; the confirm still names the piece and is explicit that it
-    // cannot be undone.
+    // The confirm says what will HAPPEN to her pages, which is not the same
+    // sentence in both cases. Unplaced: nothing changes anywhere. Placed: every
+    // page keeps the design exactly as it looks and simply stops following this
+    // piece — silica detaches rather than leaving a hole, and saying "nothing
+    // your visitors see will change" over a placed piece was false (issue 393).
+    // A piece with an old-style placement never reaches here; Delete is disabled.
     const ok = await confirm({
       title: `Delete “${piece.name}”?`,
-      description:
-        'This removes the piece and its whole history for good. It is not on any of your pages, so nothing your visitors see will change. This cannot be undone.',
+      description: inUse
+        ? `This removes the piece and its whole history for good. ${
+            usageTotal === 1 ? 'The page' : 'The pages'
+          } it is on will keep the design exactly as it looks now and simply stop following it, so nothing your visitors see will change. You will not be able to change ${
+            usageTotal === 1 ? 'it' : 'them'
+          } from one place any more. This cannot be undone.`
+        : 'This removes the piece and its whole history for good. It is not on any of your pages, so nothing your visitors see will change. This cannot be undone.',
       confirmLabel: 'Delete it',
       cancelLabel: 'Keep it',
       color: 'danger',
@@ -345,7 +359,7 @@ function ManagePiece({
 
           <FormSection
             title="Details"
-            description="The name and note are how you recognise this piece — in this list and in the editor's Add panel."
+            description="The name and note are how you recognize this piece — in this list and in the editor's Add panel."
           >
             <Field>
               <FieldLabel>Name</FieldLabel>
@@ -390,7 +404,12 @@ function ManagePiece({
             </Field>
           </FormSection>
 
-          <UsagePanel usage={usage.data} isPending={usage.isPending} isError={usage.isError} />
+          <UsagePanel
+            ctx={ctx}
+            usage={usage.data}
+            isPending={usage.isPending}
+            isError={usage.isError}
+          />
 
           {/* Destructive action as a plain row under a divider — not a card with
               equal weight to the work above it. Deletion is only possible when the
@@ -399,20 +418,24 @@ function ManagePiece({
             <div className="flex min-w-0 flex-col">
               <Text className="font-medium">Delete this piece</Text>
               <Text className="text-sm">
-                {inUse
+                {blocked
                   ? `You can't delete this while it's on ${
-                      usageTotal === 1 ? '1 page' : `${String(usageTotal)} places`
-                    }. Remove it from those in the editor first — otherwise they'd be left with a hole.`
-                  : usageKnown
-                    ? 'Removes it and its history for good. This cannot be undone.'
-                    : 'Checking where this is used before this can be deleted.'}
+                      blockedTotal === 1 ? '1 page' : `${String(blockedTotal)} places`
+                    } built the old way. Remove it from those in the editor first — otherwise they'd be left with a hole.`
+                  : !usageKnown
+                    ? 'Checking where this is used before this can be deleted.'
+                    : inUse
+                      ? `Removes it for good. ${
+                          usageTotal === 1 ? 'The page' : 'The pages'
+                        } it is on will keep the design and stop following it. This cannot be undone.`
+                      : 'Removes it and its history for good. This cannot be undone.'}
               </Text>
             </div>
             <Button
               size="sm"
               variant="outline"
               color="danger"
-              disabled={!usageKnown || inUse}
+              disabled={!usageKnown || blocked}
               loading={del.isPending}
               onClick={() => {
                 void onDelete();
@@ -425,63 +448,5 @@ function ManagePiece({
         </div>
       </div>
     </div>
-  );
-}
-
-/* ── Where it's used ────────────────────────────────────────────────────── */
-
-function UsagePanel({
-  usage,
-  isPending,
-  isError,
-}: {
-  usage: PieceUsage | undefined;
-  isPending: boolean;
-  isError: boolean;
-}) {
-  const rows = usage
-    ? [
-        ...usage.pages.map((page) => ({ ...page, kind: 'Page' as const })),
-        ...usage.layouts.map((layout) => ({ ...layout, kind: 'Layout' as const })),
-      ]
-    : [];
-
-  return (
-    <FormSection
-      title="Where it's used"
-      description="Every page and layout this piece appears on. Change it here or in the editor and all of these update together."
-    >
-      {isError ? (
-        <Text className="text-sm">Could not check where this is used just now.</Text>
-      ) : isPending ? (
-        <Text className="text-sm" role="status">
-          Checking…
-        </Text>
-      ) : rows.length === 0 ? (
-        <Text className="text-sm">
-          This piece isn&apos;t on any page or layout yet. Add it to a page in the editor and it
-          will appear here.
-        </Text>
-      ) : (
-        <ul className="flex flex-col">
-          {rows.map((row) => (
-            <li
-              key={`${row.kind}:${row.id}`}
-              className="border-base-300 flex items-center gap-3 border-b py-2 last:border-b-0"
-            >
-              {row.kind === 'Page' ? (
-                <Icon glyph={faFileText} className="size-4 shrink-0" aria-hidden />
-              ) : (
-                <Icon glyph={faTableLayout} className="size-4 shrink-0" aria-hidden />
-              )}
-              <Text className="min-w-0 flex-1 truncate font-medium">{row.name}</Text>
-              <Badge color="neutral" variant="soft" size="sm" className="shrink-0">
-                {row.kind}
-              </Badge>
-            </li>
-          ))}
-        </ul>
-      )}
-    </FormSection>
   );
 }

@@ -21,7 +21,7 @@ import { Button, Input } from '@wizeworks/silicaui-react';
 import type { TreeDoc } from '../../documents/types';
 import { docKey } from '../../documents/types';
 import { collectIds, findNode, findPlace } from '../../tree/walk';
-import { useApply, useDoc, useDocSnapshot, useSelect } from '../context';
+import { useApply, useDoc, useDocSnapshot, useSelect, useSymbolNames } from '../context';
 import { dropPosition, resolveDropTarget, type DropPosition, type Point } from '../canvas/drop';
 import { useDragCargo, useDragSource, useDropZone } from '../drag/pointer-drag';
 import { StudioIcon } from '../icon';
@@ -43,9 +43,10 @@ export function Navigator() {
 
   // The Navigator lists THIS document only. Chrome around a page body is another
   // document's tree, and listing it here would offer rows that refuse every edit.
+  const symbolNames = useSymbolNames();
   const rows = useMemo(
-    () => layerRows(doc.root, { depth, editableIds: collectIds(doc.root) }),
-    [doc.root, depth]
+    () => layerRows(doc.root, { depth, editableIds: collectIds(doc.root), symbolNames }),
+    [doc.root, depth, symbolNames]
   );
 
   /**

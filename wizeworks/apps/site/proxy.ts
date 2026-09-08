@@ -40,6 +40,55 @@ const COOKIE = 'sparx_dev_tenant';
 // tenant's sites to render without per-site DNS. Mirrors the tenant cookie.
 const PROPERTY_COOKIE = 'sparx_dev_property';
 
+// The reader's chosen language. NOT a dev override — it is a real visitor
+// preference on every host, so it is handled before the local-dev branch and
+// survives into production.
+const LANG_COOKIE = 'sparx_lang';
+const LANG_HEADER = 'x-sparx-lang';
+// The BCP-47 shape api-rest accepts. Anything else is dropped rather than
+// forwarded, so a hand-typed `?lang=<script>` never reaches a query string.
+const LANG_RE = /^[a-z]{2,3}(-[A-Za-z]{4})?(-([A-Za-z]{2}|\d{3}))?$/;
+
+/** The language this request should read in, and whether the visitor just chose
+ *  it. `?lang=` with no value means "back to the shop's own words". */
+function readerLanguage(req: NextRequest): { value: string | null; chosen: boolean } {
+  const raw = req.nextUrl.searchParams.get('lang');
+  if (raw !== null) return { value: LANG_RE.test(raw.trim()) ? raw.trim() : null, chosen: true };
+  const cookie = req.cookies.get(LANG_COOKIE)?.value ?? '';
+  return { value: LANG_RE.test(cookie) ? cookie : null, chosen: false };
+}
+
+/**
+ * Mirror the language onto the REQUEST headers, and return what to remember.
+ *
+ * Split in two because `NextResponse.next({ request: { headers } })` snapshots
+ * the headers as it is constructed: setting one afterwards changes nothing, and
+ * the page reads no language at all.
+ */
+function mirrorLanguage(
+  req: NextRequest,
+  requestHeaders: Headers
+): ReturnType<typeof readerLanguage> {
+  const lang = readerLanguage(req);
+  if (lang.value) requestHeaders.set(LANG_HEADER, lang.value);
+  else requestHeaders.delete(LANG_HEADER);
+  return lang;
+}
+
+/** Remember an explicit choice, so the next page stays in that language. */
+function rememberLanguage(
+  res: NextResponse,
+  lang: ReturnType<typeof readerLanguage>
+): NextResponse {
+  if (!lang.chosen) return res;
+  if (lang.value) {
+    res.cookies.set(LANG_COOKIE, lang.value, { httpOnly: false, sameSite: 'lax', path: '/' });
+  } else {
+    res.cookies.set(LANG_COOKIE, '', { path: '/', maxAge: 0 });
+  }
+  return res;
+}
+
 // The dev override is valid ONLY on local hosts — the one place there's no
 // per-tenant DNS. Every production host (a real `*.sparx.zone` subdomain or a
 // connected custom domain) carries the site in the Host header, so it must resolve
@@ -92,7 +141,8 @@ export function proxy(req: NextRequest) {
     if (slug) requestHeaders.set('x-tenant-slug', slug);
     if (propertySlug) requestHeaders.set('x-property-slug', propertySlug);
 
-    const res = NextResponse.next({ request: { headers: requestHeaders } });
+    const lang = mirrorLanguage(req, requestHeaders);
+    const res = rememberLanguage(NextResponse.next({ request: { headers: requestHeaders } }), lang);
     if (fromQuery && fromQuery !== fromCookie) {
       res.cookies.set(COOKIE, fromQuery, { httpOnly: false, sameSite: 'lax', path: '/' });
     }
@@ -112,7 +162,8 @@ export function proxy(req: NextRequest) {
   // from now on.
   requestHeaders.delete('x-tenant-slug');
   requestHeaders.delete('x-property-slug');
-  const res = NextResponse.next({ request: { headers: requestHeaders } });
+  const lang = mirrorLanguage(req, requestHeaders);
+  const res = rememberLanguage(NextResponse.next({ request: { headers: requestHeaders } }), lang);
   if (req.cookies.has(COOKIE)) res.cookies.set(COOKIE, '', { path: '/', maxAge: 0 });
   if (req.cookies.has(PROPERTY_COOKIE))
     res.cookies.set(PROPERTY_COOKIE, '', { path: '/', maxAge: 0 });

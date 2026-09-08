@@ -26,7 +26,6 @@ import {
   SearchInput,
   Table,
   Timestamp,
-  ToolbarSeparator,
 } from '@wizeworks/silicaui-react';
 import { Plus, Send } from 'lucide-react';
 import { RefreshButton } from '../../components/refresh-button';
@@ -100,58 +99,64 @@ export function BroadcastsListSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Broadcasts list controls">
-        <div className="max-w-xs min-w-0 flex-1">
-          <SearchInput
+      <PaneToolbar
+        label="Broadcasts list controls"
+        search={
+          <div className="max-w-xs min-w-0 flex-1">
+            <SearchInput
+              size="sm"
+              aria-label="Search broadcasts"
+              placeholder="Search broadcasts…"
+              value={search}
+              onValueChange={setSearch}
+            />
+          </div>
+        }
+        primary={
+          <Button
+            color="module"
             size="sm"
-            aria-label="Search broadcasts"
-            placeholder="Search broadcasts…"
-            value={search}
-            onValueChange={setSearch}
-          />
-        </div>
-
-        <ToolbarSeparator className="hidden @xl:block" />
-
-        <div className="hidden w-40 shrink-0 @md:block">
-          <NativeSelect
-            size="sm"
-            aria-label="Filter by status"
-            value={status}
-            onChange={(event) => {
-              setStatus(event.target.value);
+            className="ml-auto shrink-0"
+            title="New broadcast — hold Shift to open alongside, Alt for a new window"
+            onClick={(event) => {
+              ctx.open(DETAIL_KEY, { id: 'new' }, { target: targetFor(event) });
             }}
           >
-            <option value="all">Any status</option>
-            <option value="draft">Draft</option>
-            <option value="scheduled">Scheduled</option>
-            <option value="sent">Sent</option>
-            <option value="cancelled">Cancelled</option>
-            <option value="failed">Failed</option>
-          </NativeSelect>
-        </div>
-
-        <Button
-          color="module"
-          size="sm"
-          className="ml-auto shrink-0"
-          title="New broadcast — hold Shift to open alongside, Alt for a new window"
-          onClick={(event) => {
-            ctx.open(DETAIL_KEY, { id: 'new' }, { target: targetFor(event) });
-          }}
-        >
-          <Plus className="size-4" aria-hidden />
-          <span className="hidden @lg:inline">New broadcast</span>
-        </Button>
-
-        <RefreshButton
-          isFetching={isFetching}
-          updatedAt={data ? dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void refetch();
-          }}
-        />
-      </PaneToolbar>
+            <Plus className="size-4" aria-hidden />
+            <span className="hidden @lg:inline">New broadcast</span>
+          </Button>
+        }
+        controls={
+          <>
+            <div className="hidden w-40 shrink-0 @md:block">
+              <NativeSelect
+                size="sm"
+                aria-label="Filter by status"
+                value={status}
+                onChange={(event) => {
+                  setStatus(event.target.value);
+                }}
+              >
+                <option value="all">Any status</option>
+                <option value="draft">Draft</option>
+                <option value="scheduled">Scheduled</option>
+                <option value="sent">Sent</option>
+                <option value="cancelled">Cancelled</option>
+                <option value="failed">Failed</option>
+              </NativeSelect>
+            </div>
+          </>
+        }
+        refresh={
+          <RefreshButton
+            isFetching={isFetching}
+            updatedAt={data ? dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void refetch();
+            }}
+          />
+        }
+      />
 
       <Card className="min-h-0 flex-1 overflow-y-auto">
         {isError ? (

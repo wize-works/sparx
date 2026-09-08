@@ -60,7 +60,6 @@ import { PaneToolbar, PANE_SHELL } from '../../components/pane-toolbar';
 import { RefreshButton } from '../../components/refresh-button';
 import { FormSection } from '../../components/form-section';
 import type { SurfaceContext } from '../../lib/surfaces/registry';
-import { ScrollStrip } from '../../components/scroll-strip';
 import { FollowingNotice, ProductScopeFallback, useProductScope } from './product-scope';
 import { PaneLoadError } from '../../components/pane-load-error';
 import {
@@ -610,17 +609,15 @@ export function ProductReviewsSurface({ ctx }: { ctx: SurfaceContext }) {
                 className="flex flex-col gap-3"
               >
                 <div className="bg-base-300 shrink-0 rounded-full px-4 py-2">
-                  <ScrollStrip label="tabs">
-                    <TabsList>
-                      <TabsTab value="reviews">
-                        Reviews{allReviews.length > 0 ? ` (${String(allReviews.length)})` : ''}
-                      </TabsTab>
-                      <TabsTab value="questions">
-                        Questions
-                        {allQuestions.length > 0 ? ` (${String(allQuestions.length)})` : ''}
-                      </TabsTab>
-                    </TabsList>
-                  </ScrollStrip>
+                  <TabsList scrollable>
+                    <TabsTab value="reviews">
+                      Reviews{allReviews.length > 0 ? ` (${String(allReviews.length)})` : ''}
+                    </TabsTab>
+                    <TabsTab value="questions">
+                      Questions
+                      {allQuestions.length > 0 ? ` (${String(allQuestions.length)})` : ''}
+                    </TabsTab>
+                  </TabsList>
                 </div>
 
                 <TabsPanel value="reviews">

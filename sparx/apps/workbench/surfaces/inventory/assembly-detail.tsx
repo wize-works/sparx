@@ -72,6 +72,7 @@ import {
   useReleaseRun,
   type AssemblyKind,
 } from './assembly-data';
+import { PaneLoadError } from '../../components/pane-load-error';
 
 const COLUMN = 'mx-auto flex w-full max-w-4xl flex-col gap-4';
 
@@ -156,24 +157,29 @@ function PlanRun({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Plan a run actions">
-        <span className="inline-flex items-center gap-1.5">
-          <Hammer className="size-4" aria-hidden />
-          <Text as="span" className="text-sm font-medium">
-            Plan a run
-          </Text>
-        </span>
-        <Button
-          size="sm"
-          color="module"
-          className="ml-auto shrink-0"
-          disabled={!canPlan}
-          loading={planRun.isPending}
-          onClick={plan}
-        >
-          Plan it
-        </Button>
-      </PaneToolbar>
+      <PaneToolbar
+        label="Plan a run actions"
+        status={
+          <span className="inline-flex items-center gap-1.5">
+            <Hammer className="size-4" aria-hidden />
+            <Text as="span" className="text-sm font-medium">
+              Plan a run
+            </Text>
+          </span>
+        }
+        primary={
+          <Button
+            size="sm"
+            color="module"
+            className="ml-auto shrink-0"
+            disabled={!canPlan}
+            loading={planRun.isPending}
+            onClick={plan}
+          >
+            Plan it
+          </Button>
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className={COLUMN}>
@@ -344,18 +350,18 @@ function ViewRun({ ctx, id }: { ctx: SurfaceContext; id: string }) {
     const gone = isNotFound(run.error);
     return (
       <div className={PANE_SHELL}>
-        <div className="flex h-full items-center justify-center p-8">
-          <Alert color={gone ? 'warning' : 'danger'} variant="soft" className="max-w-md">
-            <AlertContent>
-              <AlertTitle>{gone ? 'This run no longer exists' : 'Could not load it'}</AlertTitle>
-              <AlertDescription>
-                {gone
-                  ? 'It may have been deleted.'
-                  : 'This is a problem reaching the server. Nothing is affected.'}
-              </AlertDescription>
-            </AlertContent>
-          </Alert>
-        </div>
+        <PaneLoadError
+          reason={gone ? 'missing' : 'unreachable'}
+          title={gone ? 'This run no longer exists' : 'Could not load this run'}
+          description={
+            gone
+              ? 'It may have been deleted. The stock it used and produced is unaffected.'
+              : 'This is a problem reaching the server. The run itself is unaffected — it just could not be read just now.'
+          }
+          onRetry={() => {
+            void run.refetch();
+          }}
+        />
       </div>
     );
   }
@@ -465,74 +471,79 @@ function ViewRun({ ctx, id }: { ctx: SurfaceContext; id: string }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Run actions">
-        <span className="inline-flex items-center gap-1.5">
-          <Hammer className="size-4" aria-hidden />
-          <Text as="span" className="font-mono text-sm font-medium">
-            {data.number}
-          </Text>
-        </span>
-        <Badge color={state.tone} variant="soft" size="sm">
-          {state.label}
-        </Badge>
-
-        {data.status === 'planned' ? (
-          <Button
-            size="sm"
-            color="warning"
-            className="ml-auto shrink-0"
-            loading={release.isPending}
-            onClick={() => {
-              void doRelease();
+      <PaneToolbar
+        label="Run actions"
+        status={
+          <span className="inline-flex items-center gap-1.5">
+            <Hammer className="size-4" aria-hidden />
+            <Text as="span" className="font-mono text-sm font-medium">
+              {data.number}
+            </Text>
+          </span>
+        }
+        controls={
+          <>
+            <Badge color={state.tone} variant="soft" size="sm">
+              {state.label}
+            </Badge>
+            {data.status === 'planned' ? (
+              <Button
+                size="sm"
+                color="warning"
+                className="ml-auto shrink-0"
+                loading={release.isPending}
+                onClick={() => {
+                  void doRelease();
+                }}
+              >
+                <Lock className="size-4" aria-hidden />
+                Hold the parts
+              </Button>
+            ) : null}
+            {/* The action this surface exists for, so it is solid and colored. */}
+            {workable ? (
+              <Button
+                size="sm"
+                color="module"
+                className={data.status === 'planned' ? 'shrink-0' : 'ml-auto shrink-0'}
+                loading={complete.isPending}
+                onClick={() => {
+                  void doComplete();
+                }}
+              >
+                <CheckCircle2 className="size-4" aria-hidden />
+                Mark it made
+              </Button>
+            ) : null}
+            {workable ? (
+              <Button
+                size="sm"
+                variant="ghost"
+                color="danger"
+                shape="square"
+                aria-label="Call this run off"
+                loading={cancel.isPending}
+                onClick={() => {
+                  void doCancel();
+                }}
+              >
+                <Ban className="size-4" aria-hidden />
+              </Button>
+            ) : (
+              <span className="ml-auto" />
+            )}
+          </>
+        }
+        refresh={
+          <RefreshButton
+            isFetching={run.isFetching}
+            updatedAt={run.dataUpdatedAt}
+            onRefresh={() => {
+              void run.refetch();
             }}
-          >
-            <Lock className="size-4" aria-hidden />
-            Hold the parts
-          </Button>
-        ) : null}
-
-        {/* The action this surface exists for, so it is solid and colored. */}
-        {workable ? (
-          <Button
-            size="sm"
-            color="module"
-            className={data.status === 'planned' ? 'shrink-0' : 'ml-auto shrink-0'}
-            loading={complete.isPending}
-            onClick={() => {
-              void doComplete();
-            }}
-          >
-            <CheckCircle2 className="size-4" aria-hidden />
-            Mark it made
-          </Button>
-        ) : null}
-
-        {workable ? (
-          <Button
-            size="sm"
-            variant="ghost"
-            color="danger"
-            shape="square"
-            aria-label="Call this run off"
-            loading={cancel.isPending}
-            onClick={() => {
-              void doCancel();
-            }}
-          >
-            <Ban className="size-4" aria-hidden />
-          </Button>
-        ) : (
-          <span className="ml-auto" />
-        )}
-
-        <RefreshButton
-          isFetching={run.isFetching}
-          updatedAt={run.dataUpdatedAt}
-          onRefresh={() => {
-            void run.refetch();
-          }}
-        />
-      </PaneToolbar>
+          />
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className={COLUMN}>

@@ -26,7 +26,11 @@ export function ChatNotificationEmail({
   siteName,
 }: ChatNotificationEmailProps) {
   return (
-    <EmailLayout preview={`New chat message from ${customerName}`}>
+    <EmailLayout
+      // Staff notification -- the shop OWNER reads this.
+      audience="platform"
+      preview={`New chat message from ${customerName}`}
+    >
       <Section>
         <EmailHeading>New chat message</EmailHeading>
         <EmailParagraph>

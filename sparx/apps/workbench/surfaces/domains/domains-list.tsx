@@ -25,6 +25,7 @@ import { useSites } from '../sites/data';
 import type { OpenTarget, SurfaceContext } from '../../lib/surfaces/registry';
 import { DOMAIN_SHOP_URL, domainState, useDomains, type Domain } from './data';
 import { RowOpenHint } from '../../components/row-open-hint';
+import { PaneLoadError } from '../../components/pane-load-error';
 
 /** Same modifier contract as every other list in the app. */
 function targetFor(event: { shiftKey: boolean; altKey: boolean }): OpenTarget {
@@ -144,24 +145,14 @@ export function DomainsListSurface({ ctx }: { ctx: SurfaceContext }) {
 
   if (isError) {
     return (
-      <div className="flex h-full items-center justify-center p-8">
-        <EmptyState
-          icon={<GlobeLock className="size-6" aria-hidden />}
-          title="Could not load your web addresses"
-          description="This is a problem reaching the server. Your addresses are unaffected and still working."
-          actions={
-            <Button
-              size="sm"
-              color="module"
-              onClick={() => {
-                void refetch();
-              }}
-            >
-              Try again
-            </Button>
-          }
-        />
-      </div>
+      <PaneLoadError
+        icon={<GlobeLock className="size-6" aria-hidden />}
+        title="Could not load your web addresses"
+        description="This is a problem reaching the server. Your addresses are unaffected and still working."
+        onRetry={() => {
+          void refetch();
+        }}
+      />
     );
   }
 
@@ -179,68 +170,71 @@ export function DomainsListSurface({ ctx }: { ctx: SurfaceContext }) {
           "Get a domain" almost never; letting the label survive was squeezing
           the search box to a stub. The search box absorbs whatever is left
           (`min-w-0 flex-1`), and the primary action and refresh never change. */}
-      <PaneToolbar label="Web address list controls">
-        {/* The width has to sit on a WRAPPER: SearchInput forwards className to
-            its inner <input>, so a sizing class aimed at the control never
-            reaches the element that actually lays out. */}
-        <div className="max-w-xs min-w-0 flex-1">
-          <SearchInput
+      <PaneToolbar
+        label="Web address list controls"
+        search={
+          <div className="max-w-xs min-w-0 flex-1">
+            <SearchInput
+              size="sm"
+              aria-label="Search web addresses"
+              placeholder="Search addresses…"
+              value={search}
+              onValueChange={setSearch}
+            />
+          </div>
+        }
+        status={
+          <p className="hidden shrink-0 text-sm whitespace-nowrap @xl:block">
+            {needle
+              ? `${String(matches.length)} of ${String(live.length)}`
+              : live.length === 1
+                ? '1 address'
+                : `${String(live.length)} addresses`}
+          </p>
+        }
+        primary={
+          <Button
+            color="module"
             size="sm"
-            aria-label="Search web addresses"
-            placeholder="Search addresses…"
-            value={search}
-            onValueChange={setSearch}
+            className="ml-auto shrink-0 whitespace-nowrap"
+            title="Connect a domain — hold Shift to open alongside, Alt for a new window"
+            onClick={(event) => {
+              ctx.open('platform.settings.domain', { id: 'new' }, { target: targetFor(event) });
+            }}
+          >
+            <Plus className="size-4" aria-hidden />
+            Connect a domain
+          </Button>
+        }
+        controls={
+          /* Buying is not part of this surface yet, so "I don't have one" is
+             answered with a real place to get one rather than a dead button. */
+          <Button
+            size="sm"
+            variant="ghost"
+            color="module"
+            className="shrink-0 whitespace-nowrap"
+            // silica's Button renders through `render`, so the composition moves
+            // this Button's children onto the anchor. The a11y rule reads the
+            // source element and cannot see that.
+            // eslint-disable-next-line jsx-a11y/anchor-has-content -- children arrive via `render`
+            render={<a href={DOMAIN_SHOP_URL} target="_blank" rel="noreferrer" />}
+          >
+            <ShoppingBag className="size-4" aria-hidden />
+            <span className="hidden @2xl:inline">Get a domain</span>
+            <ExternalLink className="hidden size-3 @2xl:inline" aria-hidden />
+          </Button>
+        }
+        refresh={
+          <RefreshButton
+            isFetching={isFetching}
+            updatedAt={domains ? dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void refetch();
+            }}
           />
-        </div>
-        <p className="hidden shrink-0 text-sm whitespace-nowrap @xl:block">
-          {needle
-            ? `${String(matches.length)} of ${String(live.length)}`
-            : live.length === 1
-              ? '1 address'
-              : `${String(live.length)} addresses`}
-        </p>
-        <div className="flex-1" />
-        {/* Buying is not part of this surface yet, so "I don't have one" is
-            answered with a real place to get one rather than a dead button. */}
-        <Button
-          size="sm"
-          variant="outline"
-          color="neutral"
-          className="shrink-0 whitespace-nowrap"
-          // Carries a title because below @lg it is icon-only, and a lone
-          // shopping bag does not say "buy a domain" to anyone.
-          title="Get a domain — opens shop.sparx.works"
-          // The anchor is empty HERE but not at runtime: silica's `render`
-          // composition moves this Button's children onto it. The a11y rule
-          // reads the source element and cannot see that.
-          // eslint-disable-next-line jsx-a11y/anchor-has-content -- children arrive via `render`
-          render={<a href={DOMAIN_SHOP_URL} target="_blank" rel="noreferrer" />}
-        >
-          <ShoppingBag className="size-4" aria-hidden />
-          <span className="hidden @2xl:inline">Get a domain</span>
-          <ExternalLink className="hidden size-3 @2xl:inline" aria-hidden />
-        </Button>
-        <Button
-          color="module"
-          size="sm"
-          className="shrink-0 whitespace-nowrap"
-          title="Connect a domain — hold Shift to open alongside, Alt for a new window"
-          onClick={(event) => {
-            ctx.open('platform.settings.domain', { id: 'new' }, { target: targetFor(event) });
-          }}
-        >
-          <Plus className="size-4" aria-hidden />
-          Connect a domain
-        </Button>
-        {/* ALWAYS the last child of a list toolbar — see RefreshButton. */}
-        <RefreshButton
-          isFetching={isFetching}
-          updatedAt={domains ? dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void refetch();
-          }}
-        />
-      </PaneToolbar>
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         {isPending ? (

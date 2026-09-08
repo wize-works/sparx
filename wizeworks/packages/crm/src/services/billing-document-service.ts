@@ -11,8 +11,11 @@ import {
   ListBillingDocumentsInput,
   UpdateBillingDocumentInput,
 } from '@wizeworks/crm-schemas';
-import { withTenant } from '@wizeworks/db';
-import type { BillingDocument, BillingDocumentLine, Prisma } from '@wizeworks/db';
+// `Prisma` as a VALUE, not a type-only import: `Prisma.DbNull` is a runtime
+// sentinel, and it is the only way to ask a nullable Json column whether a key
+// is present.
+import { Prisma, withTenant } from '@wizeworks/db';
+import type { BillingDocument, BillingDocumentLine } from '@wizeworks/db';
 
 import { writeAuditLog } from '../audit';
 import { publishCrmEvent, type CrmTopic } from '../events';
@@ -51,6 +54,19 @@ interface PendingDocEvent {
 
 export interface DocumentWithLines extends BillingDocument {
   lines: BillingDocumentLine[];
+  /**
+   * Where this document would actually be sent, resolved the same way the send
+   * route resolves it: the frozen `billTo` address first, else the customer's.
+   *
+   * It exists because the console could only see `billTo.email`, so the Send
+   * dialog told the owner "there is no email address on this invoice" about an
+   * invoice whose customer has one — and then sent it anyway when she confirmed,
+   * because the server knew the fallback and the screen did not. One rule, read
+   * from one place.
+   *
+   * Optional: only the single-document read resolves it.
+   */
+  billedToEmail?: string | null;
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -60,6 +76,10 @@ export interface DocumentWithLines extends BillingDocument {
 /** A list row: the document plus the billed party resolved for display. */
 export interface BillingDocumentListItem extends BillingDocument {
   billedToName: string | null;
+  /** When the customer was actually emailed this, or null. Read off the metadata
+   *  bag, which is where the send route records it — there is no column. Lifted
+   *  onto the row because "unpaid" and "never sent" look identical otherwise. */
+  sentAt: string | null;
 }
 
 export async function list(
@@ -99,6 +119,22 @@ export async function list(
           }
         : {}),
       ...(filter.status ? { status: filter.status } : {}),
+      // WAS IT ACTUALLY SENT? There is no `sent_at` column — the send route
+      // records it in the metadata bag — so this asks whether that key is
+      // present. `not: Prisma.DbNull` rather than a JSON equality, because the
+      // value is a timestamp string nobody knows in advance.
+      //
+      // Worth filtering to because an unpaid invoice nobody sent and an unpaid
+      // invoice sent three weeks ago read identically on this list and are
+      // completely different problems, and only one of them is the customer's
+      // fault. It is also what makes the dunning ladder's new "was it sent"
+      // guard safe: a bill she never sends is no longer chased, so it has to be
+      // findable here instead.
+      ...(filter.sent === undefined
+        ? {}
+        : filter.sent
+          ? { metadata: { path: ['sentAt'], not: Prisma.DbNull } }
+          : { NOT: { metadata: { path: ['sentAt'], not: Prisma.DbNull } } }),
       // No denormalized customer/account name column (bill-to/ship-to are
       // frozen JSON, not queryable) — search the document number directly and
       // fall back to the live customer/B2B-account relations.
@@ -139,9 +175,29 @@ export async function list(
     const items = rows.map(({ customer, company, ...document }) => ({
       ...document,
       billedToName: billedToName(document.billTo, customer, company),
+      sentAt: sentAtOf(document.metadata),
     }));
     return { items, total };
   });
+}
+
+/** When the send route last emailed this document. One reader, so the shape of
+ *  the metadata bag is decoded in one place rather than at each call site. */
+function sentAtOf(metadata: Prisma.JsonValue): string | null {
+  if (metadata && typeof metadata === 'object' && !Array.isArray(metadata)) {
+    const value = (metadata as Record<string, unknown>).sentAt;
+    if (typeof value === 'string' && value.trim()) return value;
+  }
+  return null;
+}
+
+/** The address frozen on the document itself, when there is one. */
+function frozenEmail(billTo: Prisma.JsonValue): string | null {
+  if (billTo && typeof billTo === 'object' && !Array.isArray(billTo)) {
+    const value = (billTo as Record<string, unknown>).email;
+    if (typeof value === 'string' && value.trim()) return value.trim();
+  }
+  return null;
 }
 
 /** Shape of the two relations the list resolves a name from. */
@@ -303,11 +359,15 @@ export async function get(ctx: ServiceContext, documentId: string): Promise<Docu
   const doc = await withTenant(ctx, (tx) =>
     tx.billingDocument.findUnique({
       where: { id: documentId },
-      include: { lines: { orderBy: { sortOrder: 'asc' } } },
+      include: {
+        lines: { orderBy: { sortOrder: 'asc' } },
+        customer: { select: { email: true } },
+      },
     })
   );
   if (doc?.deletedAt !== null) throw new CrmNotFoundError('BillingDocument', documentId);
-  return doc;
+  const { customer, ...document } = doc;
+  return { ...document, billedToEmail: frozenEmail(document.billTo) ?? customer?.email ?? null };
 }
 
 // ─────────────────────────────────────────────────────────────────────────

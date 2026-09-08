@@ -43,10 +43,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useQueryClient } from '@wizeworks/query';
 import {
-  Alert,
-  AlertContent,
-  AlertDescription,
-  AlertTitle,
   Badge,
   Button,
   Dialog,
@@ -158,6 +154,7 @@ import {
   type EmailVersion,
   type SavedEmailBlock,
 } from './email-data';
+import { PaneLoadError } from '../../../components/pane-load-error';
 
 /** The neutral fallback theme — used only until the tenant brand loads, or if the
  *  brand/config read fails. The compiled tenant brand (below) is what normally
@@ -712,27 +709,13 @@ function EmailStudio({ ctx }: { ctx: SurfaceContext }) {
   // A failed load replaces the studio — never an empty canvas beside dead controls.
   if (isError) {
     return (
-      <div className="flex h-full items-center justify-center p-8">
-        <Alert color="error" className="max-w-md">
-          <AlertContent>
-            <AlertTitle>Could not load your emails</AlertTitle>
-            <AlertDescription>
-              This is a problem reaching the server, or the site builder is switched off for this
-              account. Your emails are unaffected.
-            </AlertDescription>
-          </AlertContent>
-          <Button
-            size="sm"
-            color="error"
-            variant="soft"
-            onClick={() => {
-              void refetch();
-            }}
-          >
-            Try again
-          </Button>
-        </Alert>
-      </div>
+      <PaneLoadError
+        title="Could not load your emails"
+        description="This is a problem reaching the server, or the site builder is switched off for this account. Your emails are unaffected."
+        onRetry={() => {
+          void refetch();
+        }}
+      />
     );
   }
 

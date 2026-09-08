@@ -101,6 +101,36 @@ describe('watching everything a canvas resolves through', () => {
     expect(session.symbols()['tenant:welcome_band']?.name).toBe('Welcome band');
   });
 
+  it("gives back the author's own note about a piece", () => {
+    // The piece's manage screen asks "What it's for" and then promises the answer
+    // shows up "in this list and in the editor's Add panel". The Add panel reads it
+    // through here, because `symbols()` narrows a piece to what the canvas needs.
+    const session = new StudioSession(CONTEXT);
+    session.loadLibrary([
+      componentDoc({ id: 'tenant:contact_form', note: 'The contact form. Bottom of Contact.' }),
+      componentDoc({ id: 'tenant:plain', note: null }),
+      componentDoc({ id: 'tenant:blank', note: '   ' }),
+    ]);
+
+    expect(session.pieceNote('tenant:contact_form')).toBe('The contact form. Bottom of Contact.');
+    // Nothing written, whitespace, and a piece that was never loaded all read the
+    // same way: no note. The palette falls back to its own sentence for all three.
+    expect(session.pieceNote('tenant:plain')).toBeUndefined();
+    expect(session.pieceNote('tenant:blank')).toBeUndefined();
+    expect(session.pieceNote('tenant:never_loaded')).toBeUndefined();
+  });
+
+  it('prefers an OPEN piece over the loaded library copy', () => {
+    // Same live-first rule as `symbols()`, and for the same reason: the library is
+    // loaded once per session, so a piece opened afterwards holds the fresher copy.
+    // Insert must read that one, or the rail describes a piece as it was on load.
+    const session = new StudioSession(CONTEXT);
+    session.loadLibrary([componentDoc({ id: 'tenant:contact_form', note: 'Old words' })]);
+    session.open(componentDoc({ id: 'tenant:contact_form', note: 'New words' }));
+
+    expect(session.pieceNote('tenant:contact_form')).toBe('New words');
+  });
+
   it('moves on EVERY edit in another pane, not just the first', () => {
     // The dirty-set channel deliberately publishes once, when a document goes
     // from clean to dirty. A page canvas repainting on the first keystroke in the

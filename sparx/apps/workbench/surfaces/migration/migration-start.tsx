@@ -122,23 +122,30 @@ export function MigrationStartSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Migration controls">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => ctx.open('platform.migrate.history', {}, { target: 'tab' })}
-        >
-          <History className="size-4" aria-hidden />
-          Past moves
-        </Button>
-        <div className="ml-auto flex items-center gap-2">
-          <RefreshButton
-            onRefresh={() => void refetch()}
-            isFetching={isFetching}
-            updatedAt={dataUpdatedAt}
-          />
-        </div>
-      </PaneToolbar>
+      <PaneToolbar
+        label="Migration controls"
+        controls={
+          <>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => ctx.open('platform.migrate.history', {}, { target: 'tab' })}
+            >
+              <History className="size-4" aria-hidden />
+              Past moves
+            </Button>
+          </>
+        }
+        refresh={
+          <div className="ml-auto flex items-center gap-2">
+            <RefreshButton
+              onRefresh={() => void refetch()}
+              isFetching={isFetching}
+              updatedAt={dataUpdatedAt}
+            />
+          </div>
+        }
+      />
 
       <div className="mx-auto flex w-full max-w-5xl flex-col gap-5 overflow-y-auto">
         <div className="flex flex-col gap-2">

@@ -50,7 +50,7 @@ export async function sendSignatureRequest(
   const auth = requireAuth(request);
   const tenant = await prisma.tenant.findUnique({
     where: { id: auth.tenantId },
-    select: { slug: true },
+    select: { slug: true, name: true },
   });
   const url = signingUrl(tenant?.slug ?? '', args.token);
   if (!args.notify) return url;
@@ -64,6 +64,11 @@ export async function sendSignatureRequest(
         currency: true,
         propertyId: true,
         stage: { select: { customerLabel: true } },
+        // WHO IS ASKING. The mail named no business at all -- "your estimate is
+        // ready", under our wordmark, to somebody who has never heard of us,
+        // with a link asking them to sign. The trading name, not the legal
+        // entity: this is the shop the signer thinks they are dealing with.
+        property: { select: { name: true } },
       },
     })
   );
@@ -80,6 +85,7 @@ export async function sendSignatureRequest(
       signerName: args.signature.signerName,
       // The label is the tenant's own word for this stage — "Estimate", "Quote",
       // "Work Order". A hardcoded "quote" would be wrong on most of them.
+      fromName: document?.property?.name ?? tenant?.name ?? null,
       documentLabel: document?.stage.customerLabel ?? 'document',
       documentNumber: document?.number ?? '',
       documentTotal: document ? Number(document.total) : 0,

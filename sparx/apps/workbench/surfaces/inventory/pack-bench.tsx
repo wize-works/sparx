@@ -104,49 +104,58 @@ export function PackBenchSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Pack bench controls">
-        <PackageCheck className="size-4" aria-hidden />
-        <span className="text-sm">
-          {plural(
-            (boxes.data?.items ?? []).filter((b) => b.status !== 'cancelled').length,
-            'box',
-            'boxes'
-          )}
-        </span>
-
-        <Button
-          size="sm"
-          color="module-inventory"
-          variant="outline"
-          className="ml-auto"
-          disabled={create.isPending || !orderId}
-          onClick={() => {
-            void (async () => {
-              try {
-                const box = await create.mutateAsync({
-                  orderId,
-                  ...(pickListId ? { pickListId } : {}),
-                });
-                setActiveId(box.id);
-                setError(null);
-              } catch (err) {
-                setError(pickErrorMessage(err, 'Could not start another box.'));
-              }
-            })();
-          }}
-        >
-          <Plus className="size-4" aria-hidden />
-          <span className="hidden @md:inline">Another box</span>
-        </Button>
-
-        <RefreshButton
-          isFetching={boxes.isFetching}
-          updatedAt={boxes.data ? boxes.dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void boxes.refetch();
-          }}
-        />
-      </PaneToolbar>
+      <PaneToolbar
+        label="Pack bench controls"
+        status={
+          <span className="text-sm">
+            {plural(
+              (boxes.data?.items ?? []).filter((b) => b.status !== 'cancelled').length,
+              'box',
+              'boxes'
+            )}
+          </span>
+        }
+        primary={
+          <Button
+            size="sm"
+            color="module-inventory"
+            variant="outline"
+            className="ml-auto"
+            disabled={create.isPending || !orderId}
+            onClick={() => {
+              void (async () => {
+                try {
+                  const box = await create.mutateAsync({
+                    orderId,
+                    ...(pickListId ? { pickListId } : {}),
+                  });
+                  setActiveId(box.id);
+                  setError(null);
+                } catch (err) {
+                  setError(pickErrorMessage(err, 'Could not start another box.'));
+                }
+              })();
+            }}
+          >
+            <Plus className="size-4" aria-hidden />
+            <span className="hidden @md:inline">Another box</span>
+          </Button>
+        }
+        controls={
+          <>
+            <PackageCheck className="size-4" aria-hidden />
+          </>
+        }
+        refresh={
+          <RefreshButton
+            isFetching={boxes.isFetching}
+            updatedAt={boxes.data ? boxes.dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void boxes.refetch();
+            }}
+          />
+        }
+      />
 
       <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto">
         {error ? (
@@ -579,7 +588,7 @@ function SealedActions({
             size="sm"
             variant="ghost"
             onClick={(event) => {
-              ctx.open('crm.orders.detail', { id: box.orderId }, { target: targetFor(event) });
+              ctx.open('commerce.order.detail', { id: box.orderId }, { target: targetFor(event) });
             }}
           >
             Open {box.orderNumber}

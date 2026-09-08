@@ -21,7 +21,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
   Alert,
-  AlertActions,
   AlertContent,
   AlertDescription,
   AlertTitle,
@@ -50,6 +49,7 @@ import {
   useIndustryStarters,
   type IndustryStarter,
 } from './data';
+import { PaneLoadError } from '../../components/pane-load-error';
 
 const COLUMN = 'mx-auto flex w-full max-w-3xl flex-col gap-4';
 
@@ -142,28 +142,13 @@ export function IndustrySurface({ ctx }: { ctx: SurfaceContext }) {
 
   if (isError) {
     return (
-      <div className="flex h-full items-center justify-center p-8">
-        <Alert color="error" className="max-w-md">
-          <AlertContent>
-            <AlertTitle>Could not load the industry list</AlertTitle>
-            <AlertDescription>
-              This is a problem reaching the server. Your current industry is unaffected.
-            </AlertDescription>
-          </AlertContent>
-          <AlertActions>
-            <Button
-              size="sm"
-              color="error"
-              variant="soft"
-              onClick={() => {
-                void refetch();
-              }}
-            >
-              Try again
-            </Button>
-          </AlertActions>
-        </Alert>
-      </div>
+      <PaneLoadError
+        title="Could not load the industry list"
+        description="This is a problem reaching the server. Your current industry is unaffected."
+        onRetry={() => {
+          void refetch();
+        }}
+      />
     );
   }
 
@@ -216,28 +201,33 @@ export function IndustrySurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Industry actions">
-        <Button
-          color="module"
-          size="sm"
-          className="ml-auto"
-          disabled={!chosen || apply.isPending}
-          loading={apply.isPending}
-          onClick={() => {
-            void onApply();
-          }}
-        >
-          <Check className="size-4" aria-hidden />
-          {isReapply ? 'Update setup' : 'Set my industry'}
-        </Button>
-        <RefreshButton
-          isFetching={isFetching}
-          updatedAt={data ? dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void refetch();
-          }}
-        />
-      </PaneToolbar>
+      <PaneToolbar
+        label="Industry actions"
+        primary={
+          <Button
+            color="module"
+            size="sm"
+            className="ml-auto"
+            disabled={!chosen || apply.isPending}
+            loading={apply.isPending}
+            onClick={() => {
+              void onApply();
+            }}
+          >
+            <Check className="size-4" aria-hidden />
+            {isReapply ? 'Update setup' : 'Set my industry'}
+          </Button>
+        }
+        refresh={
+          <RefreshButton
+            isFetching={isFetching}
+            updatedAt={data ? dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void refetch();
+            }}
+          />
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         {isPending || !data ? (

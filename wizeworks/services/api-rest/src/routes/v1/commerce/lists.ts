@@ -71,6 +71,11 @@ const ListCartsQuery = z.object({
 
 const ListCheckoutSessionsQuery = z.object({
   step: z.string().optional(),
+  // "The ones that did not finish" is the question this list exists to answer,
+  // and it is not one step — it is every step except the two that ended. Asking
+  // for it a step at a time makes the caller page three lists and add them up,
+  // so the server answers it directly. Ignored when an exact `step` is given.
+  unfinished: z.coerce.boolean().optional(),
   take: z.coerce.number().int().min(1).max(250).optional(),
   skip: z.coerce.number().int().min(0).optional(),
 });
@@ -383,7 +388,11 @@ const commerceListRoutes: FastifyPluginAsync = async (app) => {
     const q = ListCheckoutSessionsQuery.parse(request.query);
     const take = q.take ?? 100;
     const skip = q.skip ?? 0;
-    const where = { ...(q.step ? { step: q.step } : {}) };
+    const where = q.step
+      ? { step: q.step }
+      : q.unfinished
+        ? { step: { notIn: ['completed', 'expired'] } }
+        : {};
 
     const { rows, total } = await withRequestTenant(request, async (tx) => {
       const [rows, total] = await Promise.all([
@@ -399,6 +408,14 @@ const commerceListRoutes: FastifyPluginAsync = async (app) => {
             currency: true,
             customerId: true,
             customerEmail: true,
+            // The shopper's NAME, not only the address they typed in. It is a
+            // COLUMN ON THIS TABLE, written at the till beside the email, and it
+            // was simply never selected — so a list of people showed raw email
+            // addresses where every other list in the console shows a person.
+            // Taken from the session rather than the linked customer on purpose:
+            // it is the name this checkout was made under, and a guest has one
+            // too.
+            customerName: true,
             subtotalCents: true,
             totalCents: true,
             expiresAt: true,

@@ -13,6 +13,7 @@
 // after the work) is the escape hatch for a deal added by mistake — it soft-
 // deletes, so the row and its history survive.
 
+import { shownInPlace } from '@wizeworks/query';
 import { useEffect, useMemo, useState } from 'react';
 import { PaneWaiting } from '../../components/pane-waiting';
 import { PaneLoadError } from '../../components/pane-load-error';
@@ -52,6 +53,7 @@ import { useTeamRoster } from '../../lib/api/team';
 import { useCustomers } from './customers-data';
 import { customerName } from './customer-display';
 import { usePipelines, stageTypeMeta, type Pipeline } from './pipelines-data';
+import { SaveFailure } from '@/components/save-failure';
 import {
   dealErrorMessage,
   useCreateDeal,
@@ -337,6 +339,7 @@ function DealEditor({
             toast.add({ title: `${created.title} created`, type: 'success' });
           });
         },
+        onError: shownInPlace,
       });
       return;
     }
@@ -356,6 +359,7 @@ function DealEditor({
                   setTouched(false);
                   toast.add({ title: 'Deal saved', type: 'success' });
                 },
+                onError: shownInPlace,
               }
             );
           } else {
@@ -363,6 +367,7 @@ function DealEditor({
             toast.add({ title: 'Deal saved', type: 'success' });
           }
         },
+        onError: shownInPlace,
       }
     );
   };
@@ -438,14 +443,7 @@ function DealEditor({
             </Text>
           ) : null}
 
-          {failure ? (
-            <Alert color="error">
-              <AlertContent>
-                <AlertTitle>Could not save this deal</AlertTitle>
-                <AlertDescription>{failure}</AlertDescription>
-              </AlertContent>
-            </Alert>
-          ) : null}
+          <SaveFailure title="Could not save this deal" message={failure} />
 
           {pipelineList.length === 0 ? (
             <Alert color="warning">

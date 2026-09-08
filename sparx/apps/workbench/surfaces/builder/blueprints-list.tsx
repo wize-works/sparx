@@ -36,6 +36,7 @@ import { RefreshButton } from '../../components/refresh-button';
 import type { OpenTarget, SurfaceContext } from '../../lib/surfaces/registry';
 import { contentsSummary, installState, useBlueprints, type Blueprint } from './blueprints-data';
 import { RowOpenHint } from '../../components/row-open-hint';
+import { PaneLoadError } from '../../components/pane-load-error';
 
 /** Same modifier contract as every other list in the app. */
 function targetFor(event: { shiftKey: boolean; altKey: boolean }): OpenTarget {
@@ -153,59 +154,54 @@ export function BlueprintsListSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Blueprints controls">
-        <Filter
-          color="module"
-          value={filter}
-          onValueChange={(next) => {
-            setFilter((next as FilterValue | null) ?? 'all');
-            resetWindow();
-          }}
-          showReset={false}
-          aria-label="Which designs to show"
-        >
-          <FilterItem value="all">All designs</FilterItem>
-          <FilterItem value="installed">Added to this site</FilterItem>
-        </Filter>
-
-        {typeof total === 'number' ? (
-          <Text className="ml-auto hidden shrink-0 text-sm whitespace-nowrap @md:block">
-            {total === 1 ? '1 design' : `${String(total)} designs`}
-          </Text>
-        ) : null}
-
-        <RefreshButton
-          className={typeof total === 'number' ? undefined : 'ml-auto'}
-          isFetching={isFetching}
-          updatedAt={data ? dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void refetch();
-          }}
-        />
-      </PaneToolbar>
+      <PaneToolbar
+        label="Blueprints controls"
+        controls={
+          <>
+            <Filter
+              color="module"
+              value={filter}
+              onValueChange={(next) => {
+                setFilter((next as FilterValue | null) ?? 'all');
+                resetWindow();
+              }}
+              showReset={false}
+              aria-label="Which designs to show"
+            >
+              <FilterItem value="all">All designs</FilterItem>
+              <FilterItem value="installed">Added to this site</FilterItem>
+            </Filter>
+            {typeof total === 'number' ? (
+              <Text className="ml-auto hidden shrink-0 text-sm whitespace-nowrap @md:block">
+                {total === 1 ? '1 design' : `${String(total)} designs`}
+              </Text>
+            ) : null}
+          </>
+        }
+        refresh={
+          <RefreshButton
+            className={typeof total === 'number' ? undefined : 'ml-auto'}
+            isFetching={isFetching}
+            updatedAt={data ? dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void refetch();
+            }}
+          />
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         {error ? (
           // A failed load REPLACES the gallery — "no designs yet" over a
           // connection failure is the wrong story to tell.
-          <div className="flex h-full items-center justify-center p-8">
-            <EmptyState
-              icon={<LayoutTemplate className="size-6" aria-hidden />}
-              title="Could not load the designs"
-              description="This is a problem reaching the server. Your site and anything you have already added are unaffected."
-              actions={
-                <Button
-                  size="sm"
-                  color="module"
-                  onClick={() => {
-                    void refetch();
-                  }}
-                >
-                  Try again
-                </Button>
-              }
-            />
-          </div>
+          <PaneLoadError
+            icon={<LayoutTemplate className="size-6" aria-hidden />}
+            title="Could not load the designs"
+            description="This is a problem reaching the server. Your site and anything you have already added are unaffected."
+            onRetry={() => {
+              void refetch();
+            }}
+          />
         ) : isLoading ? (
           <p className="p-4 text-sm" role="status">
             Loading…

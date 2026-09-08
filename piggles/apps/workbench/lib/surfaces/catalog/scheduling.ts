@@ -217,7 +217,15 @@ export const SCHEDULING_SURFACES: SurfaceDefinition[] = [
     icon: faChartColumn,
     section: 'Reporting',
     order: 30,
-    keywords: ['utilisation', 'no shows', 'busiest', 'analytics', 'bookings', 'revenue'],
+    keywords: [
+      'utilization',
+      'utilisation',
+      'no shows',
+      'busiest',
+      'analytics',
+      'bookings',
+      'revenue',
+    ],
     component: SchedulingReportsSurface,
   },
 ];

@@ -134,6 +134,31 @@ export function useSelectedNode(): AddressableNode | undefined {
   }, [doc, id]);
 }
 
+/**
+ * Every saved piece's name, keyed by the symbol id an instance references.
+ *
+ * The Navigator and the Inspector both name an instance row, and both used to
+ * call it "Saved design" because the node carries only the id. The name has been
+ * on the session all along — it is what the Add panel lists and what the canvas
+ * resolves the design from — so this is the one lookup both share.
+ *
+ * `useResolutionVersion` is in the dependency list deliberately: the library
+ * lives on the session, `session` is the same object forever, and a memo without
+ * it would hold its first answer for the life of the pane — so a piece saved or
+ * renamed mid-session would never reach the rows.
+ */
+export function useSymbolNames(): Readonly<Record<string, string>> {
+  const session = useStudioSession();
+  const version = useResolutionVersion();
+  return useMemo(() => {
+    const out: Record<string, string> = {};
+    for (const [id, symbol] of Object.entries(session.symbols())) out[id] = symbol.name;
+    return out;
+    // `version` is the reason this recomputes; `session` never changes identity.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session, version]);
+}
+
 export function useHistoryState(): { canUndo: boolean; canRedo: boolean } {
   const { canUndo, canRedo } = useDocSnapshot();
   return useMemo(() => ({ canUndo, canRedo }), [canUndo, canRedo]);

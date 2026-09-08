@@ -5,6 +5,7 @@
 
 import { cookies } from 'next/headers';
 
+import { resolveReaderLocale } from './locale';
 import { resolveActivePropertySlug } from './site-context';
 
 const BASE_URL = process.env.SPARX_API_REST_URL ?? 'http://localhost:3100';
@@ -60,6 +61,13 @@ async function publicGet<T>(
   // single-site storefronts are unchanged. An explicit query `property` wins.
   const propertySlug = await resolveActivePropertySlug();
   if (propertySlug && query.property === undefined) params.set('property', propertySlug);
+  // The reader's language, injected in ONE place for the same reason `property`
+  // is: every catalogue read has to carry it or the shop is half translated, and
+  // 30 call sites each remembering is 30 chances to forget. It rides in the URL,
+  // which is also the fetch cache key — so Spanish and English are separate
+  // cached entries for free, and a reader never gets served the other one.
+  const locale = await resolveReaderLocale();
+  if (locale && query.locale === undefined) params.set('locale', locale);
   for (const [key, value] of Object.entries(query)) {
     if (value === undefined || value === '') continue;
     // Array values become repeated params (?options=a&options=b) — the storefront's
@@ -692,11 +700,14 @@ async function catalogFallback(
 }
 
 export interface SiteSearchHit {
-  /** 'product' | 'collection' | 'cms_page' */
+  /** 'product' | 'collection' | 'cms_page' | 'cms_entry' */
   type: string;
   title: string;
   subtitle: string | null;
   url: string;
+  /** The tenant's own name for a CMS hit's content type — "Blog post", "Page",
+   *  "Event". Null for products and collections, whose entity type names them. */
+  kind?: string | null;
 }
 
 /** Public "search everything" across the storefront (products, collections,

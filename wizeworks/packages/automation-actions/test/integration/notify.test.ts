@@ -136,7 +136,13 @@ describe('payment failed → in-app notification', () => {
     expect(n.kind).toBe('order.payment_failed');
     expect(n.severity).toBe('danger');
     expect(n.module).toBe('commerce');
-    expect(n.entityType).toBe('Order');
+    // LOWERCASE, and that is the whole point of the field. `entityType` is not a
+    // label — it is the key `routeForEntity` looks up in @wizeworks/links to work
+    // out where the notification LEADS, and every one of the 28 entity keys there
+    // is lowercase (`order`, `gift_card`, `cms_page`). Asserting 'Order' asked the
+    // seed to write a value that resolves to nothing, which would turn the bell
+    // back into the dead end it used to be.
+    expect(n.entityType).toBe('order');
   });
 
   it('interpolates the order number into the title', async () => {

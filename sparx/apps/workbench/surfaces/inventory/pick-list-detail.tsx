@@ -36,7 +36,6 @@ import {
   Table,
   Text,
   Timestamp,
-  ToolbarSeparator,
   Tooltip,
 } from '@wizeworks/silicaui-react';
 import {
@@ -132,88 +131,93 @@ export function PickListDetailSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Walk actions">
-        <Badge color={state.tone} variant="soft">
-          {state.label}
-        </Badge>
-        <span className="font-mono text-sm">{walk.number}</span>
-
-        <ToolbarSeparator className="hidden @lg:block" />
-
-        {open ? (
-          <Button
-            size="sm"
-            color="module-inventory"
-            onClick={(event) => {
-              ctx.open('inventory.picking.guided', { id: walk.id }, { target: targetFor(event) });
+      <PaneToolbar
+        label="Walk actions"
+        status={<span className="font-mono text-sm">{walk.number}</span>}
+        controls={
+          <>
+            <Badge color={state.tone} variant="soft">
+              {state.label}
+            </Badge>
+            {open ? (
+              <Button
+                size="sm"
+                color="module-inventory"
+                onClick={(event) => {
+                  ctx.open(
+                    'inventory.picking.guided',
+                    { id: walk.id },
+                    { target: targetFor(event) }
+                  );
+                }}
+              >
+                <ScanLine className="size-4" aria-hidden />
+                <span className="hidden @md:inline">Work this walk</span>
+              </Button>
+            ) : null}
+            <Tooltip content="Print the walk as a scannable sheet">
+              <Button
+                size="sm"
+                variant="outline"
+                aria-label="Print the walk sheet"
+                onClick={(event) => {
+                  ctx.open(
+                    'inventory.documents.label',
+                    {
+                      number: walk.number,
+                      title: 'Pick list',
+                      subtitle: `${walk.warehouseName} · ${plural(walk.lineCount, 'line', 'lines')}`,
+                    },
+                    { target: targetFor(event) }
+                  );
+                }}
+              >
+                <Printer className="size-4" aria-hidden />
+              </Button>
+            </Tooltip>
+            {open ? (
+              <Tooltip content="Abandon this walk">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  color="danger"
+                  aria-label="Abandon this walk"
+                  disabled={cancel.isPending}
+                  onClick={() => {
+                    void (async () => {
+                      const ok = await confirm({
+                        title: `Abandon walk ${walk.number}?`,
+                        description:
+                          'Anything already picked stays picked — it is in a tote. The rest of the route is dropped and those orders can be put on a new walk.',
+                        confirmLabel: 'Abandon it',
+                        cancelLabel: 'Keep it',
+                        color: 'danger',
+                      });
+                      if (!ok) return;
+                      try {
+                        await cancel.mutateAsync(undefined);
+                      } catch (err) {
+                        setError(pickErrorMessage(err, 'Could not abandon the walk.'));
+                      }
+                    })();
+                  }}
+                >
+                  <Ban className="size-4" aria-hidden />
+                </Button>
+              </Tooltip>
+            ) : null}
+          </>
+        }
+        refresh={
+          <RefreshButton
+            isFetching={isFetching}
+            updatedAt={dataUpdatedAt}
+            onRefresh={() => {
+              void refetch();
             }}
-          >
-            <ScanLine className="size-4" aria-hidden />
-            <span className="hidden @md:inline">Work this walk</span>
-          </Button>
-        ) : null}
-
-        <Tooltip content="Print the walk as a scannable sheet">
-          <Button
-            size="sm"
-            variant="outline"
-            aria-label="Print the walk sheet"
-            onClick={(event) => {
-              ctx.open(
-                'inventory.documents.label',
-                {
-                  number: walk.number,
-                  title: 'Pick list',
-                  subtitle: `${walk.warehouseName} · ${plural(walk.lineCount, 'line', 'lines')}`,
-                },
-                { target: targetFor(event) }
-              );
-            }}
-          >
-            <Printer className="size-4" aria-hidden />
-          </Button>
-        </Tooltip>
-
-        {open ? (
-          <Tooltip content="Abandon this walk">
-            <Button
-              size="sm"
-              variant="outline"
-              color="danger"
-              aria-label="Abandon this walk"
-              disabled={cancel.isPending}
-              onClick={() => {
-                void (async () => {
-                  const ok = await confirm({
-                    title: `Abandon walk ${walk.number}?`,
-                    description:
-                      'Anything already picked stays picked — it is in a tote. The rest of the route is dropped and those orders can be put on a new walk.',
-                    confirmLabel: 'Abandon it',
-                    cancelLabel: 'Keep it',
-                    color: 'danger',
-                  });
-                  if (!ok) return;
-                  try {
-                    await cancel.mutateAsync(undefined);
-                  } catch (err) {
-                    setError(pickErrorMessage(err, 'Could not abandon the walk.'));
-                  }
-                })();
-              }}
-            >
-              <Ban className="size-4" aria-hidden />
-            </Button>
-          </Tooltip>
-        ) : null}
-
-        <RefreshButton
-          isFetching={isFetching}
-          updatedAt={dataUpdatedAt}
-          onRefresh={() => {
-            void refetch();
-          }}
-        />
-      </PaneToolbar>
+          />
+        }
+      />
 
       <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto">
         {error ? (

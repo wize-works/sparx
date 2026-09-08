@@ -47,14 +47,7 @@ type Mode = 'signIn' | 'signUp';
 /** The card body swaps between the method form and each mid-flow confirmation. */
 type View = 'form' | 'otp' | 'linkSent' | 'forgotPassword' | 'resetSent' | 'twoFactor';
 type Pending =
-  | null
-  | 'password'
-  | 'sendCode'
-  | 'verifyCode'
-  | 'link'
-  | 'passkey'
-  | 'reset'
-  | 'twoFactor';
+  null | 'password' | 'sendCode' | 'verifyCode' | 'link' | 'passkey' | 'reset' | 'twoFactor';
 
 /** Whether a sign-in response is really "correct credentials, now prove the
  *  second factor". Better Auth answers `{ twoFactorRedirect: true }` in place of

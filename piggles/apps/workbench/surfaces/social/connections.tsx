@@ -69,6 +69,7 @@ import {
   type SocialTarget,
 } from './data';
 import { productCopy } from '../../lib/product';
+import { SaveFailure } from '@/components/save-failure';
 
 const COLUMN = 'mx-auto flex w-full max-w-3xl flex-col gap-4';
 
@@ -656,14 +657,7 @@ export function SocialConnectionsSurface({ ctx }: { ctx: SurfaceContext }) {
                 all of them. You choose exactly which pages and profiles each post lands on.
               </Text>
 
-              {connectFailure ? (
-                <Alert color="error">
-                  <AlertContent>
-                    <AlertTitle>Could not connect</AlertTitle>
-                    <AlertDescription>{connectFailure}</AlertDescription>
-                  </AlertContent>
-                </Alert>
-              ) : null}
+              <SaveFailure title="Could not connect" message={connectFailure} />
 
               {/* Before posts go live — the approval gate. Admin-only to change;
                   everyone else sees where it stands. */}

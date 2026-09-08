@@ -190,29 +190,38 @@ export function ProfileSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Listing actions">
-        <Badge color={form.directoryVisible ? 'success' : 'neutral'} variant="soft" size="sm">
-          {form.directoryVisible ? 'Listed publicly' : 'Not listed'}
-        </Badge>
-        <Button
-          size="sm"
-          color="module"
-          className="ml-auto shrink-0"
-          disabled={!nameOk || !dirty}
-          loading={update.isPending}
-          onClick={save}
-        >
-          <Save className="size-4" aria-hidden />
-          Save
-        </Button>
-        <RefreshButton
-          isFetching={profile.isFetching}
-          updatedAt={profile.data ? profile.dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void profile.refetch();
-          }}
-        />
-      </PaneToolbar>
+      <PaneToolbar
+        label="Listing actions"
+        primary={
+          <Button
+            size="sm"
+            color="module"
+            className="ml-auto shrink-0"
+            disabled={!nameOk || !dirty}
+            loading={update.isPending}
+            onClick={save}
+          >
+            <Save className="size-4" aria-hidden />
+            Save
+          </Button>
+        }
+        controls={
+          <>
+            <Badge color={form.directoryVisible ? 'success' : 'neutral'} variant="soft" size="sm">
+              {form.directoryVisible ? 'Listed publicly' : 'Not listed'}
+            </Badge>
+          </>
+        }
+        refresh={
+          <RefreshButton
+            isFetching={profile.isFetching}
+            updatedAt={profile.data ? profile.dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void profile.refetch();
+            }}
+          />
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className={COLUMN}>

@@ -187,44 +187,51 @@ export function TimeOffSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Time off controls" wrap>
-        <Filter
-          color="module"
-          value={filter}
-          onValueChange={(next) => {
-            setFilter(typeof next === 'string' ? next : 'requested');
-          }}
-          showReset={false}
-          aria-label="Filter requests"
-        >
-          {FILTERS.map((option) => (
-            <FilterItem key={option.value} value={option.value}>
-              {option.label}
-            </FilterItem>
-          ))}
-        </Filter>
-
-        <Button
-          size="sm"
-          color="module"
-          className="ml-auto"
-          onClick={() => {
-            setStaffMemberId(people.data?.items[0]?.id ?? '');
-            setComposing(true);
-          }}
-        >
-          <Plus className="size-4" aria-hidden />
-          <span className="hidden @lg:inline">Log time off</span>
-        </Button>
-
-        <RefreshButton
-          isFetching={requests.isFetching}
-          updatedAt={requests.data ? requests.dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void requests.refetch();
-          }}
-        />
-      </PaneToolbar>
+      <PaneToolbar
+        label="Time off controls"
+        primary={
+          <Button
+            size="sm"
+            color="module"
+            className="ml-auto"
+            onClick={() => {
+              setStaffMemberId(people.data?.items[0]?.id ?? '');
+              setComposing(true);
+            }}
+          >
+            <Plus className="size-4" aria-hidden />
+            <span className="hidden @lg:inline">Log time off</span>
+          </Button>
+        }
+        controls={
+          <>
+            <Filter
+              color="module"
+              value={filter}
+              onValueChange={(next) => {
+                setFilter(typeof next === 'string' ? next : 'requested');
+              }}
+              showReset={false}
+              aria-label="Filter requests"
+            >
+              {FILTERS.map((option) => (
+                <FilterItem key={option.value} value={option.value}>
+                  {option.label}
+                </FilterItem>
+              ))}
+            </Filter>
+          </>
+        }
+        refresh={
+          <RefreshButton
+            isFetching={requests.isFetching}
+            updatedAt={requests.data ? requests.dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void requests.refetch();
+            }}
+          />
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         {requests.isError ? (

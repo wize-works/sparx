@@ -239,7 +239,7 @@ export const TRIGGER_EVENTS: readonly TriggerEventDef[] = [
   // list is an event that may as well not be published.
   {
     eventType: 'staff.certification.expiring',
-    label: 'Someone’s licence or certificate is running out',
+    label: 'Someone’s license or certificate is running out',
     module: 'staff',
   },
   { eventType: 'staff.member.created', label: 'Somebody joins the team', module: 'staff' },

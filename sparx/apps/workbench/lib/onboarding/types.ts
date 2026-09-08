@@ -21,12 +21,7 @@ export type { BlueprintVertical };
    the preview-and-publish screen. */
 
 export type OnboardingStepKey =
-  | 'modules'
-  | 'template'
-  | 'workspace'
-  | 'domain'
-  | 'payments'
-  | 'launch';
+  'modules' | 'template' | 'workspace' | 'domain' | 'payments' | 'launch';
 
 export interface OnboardingCompleted {
   modules: boolean;

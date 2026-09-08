@@ -38,10 +38,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { PaneWaiting } from '../../components/pane-waiting';
 import {
-  Alert,
-  AlertContent,
-  AlertDescription,
-  AlertTitle,
   Badge,
   Button,
   Card,
@@ -86,6 +82,7 @@ import {
 } from './products-data';
 import { PaneEmpty } from '../../components/pane-empty';
 import { PaneLoadError } from '../../components/pane-load-error';
+import { SaveFailure } from '@/components/save-failure';
 
 /** Registry module for this tab, so the brand draws Sell's own picture rather
  *  than the generic one. */
@@ -379,14 +376,7 @@ export function ProductPricingTab({ product }: { ctx: SurfaceContext; product: P
 
   return (
     <div className="flex flex-col gap-4">
-      {failure ? (
-        <Alert color="error">
-          <AlertContent>
-            <AlertTitle>That did not work</AlertTitle>
-            <AlertDescription>{failure}</AlertDescription>
-          </AlertContent>
-        </Alert>
-      ) : null}
+      <SaveFailure title="That did not work" message={failure} />
 
       {variants.map((variant) => (
         <VariantPricing
@@ -916,14 +906,7 @@ function BulkTiers({
       title="Cheaper by the dozen"
       description="Set a lower price per item once someone buys enough of them. Leave this alone if you charge the same however many they take."
     >
-      {failure ? (
-        <Alert color="error">
-          <AlertContent>
-            <AlertTitle>That did not work</AlertTitle>
-            <AlertDescription>{failure}</AlertDescription>
-          </AlertContent>
-        </Alert>
-      ) : null}
+      <SaveFailure title="That did not work" message={failure} />
 
       {isError ? (
         <div className="flex flex-wrap items-center justify-between gap-3">

@@ -283,24 +283,27 @@ export function BusinessDetailsSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Business details actions">
-        <Button
-          color="module"
-          size="sm"
-          className="ml-auto"
-          // A malformed address blocks the save outright: the server rejects it
-          // anyway, and a 400 surfaces as a generic toast that never points at
-          // the field that caused it.
-          disabled={!dirty || emailMalformed || isPending || save.isPending}
-          onClick={() => {
-            setEmailTouched(true);
-            save.mutate();
-          }}
-        >
-          <Save className="size-4" aria-hidden />
-          {save.isPending ? 'Saving…' : 'Save'}
-        </Button>
-      </PaneToolbar>
+      <PaneToolbar
+        label="Business details actions"
+        primary={
+          <Button
+            color="module"
+            size="sm"
+            className="ml-auto"
+            // A malformed address blocks the save outright: the server rejects it
+            // anyway, and a 400 surfaces as a generic toast that never points at
+            // the field that caused it.
+            disabled={!dirty || emailMalformed || isPending || save.isPending}
+            onClick={() => {
+              setEmailTouched(true);
+              save.mutate();
+            }}
+          >
+            <Save className="size-4" aria-hidden />
+            {save.isPending ? 'Saving…' : 'Save'}
+          </Button>
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <EditorLayout

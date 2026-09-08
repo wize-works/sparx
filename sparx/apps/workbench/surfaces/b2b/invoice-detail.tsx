@@ -14,10 +14,6 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import {
-  Alert,
-  AlertContent,
-  AlertDescription,
-  AlertTitle,
   Badge,
   Button,
   Dialog,
@@ -49,6 +45,7 @@ import { FormSection } from '../../components/form-section';
 import { ModuleScope } from '../../components/module-scope';
 import type { OpenTarget, SurfaceContext } from '../../lib/surfaces/registry';
 import { MoneyInput } from '@/components/money-input';
+import { SaveFailure } from '@/components/save-failure';
 import {
   PAID_METHOD_LABELS,
   formatCents,
@@ -64,6 +61,7 @@ import {
   type InvoiceRow,
   type PaidMethod,
 } from './invoices-data';
+import { PaneLoadError } from '../../components/pane-load-error';
 
 const COLUMN = 'mx-auto flex w-full max-w-3xl flex-col gap-4';
 
@@ -98,27 +96,15 @@ function InvoiceLoader({ ctx, id }: { ctx: SurfaceContext; id: string }) {
   if (invoiceQuery.isError) {
     return (
       <div className={PANE_SHELL}>
-        <div className="flex h-full items-center justify-center p-8">
-          <Alert color="error" className="max-w-md">
-            <AlertContent>
-              <AlertTitle>Could not load this invoice</AlertTitle>
-              <AlertDescription>
-                This is a problem reaching the server. The invoice itself is unaffected — nothing
-                has been lost.
-              </AlertDescription>
-            </AlertContent>
-            <Button
-              size="sm"
-              color="error"
-              variant="soft"
-              onClick={() => {
-                void invoiceQuery.refetch();
-              }}
-            >
-              Try again
-            </Button>
-          </Alert>
-        </div>
+        <PaneLoadError
+          error={invoiceQuery.error}
+          noun="invoice"
+          title="Could not load this invoice"
+          description="This is a problem reaching the server. The invoice itself is unaffected — nothing has been lost."
+          onRetry={() => {
+            void invoiceQuery.refetch();
+          }}
+        />
       </div>
     );
   }
@@ -209,17 +195,20 @@ function InvoiceCreate({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="New invoice actions">
-        <Button
-          color="module"
-          size="sm"
-          className="ml-auto"
-          loading={create.isPending}
-          onClick={submit}
-        >
-          Raise invoice
-        </Button>
-      </PaneToolbar>
+      <PaneToolbar
+        label="New invoice actions"
+        primary={
+          <Button
+            color="module"
+            size="sm"
+            className="ml-auto"
+            loading={create.isPending}
+            onClick={submit}
+          >
+            Raise invoice
+          </Button>
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className={COLUMN}>
@@ -233,14 +222,7 @@ function InvoiceCreate({ ctx }: { ctx: SurfaceContext }) {
             </Text>
           </div>
 
-          {failure ? (
-            <Alert color="error">
-              <AlertContent>
-                <AlertTitle>Could not raise this invoice</AlertTitle>
-                <AlertDescription>{failure}</AlertDescription>
-              </AlertContent>
-            </Alert>
-          ) : null}
+          <SaveFailure title="Could not raise this invoice" message={failure} />
 
           <FormSection title="The invoice">
             <Field>
@@ -448,23 +430,28 @@ function InvoiceManage({ ctx, invoice }: { ctx: SurfaceContext; invoice: Invoice
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Invoice actions">
-        <Badge color={state.tone} variant="soft" size="sm">
-          {state.label}
-        </Badge>
-        {editable ? (
-          <Button
-            color="module"
-            size="sm"
-            className="ml-auto"
-            loading={update.isPending}
-            disabled={!dirty}
-            onClick={save}
-          >
-            Save
-          </Button>
-        ) : null}
-      </PaneToolbar>
+      <PaneToolbar
+        label="Invoice actions"
+        controls={
+          <>
+            <Badge color={state.tone} variant="soft" size="sm">
+              {state.label}
+            </Badge>
+            {editable ? (
+              <Button
+                color="module"
+                size="sm"
+                className="ml-auto"
+                loading={update.isPending}
+                disabled={!dirty}
+                onClick={save}
+              >
+                Save
+              </Button>
+            ) : null}
+          </>
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className={COLUMN}>
@@ -478,14 +465,7 @@ function InvoiceManage({ ctx, invoice }: { ctx: SurfaceContext; invoice: Invoice
             </Text>
           </div>
 
-          {failure ? (
-            <Alert color="error">
-              <AlertContent>
-                <AlertTitle>Could not save this invoice</AlertTitle>
-                <AlertDescription>{failure}</AlertDescription>
-              </AlertContent>
-            </Alert>
-          ) : null}
+          <SaveFailure title="Could not save this invoice" message={failure} />
 
           <FormSection title="The money">
             <div className="flex flex-col gap-2">

@@ -99,6 +99,14 @@ interface MediaAssetWire {
   status: string;
   processing_error: string | null;
   usage_count: number;
+  usage_breakdown: {
+    products: number;
+    content: number;
+    customers: number;
+    authors: number;
+    staff_documents: number;
+    expenses: number;
+  } | null;
   original_url: string | null;
   variants: MediaVariantWire[];
   created_at: string;
@@ -112,8 +120,21 @@ export interface MediaAsset {
   filename: string;
   mimeType: string;
   kind: MediaKind;
-  /** Bytes as a real number — files are capped at 200 MB, so this is safe. */
-  byteSize: number;
+  /** Bytes as a real number — files are capped at 200 MB, so this is safe.
+   *
+   *  NULL when nobody measured it. No file is zero bytes, so a stored 0 never
+   *  means "weighs nothing"; it means the size was never recorded — every
+   *  linked picture, and 84 stored ones whose upload predates the size being
+   *  written. Rendering that 0 through `formatBytes` printed a confident
+   *  **0 bytes** under 74 of Devi's 87 photographs (issue 380). Issue 330
+   *  settled the same rule for the publish weight report. */
+  byteSize: number | null;
+  /** The file is LINKED from somewhere else rather than stored here — the key
+   *  is an `http(s):` URL (a hot-linked blueprint picture) or a `data:` URI (an
+   *  inline brand mark). It is why most unmeasured files are unmeasured: there
+   *  was never a local file to weigh. Same test api-rest uses to decide whether
+   *  a key needs resolving through storage. */
+  linked: boolean;
   width: number | null;
   height: number | null;
   durationSec: number | null;
@@ -127,8 +148,23 @@ export interface MediaAsset {
   status: string;
   processingError: string | null;
   usageCount: number;
+  /** What is using it, by kind. Null on the paths that do not count (nothing
+   *  renders those). The total above is a FLOOR: a picture placed directly into
+   *  a page in the site editor is not counted, because a builder tree keeps its
+   *  asset ids in plain JSON with no index beside them. */
+  usage: AssetUsageBreakdown | null;
   createdAt: string;
   updatedAt: string;
+}
+
+/** Where an asset is used, by kind — the same six api-rest counts. */
+export interface AssetUsageBreakdown {
+  products: number;
+  content: number;
+  customers: number;
+  authors: number;
+  staffDocuments: number;
+  expenses: number;
 }
 
 /** The smallest rendition at least `minWidth` across (sharp on a tile without
@@ -148,7 +184,8 @@ function toAsset(wire: MediaAssetWire): MediaAsset {
     filename: wire.original_filename,
     mimeType: wire.mime_type,
     kind: mediaKind(wire.mime_type),
-    byteSize: Number.isFinite(byteSize) ? byteSize : 0,
+    byteSize: Number.isFinite(byteSize) && byteSize > 0 ? byteSize : null,
+    linked: /^(?:https?:|data:)/i.test(wire.key),
     width: wire.width,
     height: wire.height,
     durationSec: wire.duration_sec,
@@ -161,6 +198,16 @@ function toAsset(wire: MediaAssetWire): MediaAsset {
     status: wire.status,
     processingError: wire.processing_error,
     usageCount: wire.usage_count,
+    usage: wire.usage_breakdown
+      ? {
+          products: wire.usage_breakdown.products,
+          content: wire.usage_breakdown.content,
+          customers: wire.usage_breakdown.customers,
+          authors: wire.usage_breakdown.authors,
+          staffDocuments: wire.usage_breakdown.staff_documents,
+          expenses: wire.usage_breakdown.expenses,
+        }
+      : null,
     createdAt: wire.created_at,
     updatedAt: wire.updated_at,
   };
@@ -288,6 +335,42 @@ export function useDeleteAsset(id: string) {
 /**
  * A human size — "2.4 MB", not "2516582 bytes".
  */
+/** What to print where a file's size goes.
+ *
+ *  A size nobody recorded must not render as one, and the two reasons a size is
+ *  missing are worth telling apart: a linked picture was never downloaded here,
+ *  so there is nothing of ours to weigh, while a stored file with no size is a
+ *  gap in its own record. */
+export function sizeLabel(asset: Pick<MediaAsset, 'byteSize' | 'linked'>): string {
+  if (asset.byteSize !== null) return formatBytes(asset.byteSize);
+  return asset.linked ? 'Stored somewhere else' : 'Size not recorded';
+}
+
+/** "3 product photos and 1 page", or null when nothing is using it. Names the
+ *  KINDS rather than a bare count, because "used in 4 places" does not tell an
+ *  owner which screen to open before she can delete the file. */
+export function usedInLabel(asset: Pick<MediaAsset, 'usageCount' | 'usage'>): string | null {
+  if (asset.usageCount <= 0) return null;
+  const u = asset.usage;
+  if (!u) {
+    const n = asset.usageCount;
+    return `${String(n)} ${n === 1 ? 'place' : 'places'} on your site`;
+  }
+  const parts: string[] = [];
+  const add = (n: number, one: string, many: string) => {
+    if (n > 0) parts.push(`${String(n)} ${n === 1 ? one : many}`);
+  };
+  add(u.products, 'product photo', 'product photos');
+  add(u.content, 'page or article', 'pages and articles');
+  add(u.customers, 'customer record', 'customer records');
+  add(u.authors, 'author profile', 'author profiles');
+  add(u.staffDocuments, 'staff document', 'staff documents');
+  add(u.expenses, 'expense', 'expenses');
+  if (parts.length === 0) return `${String(asset.usageCount)} places on your site`;
+  if (parts.length === 1) return parts[0]!;
+  return `${parts.slice(0, -1).join(', ')} and ${parts.at(-1)!}`;
+}
+
 export function formatBytes(bytes: number): string {
   if (!Number.isFinite(bytes) || bytes <= 0) return '0 bytes';
   const units = ['bytes', 'KB', 'MB', 'GB'];

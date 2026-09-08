@@ -204,15 +204,18 @@ export function InventorySetupSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Setup controls">
-        <RefreshButton
-          isFetching={setup.isFetching}
-          updatedAt={setup.data ? setup.dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void setup.refetch();
-          }}
-        />
-      </PaneToolbar>
+      <PaneToolbar
+        label="Setup controls"
+        refresh={
+          <RefreshButton
+            isFetching={setup.isFetching}
+            updatedAt={setup.data ? setup.dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void setup.refetch();
+            }}
+          />
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className="mx-auto flex w-full max-w-4xl flex-col gap-4">

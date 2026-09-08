@@ -37,6 +37,7 @@ import {
   MoreHorizontal,
   PackageCheck,
   Printer,
+  SendHorizontal,
   Trash2,
 } from 'lucide-react';
 import { api } from '../../lib/api/client';
@@ -183,6 +184,115 @@ export function StageControl({ doc, stages }: StageControlProps) {
         </DropdownMenuGroup>
       </DropdownMenuContent>
     </DropdownMenu>
+  );
+}
+
+/**
+ * Give the document to the person who owes the money.
+ *
+ * This console could create, number, total, snapshot, print and take payment on
+ * an invoice, and had no way to hand one to a customer. The two outbound
+ * actions in the overflow menu — "Print or save as PDF" and "Copy payment link"
+ * — both end by handing the job back to the operator's own mail client, and the
+ * Bill to field labels its email box "Where the invoice gets sent" about a send
+ * that did not exist here.
+ *
+ * It sits in the toolbar rather than the overflow menu. Raising an invoice and
+ * sending it are one errand, and the second half of an errand is not something
+ * to go hunting for behind a menu.
+ */
+export function SendButton({ doc, dirty }: { doc: BillingDocument; dirty: boolean }) {
+  const queryClient = useQueryClient();
+  const toast = useToast();
+  const confirm = useConfirm();
+
+  const send = useMutation({
+    mutationFn: () =>
+      api.post<{ to: string; documentNumber: string }>(
+        `/v1/invoicing/documents/${doc.id}/send`,
+        {}
+      ),
+    onSuccess: (result) => {
+      void queryClient.invalidateQueries({ queryKey: ['invoicing'] });
+      toast.add({
+        title: `Sent to ${result.to}`,
+        description: 'The invoice is in their inbox, with the lines and the total on it.',
+        type: 'success',
+      });
+    },
+    onError: (error) => {
+      toast.add({
+        title: 'Could not send it',
+        // The server refuses with sentences an operator can act on ("add an
+        // email address under Bill to"), so they are shown as written.
+        description:
+          error instanceof Error && error.message.length < 300
+            ? error.message
+            : 'Nothing was sent. Try again in a moment.',
+        type: 'error',
+      });
+    },
+  });
+
+  const metadata = doc.metadata ?? {};
+  const sentAt = typeof metadata.sentAt === 'string' ? metadata.sentAt : null;
+
+  // Never email a version that is not the saved one — what lands in their inbox
+  // has to be the document this pane can still show afterwards.
+  const blockedReason = dirty
+    ? 'Save first — otherwise they would get a different invoice from the one on screen.'
+    : null;
+
+  const onSend = async () => {
+    // The server's answer, not a second guess at it: an invoice with no address
+    // of its own still goes to the customer on it. A blank string counts as no
+    // address, which is why this is a first-non-empty rather than a `??` chain.
+    const to =
+      [doc.billTo?.email, doc.billedToEmail]
+        .map((value) => (value ?? '').trim())
+        .find((value) => value.length > 0) ?? '';
+    const ok = await confirm({
+      title: sentAt ? 'Send this invoice again?' : 'Send this invoice?',
+      description: to
+        ? `${doc.number ?? 'This invoice'} goes to ${to}, with its lines, its total and anything written in Notes.` +
+          // Sending fills in an empty deadline, so say so BEFORE the click. A
+          // date nobody typed appearing in a field on screen is a small
+          // surprise, and a deadline is the one thing on a bill an operator may
+          // want to choose.
+          (doc.dueAt ? '' : ' It has no deadline yet, so it will be due when they get it.') +
+          (sentAt ? ' They already have a copy; this sends another.' : '')
+        : 'There is no email address on this invoice yet. Add one under Bill to first.',
+      confirmLabel: sentAt ? 'Send it again' : 'Send it',
+      cancelLabel: 'Not yet',
+      color: 'module',
+    });
+    if (!ok) return;
+    await deferTick();
+    send.mutate();
+  };
+
+  return (
+    <Tooltip
+      content={
+        blockedReason ??
+        (sentAt
+          ? `Already sent ${new Date(sentAt).toLocaleDateString()}. Sends another copy.`
+          : 'Email this invoice to the customer.')
+      }
+    >
+      <Button
+        color="module"
+        variant="outline"
+        size="sm"
+        disabled={Boolean(blockedReason) || send.isPending}
+        onClick={() => {
+          void onSend();
+        }}
+      >
+        <SendHorizontal className="size-4" aria-hidden />
+        {send.isPending ? 'Sending…' : sentAt ? 'Send again' : 'Send'}
+      </Button>
+    </Tooltip>
   );
 }
 

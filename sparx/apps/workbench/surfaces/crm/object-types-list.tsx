@@ -40,37 +40,46 @@ export function ObjectTypesListSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Record type controls">
-        <Button
-          size="sm"
-          color="neutral"
-          variant={showArchived ? 'solid' : 'outline'}
-          onClick={() => {
-            setShowArchived((v) => !v);
-          }}
-        >
-          {showArchived ? 'Hiding nothing' : 'Show put-away types'}
-        </Button>
-        <Button
-          color="module"
-          size="sm"
-          className="ml-auto shrink-0"
-          title="New record type — hold Shift to open alongside, Alt for a new window"
-          onClick={(event) => {
-            ctx.open('crm.object-type.detail', { key: 'new' }, { target: targetFor(event) });
-          }}
-        >
-          <Plus className="size-4" aria-hidden />
-          New record type
-        </Button>
-        <RefreshButton
-          isFetching={isFetching}
-          updatedAt={data ? dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void refetch();
-          }}
-        />
-      </PaneToolbar>
+      <PaneToolbar
+        label="Record type controls"
+        primary={
+          <Button
+            color="module"
+            size="sm"
+            className="ml-auto shrink-0"
+            title="New record type — hold Shift to open alongside, Alt for a new window"
+            onClick={(event) => {
+              ctx.open('crm.object-type.detail', { key: 'new' }, { target: targetFor(event) });
+            }}
+          >
+            <Plus className="size-4" aria-hidden />
+            New record type
+          </Button>
+        }
+        controls={
+          <>
+            <Button
+              size="sm"
+              color="neutral"
+              variant={showArchived ? 'solid' : 'outline'}
+              onClick={() => {
+                setShowArchived((v) => !v);
+              }}
+            >
+              {showArchived ? 'Hiding nothing' : 'Show put-away types'}
+            </Button>
+          </>
+        }
+        refresh={
+          <RefreshButton
+            isFetching={isFetching}
+            updatedAt={data ? dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void refetch();
+            }}
+          />
+        }
+      />
 
       <Card className="min-h-0 flex-1 overflow-y-auto">
         {moduleOff ? (

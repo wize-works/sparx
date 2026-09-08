@@ -79,6 +79,18 @@ export const HOST_KEYS = {
    *  server-side, which is why this is a core and not bound refs — a binding can draw
    *  the list, but it cannot carry the form. */
   commerceProductReviews: 'commerce.product-reviews',
+  /** A product's QUESTIONS AND ANSWERS — the published questions, the shop's answers,
+   *  and the ask-a-question form. A per-record functional template (`commerce.product`
+   *  record type); the route passes the product handle via context. Interactive for the
+   *  same reason reviews are: the form posts to the public questions endpoint and the
+   *  question enters moderation, so a binding could draw the list but could never carry
+   *  the form.
+   *
+   *  It exists because the console's Questions queue was the only end of this that was
+   *  built. A shop owner opened it, read "no questions yet", and had no way to learn
+   *  that no page on her website could take one — the queue was waiting on a doorbell
+   *  nobody had fitted. */
+  commerceProductQuestions: 'commerce.product-questions',
   /** The bookable-service DETAIL — one service's header + its LIVE time-picker (availability,
    *  slot selection, booking). A per-record functional template (`scheduling.service` record
    *  type); the route passes the service id via context. Interactive (client widget). */
@@ -441,6 +453,46 @@ export const HOST_COMPONENTS: HostComponentMeta[] = [
       {
         name: 'showForm',
         label: 'Let customers write a review',
+        type: 'boolean',
+        default: true,
+      },
+    ],
+  },
+  {
+    key: HOST_KEYS.commerceProductQuestions,
+    // What a shop owner calls it, and the pair of words her console already uses for
+    // the queue these land in. Not "Q&A" — an abbreviation she has to expand before
+    // she knows whether it is the thing she is looking for.
+    label: 'Questions and answers',
+    category: 'Your shop',
+    // The same glyph reviews wear. A shopper writing on a product page is one subject,
+    // and an author scanning the palette should see the two as a set.
+    icon: 'article',
+    hint: 'Questions customers asked about this product, your answers, and a form for asking a new one. Put it on your product page.',
+    // Unpinned, for the reason reviews are: this is a CHOICE, not a transaction.
+    // Nothing about the shop stops working without it, and a business that tries
+    // taking questions and decides it would rather answer by email must be able to
+    // take the section off the page again.
+    pinned: false,
+    defaultClass: 'mx-auto w-full max-w-4xl px-6',
+    props: [
+      {
+        name: 'heading',
+        label: 'Heading',
+        type: 'text',
+        default: 'Questions',
+      },
+      {
+        name: 'emptyText',
+        label: 'What to say before anyone has asked',
+        type: 'text',
+        // Invites the first one rather than reporting a shortage. A new shop shows
+        // this line for months, so it is real copy and not a placeholder.
+        default: 'No questions yet — ask us anything.',
+      },
+      {
+        name: 'showForm',
+        label: 'Let customers ask a question',
         type: 'boolean',
         default: true,
       },

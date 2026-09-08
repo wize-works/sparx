@@ -489,25 +489,32 @@ export function MarketSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="sparx.market controls">
-        <ShoppingBag className="size-4 shrink-0" aria-hidden />
-        <Heading level={2} className="min-w-0 truncate text-base font-semibold">
-          {LABEL}
-        </Heading>
-        {profile?.enabled ? (
-          <Badge color="success" variant="soft" size="sm">
-            Taking part
-          </Badge>
-        ) : null}
-        <RefreshButton
-          className="ml-auto"
-          isFetching={profileQuery.isFetching}
-          updatedAt={profile ? profileQuery.dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void profileQuery.refetch();
-          }}
-        />
-      </PaneToolbar>
+      <PaneToolbar
+        label="sparx.market controls"
+        controls={
+          <>
+            <ShoppingBag className="size-4 shrink-0" aria-hidden />
+            <Heading level={2} className="min-w-0 truncate text-base font-semibold">
+              {LABEL}
+            </Heading>
+            {profile?.enabled ? (
+              <Badge color="success" variant="soft" size="sm">
+                Taking part
+              </Badge>
+            ) : null}
+          </>
+        }
+        refresh={
+          <RefreshButton
+            className="ml-auto"
+            isFetching={profileQuery.isFetching}
+            updatedAt={profile ? profileQuery.dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void profileQuery.refetch();
+            }}
+          />
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className="mx-auto flex w-full max-w-3xl flex-col gap-4">

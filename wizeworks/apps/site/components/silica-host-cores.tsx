@@ -25,6 +25,7 @@ import { CategoryDetail } from '@/components/category/category-detail';
 import { BookingServices, toHeadingText } from '@/components/booking/booking-services';
 import { BookingServiceDetail } from '@/components/booking/booking-service-detail';
 import { ProductReviewsCore } from '@/components/products/product-reviews-core';
+import { ProductQuestionsCore } from '@/components/products/product-questions-core';
 import { AccountAuth, toAuthMode } from '@/components/account/account-auth';
 import { AccountLink } from '@/components/account/account-link';
 import { SiteBrand, toBrandShow } from '@/components/brand/site-brand';
@@ -147,6 +148,19 @@ export function SiteHostRenderer(ctx: HostCoreContext): HostRenderer {
             handle={ctx.recordHandle ?? ''}
             heading={toHeadingText(node.props?.heading, 'Reviews')}
             emptyText={toHeadingText(node.props?.emptyText, 'No reviews yet — be the first.')}
+            showForm={node.props?.showForm !== false}
+          />
+        );
+      case HOST_KEYS.commerceProductQuestions:
+        // Per-record, exactly like reviews: the route passes the product handle and the
+        // core fetches its own questions. Author-tunable words, because a shop that
+        // calls this "Ask the maker" should be able to say so.
+        return (
+          <ProductQuestionsCore
+            tenantSlug={ctx.site.slug}
+            handle={ctx.recordHandle ?? ''}
+            heading={toHeadingText(node.props?.heading, 'Questions')}
+            emptyText={toHeadingText(node.props?.emptyText, 'No questions yet — ask us anything.')}
             showForm={node.props?.showForm !== false}
           />
         );

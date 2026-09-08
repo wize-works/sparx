@@ -143,41 +143,46 @@ export function ReceivingScanSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Receiving controls">
-        {/* The consequence, colored as one. Everything else on this screen is
+      <PaneToolbar
+        label="Receiving controls"
+        controls={
+          <>
+            {/* The consequence, colored as one. Everything else on this screen is
             reversible; this is the button that writes the ledger. */}
-        <Button
-          color="module-inventory"
-          size="sm"
-          disabled={scannedTotal === 0 || post.isPending || closed}
-          onClick={() => {
-            void postIt();
-          }}
-        >
-          <PackageCheck className="size-4" aria-hidden />
-          {post.isPending ? 'Booking in…' : 'Book it in'}
-        </Button>
-
-        <Input
-          size="sm"
-          className="max-w-44 shrink"
-          placeholder="Packing slip ref"
-          aria-label="Packing slip reference"
-          value={reference}
-          onChange={(event) => {
-            setReference(event.target.value);
-          }}
-        />
-
-        <RefreshButton
-          className="ml-auto"
-          isFetching={session.isFetching}
-          updatedAt={session.dataUpdatedAt}
-          onRefresh={() => {
-            void session.refetch();
-          }}
-        />
-      </PaneToolbar>
+            <Button
+              color="module-inventory"
+              size="sm"
+              disabled={scannedTotal === 0 || post.isPending || closed}
+              onClick={() => {
+                void postIt();
+              }}
+            >
+              <PackageCheck className="size-4" aria-hidden />
+              {post.isPending ? 'Booking in…' : 'Book it in'}
+            </Button>
+            <Input
+              size="sm"
+              className="max-w-44 shrink"
+              placeholder="Packing slip ref"
+              aria-label="Packing slip reference"
+              value={reference}
+              onChange={(event) => {
+                setReference(event.target.value);
+              }}
+            />
+          </>
+        }
+        refresh={
+          <RefreshButton
+            className="ml-auto"
+            isFetching={session.isFetching}
+            updatedAt={session.dataUpdatedAt}
+            onRefresh={() => {
+              void session.refetch();
+            }}
+          />
+        }
+      />
 
       <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto">
         {/* Who and what, once, at the top. A receiver working two deliveries

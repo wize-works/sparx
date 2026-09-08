@@ -382,29 +382,36 @@ export function ProvenanceSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Explanation controls">
-        {data ? (
-          <Button
-            size="sm"
-            variant="ghost"
-            color="neutral"
-            onClick={() => {
-              ctx.open('inventory.stock.item', { variantId: data.variantId });
+      <PaneToolbar
+        label="Explanation controls"
+        controls={
+          <>
+            {data ? (
+              <Button
+                size="sm"
+                variant="ghost"
+                color="neutral"
+                onClick={() => {
+                  ctx.open('inventory.stock.item', { variantId: data.variantId });
+                }}
+              >
+                <ExternalLink className="size-4" aria-hidden />
+                Open the item
+              </Button>
+            ) : null}
+          </>
+        }
+        refresh={
+          <RefreshButton
+            className="ml-auto"
+            isFetching={query.isFetching}
+            updatedAt={data ? query.dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void query.refetch();
             }}
-          >
-            <ExternalLink className="size-4" aria-hidden />
-            Open the item
-          </Button>
-        ) : null}
-        <RefreshButton
-          className="ml-auto"
-          isFetching={query.isFetching}
-          updatedAt={data ? query.dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void query.refetch();
-          }}
-        />
-      </PaneToolbar>
+          />
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className="mx-auto flex w-full max-w-3xl flex-col gap-3">

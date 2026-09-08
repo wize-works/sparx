@@ -3,6 +3,11 @@
 // The plain words for the values an order stores — payment states, ways money
 // moved, delivery states, carriers and channels.
 
+// Carrier words come from the schema package, not a local map. There were three
+// of those and they had drifted: this console said "Sent by the supplier" where
+// the shopper's own order page said "Drop-ship", and the customer's email said
+// "usps". One list, so a new carrier is named once.
+import { carrierLabel } from '@wizeworks/commerce-schemas';
 import { channelLabel as sharedChannelLabel } from '../../lib/console/channels';
 import { paymentMethodLabels } from '../../lib/payment-methods';
 import type { Order, OrderFulfillment } from './order-types';
@@ -39,6 +44,7 @@ export const PAYMENT_PROCESSOR_LABELS: Record<string, string> = paymentMethodLab
   'net_terms',
   'stripe',
   'paypal',
+  'gift_card',
 ]);
 
 /** True when the money never went through a gateway, so there is nothing to
@@ -48,7 +54,9 @@ export const PAYMENT_PROCESSOR_LABELS: Record<string, string> = paymentMethodLab
  *  `card` counts: it means a card on the business's OWN reader, which nothing
  *  here charged and nothing here can credit. `stripe`/`paypal` are the gateways. */
 export function paidByHand(processor: string): boolean {
-  return ['manual', 'card', 'check', 'ach', 'wire'].includes(processor);
+  // `gift_card` counts: nothing here credits a card automatically, so putting
+  // the money back is an adjustment somebody makes on the card by hand.
+  return ['manual', 'card', 'check', 'ach', 'wire', 'gift_card'].includes(processor);
 }
 
 export const FULFILLMENT_STATUS_LABELS: Record<string, string> = {
@@ -57,18 +65,6 @@ export const FULFILLMENT_STATUS_LABELS: Record<string, string> = {
   delivered: 'Delivered',
   failed: 'Delivery failed',
   cancelled: 'Cancelled',
-};
-
-/** The API's `Carrier` enum in the words a business uses. `pickup` is handled
- *  by `shipmentHeadline` rather than listed here — nothing was carried. */
-const CARRIER_LABELS: Record<string, string> = {
-  ups: 'UPS',
-  usps: 'USPS',
-  fedex: 'FedEx',
-  dhl: 'DHL',
-  digital: 'Sent electronically',
-  dropship: 'Sent by the supplier',
-  other: 'Another courier',
 };
 
 /**
@@ -81,8 +77,13 @@ const CARRIER_LABELS: Record<string, string> = {
  */
 export function shipmentHeadline(shipment: OrderFulfillment): string {
   if (shipment.carrier === 'pickup') return shipment.service ?? 'Collected in person';
-  const carrier = shipment.carrier ? (CARRIER_LABELS[shipment.carrier] ?? shipment.carrier) : '';
-  return [carrier, shipment.service].filter(Boolean).join(' · ') || 'Delivery';
+  const carrier = carrierLabel(shipment.carrier);
+  const service = shipment.service ?? '';
+  // A carrier's own service names usually START with the carrier, so joining
+  // both produced "USPS · USPS Ground Advantage Economy". When the service
+  // already says who is carrying it, it says it once.
+  if (carrier && service.toLowerCase().startsWith(carrier.toLowerCase())) return service;
+  return [carrier, service].filter(Boolean).join(' · ') || 'Delivery';
 }
 
 /** "Delivered" is right for something a courier brought and wrong for something

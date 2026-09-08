@@ -17,13 +17,14 @@
 
 import { useState } from 'react';
 import { PaneWaiting } from '../../components/pane-waiting';
-import { useQuery } from '@wizeworks/query';
+import { useQuery, useQueryClient } from '@wizeworks/query';
 import { Badge, Card, EmptyState, SearchInput } from '@wizeworks/silicaui-react';
 import { Table } from '../../components/table';
 import { faArrowDown, faArrowUp, faFileText, faPlus } from '@fortawesome/pro-solid-svg-icons';
 import { Icon } from '@piggles/ui';
 import { ListPagination, MAX_TAKE, type PageSize } from '../../components/list-pagination';
 import { PaneToolbar, PANE_SHELL } from '../../components/pane-toolbar';
+import { ArSummary } from './ar-summary';
 import { ListEmptyState } from '../../components/list-empty-state';
 import { RefreshButton } from '../../components/refresh-button';
 import { api } from '../../lib/api/client';
@@ -68,6 +69,22 @@ const STATUS_FILTERS = [
   { value: 'paid', label: invoiceState('paid').label },
 ] as const;
 
+/**
+ * Whether the customer was actually given the bill.
+ *
+ * A separate question from status, and the one nobody could ask before. An
+ * invoice that is unpaid because nobody sent it and an invoice that is unpaid
+ * three weeks after it landed read identically here, and only one of them is
+ * the customer's fault. It also has to be askable now that the reminder and
+ * overdue emails skip an unsent invoice — a bill nobody sends is no longer
+ * chased, so this is where it has to be findable instead.
+ */
+const SENT_FILTERS = [
+  { value: 'all', label: 'All' },
+  { value: 'false', label: 'Not sent' },
+  { value: 'true', label: 'Sent' },
+] as const;
+
 function targetFor(event: { shiftKey: boolean; altKey: boolean }): OpenTarget {
   if (event.altKey) return 'window';
   if (event.shiftKey) return 'beside';
@@ -77,6 +94,7 @@ function targetFor(event: { shiftKey: boolean; altKey: boolean }): OpenTarget {
 export function InvoiceListSurface({ ctx }: { ctx: SurfaceContext }) {
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('all');
+  const [sent, setSent] = useState('all');
   // Due soonest first — the question a receivables list exists to answer, and
   // the reason the endpoint needed a real `order` param rather than the
   // platform's usual hardcoded 'desc'.
@@ -102,17 +120,19 @@ export function InvoiceListSurface({ ctx }: { ctx: SurfaceContext }) {
    * database. Refetching 100 rows to add 50 is a few KB of JSON against a
    * correctness guarantee, which is a trade worth making every time.
    */
+  const queryClient = useQueryClient();
   const { data, isLoading, isFetching, dataUpdatedAt, error, refetch } = useQuery({
     queryKey: [
       'invoicing',
       'documents',
-      { q: search, status: activeStatus, sort: sort.key, dir: sort.dir, take, skip },
+      { q: search, status: activeStatus, sent, sort: sort.key, dir: sort.dir, take, skip },
     ],
     queryFn: () =>
       api
         .list<BillingDocument>('/v1/invoicing/documents', {
           ...(search ? { q: search } : {}),
           ...(activeStatus === 'all' ? {} : { status: activeStatus }),
+          ...(sent === 'all' ? {} : { sent }),
           sort_by: sort.key,
           order: sort.dir,
           take,
@@ -230,6 +250,16 @@ export function InvoiceListSurface({ ctx }: { ctx: SurfaceContext }) {
             },
             options: STATUS_FILTERS,
           },
+          {
+            label: 'Sent',
+            key: 'sent',
+            value: sent,
+            onValueChange: (next) => {
+              setSent(next ?? 'all');
+              resetWindow();
+            },
+            options: SENT_FILTERS,
+          },
         ]}
         // The sort is half the question here — "late, biggest balance first" is
         // a different list from "late, soonest due" — so it rides the snapshot.
@@ -252,20 +282,27 @@ export function InvoiceListSurface({ ctx }: { ctx: SurfaceContext }) {
             the Toolbar rather than beside it, so it joins the roving arrow-key
             focus instead of becoming a stray extra tab stop.
 
-            If the receivables band (./ar-summary.tsx) is ever mounted here — it
-            is written to ride alongside this list, but nothing imports it today
-            — this must also invalidate ['invoicing','aging']. Refreshing the
-            rows while "Outstanding" kept an older figure would be the pane
-            disagreeing with itself. */
+            It also invalidates ['invoicing','aging'] for the receivables band
+            above. Refreshing the rows while "Outstanding" kept an older figure
+            would be the pane disagreeing with itself. */
           <RefreshButton
             isFetching={isFetching}
             updatedAt={data ? dataUpdatedAt : undefined}
             onRefresh={() => {
               void refetch();
+              void queryClient.invalidateQueries({ queryKey: ['invoicing', 'aging'] });
             }}
           />
         }
       />
+
+      {/* HOW MUCH AM I OWED, AND HOW MUCH OF IT IS LATE.
+          The list answers "what invoices exist"; nobody opens this pane to ask
+          that. It reads /v1/invoicing/aging over ALL open documents rather than
+          summing the page on screen, and it hides itself entirely when there is
+          nothing open, so an empty pane stays empty. It was written to ride here
+          and nothing had ever mounted it. */}
+      <ArSummary />
 
       <Card className="min-h-0 flex-1 overflow-y-auto">
         {error ? (
@@ -278,7 +315,7 @@ export function InvoiceListSurface({ ctx }: { ctx: SurfaceContext }) {
         ) : rows.length === 0 ? (
           <ListEmptyState
             module={MODULE}
-            filtered={Boolean(search) || activeStatus !== 'all'}
+            filtered={Boolean(search) || activeStatus !== 'all' || sent !== 'all'}
             noResults={{
               icon: <Icon glyph={faFileText} className="size-6" aria-hidden />,
               title: 'Nothing matches those filters',
@@ -348,9 +385,22 @@ export function InvoiceListSurface({ ctx }: { ctx: SurfaceContext }) {
                       {due.label}
                     </td>
                     <td>
-                      <Badge color={state.tone} variant={state.tone && 'soft'} size="sm">
-                        {state.label}
-                      </Badge>
+                      <div className="flex flex-wrap items-center gap-1">
+                        <Badge color={state.tone} variant={state.tone && 'soft'} size="sm">
+                          {state.label}
+                        </Badge>
+                        {/* An unpaid invoice nobody sent is not late, it is not
+                            started — and the two read identically without this.
+                            It matters more now than it did: the reminder and
+                            overdue emails skip an unsent invoice, so this row is
+                            the only thing that says the bill is still sitting
+                            here. `warning`, because it is waiting on HER. */}
+                        {doc.sentAt === null && doc.status !== 'paid' && doc.status !== 'void' ? (
+                          <Badge color="warning" variant="outline" size="sm">
+                            Not sent
+                          </Badge>
+                        ) : null}
+                      </div>
                     </td>
                     <td className="hidden text-right tabular-nums @3xl:table-cell">
                       {formatMoney(doc.total, doc.currency)}

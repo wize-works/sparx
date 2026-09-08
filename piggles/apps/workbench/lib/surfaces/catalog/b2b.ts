@@ -126,7 +126,7 @@ export const B2B_SURFACES: SurfaceDefinition[] = [
     icon: faCheckCircle,
     section: 'Setup',
     order: 21,
-    keywords: ['approval queue', 'authorise', 'sign off', 'credit limit'],
+    keywords: ['approval queue', 'authorize', 'authorise', 'sign off', 'credit limit'],
     component: ApprovalsSurface,
   },
 ];

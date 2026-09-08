@@ -57,6 +57,7 @@ import {
   type SequenceRow,
   type SequenceStatus,
 } from './sequences-data';
+import { PaneLoadError } from '../../components/pane-load-error';
 
 const COLUMN = 'mx-auto flex w-full max-w-3xl flex-col gap-4';
 const EVERY_SITE = '__all__';
@@ -151,31 +152,19 @@ export function SequenceDetailSurface({ ctx }: { ctx: SurfaceContext }) {
 }
 
 function LoadSequence({ ctx, id }: { ctx: SurfaceContext; id: string }) {
-  const { data: sequence, isPending, isError, refetch } = useSequence(id);
+  const { data: sequence, isPending, isError, error, refetch } = useSequence(id);
 
   if (isError) {
     return (
-      <div className="flex h-full items-center justify-center p-8">
-        <Alert color="error" className="max-w-md">
-          <AlertContent>
-            <AlertTitle>Could not load this sequence</AlertTitle>
-            <AlertDescription>
-              This is a problem reaching the server, or the sequence no longer exists. Nothing has
-              been changed.
-            </AlertDescription>
-          </AlertContent>
-          <Button
-            size="sm"
-            color="error"
-            variant="soft"
-            onClick={() => {
-              void refetch();
-            }}
-          >
-            Try again
-          </Button>
-        </Alert>
-      </div>
+      <PaneLoadError
+        error={error}
+        noun="sequence"
+        title="Could not load this sequence"
+        description="This is a problem reaching the server, or the sequence no longer exists. Nothing has been changed."
+        onRetry={() => {
+          void refetch();
+        }}
+      />
     );
   }
 
@@ -434,87 +423,91 @@ function SequenceEditor({ ctx, sequence }: { ctx: SurfaceContext; sequence?: Seq
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Sequence actions" wrap>
-        {!isNew ? (
-          <Badge color={state.tone} variant="soft" size="sm">
-            {state.label}
-          </Badge>
-        ) : null}
-        {dirty && !isNew ? (
-          <Badge color="info" variant="soft" size="sm">
-            Unsaved changes
-          </Badge>
-        ) : null}
-
-        {sequence ? (
+      <PaneToolbar
+        label="Sequence actions"
+        controls={
           <>
-            <Button
-              size="sm"
-              variant="outline"
-              color="neutral"
-              className="ml-auto shrink-0"
-              title="See who is enrolled"
-              onClick={(event) => {
-                ctx.open(
-                  'email.sequences.enrollments',
-                  { sequenceId: sequence.id },
-                  { target: targetFor(event) }
-                );
-              }}
-            >
-              <Users className="size-4" aria-hidden />
-              <span className="hidden @md:inline">Enrolled</span>
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              color={status === 'active' ? 'neutral' : 'module'}
-              className="shrink-0"
-              loading={statusMut.isPending}
-              onClick={onToggleStatus}
-            >
-              <Power className="size-4" aria-hidden />
-              {status === 'active' ? 'Pause' : 'Turn on'}
-            </Button>
-            <Button
-              size="sm"
-              color="module"
-              className="shrink-0"
-              loading={update.isPending && !statusMut.isPending}
-              disabled={!dirty || busy}
-              onClick={onSave}
-            >
-              Save
-            </Button>
-            <Button
-              size="sm"
-              variant="ghost"
-              color="danger"
-              shape="square"
-              className="shrink-0"
-              aria-label="Delete this sequence"
-              title="Delete this sequence"
-              loading={remove.isPending}
-              onClick={() => {
-                void onDelete();
-              }}
-            >
-              <Trash2 className="size-4" aria-hidden />
-            </Button>
+            {!isNew ? (
+              <Badge color={state.tone} variant="soft" size="sm">
+                {state.label}
+              </Badge>
+            ) : null}
+            {dirty && !isNew ? (
+              <Badge color="info" variant="soft" size="sm">
+                Unsaved changes
+              </Badge>
+            ) : null}
+            {sequence ? (
+              <>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  color="neutral"
+                  className="ml-auto shrink-0"
+                  title="See who is enrolled"
+                  onClick={(event) => {
+                    ctx.open(
+                      'email.sequences.enrollments',
+                      { sequenceId: sequence.id },
+                      { target: targetFor(event) }
+                    );
+                  }}
+                >
+                  <Users className="size-4" aria-hidden />
+                  <span className="hidden @md:inline">Enrolled</span>
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  color={status === 'active' ? 'neutral' : 'module'}
+                  className="shrink-0"
+                  loading={statusMut.isPending}
+                  onClick={onToggleStatus}
+                >
+                  <Power className="size-4" aria-hidden />
+                  {status === 'active' ? 'Pause' : 'Turn on'}
+                </Button>
+                <Button
+                  size="sm"
+                  color="module"
+                  className="shrink-0"
+                  loading={update.isPending && !statusMut.isPending}
+                  disabled={!dirty || busy}
+                  onClick={onSave}
+                >
+                  Save
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  color="danger"
+                  shape="square"
+                  className="shrink-0"
+                  aria-label="Delete this sequence"
+                  title="Delete this sequence"
+                  loading={remove.isPending}
+                  onClick={() => {
+                    void onDelete();
+                  }}
+                >
+                  <Trash2 className="size-4" aria-hidden />
+                </Button>
+              </>
+            ) : (
+              <Button
+                size="sm"
+                color="module"
+                className="ml-auto shrink-0"
+                loading={create.isPending}
+                disabled={busy}
+                onClick={onCreate}
+              >
+                Create
+              </Button>
+            )}
           </>
-        ) : (
-          <Button
-            size="sm"
-            color="module"
-            className="ml-auto shrink-0"
-            loading={create.isPending}
-            disabled={busy}
-            onClick={onCreate}
-          >
-            Create
-          </Button>
-        )}
-      </PaneToolbar>
+        }
+      />
 
       {error ? (
         <Alert color="error" className="shrink-0">

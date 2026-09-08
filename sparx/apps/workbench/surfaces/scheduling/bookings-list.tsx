@@ -105,84 +105,90 @@ export function BookingsListSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Booking list controls" wrap>
-        <div className="max-w-xs min-w-0 flex-1">
-          <SearchInput
+      <PaneToolbar
+        label="Booking list controls"
+        search={
+          <div className="max-w-xs min-w-0 flex-1">
+            <SearchInput
+              size="sm"
+              aria-label="Search bookings by note or name"
+              placeholder="Search notes and names…"
+              value={search}
+              onValueChange={onFilter(setSearch)}
+            />
+          </div>
+        }
+        primary={
+          <Button
+            data-tour="scheduling-take-booking"
+            color="module"
             size="sm"
-            aria-label="Search bookings by note or name"
-            placeholder="Search notes and names…"
-            value={search}
-            onValueChange={onFilter(setSearch)}
+            className="ml-auto"
+            title="Take a booking — hold Shift to open alongside, Alt for a new window"
+            onClick={(event) => {
+              ctx.open('scheduling.bookings.detail', { id: 'new' }, { target: targetFor(event) });
+            }}
+          >
+            <Plus className="size-4" aria-hidden />
+            Take a booking
+          </Button>
+        }
+        controls={
+          <>
+            <NativeSelect
+              size="sm"
+              aria-label="Filter by status"
+              className="w-auto"
+              value={status}
+              onChange={(event) => {
+                onFilter(setStatus)(event.target.value as BookingStatus | '');
+              }}
+            >
+              {STATUS_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </NativeSelect>
+            <NativeSelect
+              size="sm"
+              aria-label="Filter by kind of booking"
+              className="w-auto"
+              value={type}
+              onChange={(event) => {
+                onFilter(setType)(event.target.value as BookingType | '');
+              }}
+            >
+              {TYPE_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </NativeSelect>
+            <NativeSelect
+              size="sm"
+              aria-label="Order by time"
+              className="w-auto"
+              value={order}
+              onChange={(event) => {
+                onFilter(setOrder)(event.target.value as BookingOrder);
+              }}
+            >
+              <option value="desc">Most recent first</option>
+              <option value="asc">Soonest first</option>
+            </NativeSelect>
+          </>
+        }
+        refresh={
+          <RefreshButton
+            isFetching={isFetching}
+            updatedAt={data ? dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void refetch();
+            }}
           />
-        </div>
-
-        <NativeSelect
-          size="sm"
-          aria-label="Filter by status"
-          className="w-auto"
-          value={status}
-          onChange={(event) => {
-            onFilter(setStatus)(event.target.value as BookingStatus | '');
-          }}
-        >
-          {STATUS_OPTIONS.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </NativeSelect>
-
-        <NativeSelect
-          size="sm"
-          aria-label="Filter by kind of booking"
-          className="w-auto"
-          value={type}
-          onChange={(event) => {
-            onFilter(setType)(event.target.value as BookingType | '');
-          }}
-        >
-          {TYPE_OPTIONS.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </NativeSelect>
-
-        <NativeSelect
-          size="sm"
-          aria-label="Order by time"
-          className="w-auto"
-          value={order}
-          onChange={(event) => {
-            onFilter(setOrder)(event.target.value as BookingOrder);
-          }}
-        >
-          <option value="desc">Most recent first</option>
-          <option value="asc">Soonest first</option>
-        </NativeSelect>
-
-        <Button
-          data-tour="scheduling-take-booking"
-          color="module"
-          size="sm"
-          className="ml-auto"
-          title="Take a booking — hold Shift to open alongside, Alt for a new window"
-          onClick={(event) => {
-            ctx.open('scheduling.bookings.detail', { id: 'new' }, { target: targetFor(event) });
-          }}
-        >
-          <Plus className="size-4" aria-hidden />
-          Take a booking
-        </Button>
-
-        <RefreshButton
-          isFetching={isFetching}
-          updatedAt={data ? dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void refetch();
-          }}
-        />
-      </PaneToolbar>
+        }
+      />
 
       <Card className="min-h-0 flex-1 overflow-y-auto">
         {error ? (

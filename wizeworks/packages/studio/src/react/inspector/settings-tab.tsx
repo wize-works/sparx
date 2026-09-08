@@ -337,8 +337,10 @@ export function SettingsTab({ node }: { node: AddressableNode }) {
           <FieldDescription>Stops this being moved or deleted by accident.</FieldDescription>
         </Field>
       ) : (
+        // No product name: this file is shared, so naming one brand tells the
+        // other brand's customers about something that is not theirs.
         <p className="text-base-content text-sm">
-          This part is kept in place by Piggles so the page keeps working.
+          This part is held in place so the page keeps working, and cannot be moved or deleted.
         </p>
       )}
 

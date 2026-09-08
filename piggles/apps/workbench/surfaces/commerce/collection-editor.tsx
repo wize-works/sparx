@@ -4,15 +4,7 @@
 // two ages. The write side is ./collection-editor-writes.ts.
 
 import { useEffect, useMemo, useState } from 'react';
-import {
-  Alert,
-  AlertContent,
-  AlertDescription,
-  AlertTitle,
-  Badge,
-  Button,
-  Text,
-} from '@wizeworks/silicaui-react';
+import { Badge, Button, Text } from '@wizeworks/silicaui-react';
 import { faTrashCan } from '@fortawesome/pro-solid-svg-icons';
 import { Icon } from '@piggles/ui';
 import { useDirtySource } from '../../lib/workbench/dirty';
@@ -25,6 +17,7 @@ import { CollectionMembers } from './collection-detail-members';
 import { CollectionExtras } from './collection-detail-extras';
 import { useCollectionWrites } from './collection-editor-writes';
 import { slugifyHandle, type CollectionDetail } from './collections-data';
+import { SaveFailure } from '@/components/save-failure';
 
 const COLUMN = 'mx-auto flex w-full max-w-3xl flex-col gap-4';
 
@@ -163,14 +156,7 @@ export function CollectionEditor({
             </Text>
           ) : null}
 
-          {writes.failure ? (
-            <Alert color="error">
-              <AlertContent>
-                <AlertTitle>Could not save this group</AlertTitle>
-                <AlertDescription>{writes.failure}</AlertDescription>
-              </AlertContent>
-            </Alert>
-          ) : null}
+          <SaveFailure title="Could not save this group" message={writes.failure} />
 
           <CollectionBasics
             draft={draft}

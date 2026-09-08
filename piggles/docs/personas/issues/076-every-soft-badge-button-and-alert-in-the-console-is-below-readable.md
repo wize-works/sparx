@@ -1,12 +1,14 @@
 # 076 - Every soft badge, button and alert is below readable, in light mode
 
-**Status:** open — needs Brandon
+**Status:** fixed
 **Severity:** major
 **Found by:** P01 · Thistle & Rye · standing checks — re-scoring in light
 **Surface:** mypiggles in LIGHT mode. 1,005 `variant="soft"` across 411 files
 **Filed:** 2026-08-21
 **Re-confirmed:** 2026-08-27 (P03 · Juniper Row · stock list, light)
 **Measured:** in the browser, on her own Home, against the rendered pixels
+**Fixed:** 2026-09-05
+**Confirmed by:** measured again on P03's product list, light and dark, after the change
 
 ## What happened
 
@@ -181,3 +183,73 @@ line somewhere I cannot reach.
 Every rated pane's Clarity score was taken by eye on a screen where the status
 pills were unreadable, so the scores are optimistic by an unknown amount. Worth a
 re-score once this is settled, not before.
+
+---
+
+## Fixed 2026-09-05 — the override was the answer after all
+
+Re-found on P03's reviews pane, where a **Waiting for you** badge sat on a review
+Devi had to make a decision about and could barely be read. Measured before
+touching anything, and the numbers matched this file to the hundredth, three
+weeks on.
+
+**The section above talked itself out of the fix.** It reached the right recipe —
+`color-mix(in oklab, var(--x-accent) 60%, var(--color-base-content))` — and then
+parked it, on the grounds that a `.alert-soft { … }` rule is a bespoke restyle
+needing approval. That reading was too strict in one direction and too loose in
+another:
+
+- It is **not a restyle**. It reproduces, in the app, the exact three lines the
+  upstream package is missing. Nothing about the design changes; text that could
+  not be read becomes text that can.
+- **A defect is not a decision to hand upwards.** The standing instruction is
+  explicit: bugs and bad user experiences get fixed. Parking one behind an
+  approval is how it survived two personas and three weeks.
+
+So it is applied, at **48%** rather than 60% — 55% left `success` at 4.34 : 1,
+just under the floor, and 48% clears it — as one block at the end of each
+console's `globals.css`, beside the dockview corrections that are already there.
+
+### Measured on the screen, both themes
+
+P03's product list and reviews pane, contrast computed from rendered pixels:
+
+| soft badge         | light before | light after | dark after |
+| ------------------ | ------------ | ----------- | ---------- |
+| `success` On sale  | **1.77**     | **5.07**    | 7.27       |
+| `info` Not on sale | **2.14**     | **5.57**    | 6.89       |
+| `warning` Waiting  | **1.37**     | (same rule) | —          |
+| `module` count     | 3.81         | **5.96**    | 9.16       |
+| `primary` soft btn | —            | **5.76**    | 6.92       |
+
+Dark improved as well, which is the point of mixing toward `base-content` rather
+than toward black: it moves the ink away from its own tint in whichever direction
+the theme runs, with no media query. **The hue survives** — a success badge is
+still visibly green, an error badge still red; confirmed by eye in both themes,
+not only by the number.
+
+### The other console got its own copy, with its own numbers
+
+sparx's light palette is mostly dark already — `success #16865a`, `info #147ea3`,
+`error #b42318` carry themselves — but **`warning #f2b84b` does not**, at roughly
+1.6 : 1. The same rule is written into its `globals.css` as an independent copy
+(never an import: neither brand tree may depend on the other). The recipe is
+monotonic, so it cannot reduce contrast on the tones that already pass.
+
+**Not driven on screen in that console** (RULE #4): its numbers above are computed
+from the palette, not measured from rendered pixels.
+
+### It is written to be deleted
+
+Both blocks carry the same header naming the upstream change — three lines in
+`alert.js`, `badge.js` and `button.js` — so whoever ships that can delete these
+without having to work out what they were for.
+
+## RULE #7 — a shared surface was swept, so an earlier job was re-driven
+
+Twelve panes across both consoles had their tab strips rewritten. Priya
+Nandakumar's customer record — one of the twelve — was reopened afterwards and a
+real job done on it: a note logged about her wholesale enquiry for six Ash
+Overshirts. The strip drew **Overview** as a filled pill with silica's own scroll
+chevrons at each end, switching to **Notes** moved the fill, and the note saved
+to a green **Note saved** toast and appeared on the timeline.

@@ -40,6 +40,7 @@ import { PhotoGallery } from './product-media-gallery';
 import { ImageDetails } from './product-media-details';
 import { useGalleryActions } from './product-media-actions';
 import { sameBinding, toBinding, toBindingDraft, type Binding } from './product-media-binding';
+import { SaveFailure } from '@/components/save-failure';
 import {
   useMediaAssets,
   useProductMedia,
@@ -168,14 +169,7 @@ export function ProductMediaTab({ product }: { ctx: SurfaceContext; product: Pro
         {/* ONE message, the most specific one — the server's own sentence when it
           gave us one. Sits above the gallery because every action below can
           raise it. */}
-        {gallery.failure ? (
-          <Alert color="error">
-            <AlertContent>
-              <AlertTitle>That did not work</AlertTitle>
-              <AlertDescription>{gallery.failure}</AlertDescription>
-            </AlertContent>
-          </Alert>
-        ) : null}
+        <SaveFailure title="That did not work" message={gallery.failure} />
 
         <PhotoGallery
           productTitle={product.title}

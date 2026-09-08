@@ -10,37 +10,27 @@
 // mid-paste asks first, and it can sit BESIDE the list (how it is opened) so the
 // existing rules stay in view while you add to them.
 //
-// Every pasted line is parsed and validated in the browser before anything is
-// sent (see `parseRedirectRows`), so the preview shows exactly what will and will
-// not import. The server still has the final say — it catches loops and
-// duplicates across rules it already holds — and those come back as a per-row
-// result you can fix and re-import without losing the rest.
+// The preview knows two things about the business — her connected web addresses
+// and the rules she already has — so a pasted search-console URL is read as a
+// path, and a line that already has a rule says so instead of promising "Ready"
+// and being turned down (issue 400).
 
 import { useMemo, useState } from 'react';
-import {
-  Alert,
-  AlertContent,
-  AlertDescription,
-  AlertTitle,
-  Badge,
-  Button,
-  Text,
-  Textarea,
-  useToast,
-} from '@wizeworks/silicaui-react';
-import { Table } from '../../components/table';
-import { faArrowRight, faCircleCheck, faUpload } from '@fortawesome/pro-solid-svg-icons';
+import { Button, Text, Textarea, useToast } from '@wizeworks/silicaui-react';
+import { faUpload } from '@fortawesome/pro-solid-svg-icons';
 import { Icon } from '@piggles/ui';
 import { PaneToolbar, PANE_SHELL } from '../../components/pane-toolbar';
 import { FormSection } from '../../components/form-section';
 import { useDirtySource } from '../../lib/workbench/dirty';
 import { afterPaneChange } from '../../lib/defer';
 import type { SurfaceContext } from '../../lib/surfaces/registry';
+import { countRows, PreviewTable } from './redirects-import-preview';
+import { ImportResult, type SentRow } from './redirects-import-result';
 import {
   parseRedirectRows,
   redirectErrorMessage,
-  redirectTypeMeta,
   useBulkCreateRedirects,
+  useRedirectImportContext,
   type BulkImportResult,
 } from './redirects-data';
 
@@ -53,18 +43,16 @@ const SAMPLE = `/old-pricing, /pricing
 export function RedirectsImportSurface({ ctx }: { ctx: SurfaceContext }) {
   const toast = useToast();
   const bulk = useBulkCreateRedirects();
+  const context = useRedirectImportContext();
 
   const [text, setText] = useState('');
   // The rows actually sent on the last import, so a per-row server result can be
   // pointed back at the line it came from.
-  const [result, setResult] = useState<{
-    outcome: BulkImportResult;
-    sent: { line: number; from: string; to: string }[];
-  } | null>(null);
+  const [result, setResult] = useState<{ outcome: BulkImportResult; sent: SentRow[] } | null>(null);
 
-  const parsed = useMemo(() => parseRedirectRows(text), [text]);
-  const valid = useMemo(() => parsed.filter((row) => row.error === null), [parsed]);
-  const invalidCount = parsed.length - valid.length;
+  const parsed = useMemo(() => parseRedirectRows(text, context), [text, context]);
+  const ready = useMemo(() => parsed.filter((row) => row.state === 'ready'), [parsed]);
+  const counts = useMemo(() => countRows(parsed), [parsed]);
 
   // Dirty while there is pasted work not yet imported. Once imported, `result`
   // is set and the text is untouched, so the pane reads clean — and typing again
@@ -79,11 +67,28 @@ export function RedirectsImportSurface({ ctx }: { ctx: SurfaceContext }) {
     if (result !== null) setResult(null);
   };
 
+  const announce = (outcome: BulkImportResult) => {
+    const left = outcome.skipped.length;
+    toast.add({
+      title:
+        outcome.inserted === 1 ? '1 redirect imported' : `${outcome.inserted} redirects imported`,
+      ...(left > 0
+        ? {
+            description:
+              left === 1
+                ? 'One line was left out — see the summary.'
+                : `${left} lines were left out — see the summary.`,
+          }
+        : {}),
+      type: left > 0 ? 'warning' : 'success',
+    });
+  };
+
   const runImport = () => {
-    if (valid.length === 0 || bulk.isPending) return;
-    const sent = valid.map((row) => ({ line: row.line, from: row.from, to: row.to }));
+    if (ready.length === 0 || bulk.isPending) return;
+    const sent: SentRow[] = ready.map((row) => ({ line: row.line, from: row.from, to: row.to }));
     bulk.mutate(
-      valid.map((row) => ({
+      ready.map((row) => ({
         from_path: row.from,
         to_path: row.to,
         status_code: row.statusCode,
@@ -92,16 +97,7 @@ export function RedirectsImportSurface({ ctx }: { ctx: SurfaceContext }) {
         onSuccess: (outcome) => {
           setResult({ outcome, sent });
           setText('');
-          toast.add({
-            title:
-              outcome.inserted === 1
-                ? '1 redirect imported'
-                : `${outcome.inserted} redirects imported`,
-            ...(outcome.skipped.length > 0
-              ? { description: `${outcome.skipped.length} could not be added — see the summary.` }
-              : {}),
-            type: outcome.skipped.length > 0 ? 'warning' : 'success',
-          });
+          announce(outcome);
         },
         onError: (err) => {
           toast.add({
@@ -125,24 +121,18 @@ export function RedirectsImportSurface({ ctx }: { ctx: SurfaceContext }) {
     <div className={PANE_SHELL}>
       <PaneToolbar
         label="Bulk import actions"
-        status={
-          <Text className="truncate px-1 text-sm">
-            {valid.length > 0
-              ? `${valid.length} ready${invalidCount > 0 ? ` · ${invalidCount} to fix` : ''}`
-              : 'Paste your list below'}
-          </Text>
-        }
+        status={<Text className="truncate px-1 text-sm">{toolbarStatus(counts)}</Text>}
         primary={
           <Button
             color="module"
             size="sm"
             className="ml-auto shrink-0"
             loading={bulk.isPending}
-            disabled={valid.length === 0}
+            disabled={ready.length === 0}
             onClick={runImport}
           >
             <Icon glyph={faUpload} className="size-4" aria-hidden />
-            {valid.length > 1 ? `Import ${valid.length}` : 'Import'}
+            {ready.length > 1 ? `Import ${ready.length}` : 'Import'}
           </Button>
         }
       />
@@ -182,150 +172,25 @@ export function RedirectsImportSurface({ ctx }: { ctx: SurfaceContext }) {
               }}
             />
             <Text className="text-sm">
-              Copied straight from a spreadsheet works too — the columns come across as tabs. Both
-              addresses are paths on this site, starting with a slash.
+              Copied straight from a spreadsheet works too — the columns come across as tabs. Full
+              web addresses work as well, as long as they are on one of your own; only the part
+              after the address is kept.
             </Text>
           </FormSection>
 
-          {parsed.length > 0 ? (
-            <PreviewTable rows={parsed} validCount={valid.length} invalidCount={invalidCount} />
-          ) : null}
+          {parsed.length > 0 ? <PreviewTable rows={parsed} counts={counts} /> : null}
         </div>
       </div>
     </div>
   );
 }
 
-/* ── The parsed preview ─────────────────────────────────────────────────── */
-
-function PreviewTable({
-  rows,
-  validCount,
-  invalidCount,
-}: {
-  rows: ReturnType<typeof parseRedirectRows>;
-  validCount: number;
-  invalidCount: number;
-}) {
-  return (
-    <FormSection
-      title="Check before importing"
-      description={
-        invalidCount > 0
-          ? `${validCount} ready to import. ${invalidCount} need a fix first — the rest will still import without them.`
-          : `All ${validCount} ready to import.`
-      }
-    >
-      <div className="border-base-300 max-h-96 overflow-y-auto rounded-lg border">
-        <Table size="sm">
-          <thead>
-            <tr>
-              <th className="w-10 text-right">#</th>
-              <th>Redirect</th>
-              <th>Type</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((row) => {
-              const type = redirectTypeMeta(row.statusCode);
-              return (
-                <tr key={row.line}>
-                  <td className="text-right text-sm tabular-nums">{row.line}</td>
-                  <td>
-                    <div className="flex min-w-0 flex-col gap-0.5">
-                      <span className="max-w-80 truncate font-mono text-sm">{row.from || '—'}</span>
-                      <span className="flex max-w-80 items-center gap-1 font-mono text-sm">
-                        <Icon glyph={faArrowRight} className="size-3.5 shrink-0" aria-hidden />
-                        <span className="truncate">{row.to || '—'}</span>
-                      </span>
-                    </div>
-                  </td>
-                  <td>
-                    <Badge color={type.tone} variant="soft" size="sm">
-                      {type.label}
-                    </Badge>
-                  </td>
-                  <td>
-                    {row.error ? (
-                      <span className="text-error text-sm">{row.error}</span>
-                    ) : (
-                      <Badge color="success" variant="soft" size="sm">
-                        Ready
-                      </Badge>
-                    )}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </Table>
-      </div>
-    </FormSection>
-  );
-}
-
-/* ── The result of an import ────────────────────────────────────────────── */
-
-function ImportResult({
-  outcome,
-  sent,
-  onViewList,
-  onImportMore,
-}: {
-  outcome: BulkImportResult;
-  sent: { line: number; from: string; to: string }[];
-  onViewList: () => void;
-  onImportMore: () => void;
-}) {
-  const hasSkipped = outcome.skipped.length > 0;
-  return (
-    <Alert color={hasSkipped ? 'warning' : 'success'} variant="soft">
-      <AlertContent>
-        <AlertTitle>
-          {outcome.inserted === 1
-            ? '1 redirect imported'
-            : `${outcome.inserted} redirects imported`}
-        </AlertTitle>
-        <AlertDescription>
-          <div className="flex flex-col gap-3">
-            {hasSkipped ? (
-              <>
-                <span>
-                  {outcome.skipped.length === 1
-                    ? 'One line could not be added — the server turned it down for this reason:'
-                    : `${outcome.skipped.length} lines could not be added — the server turned them down for these reasons:`}
-                </span>
-                <ul className="flex flex-col gap-1">
-                  {outcome.skipped.map((item) => {
-                    const source = sent[item.row];
-                    return (
-                      <li key={item.row} className="text-sm">
-                        <span className="font-mono">{source?.from ?? `Row ${item.row + 1}`}</span> —{' '}
-                        {item.reason}
-                      </li>
-                    );
-                  })}
-                </ul>
-                <span>Fix those lines and import them again — the rest are already in.</span>
-              </>
-            ) : (
-              <span className="flex items-center gap-2">
-                <Icon glyph={faCircleCheck} className="size-4 shrink-0" aria-hidden />
-                Every redirect on your list is now live.
-              </span>
-            )}
-            <div className="flex flex-wrap gap-2">
-              <Button size="sm" color="module" onClick={onViewList}>
-                View all redirects
-              </Button>
-              <Button size="sm" variant="outline" color="neutral" onClick={onImportMore}>
-                Import another list
-              </Button>
-            </div>
-          </div>
-        </AlertDescription>
-      </AlertContent>
-    </Alert>
-  );
+/** The one line of status the toolbar has room for. */
+function toolbarStatus(counts: { ready: number; fix: number; already: number }): string {
+  if (counts.ready === 0 && counts.fix === 0 && counts.already === 0)
+    return 'Paste your list below';
+  const parts = [`${String(counts.ready)} ready`];
+  if (counts.already > 0) parts.push(`${String(counts.already)} already set up`);
+  if (counts.fix > 0) parts.push(`${String(counts.fix)} to fix`);
+  return parts.join(' · ');
 }

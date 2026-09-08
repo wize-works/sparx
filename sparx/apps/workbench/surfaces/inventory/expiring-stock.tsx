@@ -48,7 +48,6 @@ import {
   Text,
   Textarea,
   Timestamp,
-  ToolbarSeparator,
   useToast,
 } from '@wizeworks/silicaui-react';
 import { CalendarX2, Percent, Trash2 } from 'lucide-react';
@@ -218,46 +217,51 @@ export function ExpiringStockSurface(_props: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Expiring stock controls">
-        <NativeSelect
-          size="sm"
-          className="max-w-44 shrink"
-          aria-label="How far ahead"
-          value={horizon}
-          onChange={(event) => {
-            setHorizon(event.target.value);
-          }}
-        >
-          {HORIZONS.map((h) => (
-            <option key={h.value} value={h.value}>
-              {h.label}
-            </option>
-          ))}
-        </NativeSelect>
-
-        <ToolbarSeparator />
-
-        {/* The buckets as the headline, because the shape of the problem is the
+      <PaneToolbar
+        label="Expiring stock controls"
+        status={
+          <span className="flex flex-wrap items-center gap-1.5">
+            {buckets.map((b) => (
+              <Badge key={b.bucket} color={bucketTone(b.bucket)} variant="soft" size="sm">
+                {bucketLabel(b.bucket)}: {b.lots}
+                {b.valueCents !== null ? ` · ${formatCents(b.valueCents)}` : ''}
+              </Badge>
+            ))}
+          </span>
+        }
+        controls={
+          <>
+            <NativeSelect
+              size="sm"
+              className="max-w-44 shrink"
+              aria-label="How far ahead"
+              value={horizon}
+              onChange={(event) => {
+                setHorizon(event.target.value);
+              }}
+            >
+              {HORIZONS.map((h) => (
+                <option key={h.value} value={h.value}>
+                  {h.label}
+                </option>
+              ))}
+            </NativeSelect>
+            {/* The buckets as the headline, because the shape of the problem is the
             answer: forty lots at 90 days is a purchasing conversation, four at
             30 days is a markdown this afternoon. */}
-        <span className="flex flex-wrap items-center gap-1.5">
-          {buckets.map((b) => (
-            <Badge key={b.bucket} color={bucketTone(b.bucket)} variant="soft" size="sm">
-              {bucketLabel(b.bucket)}: {b.lots}
-              {b.valueCents !== null ? ` · ${formatCents(b.valueCents)}` : ''}
-            </Badge>
-          ))}
-        </span>
-
-        <RefreshButton
-          className="ml-auto"
-          isFetching={report.isFetching}
-          updatedAt={report.data ? report.dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void report.refetch();
-          }}
-        />
-      </PaneToolbar>
+          </>
+        }
+        refresh={
+          <RefreshButton
+            className="ml-auto"
+            isFetching={report.isFetching}
+            updatedAt={report.data ? report.dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void report.refetch();
+            }}
+          />
+        }
+      />
 
       {expired && expired.lots > 0 ? (
         <Alert color="danger" variant="soft">

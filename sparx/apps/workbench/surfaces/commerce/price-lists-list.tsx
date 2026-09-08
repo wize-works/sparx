@@ -74,47 +74,58 @@ export function PriceListsListSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Price list controls">
-        <div className="max-w-xs min-w-0 flex-1">
-          <SearchInput
+      <PaneToolbar
+        label="Price list controls"
+        search={
+          <div className="max-w-xs min-w-0 flex-1">
+            <SearchInput
+              size="sm"
+              aria-label="Search price lists"
+              placeholder="Search price lists…"
+              value={search}
+              onValueChange={setSearch}
+            />
+          </div>
+        }
+        primary={
+          <Button
+            color="module"
             size="sm"
-            aria-label="Search price lists"
-            placeholder="Search price lists…"
-            value={search}
-            onValueChange={setSearch}
-          />
-        </div>
-        <div className="hidden w-40 shrink-0 @md:block">
-          <Select
-            size="sm"
-            aria-label="Show which price lists"
-            value={filter}
-            items={FILTERS.map((entry) => ({ value: entry.value, label: entry.label }))}
-            onValueChange={(next) => {
-              setFilter((next as FilterValue | null) ?? 'all');
+            className="ml-auto"
+            title="Add a price list — hold Shift to open alongside, Alt for a new window"
+            onClick={(event) => {
+              ctx.open('commerce.pricelist.detail', { id: 'new' }, { target: targetFor(event) });
+            }}
+          >
+            <Plus className="size-4" aria-hidden />
+            Add a price list
+          </Button>
+        }
+        controls={
+          <>
+            <div className="hidden w-40 shrink-0 @md:block">
+              <Select
+                size="sm"
+                aria-label="Show which price lists"
+                value={filter}
+                items={FILTERS.map((entry) => ({ value: entry.value, label: entry.label }))}
+                onValueChange={(next) => {
+                  setFilter((next as FilterValue | null) ?? 'all');
+                }}
+              />
+            </div>
+          </>
+        }
+        refresh={
+          <RefreshButton
+            isFetching={isFetching}
+            updatedAt={data ? dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void refetch();
             }}
           />
-        </div>
-        <Button
-          color="module"
-          size="sm"
-          className="ml-auto"
-          title="Add a price list — hold Shift to open alongside, Alt for a new window"
-          onClick={(event) => {
-            ctx.open('commerce.pricelist.detail', { id: 'new' }, { target: targetFor(event) });
-          }}
-        >
-          <Plus className="size-4" aria-hidden />
-          Add a price list
-        </Button>
-        <RefreshButton
-          isFetching={isFetching}
-          updatedAt={data ? dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void refetch();
-          }}
-        />
-      </PaneToolbar>
+        }
+      />
 
       <Card className="min-h-0 flex-1 overflow-y-auto">
         {isError ? (

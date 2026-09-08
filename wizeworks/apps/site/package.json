@@ -22,6 +22,7 @@
     "@wizeworks/builder-schemas": "workspace:*",
     "@wizeworks/chat-widget": "workspace:*",
     "@wizeworks/cms-editor": "workspace:*",
+    "@wizeworks/commerce-schemas": "workspace:*",
     "@wizeworks/section-template-react": "workspace:*",
     "@wizeworks/silica-catalog": "workspace:*",
     "@wizeworks/silica-corrections": "workspace:*",

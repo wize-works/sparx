@@ -91,7 +91,7 @@ function FavouriteButton({
         variant="ghost"
         size="xs"
         shape="square"
-        aria-label={favourited ? `Remove ${title} from favourites` : `Add ${title} to favourites`}
+        aria-label={favourited ? `Remove ${title} from favorites` : `Add ${title} to favorites`}
         aria-pressed={favourited}
         disabled={toggle.isPending}
         className="shrink-0"

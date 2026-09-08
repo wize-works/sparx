@@ -6,8 +6,10 @@
 //   1. numberOnEnter   → allocate the stable per-SITE sequence once (docs/131
 //      §3.6), then (re)format the visible number with this stage's prefix
 //      (EST-… → INV-…).
-//   2. final / void     → stamp finalizedAt / voidedAt + AR status, and FREEZE
-//      the issuer identity onto the document.
+//   2. open / final     → FREEZE the issuer identity and set the due date: the
+//      document has become a bill somebody is handed, so who is billing them
+//      and when it is owed both stop moving here.
+//   2b. final / void    → stamp finalizedAt / voidedAt + AR status.
 //   3. snapshotOnEnter  → freeze an immutable BillingDocumentSnapshot of the
 //      document exactly as it stands (lines + totals + party), AFTER numbering
 //      so the frozen copy carries the right number.
@@ -42,19 +44,6 @@ import { formatBillingNumber, nextBillingDocumentSeq } from './record-numbers';
 // hand-edited stage.
 const DEFAULT_NUMBER_PREFIX = 'INV-';
 
-/**
- * The seller block, frozen onto a document at finalize (docs/131 §3.6).
- *
- * Carries BOTH names on purpose. `siteName` is the trading name the customer
- * recognises — the business they think they bought from — while `legalName` and
- * `taxId` identify the entity that is actually liable, and on a multi-brand
- * tenant those are different strings. A document that prints only one of them is
- * either unrecognisable to the customer or unusable to the tax authority.
- *
- * `taxId` is included ONLY when the entity is registered: printing a VAT number
- * a business does not have is a misrepresentation, and `taxRegistered` exists
- * precisely to gate it.
- */
 /** The company whose terms apply — the customer's employer, when the document
  *  itself is not addressed to a company. Null for a walk-in with no employer on
  *  file, which is the honest answer: nobody agreed any terms with them. */
@@ -70,7 +59,56 @@ async function payerCompanyId(
   return customer?.companyId ?? null;
 }
 
-async function snapshotIssuer(
+/**
+ * WHEN THIS BILL IS DUE, counted from the day the customer gets it.
+ *
+ * The payer's employer supplies the window ("net 30" -> 30 days). Nobody on file,
+ * or terms that name no number, means ZERO days -- which `netTermsDays` already
+ * documents as "due immediately", and is what "due on receipt" means on a paper
+ * invoice.
+ *
+ * `receivedOn` is the anchor, and it is deliberately a parameter, because the two
+ * callers know different things. Entering a payable stage only knows when the
+ * bill was RAISED, and it may then sit unsent for a week; the send route knows
+ * the day the customer actually receives it. Anchoring a zero-day window to the
+ * raise date would deliver invoices that were already overdue on arrival.
+ */
+export async function dueDateFromTerms(
+  tx: Prisma.TransactionClient,
+  document: { companyId: string | null; customerId: string | null },
+  receivedOn: Date
+): Promise<Date> {
+  const companyId = document.companyId ?? (await payerCompanyId(tx, document.customerId));
+  const account = companyId
+    ? await tx.company.findUnique({ where: { id: companyId }, select: { paymentTerms: true } })
+    : null;
+  const due = new Date(receivedOn);
+  due.setUTCDate(due.getUTCDate() + netTermsDays(account?.paymentTerms));
+  return due;
+}
+
+/**
+ * The seller block, frozen onto a document the moment it becomes payable
+ * (docs/131 §3.6) — its trading name, legal entity, address and tax id as they
+ * stand right now.
+ *
+ * Carries BOTH names on purpose. `siteName` is the trading name the customer
+ * recognises — the business they think they bought from — while `legalName` and
+ * `taxId` identify the entity that is actually liable, and on a multi-brand
+ * tenant those are different strings. A document that prints only one of them is
+ * either unrecognisable to the customer or unusable to the tax authority.
+ *
+ * `taxId` is included ONLY when the entity is registered: printing a VAT number
+ * a business does not have is a misrepresentation, and `taxRegistered` exists
+ * precisely to gate it.
+ *
+ * Exported because there are TWO writers of a finalized billing document and
+ * only one of them went through `applyStageEntryEffects`: the B2B AR ledger
+ * constructs its document directly, sets its own `finalizedAt`, and had no
+ * issuer at all. A second copy of this would be a second thing to keep in step,
+ * so both call this.
+ */
+export async function snapshotIssuer(
   tx: Prisma.TransactionClient,
   tenantId: string,
   propertyId: string
@@ -212,14 +250,6 @@ export async function applyStageEntryEffects(
   if (enteringFinal) {
     const finalizedAt = new Date();
     data.finalizedAt = finalizedAt;
-    // Freeze WHO ISSUED this (docs/131 §3.6, docs/130 §2.7). billTo/shipTo were
-    // already snapshotted here and the seller was not, so renaming a site — or
-    // editing the legal entity's address — silently rewrote the letterhead on
-    // invoices already in customers' hands. Finalize is the right moment: it is
-    // the point the document stops being editable.
-    if (document.issuedBy === null) {
-      data.issuedBy = await snapshotIssuer(tx, ctx.tenantId, document.propertyId);
-    }
   }
 
   // ── When is it due? ───────────────────────────────────────────────────────
@@ -230,12 +260,22 @@ export async function applyStageEntryEffects(
   // customer: here is the bill.
   //
   // This used to live inside the `final`-only block above, bundled with
-  // `finalizedAt` and `issuedBy` -- which genuinely are facts about finalizing.
-  // A due date is not. The consequence was that the DEFAULT workflow, whose
-  // Invoice stage is `open`, could never produce one: every invoice a new tenant
-  // ever raised read "No due date", sat outside every aging bucket, and could
-  // never be chased. The terms were recorded, agreed and displayed, and reached
-  // nothing.
+  // `finalizedAt` and `issuedBy`. The consequence was that the DEFAULT workflow,
+  // whose Invoice stage is `open`, could never produce one: every invoice a new
+  // tenant ever raised read "No due date", sat outside every aging bucket, and
+  // could never be chased. The terms were recorded, agreed and displayed, and
+  // reached nothing.
+  //
+  // `issuedBy` HAS NOW BEEN MOVED HERE FOR THE SAME REASON, and the two are one
+  // rule rather than two: this is the moment the document becomes a bill the
+  // customer is handed, so it is the moment both "when is it due" and "who is
+  // billing you" must stop moving. Left in the `final`-only block it never fired
+  // on the default workflow at all -- 0 of 90 documents on this database carried
+  // an issuer, 52 of them finalized -- so the letterhead every tenant prints was
+  // resolved live, which is exactly what freezing it exists to prevent.
+  //
+  // The fix and its own bug shipped in the same function: one field was moved
+  // out of the wrong block and its neighbour was left behind.
   //
   // THE TERMS FOLLOW THE PAYER'S EMPLOYER, not only a document addressed to the
   // company. It used to read `document.companyId` alone, and nothing sets that
@@ -247,19 +287,28 @@ export async function applyStageEntryEffects(
   // `dueAt === null` is the idempotence guard: a date already set by hand, or on
   // an earlier entry, is never overwritten.
   const becomingPayable = stage.stageType === 'open' || stage.stageType === 'final';
+
+  // Freeze WHO ISSUED THIS (docs/131 §3.6, docs/130 §2.7). `billTo`/`shipTo` were
+  // already snapshotted and the seller was not, so renaming a site — or editing
+  // the legal entity's address — rewrote the letterhead on invoices already in
+  // customers' hands. `issuedBy === null` is the idempotence guard: a document
+  // re-entering a payable stage keeps the issuer it was first sent under.
+  if (becomingPayable && document.issuedBy === null) {
+    data.issuedBy = await snapshotIssuer(tx, ctx.tenantId, document.propertyId);
+  }
+
   if (becomingPayable && document.dueAt === null) {
-    const companyId = document.companyId ?? (await payerCompanyId(tx, document.customerId));
-    if (companyId) {
-      const account = await tx.company.findUnique({
-        where: { id: companyId },
-        select: { paymentTerms: true },
-      });
-      const days = netTermsDays(account?.paymentTerms);
-      if (days > 0) {
-        const due = new Date();
-        due.setUTCDate(due.getUTCDate() + days);
-        data.dueAt = due;
-      }
+    // A REAL WINDOW ONLY. `dueDateFromTerms` answers for everyone, including a
+    // walk-in with no terms, but a zero-day answer anchored HERE would be wrong:
+    // raising a bill is not handing it over, and an invoice that sits unsent for
+    // a week would reach the customer already a week overdue. So a payer with no
+    // agreed window is left with no date until the send route sets one from the
+    // day it actually goes out. Anyone on terms gets theirs now, so the deadline
+    // is on screen before she sends it.
+    const raisedAt = new Date();
+    const due = await dueDateFromTerms(tx, document, raisedAt);
+    if (due.getTime() > raisedAt.getTime()) {
+      data.dueAt = due;
     }
   }
   if (stage.stageType === 'void') {

@@ -58,7 +58,6 @@ import {
   Plus,
   RefreshCw,
   Trash2,
-  TriangleAlert,
 } from 'lucide-react';
 import { useQueryClient } from '@wizeworks/query';
 import { useConfirm } from '../../lib/confirm';
@@ -69,6 +68,7 @@ import { RefreshButton } from '../../components/refresh-button';
 import { FormSection } from '../../components/form-section';
 import { useViewer, useModuleStates } from '../../lib/api/shell-data';
 import type { OpenTarget, SurfaceContext } from '../../lib/surfaces/registry';
+import { SaveFailure } from '@/components/save-failure';
 import {
   aiCredentialErrorMessage,
   apiKeyState,
@@ -96,6 +96,7 @@ import {
   type McpConnection,
   type ScopeMeta,
 } from './data';
+import { PaneLoadError } from '../../components/pane-load-error';
 
 const COLUMN = 'mx-auto flex w-full max-w-3xl flex-col gap-4';
 
@@ -245,14 +246,7 @@ function KeyForm({
 
   return (
     <div className="flex flex-col gap-4">
-      {failure ? (
-        <Alert color="error">
-          <AlertContent>
-            <AlertTitle>That key could not be used</AlertTitle>
-            <AlertDescription>{failure}</AlertDescription>
-          </AlertContent>
-        </Alert>
-      ) : null}
+      <SaveFailure title="That key could not be used" message={failure} />
 
       <Field>
         <FieldLabel>Which AI service is it?</FieldLabel>
@@ -984,14 +978,7 @@ function ApiKeysSection({
           <Heading level={3} className="text-base font-semibold">
             Create an API key
           </Heading>
-          {issueFailure ? (
-            <Alert color="error">
-              <AlertContent>
-                <AlertTitle>That key could not be created</AlertTitle>
-                <AlertDescription>{issueFailure}</AlertDescription>
-              </AlertContent>
-            </Alert>
-          ) : null}
+          <SaveFailure title="That key could not be created" message={issueFailure} />
 
           <Field>
             <FieldLabel>What is it for?</FieldLabel>
@@ -1167,28 +1154,13 @@ export function AiConnectionsSurface({ ctx }: { ctx: SurfaceContext }) {
 
   if (isError) {
     return (
-      <div className="flex h-full items-center justify-center p-8">
-        <Alert color="error" className="max-w-md">
-          <TriangleAlert />
-          <AlertContent>
-            <AlertTitle>Could not load your AI connections</AlertTitle>
-            <AlertDescription>
-              This is a problem reaching the server. Your connected account, apps and keys, if you
-              have any, are unaffected.
-            </AlertDescription>
-          </AlertContent>
-          <Button
-            size="sm"
-            color="error"
-            variant="soft"
-            onClick={() => {
-              void refetch();
-            }}
-          >
-            Try again
-          </Button>
-        </Alert>
-      </div>
+      <PaneLoadError
+        title="Could not load your AI connections"
+        description="This is a problem reaching the server. Your connected account, apps and keys, if you have any, are unaffected."
+        onRetry={() => {
+          void refetch();
+        }}
+      />
     );
   }
 
@@ -1209,14 +1181,17 @@ export function AiConnectionsSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="AI connection controls">
-        <RefreshButton
-          className="ml-auto"
-          isFetching={isFetching}
-          updatedAt={dataUpdatedAt}
-          onRefresh={refreshAll}
-        />
-      </PaneToolbar>
+      <PaneToolbar
+        label="AI connection controls"
+        refresh={
+          <RefreshButton
+            className="ml-auto"
+            isFetching={isFetching}
+            updatedAt={dataUpdatedAt}
+            onRefresh={refreshAll}
+          />
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className={COLUMN}>

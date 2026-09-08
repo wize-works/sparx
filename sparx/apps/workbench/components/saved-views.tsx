@@ -57,6 +57,7 @@ import { useMutation, useQuery, useQueryClient } from '@wizeworks/query';
 import { api } from '../lib/api/client';
 import { afterCommit, afterMenuClose } from '../lib/defer';
 import { useConfirm } from '../lib/confirm';
+import { MENU_ROW, type ToolbarPresentation } from './toolbar-presentation';
 
 export interface SavedViewConfig {
   /** The list's own filter vocabulary, as strings. Opaque here on purpose: a
@@ -119,6 +120,9 @@ export interface SavedViewsBarProps {
   /** Layout only — the toolbar's `ml-auto` when this is the first control of
    *  the right-hand group. */
   className?: string;
+  /** `menu` relocates both controls into PaneToolbar's overflow popover, where
+   *  there is no hover to reveal a tooltip so each one wears its label. */
+  presentation?: ToolbarPresentation;
 }
 
 /**
@@ -137,6 +141,7 @@ export function SavedViewsBar({
   visibleColumns,
   onColumnsChange,
   className,
+  presentation = 'bar',
 }: SavedViewsBarProps) {
   const toast = useToast();
   const confirm = useConfirm();
@@ -188,20 +193,33 @@ export function SavedViewsBar({
     <>
       <DropdownMenu>
         <DropdownMenuTrigger>
-          <Button
-            color={activeId ? 'module' : 'neutral'}
-            variant={activeId ? 'soft' : 'outline'}
-            size="sm"
-            {...(className ? { className } : {})}
-          >
-            <Star className="size-4" aria-hidden />
-            {activeName ?? 'Views'}
-            {items.length > 0 && !activeName ? (
-              <Badge color="neutral" variant="soft" size="sm">
-                {items.length}
-              </Badge>
-            ) : null}
-          </Button>
+          {presentation === 'menu' ? (
+            <Button
+              size="sm"
+              variant="ghost"
+              className={MENU_ROW}
+              {...(activeId ? { color: 'module' as const } : {})}
+            >
+              <Star className="size-4" aria-hidden />
+              <span>{activeName ?? 'Saved views'}</span>
+              {items.length > 0 && !activeName ? (
+                <Badge color="info" variant="soft" size="sm" className="ml-auto">
+                  {items.length}
+                </Badge>
+              ) : null}
+            </Button>
+          ) : (
+            <Button
+              size="sm"
+              variant="ghost"
+              shape="square"
+              aria-label={activeName ? `Saved views · showing "${activeName}"` : 'Saved views'}
+              {...(className ? { className } : {})}
+              {...(activeId ? { color: 'module' as const } : {})}
+            >
+              <Star className="size-4" aria-hidden />
+            </Button>
+          )}
         </DropdownMenuTrigger>
         <DropdownMenuContent>
           {items.length === 0 ? (
@@ -342,9 +360,7 @@ export function SavedViewsBar({
           </div>
           <div className="flex justify-end gap-2">
             <DialogClose>
-              <Button color="neutral" variant="outline">
-                Cancel
-              </Button>
+              <Button variant="outline">Cancel</Button>
             </DialogClose>
             <Button
               color="module"
@@ -417,9 +433,9 @@ export function ColumnChooser({
     <DropdownMenu>
       <DropdownMenuTrigger>
         <Button
-          color={hiddenCount > 0 ? 'module' : 'neutral'}
-          variant={hiddenCount > 0 ? 'soft' : 'outline'}
           size="sm"
+          variant="ghost"
+          {...(hiddenCount > 0 ? { color: 'module' as const } : {})}
         >
           <Columns3 className="size-4" aria-hidden />
           Columns
@@ -451,7 +467,7 @@ export function ColumnChooser({
               <Checkbox color="module" checked={shown} disabled={column.required === true} />
               <span className="flex-1 truncate">{column.label}</span>
               {column.required === true ? (
-                <Badge color="neutral" variant="soft" size="sm">
+                <Badge color="info" variant="soft" size="sm">
                   Always
                 </Badge>
               ) : null}

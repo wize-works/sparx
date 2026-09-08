@@ -107,6 +107,13 @@ export interface ComponentDoc extends DocumentBase {
   propertyId: string;
   /** The master tree. Instances across pages and the layout expand from this. */
   root: Node;
+  /** The author's own note — "what it's for", in her words. The manage screen
+   *  promises it appears "in this list and in the editor's Add panel", so it has
+   *  to travel with the document: `symbols()` narrows a piece to what the CANVAS
+   *  needs, and the Insert rail reads it back through `pieceNote`. Null when she
+   *  has not written one, and absent entirely for a site-owned piece, whose store
+   *  has nowhere to keep it. */
+  note?: string | null;
 }
 
 export interface EmailDoc extends DocumentBase {

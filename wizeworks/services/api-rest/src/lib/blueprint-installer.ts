@@ -41,6 +41,7 @@ import {
 } from '@wizeworks/scheduling-schemas';
 import {
   parseTypeSchema,
+  publishTimestamp,
   resolveType,
   validateAndNormalizeBody,
   recordRevision,
@@ -116,7 +117,14 @@ export interface InstallResult {
    *  only linked it to the site, so uninstall must unlink rather than delete it: the
    *  sibling site that installed the same design is still showing it. Both kinds stay
    *  in this list because pin resolution needs to map every slug to an id. */
-  content: { typeKey: string; slug: string | null; id: string; reused?: boolean }[];
+  content: {
+    typeKey: string;
+    slug: string | null;
+    id: string;
+    /** The manifest's status. Absent on results recorded before this was carried. */
+    declaredStatus?: string;
+    reused?: boolean;
+  }[];
   /** Booking-backed service business (docs/79) — the id-map for the scheduling
    *  slice. Null until an install with a `scheduling` decl runs it; `services` is
    *  what the backfill's `isMaterialized` gate reads. */
@@ -1021,7 +1029,19 @@ export async function installContentSlice(env: SliceEnv): Promise<void> {
             tenantId,
             typeKey: entry.typeKey,
             slug: entry.slug ?? null,
-            status: entry.status,
+            // DRAFT, like every other artifact this installer creates, and unlike what
+            // this line used to do (issue 377). Every content entry in every blueprint
+            // in the marketplace declares `published`, and honoring that put somebody
+            // else's example articles onto the PUBLIC site the moment a design was
+            // added -- an entry is scoped to the target site through the junction
+            // below, and a site with a live journal page lists its published entries
+            // whether or not the design's own pages have been published yet. The screen
+            // says three separate times that nothing goes live until you publish it.
+            //
+            // `goLiveInstall` is what publishes them, on the tenant's explicit go-live,
+            // which is the contract stated at the top of this file and the one the
+            // pages, products and emails have always followed.
+            status: 'draft',
             body: body as Prisma.InputJsonValue,
             seoJson: seo as Prisma.InputJsonValue,
             // `author_id` FKs to the CMS `authors` table, NOT `users`. The blueprint now
@@ -1070,7 +1090,10 @@ export async function installContentSlice(env: SliceEnv): Promise<void> {
           entryId: row.id,
           body,
           seoJson: seo,
-          status: entry.status,
+          // What was WRITTEN, not what the manifest asked for. A revision is the
+          // history of the row, and a first revision claiming `published` on a row
+          // that is a draft would misread as somebody having unpublished it.
+          status: 'draft',
           kind: 'manual',
           authorId: userId ?? null,
           summary: 'Installed from template',
@@ -1080,6 +1103,11 @@ export async function installContentSlice(env: SliceEnv): Promise<void> {
         typeKey: entry.typeKey,
         slug: entry.slug ?? null,
         id: row.id,
+        // What the design MEANT this entry to be once the site is live. Everything is
+        // installed as a draft; this is the only record of the difference between an
+        // entry the design ships live and one it ships as a draft, and `goLiveInstall`
+        // is its only reader.
+        declaredStatus: entry.status,
         ...(existingEntry ? { reused: true } : {}),
       });
     });
@@ -1758,17 +1786,29 @@ export async function goLiveInstall(ctxIn: InstallContext, installId: string): P
       .publish(ctx, p.id)
       .catch((err) => logger.warn({ err, id: p.id }, 'product publish failed'));
   }
-  // Content entries → published.
+  // Content entries → published. This is where a design's articles become public,
+  // and the only place they do (issue 377): install writes them as drafts.
   for (const c of r.content ?? []) {
+    // Only what the design meant to be live. An entry it ships as a draft stays one.
+    // Results recorded before `declaredStatus` existed carry none, and those installs
+    // did declare published for every entry, so an absent value means published.
+    if (c.declaredStatus !== undefined && c.declaredStatus !== 'published') continue;
     await withTenant(ctx, async (tx) => {
       const entry = await tx.contentEntry.findFirst({
         where: { id: c.id },
-        select: { body: true, seoJson: true },
+        select: { body: true, seoJson: true, status: true, publishedAt: true },
       });
       if (!entry) return;
+      // Only a draft. An install that REUSED an entry the shop already had must not
+      // republish something they archived, and re-dating one that is already live
+      // would move a real post to the top of their own journal.
+      if (entry.status !== 'draft') return;
       await tx.contentEntry.update({
         where: { id: c.id },
-        data: { status: 'published', publishedAt: new Date() },
+        data: {
+          status: 'published',
+          publishedAt: publishTimestamp('published', entry.publishedAt),
+        },
       });
       await recordRevision(tx, {
         tenantId,

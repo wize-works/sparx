@@ -45,6 +45,12 @@ export interface CredentialField {
 export interface GatewayDescriptor {
   id: string;
   name: string;
+  /** The company whose account and dashboard the owner actually has. The SHELF
+   *  name has a different job — it has to distinguish "Your own Stripe" from the
+   *  platform's own gateway — and putting that in a possessive produced "your
+   *  Your own Stripe account" on screen. Absent means the shelf name reads
+   *  correctly on its own (Square, PayPal). */
+  processor?: string;
   tagline?: string;
   blurb: string;
   /** Whether a tenant can switch this on today. Absent means yes — a gateway that
@@ -183,9 +189,16 @@ export function paymentsErrorMessage(error: unknown, fallback: string): string {
 }
 
 export interface GatewayState {
-  /** success = active + ready; info = selected but not yet ready; warning =
-   *  keys saved but not the active one; neutral = available, nothing done. */
-  tone: 'success' | 'info' | 'warning' | 'neutral';
+  /** success = live and charging cards; info = a state that is not money moving
+   *  (chosen but not ready, live but charging nothing, not built yet); warning =
+   *  keys saved on a provider checkout is not using.
+   *
+   *  ABSENT means colorless — a bare `.badge` resolving to base-content, which is
+   *  the right ink for a row that carries no state at all. It used to say
+   *  `neutral`, which named a color for "nothing has happened here" and made
+   *  "Available" and "Coming soon" the same grey pill (root RULE #4: if an
+   *  element distinguishes A from B, its color carries the distinction). */
+  tone?: 'success' | 'info' | 'warning';
   label: string;
 }
 
@@ -207,10 +220,18 @@ export function gatewayState(
   // that must not then offer a control which would throw. Checked first: a tenant can
   // neither select nor save keys for something that cannot charge a card.
   if (gateway.availability === 'coming_soon') {
-    return { tone: 'neutral', label: 'Coming soon' };
+    return { tone: 'info', label: 'Coming soon' };
   }
 
   if (isSelected && config?.isActive) {
+    // ACTIVE and CHARGING are two different facts, and this badge used to report
+    // the first while claiming the second. A gateway whose checkout is 'none' is
+    // switched on and takes no money: the row said "Active — taking payments" in
+    // green, two lines under the pane's own sentence "nothing is charged online".
+    // An online-only shop reading the badge would take every order unpaid.
+    if (gateway.checkout === 'none') {
+      return { tone: 'info', label: 'Active — no card payments' };
+    }
     return { tone: 'success', label: 'Active — taking payments' };
   }
   if (isSelected) {
@@ -226,5 +247,22 @@ export function gatewayState(
   if (credential?.hasSecrets) {
     return { tone: 'warning', label: 'Keys saved — not your active provider' };
   }
-  return { tone: 'neutral', label: 'Available' };
+  // Nothing has happened to this one. That is the absence of state, so the
+  // badge wears no color rather than the color named "no color".
+  return { label: 'Available' };
+}
+
+/**
+ * The one-badge answer to "is my checkout charging cards?", for the shelf
+ * header. It reads the same fact as {@link gatewayState}, so the header and the
+ * row it summarises cannot end up saying different things.
+ */
+export function checkoutSummary(
+  active: GatewayDescriptor | undefined,
+  isActive: boolean
+): GatewayState | null {
+  if (!active || !isActive) return null;
+  return active.checkout === 'none'
+    ? { tone: 'info', label: 'No card payments' }
+    : { tone: 'success', label: 'Taking payments' };
 }

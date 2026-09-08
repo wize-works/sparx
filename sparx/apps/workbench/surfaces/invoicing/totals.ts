@@ -79,6 +79,8 @@ export interface DocumentTotals {
   subtotal: number;
   discountTotal: number;
   taxTotal: number;
+  shippingTotal: number;
+  surchargeTotal: number;
   total: number;
 }
 
@@ -97,7 +99,27 @@ export function computeLine(line: DraftLine, taxRate: number): LineTotals {
   };
 }
 
-export function computeTotals(lines: DraftLine[], taxRate: number): DocumentTotals {
+/**
+ * SHIPPING AND SURCHARGE ARE PART OF THE TOTAL, and were named in this file's
+ * header long before they were added here. The mirror stopped at tax, so an
+ * invoice carrying a delivery charge showed a Total short by exactly that
+ * charge -- sitting beside an "Amount due" read straight off the server, which
+ * was right. Two figures on one card that could not both be true.
+ *
+ * It also made the "Not saved yet" warning fire on documents nobody had edited,
+ * because that warning is this number compared with the saved one. A warning
+ * that goes off when nothing is wrong is one she learns to ignore, and it is
+ * the only thing between her and emailing a stale invoice.
+ *
+ * Both are document-level and pass through untouched: they are not taxed, not
+ * discounted, and added last, exactly as `billing-totals.ts` does it.
+ */
+export function computeTotals(
+  lines: DraftLine[],
+  taxRate: number,
+  shippingTotal = 0,
+  surchargeTotal = 0
+): DocumentTotals {
   let subtotal = 0;
   let discountTotal = 0;
   let taxTotal = 0;
@@ -112,12 +134,16 @@ export function computeTotals(lines: DraftLine[], taxRate: number): DocumentTota
   subtotal = round2(subtotal);
   discountTotal = round2(discountTotal);
   taxTotal = round2(taxTotal);
+  const shipping = round2(shippingTotal);
+  const surcharge = round2(surchargeTotal);
 
   return {
     subtotal,
     discountTotal,
     taxTotal,
-    total: round2(subtotal - discountTotal + taxTotal),
+    shippingTotal: shipping,
+    surchargeTotal: surcharge,
+    total: round2(subtotal - discountTotal + taxTotal + shipping + surcharge),
   };
 }
 

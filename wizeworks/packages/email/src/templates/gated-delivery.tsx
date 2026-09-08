@@ -42,7 +42,11 @@ export function GatedDeliveryEmail({
     message ?? 'Thanks for asking — here is the file you wanted, ready whenever you are.';
   const days = expiresInDays === 1 ? '1 day' : `${String(expiresInDays)} days`;
   return (
-    <EmailLayout preview={`Your download: ${filename}`}>
+    <EmailLayout
+      // The visitor swapped their email address for a file on the TENANT's site.
+      audience="visitor"
+      preview={`Your download: ${filename}`}
+    >
       <Section>
         <EmailHeading>Here it is{name ? `, ${name}` : ''}</EmailHeading>
         <EmailParagraph>{body}</EmailParagraph>

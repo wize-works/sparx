@@ -16,16 +16,7 @@
 
 import { PaneWaiting } from '../../components/pane-waiting';
 import { PaneLoadError } from '../../components/pane-load-error';
-import {
-  Alert,
-  AlertContent,
-  AlertDescription,
-  AlertTitle,
-  Badge,
-  Button,
-  Card,
-  Text,
-} from '@wizeworks/silicaui-react';
+import { Badge, Button, Card, Text } from '@wizeworks/silicaui-react';
 import { faFloppyDisk } from '@fortawesome/pro-solid-svg-icons';
 import { Icon } from '@piggles/ui';
 import { PaneToolbar, PANE_SHELL } from '../../components/pane-toolbar';
@@ -36,6 +27,7 @@ import { BookingWindow, ServiceOptions } from './service-options';
 import { BLANK, draftFrom, type Draft } from './service-draft';
 import { useServiceEditor } from './service-editor-state';
 import type { SurfaceContext } from '../../lib/surfaces/registry';
+import { SaveFailure } from '@/components/save-failure';
 import {
   bookingTypeLabel,
   isNotFound,
@@ -109,14 +101,7 @@ function ServiceEditor({
             <Text className="text-sm">{bookingTypeLabel(existing.bookingType)}</Text>
           ) : null}
 
-          {form.saveError ? (
-            <Alert color="error">
-              <AlertContent>
-                <AlertTitle>Could not save this service</AlertTitle>
-                <AlertDescription>{form.saveError}</AlertDescription>
-              </AlertContent>
-            </Alert>
-          ) : null}
+          <SaveFailure title="Could not save this service" message={form.saveError} />
 
           <ServiceBasics
             isNew={isNew}

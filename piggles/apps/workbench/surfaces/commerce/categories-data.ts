@@ -63,8 +63,13 @@ export interface CategoryDetail {
   featured: boolean;
   iconMediaId: string | null;
   heroMediaId: string | null;
-  /** How many products are filed in this category. */
+  /** Products a SHOPPER finds under this heading on the site being worked in.
+   *  Filed-in-total is this plus `hiddenProductCount` — the delete confirmation
+   *  wants the sum, because that is what a delete detaches (issue 382). */
   productCount: number;
+  /** Filed here but not on the website: archived, still a draft, or kept for one
+   *  of the business's other sites. */
+  hiddenProductCount: number;
   seoTitle: string | null;
   seoDescription: string | null;
   ogImageId: string | null;

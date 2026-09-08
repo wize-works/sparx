@@ -16,7 +16,6 @@ import {
   AlertDescription,
   AlertTitle,
   Badge,
-  Button,
   Heading,
   Text,
   Timestamp,
@@ -34,6 +33,7 @@ import {
   type AutomationRunStepRow,
   type Tone,
 } from './automations-data';
+import { PaneLoadError } from '../../components/pane-load-error';
 
 const COLUMN = 'mx-auto flex w-full max-w-3xl flex-col gap-4';
 
@@ -138,7 +138,7 @@ export function AutomationRunDetailSurface({ ctx }: { ctx: SurfaceContext }) {
   const runId = typeof ctx.params.runId === 'string' ? ctx.params.runId : '';
 
   const { data: automation } = useAutomation(automationId);
-  const { data: run, isPending, isError, refetch } = useAutomationRun(automationId, runId);
+  const { data: run, isPending, isError, error, refetch } = useAutomationRun(automationId, runId);
 
   useEffect(() => {
     if (run) ctx.setTitle(automation ? `${automation.name} — run` : 'Run');
@@ -146,26 +146,15 @@ export function AutomationRunDetailSurface({ ctx }: { ctx: SurfaceContext }) {
 
   if (isError) {
     return (
-      <div className="flex h-full items-center justify-center p-8">
-        <Alert color="error" className="max-w-md">
-          <AlertContent>
-            <AlertTitle>Could not load this run</AlertTitle>
-            <AlertDescription>
-              This is a problem reaching the server, or the run no longer exists.
-            </AlertDescription>
-          </AlertContent>
-          <Button
-            size="sm"
-            color="error"
-            variant="soft"
-            onClick={() => {
-              void refetch();
-            }}
-          >
-            Try again
-          </Button>
-        </Alert>
-      </div>
+      <PaneLoadError
+        error={error}
+        noun="run"
+        title="Could not load this run"
+        description="This is a problem reaching the server, or the run no longer exists."
+        onRetry={() => {
+          void refetch();
+        }}
+      />
     );
   }
 
@@ -182,16 +171,21 @@ export function AutomationRunDetailSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Run details">
-        <Badge color={state.tone} variant="soft" size="sm">
-          {state.label}
-        </Badge>
-        {run.automationVersion !== null ? (
-          <Badge color="neutral" variant="outline" size="sm">
-            v{run.automationVersion}
-          </Badge>
-        ) : null}
-      </PaneToolbar>
+      <PaneToolbar
+        label="Run details"
+        controls={
+          <>
+            <Badge color={state.tone} variant="soft" size="sm">
+              {state.label}
+            </Badge>
+            {run.automationVersion !== null ? (
+              <Badge color="neutral" variant="outline" size="sm">
+                v{run.automationVersion}
+              </Badge>
+            ) : null}
+          </>
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className={COLUMN}>

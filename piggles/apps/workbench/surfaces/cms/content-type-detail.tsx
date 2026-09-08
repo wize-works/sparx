@@ -22,6 +22,7 @@
 // EditorLayout — the field builder IS the work and wants the full width of one
 // centred, capped column, not a bento with a near-empty rail.
 
+import { shownInPlace } from '@wizeworks/query';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { PaneWaiting } from '../../components/pane-waiting';
 import { PaneLoadError } from '../../components/pane-load-error';
@@ -82,6 +83,7 @@ import {
   type TypeMetaInput,
 } from './content-types-data';
 import { productCopy } from '../../lib/product';
+import { SaveFailure } from '@/components/save-failure';
 
 const COLUMN = 'mx-auto flex w-full max-w-3xl flex-col gap-4';
 
@@ -270,6 +272,7 @@ function CreateType({ ctx }: { ctx: SurfaceContext }) {
           toast.add({ title: `${type.name} created`, type: 'success' });
         });
       },
+      onError: shownInPlace,
     });
   };
 
@@ -298,14 +301,7 @@ function CreateType({ ctx }: { ctx: SurfaceContext }) {
             content of this kind straight away.
           </Text>
 
-          {failure ? (
-            <Alert color="error">
-              <AlertContent>
-                <AlertTitle>Could not create this</AlertTitle>
-                <AlertDescription>{failure}</AlertDescription>
-              </AlertContent>
-            </Alert>
-          ) : null}
+          <SaveFailure title="Could not create this" message={failure} />
 
           <MetaForm
             draft={draft}
@@ -427,7 +423,18 @@ function EditType({
   useDirtySource(dirty, 'You have unsaved changes to this content type. Close anyway?');
 
   const problem = metaProblem(draft, false);
-  const entryCount = counts?.get(type.key) ?? 0;
+  // The DELETE reckons with every site: `deleteContentTypeTx` refuses tenant-wide,
+  // so a type with nothing on this site can still be undeletable (issue 389).
+  const typeCounts = counts?.get(type.key);
+  const entryCount = typeCounts?.allSites ?? 0;
+  const entriesHere = typeCounts?.here ?? 0;
+  const entriesElsewhere = Math.max(0, entryCount - entriesHere);
+  /** The clause that stops "3 entries use this type" reading as a lie on a screen
+   *  whose own list shows none of them. Empty when they are all on this site. */
+  const elsewhereClause =
+    entriesElsewhere > 0
+      ? ` ${String(entriesElsewhere)} of them ${entriesElsewhere === 1 ? 'is' : 'are'} on your other sites.`
+      : '';
 
   const onSave = () => {
     if (problem) return;
@@ -456,7 +463,7 @@ function EditType({
       title: `Delete “${type.name}”?`,
       description:
         entryCount > 0
-          ? `${String(entryCount)} ${entryCount === 1 ? 'entry uses' : 'entries use'} this type. You cannot delete it until those are removed — archiving them is not enough. This cannot be undone.`
+          ? `${String(entryCount)} ${entryCount === 1 ? 'entry uses' : 'entries use'} this type.${elsewhereClause} You cannot delete it until those are removed — archiving them is not enough. This cannot be undone.`
           : `This removes the “${type.name}” type and its fields for good. This cannot be undone.`,
       confirmLabel: 'Delete it',
       cancelLabel: 'Keep it',
@@ -521,7 +528,7 @@ function EditType({
               <Text className="font-medium">Delete this type</Text>
               <Text className="text-sm">
                 {entryCount > 0
-                  ? `${String(entryCount)} ${entryCount === 1 ? 'entry uses' : 'entries use'} it, so it cannot be deleted yet.`
+                  ? `${String(entryCount)} ${entryCount === 1 ? 'entry uses' : 'entries use'} it, so it cannot be deleted yet.${elsewhereClause}`
                   : 'Removes the type and its fields for good. This cannot be undone.'}
               </Text>
             </div>

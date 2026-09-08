@@ -256,12 +256,15 @@ export function TeamMemberSurface({ ctx }: { ctx: SurfaceContext }) {
           everyone else this pane is a read-only profile, and a permanently
           dead button at the top of it would say nothing useful. */}
       {editable ? (
-        <PaneToolbar label="Teammate actions">
-          <Button color="module" size="sm" disabled={!dirty || update.isPending} onClick={save}>
-            <Save className="size-4" aria-hidden />
-            {update.isPending ? 'Saving…' : 'Save'}
-          </Button>
-        </PaneToolbar>
+        <PaneToolbar
+          label="Teammate actions"
+          primary={
+            <Button color="module" size="sm" disabled={!dirty || update.isPending} onClick={save}>
+              <Save className="size-4" aria-hidden />
+              {update.isPending ? 'Saving…' : 'Save'}
+            </Button>
+          }
+        />
       ) : null}
 
       <div className="min-h-0 flex-1 overflow-y-auto p-4">

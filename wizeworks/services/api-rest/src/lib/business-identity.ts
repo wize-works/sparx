@@ -65,6 +65,60 @@ function buildAddressLines(b: BusinessRow): string[] {
 }
 
 /**
+ * The issuer FROZEN on a document, when it has one.
+ *
+ * `billing_documents.issued_by` is written the moment a document is finalized,
+ * precisely so that renaming a site — or editing the legal entity's address —
+ * cannot rewrite the letterhead on invoices already in customers' hands. That
+ * column was written and read by nothing: both renderers went to the live
+ * business, so the exact rewrite it exists to prevent still happened, and a
+ * customer's copy and the tenant's copy could disagree about who billed them.
+ *
+ * The frozen record carries BOTH names. `legalName` wins here for the same
+ * reason the live path prefers the business over the site: an invoice is issued
+ * by the BUSINESS, not by whichever shop the customer happened to buy through.
+ *
+ * The tax id needs no `taxRegistered` check — that gate was applied at freeze
+ * time, so a value present here is one the business genuinely held that day.
+ *
+ * Returns null for a document finalized before the column existed, or never
+ * finalized at all, which is the caller's signal to fall back to live.
+ */
+export function frozenIssuerIdentity(issuedBy: unknown): BusinessIdentity | null {
+  if (!issuedBy || typeof issuedBy !== 'object' || Array.isArray(issuedBy)) return null;
+  const issuer = issuedBy as Record<string, unknown>;
+  const str = (value: unknown): string | null =>
+    typeof value === 'string' && value.trim() ? value.trim() : null;
+
+  const address =
+    issuer.address && typeof issuer.address === 'object' && !Array.isArray(issuer.address)
+      ? (issuer.address as Record<string, unknown>)
+      : {};
+
+  // Same row shape, so the frozen block and the live one go through one
+  // formatter and cannot drift into printing different addresses differently.
+  const lines = buildAddressLines({
+    businessName: str(issuer.legalName),
+    phone: str(issuer.phone),
+    addressLine1: str(address.line1),
+    addressLine2: str(address.line2),
+    city: str(address.city),
+    region: str(address.region),
+    postalCode: str(address.postalCode),
+    country: str(address.country),
+    taxId: str(issuer.taxId),
+    taxRegistered: str(issuer.taxId) !== null,
+  });
+
+  const businessName = str(issuer.legalName) ?? str(issuer.siteName);
+  if (!businessName && lines.length === 0) return null;
+  return {
+    ...(businessName ? { businessName } : {}),
+    ...(lines.length > 0 ? { addressLines: lines } : {}),
+  };
+}
+
+/**
  * Resolve the issuing business's document identity.
  *
  * Falls back to the tenant's legal name when no business name is set, so a

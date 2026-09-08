@@ -96,6 +96,7 @@ import {
   type InventorySource,
   type SourceType,
 } from './sources-data';
+import { PaneLoadError } from '../../components/pane-load-error';
 
 const COLUMN = 'mx-auto flex w-full max-w-3xl flex-col gap-4';
 
@@ -625,101 +626,108 @@ function SourceEditor({
   return (
     <div className={PANE_SHELL}>
       {isNew ? (
-        <PaneToolbar label="Add a stock source actions">
-          <Button
-            size="sm"
-            color="module"
-            className="ml-auto"
-            loading={create.isPending}
-            disabled={!canSave}
-            onClick={save}
-          >
-            <Save className="size-4" aria-hidden />
-            Add this source
-          </Button>
-        </PaneToolbar>
+        <PaneToolbar
+          label="Add a stock source actions"
+          primary={
+            <Button
+              size="sm"
+              color="module"
+              className="ml-auto"
+              loading={create.isPending}
+              disabled={!canSave}
+              onClick={save}
+            >
+              <Save className="size-4" aria-hidden />
+              Add this source
+            </Button>
+          }
+        />
       ) : (
-        <PaneToolbar label="Stock source actions" wrap>
-          {state ? (
-            <Badge color={state.tone} variant="soft" size="sm">
-              {state.label}
-            </Badge>
-          ) : null}
-
-          <Button
-            size="sm"
-            variant="outline"
-            color="neutral"
-            className="ml-auto shrink-0"
-            loading={update.isPending}
-            onClick={togglePaused}
-          >
-            {source?.status === 'paused' ? (
-              <>
-                <Play className="size-4" aria-hidden />
-                <span className="hidden @lg:inline">Turn on</span>
-              </>
-            ) : (
-              <>
-                <Pause className="size-4" aria-hidden />
-                <span className="hidden @lg:inline">Pause</span>
-              </>
-            )}
-          </Button>
-
-          {type === 'agent' ? null : (
+        <PaneToolbar
+          label="Stock source actions"
+          primary={
             <Button
               size="sm"
               variant="outline"
               color="neutral"
-              className="shrink-0"
-              loading={sync.isPending}
-              disabled={source?.status === 'paused'}
-              onClick={runSync}
+              className="ml-auto shrink-0"
+              loading={update.isPending}
+              onClick={togglePaused}
             >
-              <RefreshCw className="size-4" aria-hidden />
-              <span className="hidden @lg:inline">Sync now</span>
+              {source?.status === 'paused' ? (
+                <>
+                  <Play className="size-4" aria-hidden />
+                  <span className="hidden @lg:inline">Turn on</span>
+                </>
+              ) : (
+                <>
+                  <Pause className="size-4" aria-hidden />
+                  <span className="hidden @lg:inline">Pause</span>
+                </>
+              )}
             </Button>
-          )}
-
-          <Button
-            size="sm"
-            color="module"
-            className="shrink-0"
-            loading={update.isPending}
-            disabled={!canSave}
-            onClick={save}
-          >
-            <Save className="size-4" aria-hidden />
-            Save
-          </Button>
-
-          <Button
-            size="sm"
-            variant="ghost"
-            color="danger"
-            shape="square"
-            className="shrink-0"
-            aria-label="Remove this source"
-            title="Remove this source"
-            loading={remove.isPending}
-            onClick={() => {
-              void removeSource();
-            }}
-          >
-            <Trash2 className="size-4" aria-hidden />
-          </Button>
-
-          {/* Re-reads liveness/last-sync from the server without remounting, so
+          }
+          controls={
+            <>
+              {state ? (
+                <Badge color={state.tone} variant="soft" size="sm">
+                  {state.label}
+                </Badge>
+              ) : null}
+              {type === 'agent' ? null : (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  color="neutral"
+                  className="shrink-0"
+                  loading={sync.isPending}
+                  disabled={source?.status === 'paused'}
+                  onClick={runSync}
+                >
+                  <RefreshCw className="size-4" aria-hidden />
+                  <span className="hidden @lg:inline">Sync now</span>
+                </Button>
+              )}
+              <Button
+                size="sm"
+                color="module"
+                className="shrink-0"
+                loading={update.isPending}
+                disabled={!canSave}
+                onClick={save}
+              >
+                <Save className="size-4" aria-hidden />
+                Save
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                color="danger"
+                shape="square"
+                className="shrink-0"
+                aria-label="Remove this source"
+                title="Remove this source"
+                loading={remove.isPending}
+                onClick={() => {
+                  void removeSource();
+                }}
+              >
+                <Trash2 className="size-4" aria-hidden />
+              </Button>
+              {/* Re-reads liveness/last-sync from the server without remounting, so
               an in-progress draft survives the refresh. */}
-          <RefreshButton
-            isFetching={isFetching ?? sync.isPending}
-            updatedAt={source ? new Date(source.updatedAt).getTime() : undefined}
-            onRefresh={() => {
-              onRefresh?.();
-            }}
-          />
-        </PaneToolbar>
+            </>
+          }
+          refresh={
+            <RefreshButton
+              isFetching={isFetching ?? sync.isPending}
+              updatedAt={source ? new Date(source.updatedAt).getTime() : undefined}
+              onRefresh={() => {
+                onRefresh?.();
+              }}
+            />
+          }
+        />
       )}
 
       <div className="min-h-0 flex-1 overflow-y-auto">
@@ -1260,43 +1268,18 @@ function ExistingSource({ ctx, id }: { ctx: SurfaceContext; id: string }) {
     const gone = isNotFound(error);
     return (
       <div className={PANE_SHELL}>
-        <div className="flex h-full items-center justify-center p-8">
-          <Alert color={gone ? 'warning' : 'danger'} variant="soft" className="max-w-md">
-            <AlertContent>
-              <AlertTitle>
-                {gone ? 'This source no longer exists' : 'Could not load this source'}
-              </AlertTitle>
-              <AlertDescription>
-                {gone
-                  ? 'It has been removed from your list. Any stock numbers it brought in are unaffected.'
-                  : 'This is a problem reaching the server. The connection itself is unaffected.'}
-              </AlertDescription>
-            </AlertContent>
-            {gone ? (
-              <Button
-                size="sm"
-                color="warning"
-                variant="soft"
-                onClick={() => {
-                  ctx.open('inventory.sources', undefined, { target: 'replace' });
-                }}
-              >
-                Back to your sources
-              </Button>
-            ) : (
-              <Button
-                size="sm"
-                color="danger"
-                variant="soft"
-                onClick={() => {
-                  void refetch();
-                }}
-              >
-                Try again
-              </Button>
-            )}
-          </Alert>
-        </div>
+        <PaneLoadError
+          reason={gone ? 'missing' : 'unreachable'}
+          title={gone ? 'This source no longer exists' : 'Could not load this source'}
+          description={
+            gone
+              ? 'It has been removed from your list. Any stock numbers it brought in are unaffected.'
+              : 'This is a problem reaching the server. The connection itself is unaffected.'
+          }
+          onRetry={() => {
+            void refetch();
+          }}
+        />
       </div>
     );
   }

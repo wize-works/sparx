@@ -62,7 +62,9 @@ import { useDirtySource } from '../../lib/workbench/dirty';
 import { useTabSave } from './product-tab-save';
 import { FormSection } from '../../components/form-section';
 import { MoneyInput } from '@/components/money-input';
+import { skuStem, slotLabel, slotsOf, suggestSlotSku, type Slot } from './product-variant-slots';
 import type { SurfaceContext } from '../../lib/surfaces/registry';
+import { SaveFailure } from '@/components/save-failure';
 import {
   formatCents,
   productErrorMessage,
@@ -183,65 +185,6 @@ function draftProblem(draft: VariantDraft): string | null {
   return dimensionProblem(draft);
 }
 
-/* ── The grid ───────────────────────────────────────────────────────────── */
-
-interface Slot {
-  key: string;
-  /** One value per axis, in axis order. This is the slot's identity. */
-  coordinate: { optionName: string; valueId: string; valueText: string }[];
-  variant: Variant | null;
-}
-
-/** Every combination the choices allow, in the order they are shown. */
-function slotsOf(options: ProductOption[], live: Variant[]): Slot[] {
-  let rows: Slot['coordinate'][] = [[]];
-  for (const option of options) {
-    const next: Slot['coordinate'][] = [];
-    for (const row of rows) {
-      for (const value of option.values) {
-        next.push([...row, { optionName: option.name, valueId: value.id, valueText: value.value }]);
-      }
-    }
-    rows = next;
-  }
-
-  return rows.map((coordinate) => {
-    const wanted = [...coordinate.map((point) => point.valueId)].sort();
-    const variant =
-      live.find((candidate) => {
-        if (candidate.optionValueIds.length !== wanted.length) return false;
-        const held = [...candidate.optionValueIds].sort();
-        return held.every((id, index) => id === wanted[index]);
-      }) ?? null;
-    return { key: coordinate.map((point) => point.valueId).join('|'), coordinate, variant };
-  });
-}
-
-function slotLabel(slot: Slot): string {
-  return slot.coordinate.map((point) => point.valueText).join(' · ');
-}
-
-/** A first code for a new version, built from the product's web address and the
- *  choices it sits on, so nobody has to invent one per cell of a 3×4 grid. Stays
- *  fully editable — a business with its own scheme types theirs over the top. */
-function suggestSlotSku(product: Product, slot: Slot, taken: Set<string>): string {
-  const token = (value: string) =>
-    value
-      .toUpperCase()
-      .replace(/[^A-Z0-9]+/g, '-')
-      .replace(/^-+|-+$/g, '')
-      .slice(0, 12);
-  const base = token(product.handle) || 'ITEM';
-  const suffix = slot.coordinate.map((point) => token(point.valueText)).filter(Boolean);
-  let candidate = [base, ...suffix].join('-').slice(0, 120);
-  let attempt = 2;
-  while (taken.has(candidate.toLowerCase())) {
-    candidate = `${[base, ...suffix].join('-').slice(0, 116)}-${String(attempt)}`;
-    attempt += 1;
-  }
-  return candidate;
-}
-
 /* ── The tab ────────────────────────────────────────────────────────────── */
 
 export function ProductVariantsTab({ product }: { ctx: SurfaceContext; product: Product }) {
@@ -264,6 +207,14 @@ export function ProductVariantsTab({ product }: { ctx: SurfaceContext; product: 
   const live = useMemo(() => all.filter((variant) => variant.deletedAt === null), [all]);
   const retired = useMemo(() => all.filter((variant) => variant.deletedAt !== null), [all]);
   const axes = useMemo(() => options.data ?? [], [options.data]);
+  const slots = useMemo(() => slotsOf(axes, live), [axes, live]);
+
+  /** The code this product already carries, and every code it already holds.
+   *  Both are needed wherever a new version is offered a code, and both are
+   *  worked out ONCE here: three places offer one, and a stem derived three
+   *  times is a stem that drifts (issue 172). */
+  const stem = useMemo(() => skuStem(product, slots, live), [product, slots, live]);
+  const taken = useMemo(() => new Set(all.map((variant) => variant.sku.toLowerCase())), [all]);
 
   const saved = useMemo(() => {
     const map: Record<string, VariantDraft> = {};
@@ -401,11 +352,11 @@ export function ProductVariantsTab({ product }: { ctx: SurfaceContext; product: 
     });
     if (!ok) return;
 
-    const taken = new Set(all.map((variant) => variant.sku.toLowerCase()));
+    const claimed = new Set(taken);
     let made = 0;
     for (const slot of empty) {
-      const sku = suggestSlotSku(product, slot, taken);
-      taken.add(sku.toLowerCase());
+      const sku = suggestSlotSku(stem, slot, claimed);
+      claimed.add(sku.toLowerCase());
       try {
         await create.mutateAsync({
           sku,
@@ -464,7 +415,6 @@ export function ProductVariantsTab({ product }: { ctx: SurfaceContext; product: 
     );
   }
 
-  const slots = slotsOf(axes, live);
   const placed = new Set(
     slots.map((slot) => slot.variant?.id).filter((id): id is string => id !== undefined)
   );
@@ -521,17 +471,10 @@ export function ProductVariantsTab({ product }: { ctx: SurfaceContext; product: 
 
       {/* ONE message, the most specific one — the server's own sentence names the
           exact code that clashed, which no generic banner could. */}
-      {saveError ? (
-        <Alert color="error">
-          <AlertContent>
-            <AlertTitle>That version was not saved</AlertTitle>
-            <AlertDescription>{saveError}</AlertDescription>
-          </AlertContent>
-        </Alert>
-      ) : null}
+      <SaveFailure title="That version was not saved" message={saveError} />
 
       {live.length === 0 && retired.length === 0 ? (
-        <NoPriceYet product={product} axes={axes} slots={slots} onCreated={create} />
+        <NoPriceYet axes={axes} slots={slots} stem={stem} onCreated={create} />
       ) : null}
 
       {axes.length === 0 ? (
@@ -550,7 +493,8 @@ export function ProductVariantsTab({ product }: { ctx: SurfaceContext; product: 
           slots={slots}
           axes={axes}
           rowProps={rowProps}
-          product={product}
+          stem={stem}
+          taken={taken}
           create={create}
         />
       )}
@@ -629,24 +573,22 @@ export function ProductVariantsTab({ product }: { ctx: SurfaceContext; product: 
 /* ── A product that cannot be bought at all ─────────────────────────────── */
 
 function NoPriceYet({
-  product,
   axes,
   slots,
+  stem,
   onCreated,
 }: {
-  product: Product;
   axes: ProductOption[];
   slots: Slot[];
+  /** The code this product already carries. On a product with no version at all
+   *  — which is the only way this section is reached — `skuStem` falls back to
+   *  the product's web address, so the offer is the same one it always was. */
+  stem: string;
   onCreated: ReturnType<typeof useCreateVariant>;
 }) {
   const toast = useToast();
   const [sku, setSku] = useState(() =>
-    axes.length > 0 && slots[0]
-      ? suggestSlotSku(product, slots[0], new Set())
-      : product.handle
-          .toUpperCase()
-          .replace(/[^A-Z0-9]+/g, '-')
-          .slice(0, 120)
+    axes.length > 0 && slots[0] ? suggestSlotSku(stem, slots[0], new Set()) : stem
   );
   const [price, setPrice] = useState(0);
 
@@ -751,13 +693,17 @@ function GroupedGrid({
   slots,
   axes,
   rowProps,
-  product,
+  stem,
+  taken,
   create,
 }: {
   slots: Slot[];
   axes: ProductOption[];
   rowProps: RowProps;
-  product: Product;
+  /** The code this product already carries, and every code it already holds —
+   *  both worked out once by the tab (issue 172). */
+  stem: string;
+  taken: Set<string>;
   create: ReturnType<typeof useCreateVariant>;
 }) {
   const grouped = useMemo(() => {
@@ -787,7 +733,7 @@ function GroupedGrid({
                 {...rowProps}
               />
             ) : (
-              <EmptySlotRow key={slot.key} slot={slot} product={product} create={create} />
+              <EmptySlotRow key={slot.key} slot={slot} stem={stem} taken={taken} create={create} />
             )
           )}
         </FormSection>
@@ -800,11 +746,16 @@ function GroupedGrid({
 
 function EmptySlotRow({
   slot,
-  product,
+  stem,
+  taken,
   create,
 }: {
   slot: Slot;
-  product: Product;
+  /** The code this product already carries — see `skuStem`. */
+  stem: string;
+  /** Every code this product already holds, live or retired. Offering one that
+   *  is taken pre-fills the field with a code the server will refuse. */
+  taken: Set<string>;
   create: ReturnType<typeof useCreateVariant>;
 }) {
   const toast = useToast();
@@ -824,7 +775,7 @@ function EmptySlotRow({
           variant="outline"
           color="module"
           onClick={() => {
-            setSku(suggestSlotSku(product, slot, new Set()));
+            setSku(suggestSlotSku(stem, slot, taken));
             setAdding(true);
           }}
         >

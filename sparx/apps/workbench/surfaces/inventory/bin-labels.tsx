@@ -28,7 +28,6 @@ import {
   Text,
   ToggleGroup,
   ToggleGroupItem,
-  ToolbarSeparator,
 } from '@wizeworks/silicaui-react';
 import { Printer, QrCode } from 'lucide-react';
 import { PaneToolbar, PANE_SHELL } from '../../components/pane-toolbar';
@@ -177,80 +176,82 @@ export function BinLabelsSurface({ ctx }: { ctx: SurfaceContext }) {
   return (
     <div className={PANE_SHELL}>
       {/* `print:hidden` — the controls are not part of the sheet. */}
-      <PaneToolbar label="Label controls" className="print:hidden">
-        <Button
-          color="module-inventory"
-          size="sm"
-          disabled={bins.length === 0}
-          onClick={() => {
-            window.print();
-          }}
-        >
-          <Printer className="size-4" aria-hidden />
-          Print {bins.length > 0 ? plural(bins.length, 'label', 'labels') : 'labels'}
-        </Button>
-
-        <ToolbarSeparator />
-
-        {!singleBinId ? (
+      <PaneToolbar
+        label="Label controls"
+        className="print:hidden"
+        controls={
           <>
-            <NativeSelect
+            <Button
+              color="module-inventory"
               size="sm"
-              className="max-w-40 shrink"
-              aria-label="Location"
-              value={locationId}
-              onChange={(event) => {
-                setLocationId(event.target.value);
-                setZone('');
+              disabled={bins.length === 0}
+              onClick={() => {
+                window.print();
               }}
             >
-              <option value="">Every location</option>
-              {activeLocations.map((location) => (
-                <option key={location.id} value={location.id}>
-                  {location.name}
-                </option>
-              ))}
-            </NativeSelect>
+              <Printer className="size-4" aria-hidden />
+              Print {bins.length > 0 ? plural(bins.length, 'label', 'labels') : 'labels'}
+            </Button>
+            {!singleBinId ? (
+              <>
+                <NativeSelect
+                  size="sm"
+                  className="max-w-40 shrink"
+                  aria-label="Location"
+                  value={locationId}
+                  onChange={(event) => {
+                    setLocationId(event.target.value);
+                    setZone('');
+                  }}
+                >
+                  <option value="">Every location</option>
+                  {activeLocations.map((location) => (
+                    <option key={location.id} value={location.id}>
+                      {location.name}
+                    </option>
+                  ))}
+                </NativeSelect>
 
-            {zones.length > 0 ? (
-              <NativeSelect
-                size="sm"
-                className="max-w-36 shrink"
-                aria-label="Zone"
-                value={zone}
-                onChange={(event) => {
-                  setZone(event.target.value);
-                }}
-              >
-                <option value="">Every zone</option>
-                {zones.map((z) => (
-                  <option key={z} value={z}>
-                    {z}
-                  </option>
-                ))}
-              </NativeSelect>
+                {zones.length > 0 ? (
+                  <NativeSelect
+                    size="sm"
+                    className="max-w-36 shrink"
+                    aria-label="Zone"
+                    value={zone}
+                    onChange={(event) => {
+                      setZone(event.target.value);
+                    }}
+                  >
+                    <option value="">Every zone</option>
+                    {zones.map((z) => (
+                      <option key={z} value={z}>
+                        {z}
+                      </option>
+                    ))}
+                  </NativeSelect>
+                ) : null}
+              </>
             ) : null}
-          </>
-        ) : null}
-
-        <ToggleGroup
-          value={[size]}
-          onValueChange={(value) => {
-            const next = value[0];
-            if (next) setSize(next as SizeKey);
-          }}
-        >
-          {SIZES.map((s) => (
-            <ToggleGroupItem
-              key={s.value}
-              value={s.value}
-              aria-label={`${s.label} labels — ${s.hint}`}
+            <ToggleGroup
+              value={[size]}
+              onValueChange={(value) => {
+                const next = value[0];
+                if (next) setSize(next as SizeKey);
+              }}
             >
-              {s.label}
-            </ToggleGroupItem>
-          ))}
-        </ToggleGroup>
-      </PaneToolbar>
+              {SIZES.map((s) => (
+                <ToggleGroupItem
+                  key={s.value}
+                  value={s.value}
+                  aria-label={`${s.label} labels — ${s.hint}`}
+                >
+                  {s.label}
+                </ToggleGroupItem>
+              ))}
+            </ToggleGroup>
+          </>
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         {isLoading ? (

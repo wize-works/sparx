@@ -10,14 +10,11 @@
 // same in its own row. Only the controls that apply to the current choice are
 // shown, so nobody sets a percentage on a policy that takes no deposit.
 
+import { shownInPlace } from '@wizeworks/query';
 import { useEffect, useMemo, useState } from 'react';
 import { PaneWaiting } from '../../components/pane-waiting';
 import { PaneLoadError } from '../../components/pane-load-error';
 import {
-  Alert,
-  AlertContent,
-  AlertDescription,
-  AlertTitle,
   Button,
   Card,
   Checkbox,
@@ -41,6 +38,7 @@ import { MoneyTextInput, moneyCents, moneyProblem } from '../../components/money
 import { useDirtySource } from '../../lib/workbench/dirty';
 import { afterPaneChange } from '../../lib/defer';
 import type { SurfaceContext } from '../../lib/surfaces/registry';
+import { SaveFailure } from '@/components/save-failure';
 import {
   DEPOSIT_TYPES,
   REMINDER_OFFSETS,
@@ -321,6 +319,7 @@ function PolicyEditor({
             toast.add({ title: `${body.name ?? 'Rule set'} added`, type: 'success' });
           });
         },
+        onError: shownInPlace,
       });
       return;
     }
@@ -328,6 +327,7 @@ function PolicyEditor({
       onSuccess: () => {
         toast.add({ title: 'Rule set saved', type: 'success' });
       },
+      onError: shownInPlace,
     });
   };
 
@@ -394,14 +394,7 @@ function PolicyEditor({
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className={COLUMN}>
-          {saveError ? (
-            <Alert color="error">
-              <AlertContent>
-                <AlertTitle>Could not save this rule set</AlertTitle>
-                <AlertDescription>{saveError}</AlertDescription>
-              </AlertContent>
-            </Alert>
-          ) : null}
+          <SaveFailure title="Could not save this rule set" message={saveError} />
 
           <FormSection
             title={isNew ? 'New rule set' : 'Name'}

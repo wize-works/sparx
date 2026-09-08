@@ -2088,19 +2088,48 @@ async function seedDemoCommerceOps(tenantId: string): Promise<void> {
     });
 
     // ── Tax ──────────────────────────────────────────────────────────
+    //
+    // A demo shop that has been trading for a year IS registered where it
+    // collects, so it has a permit number and a date it started. Seeding a
+    // collecting place without them would be the same untrue row the industry
+    // starters used to write (issue 429), and the
+    // `tax_zones_active_needs_a_person` CHECK now refuses it outright.
+    const registeredOn = new Date('2026-01-15T00:00:00.000Z');
     const taxZones = [
       {
         region: 'US-CA',
         nexusType: 'physical',
+        permit: 'CA-SR-118-4470921',
         name: 'California Sales Tax',
         rateBasisPoints: 825,
       },
-      { region: 'US-TX', nexusType: 'economic', name: 'Texas Sales Tax', rateBasisPoints: 625 },
-      { region: 'US-NY', nexusType: 'economic', name: 'New York Sales Tax', rateBasisPoints: 400 },
+      {
+        region: 'US-TX',
+        nexusType: 'economic',
+        permit: 'TX-1-75209844163',
+        name: 'Texas Sales Tax',
+        rateBasisPoints: 625,
+      },
+      {
+        region: 'US-NY',
+        nexusType: 'economic',
+        permit: 'NY-CT-274188395',
+        name: 'New York Sales Tax',
+        rateBasisPoints: 400,
+      },
     ];
     for (const z of taxZones) {
       const zone = await tx.taxZone.create({
-        data: { tenantId, country: 'US', region: z.region, nexusType: z.nexusType, isActive: true },
+        data: {
+          tenantId,
+          country: 'US',
+          region: z.region,
+          nexusType: z.nexusType,
+          registrationNumber: z.permit,
+          registeredAt: registeredOn,
+          isActive: true,
+          activatedAt: registeredOn,
+        },
       });
       await tx.taxRate.create({
         data: {

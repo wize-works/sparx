@@ -541,40 +541,45 @@ export function RecurringCostsSurface() {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Repeating cost actions" wrap>
-        <Button
-          size="sm"
-          color="module"
-          onClick={() => {
-            setAdding(true);
-            setEditing(null);
-          }}
-        >
-          <Plus className="size-4" aria-hidden />
-          Add a repeating cost
-        </Button>
-
-        <Button
-          size="sm"
-          variant="outline"
-          color="neutral"
-          loading={generate.isPending}
-          disabled={templates.length === 0}
-          onClick={runGenerate}
-        >
-          <Play className="size-4" aria-hidden />
-          Catch up now
-        </Button>
-
-        <RefreshButton
-          className="ml-auto"
-          isFetching={isFetching}
-          updatedAt={data ? dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void refetch();
-          }}
-        />
-      </PaneToolbar>
+      <PaneToolbar
+        label="Repeating cost actions"
+        controls={
+          <>
+            <Button
+              size="sm"
+              color="module"
+              onClick={() => {
+                setAdding(true);
+                setEditing(null);
+              }}
+            >
+              <Plus className="size-4" aria-hidden />
+              Add a repeating cost
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              color="neutral"
+              loading={generate.isPending}
+              disabled={templates.length === 0}
+              onClick={runGenerate}
+            >
+              <Play className="size-4" aria-hidden />
+              Catch up now
+            </Button>
+          </>
+        }
+        refresh={
+          <RefreshButton
+            className="ml-auto"
+            isFetching={isFetching}
+            updatedAt={data ? dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void refetch();
+            }}
+          />
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         {isError ? (

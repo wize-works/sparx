@@ -267,11 +267,17 @@ const ORDER_EVENTS = [
   // notification actionable.
   'order.payment_failed',
   'payment.captured',
-  'order.fulfilled',
-  'order.delivered',
   'order.cancelled',
   'order.refunded',
 ];
+// The two events that are about a PARCEL, not just an order. Both carry
+// `fulfillmentId` in their payload, and dropping it is not harmless: a shipping
+// confirmation that knows only the order resolves its tracking details from "the
+// latest parcel on this order", so an order that ships in two boxes can tell the
+// customer the wrong tracking number. These hydrate the order like any other
+// order event and then merge the parcel's own id on top, the same way the
+// subscription link events merge the facts that ride in their payload.
+const FULFILLMENT_EVENTS = ['order.fulfilled', 'order.delivered'];
 // Commerce subscription lifecycle (docs/implementation/transactional-email §4 P2).
 // Each carries `subscriptionId` in its payload; the resolver hydrates the row +
 // its customer so the lifecycle emails (and any tenant automation) resolve the
@@ -320,6 +326,33 @@ export function installBuiltinResolvers(): void {
   }
   for (const ev of ORDER_EVENTS) {
     registerResolver(ev, (ctx, p) => hydrateOrder(ctx, str(p.orderId ?? p.id)));
+  }
+  for (const ev of FULFILLMENT_EVENTS) {
+    registerResolver(ev, async (ctx, p) => {
+      const fields = await hydrateOrder(ctx, str(p.orderId ?? p.id));
+      // Empty string rather than undefined, matching the subscription link
+      // events: a bound row with an empty value self-drops, where a missing key
+      // renders the raw token.
+      const fulfillmentId = str(p.fulfillmentId);
+      fields['fulfillment.id'] = fulfillmentId;
+      // The parcel's own facts, read from the ROW rather than the payload — the
+      // payload carries only ids. `carrier` is the load-bearing one: a COLLECTION
+      // is recorded as a fulfillment carried by `pickup`, and it publishes
+      // `order.fulfilled` exactly like a despatch does. Without this field an
+      // automation cannot tell the two apart, and a shipping confirmation goes
+      // to somebody who just walked out of the shop holding the goods.
+      if (fulfillmentId) {
+        const f = await ctx.tx.orderFulfillment.findUnique({
+          where: { id: fulfillmentId },
+          select: { carrier: true, service: true, trackingNumber: true, status: true },
+        });
+        fields['fulfillment.carrier'] = f?.carrier ?? '';
+        fields['fulfillment.service'] = f?.service ?? '';
+        fields['fulfillment.trackingNumber'] = f?.trackingNumber ?? '';
+        fields['fulfillment.status'] = f?.status ?? '';
+      }
+      return fields;
+    });
   }
   for (const ev of SUBSCRIPTION_EVENTS) {
     registerResolver(ev, (ctx, p) => hydrateSubscription(ctx, str(p.subscriptionId ?? p.id)));

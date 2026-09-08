@@ -49,6 +49,7 @@ import { PaneToolbar, PANE_SHELL } from '../../components/pane-toolbar';
 import { FormSection } from '../../components/form-section';
 import { RefreshButton } from '../../components/refresh-button';
 import type { SurfaceContext } from '../../lib/surfaces/registry';
+import { SaveFailure } from '@/components/save-failure';
 import {
   formatDateTime,
   useCreateWebhook,
@@ -62,6 +63,7 @@ import {
   type WebhookEventKey,
   type WebhookSubscription,
 } from './webhooks-data';
+import { PaneLoadError } from '../../components/pane-load-error';
 
 const COLUMN = 'mx-auto flex w-full max-w-3xl flex-col gap-4';
 
@@ -311,11 +313,14 @@ function CreateWebhook({ ctx }: { ctx: SurfaceContext }) {
   if (created) {
     return (
       <div className={PANE_SHELL}>
-        <PaneToolbar label="New webhook actions">
-          <Button color="module" size="sm" className="ml-auto" onClick={goManage}>
-            Done — manage this webhook
-          </Button>
-        </PaneToolbar>
+        <PaneToolbar
+          label="New webhook actions"
+          primary={
+            <Button color="module" size="sm" className="ml-auto" onClick={goManage}>
+              Done — manage this webhook
+            </Button>
+          }
+        />
 
         <div className="min-h-0 flex-1 overflow-y-auto">
           <div className={COLUMN}>
@@ -355,18 +360,21 @@ function CreateWebhook({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="New webhook actions">
-        <Button
-          color="module"
-          size="sm"
-          className="ml-auto"
-          disabled={!canCreate}
-          loading={create.isPending}
-          onClick={submit}
-        >
-          Create webhook
-        </Button>
-      </PaneToolbar>
+      <PaneToolbar
+        label="New webhook actions"
+        primary={
+          <Button
+            color="module"
+            size="sm"
+            className="ml-auto"
+            disabled={!canCreate}
+            loading={create.isPending}
+            onClick={submit}
+          >
+            Create webhook
+          </Button>
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className={COLUMN}>
@@ -380,14 +388,7 @@ function CreateWebhook({ ctx }: { ctx: SurfaceContext }) {
             </Text>
           </div>
 
-          {failure ? (
-            <Alert color="error">
-              <AlertContent>
-                <AlertTitle>Could not create this webhook</AlertTitle>
-                <AlertDescription>{failure}</AlertDescription>
-              </AlertContent>
-            </Alert>
-          ) : null}
+          <SaveFailure title="Could not create this webhook" message={failure} />
 
           <WebhookFields draft={draft} onChange={change} />
         </div>
@@ -428,28 +429,17 @@ function EditWebhook({ ctx, id }: { ctx: SurfaceContext; id: string }) {
     ctx.setTitle(displayName);
   }, [ctx, displayName]);
 
+  // No missing-state to pass: `useWebhook` resolves out of the LIST, so a deleted webhook arrives as
+  // null after a good load and is handled below, never as a 404.
   if (isError) {
     return (
-      <div className="flex h-full items-center justify-center p-8">
-        <Alert color="error" className="max-w-md">
-          <AlertContent>
-            <AlertTitle>Could not load this</AlertTitle>
-            <AlertDescription>
-              This is a problem reaching the server. The webhook itself is unaffected.
-            </AlertDescription>
-          </AlertContent>
-          <Button
-            size="sm"
-            color="error"
-            variant="soft"
-            onClick={() => {
-              void refetch();
-            }}
-          >
-            Try again
-          </Button>
-        </Alert>
-      </div>
+      <PaneLoadError
+        title="Could not load this webhook"
+        description="This is a problem reaching the server. The webhook itself is unaffected."
+        onRetry={() => {
+          void refetch();
+        }}
+      />
     );
   }
 
@@ -606,24 +596,31 @@ function ManageBody({
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Webhook actions">
-        <Badge color={state.tone} variant="soft" size="sm">
-          {state.label}
-        </Badge>
-
-        <Button
-          color="module"
-          size="sm"
-          className="ml-auto"
-          disabled={!canSave}
-          loading={update.isPending}
-          onClick={save}
-        >
-          Save
-        </Button>
-
-        <RefreshButton isFetching={isFetching} updatedAt={dataUpdatedAt} onRefresh={refetch} />
-      </PaneToolbar>
+      <PaneToolbar
+        label="Webhook actions"
+        primary={
+          <Button
+            color="module"
+            size="sm"
+            className="ml-auto"
+            disabled={!canSave}
+            loading={update.isPending}
+            onClick={save}
+          >
+            Save
+          </Button>
+        }
+        controls={
+          <>
+            <Badge color={state.tone} variant="soft" size="sm">
+              {state.label}
+            </Badge>
+          </>
+        }
+        refresh={
+          <RefreshButton isFetching={isFetching} updatedAt={dataUpdatedAt} onRefresh={refetch} />
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className={COLUMN}>

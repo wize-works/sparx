@@ -39,7 +39,14 @@ export interface Taxonomy {
   name: string;
   plural_name: string;
   hierarchical: boolean;
+  /** Labels on the site being worked in. A vocabulary is shared across a
+   *  business's sites but its labels are not — "Diesel repair" is meaningless on
+   *  the donut site — so this is the number the list shows (issue 385). */
   term_count: number;
+  /** Labels across every site. What a DELETE takes with it, since deleting the
+   *  vocabulary cascades to all of them at once — which is why the confirmation
+   *  reads this and the list reads the one above. */
+  all_sites_term_count: number;
   created_at: string;
   updated_at: string;
 }
@@ -277,7 +284,7 @@ export function taxonomyKind(hierarchical: boolean): { label: string; detail: st
   if (!hierarchical) return null;
   return {
     label: 'Nested',
-    detail: 'Terms can sit under one another, like Food › Desserts › Cakes.',
+    detail: 'Labels can sit under one another, like Food › Desserts › Cakes.',
   };
 }
 

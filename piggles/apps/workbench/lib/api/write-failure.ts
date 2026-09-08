@@ -43,9 +43,18 @@ export interface WriteFailure {
 }
 
 /** The browser itself says there is no connection. The one case where "check
- *  your connection" is real advice. */
+ *  your connection" is real advice — so it has to be the browser SAYING SO, not
+ *  the absence of an answer.
+ *
+ *  This read `!navigator.onLine`, which is true both when the browser reports
+ *  offline AND when it reports nothing at all: Node ships a global `navigator`
+ *  with no `onLine`, and `!undefined` is `true`. Anywhere the property is
+ *  missing, every single failed write claimed the connection was down and sent
+ *  the reader to fix a network that was never broken — the exact trap the header
+ *  rule above describes. An unmeasured value must never render as a measurement
+ *  (issue 386). */
 function isOffline(): boolean {
-  return typeof navigator !== 'undefined' && !navigator.onLine;
+  return typeof navigator !== 'undefined' && navigator.onLine === false;
 }
 
 /**
@@ -125,9 +134,9 @@ export function describeWriteFailure(error: unknown): WriteFailure {
     };
   }
 
-  // 409 — someone else got there first. Two different things wear this code and
-  // their remedies are opposite, which is exactly the split this file's header
-  // rule exists for (issue 146).
+  // 409 — a REFUSAL. Several different things wear this code and their remedies
+  // differ, which is exactly the split this file's header rule exists for
+  // (issue 146).
   if (error.status === 409) {
     // A time that got taken while she was filling the form in. Nobody edited
     // anything of hers, and there is usually nothing to reopen — it is a NEW
@@ -150,13 +159,38 @@ export function describeWriteFailure(error: unknown): WriteFailure {
         code: 'stale-state',
       };
     }
-    // The one failure where "try again" is actively wrong advice: retrying would
-    // overwrite whatever they did.
+    // EVERY OTHER 409 IS A REFUSAL, NOT A RACE, and the server has already
+    // written the reason in her words: "That domain is already connected to a
+    // site", "Verify this domain before making it canonical", "The address that
+    // came with this site is its permanent one, so it cannot be removed".
+    //
+    // This used to answer all of them with "Someone else changed this while you
+    // had it open — reopen it to see their version, then make your change
+    // again", which is the same trap the header rule describes: a sentence that
+    // sends somebody to redo work when the real remedy is to pick a different
+    // name. It was wrong on all 56 `conflict()` call sites in api-rest, and it
+    // was describing a failure that CANNOT arrive as a 409 — a genuine stale
+    // write raises 412 (`assertIfMatch`), handled below (issue 386).
+    return {
+      message:
+        error.message || "That didn't save. Something about it clashes with what is already there.",
+      showReference: false,
+      code: error.code || 'conflict',
+    };
+  }
+
+  // 412 — the real "someone else got there first". `assertIfMatch` raises this
+  // when the version she had open is not the current one, and its own sentence is
+  // written for a developer ("If-Match precondition failed — entry was modified
+  // by someone else. Reload before retrying."), so it is replaced rather than
+  // passed through. This is the one failure where "try again" is actively wrong
+  // advice: retrying would overwrite whatever they did.
+  if (error.status === 412) {
     return {
       message:
         'Someone else changed this while you had it open, so it was not saved over. Reopen it to see their version, then make your change again.',
       showReference: false,
-      code: 'conflict',
+      code: 'stale-write',
     };
   }
 

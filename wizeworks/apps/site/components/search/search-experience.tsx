@@ -33,8 +33,15 @@ const dollarsToCents = (v: string | undefined): number | undefined => {
   return Number.isFinite(n) && n >= 0 ? Math.round(n * 100) : undefined;
 };
 
-const SITE_HIT_LABEL: Record<string, string> = { collection: 'Collection', cms_page: 'Page' };
-const labelForType = (t: string) => SITE_HIT_LABEL[t] ?? 'Result';
+// Fallback names by entity type. A CMS hit carries the tenant's OWN name for its
+// content type ("Blog post", "Event", "Job posting"), because one `cms_entry` can be
+// any of ten kinds and the entity type alone cannot tell them apart.
+const SITE_HIT_LABEL: Record<string, string> = {
+  collection: 'Collection',
+  cms_page: 'Page',
+  cms_entry: 'Article',
+};
+const labelFor = (h: SiteSearchHit) => h.kind ?? SITE_HIT_LABEL[h.type] ?? 'Result';
 
 export async function SearchExperience({
   site,
@@ -117,19 +124,14 @@ export async function SearchExperience({
       </form>
 
       {siteHits.length > 0 ? (
-        <section style={{ marginBlock: '1.5rem' }}>
-          <h2 style={{ fontSize: '1rem', marginBottom: '0.5rem' }}>Pages &amp; collections</h2>
-          <ul
-            style={{ listStyle: 'none', margin: 0, padding: 0, display: 'grid', gap: '0.375rem' }}
-          >
+        <section className="my-6">
+          <h2 className="mb-2 text-base">Pages &amp; collections</h2>
+          <ul className="m-0 grid list-none gap-1.5 p-0">
             {siteHits.map((h) => (
               <li key={h.url}>
-                <a
-                  href={h.url}
-                  style={{ display: 'inline-flex', gap: '0.5rem', alignItems: 'baseline' }}
-                >
+                <a href={h.url} className="inline-flex items-baseline gap-2">
                   <span>{h.title}</span>
-                  <span style={{ fontSize: '0.75rem', opacity: 0.6 }}>{labelForType(h.type)}</span>
+                  <span className="badge badge-sm">{labelFor(h)}</span>
                 </a>
               </li>
             ))}
@@ -168,8 +170,13 @@ export async function SearchExperience({
           </aside>
           <div>
             <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+              {/* PRODUCTS, said out loud. This line sits above the product grid and
+                  counts only it, and the strip above can be showing pages and
+                  collections that matched — so an unqualified "0 results for
+                  returns" directly under a found Return Policy told the shopper
+                  two opposite things at once. */}
               <span className="text-base-content text-sm">
-                {result.total} {result.total === 1 ? 'result' : 'results'}
+                {result.total} {result.total === 1 ? 'product' : 'products'}
                 {q ? ` for “${q}”` : ''}
               </span>
               <SortSelect value={sort} />
@@ -177,8 +184,12 @@ export async function SearchExperience({
             {result.items.length === 0 ? (
               <EmptyState
                 icon="🤷"
-                title={q ? `No results for “${q}”` : 'No matching products'}
-                description="Check your spelling or loosen the filters."
+                title={q ? `No products match “${q}”` : 'No matching products'}
+                description={
+                  siteHits.length > 0
+                    ? 'Nothing in the shop, but the pages above matched.'
+                    : 'Check your spelling or loosen the filters.'
+                }
                 action={{ label: 'Browse all products', href: '/products' }}
               />
             ) : (

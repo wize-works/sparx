@@ -331,13 +331,22 @@ function PaletteRow({
         className="hover:bg-base-200 flex w-full items-center gap-2 rounded px-2 py-1.5 text-left"
       >
         <StudioIcon name={item.icon} className="text-base-content/70 inline-flex size-4 shrink-0" />
-        <span className="min-w-0">
+        {/* The name gets the WHOLE row. A search result used to carry its group in
+            a second column on the same line, and on a rail this narrow that column
+            cost about half the width: searching "opening" returned three rows
+            reading "Opening (wor…", "Opening ho…" and "Opening over a f…" — cut at
+            exactly the point where they start to differ, so the list could not be
+            used to choose between them. The group is still worth saying, because it
+            is what tells "Opening hours" from "Opening (words only)"; it just
+            belongs on the second line, where it is short and leads the sentence. */}
+        <span className="min-w-0 flex-1">
           <span className="block truncate text-sm">{item.label}</span>
-          {item.hint ? (
-            <span className="text-base-content block truncate text-xs">{item.hint}</span>
+          {group || item.hint ? (
+            <span className="text-base-content block truncate text-xs">
+              {[group, item.hint].filter(Boolean).join(' · ')}
+            </span>
           ) : null}
         </span>
-        {group ? <span className="text-base-content ml-auto shrink-0 text-xs">{group}</span> : null}
       </button>
     </li>
   );

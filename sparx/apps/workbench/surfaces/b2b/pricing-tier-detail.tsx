@@ -11,10 +11,6 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import {
-  Alert,
-  AlertContent,
-  AlertDescription,
-  AlertTitle,
   Badge,
   Button,
   Field,
@@ -39,6 +35,7 @@ import type { SurfaceContext } from '../../lib/surfaces/registry';
 import { MoneyInput } from '@/components/money-input';
 import { VariantPicker } from '../commerce/variant-picker';
 import type { VariantChoice } from '../commerce/bundles-data';
+import { SaveFailure } from '@/components/save-failure';
 import {
   formatCents,
   tierErrorMessage,
@@ -55,6 +52,7 @@ import {
   type TierRow,
   type TierWriteInput,
 } from './pricing-tiers-data';
+import { PaneLoadError } from '../../components/pane-load-error';
 
 const COLUMN = 'mx-auto flex w-full max-w-3xl flex-col gap-4';
 
@@ -106,27 +104,15 @@ function TierLoader({ ctx, id }: { ctx: SurfaceContext; id: string }) {
   if (tierQuery.isError) {
     return (
       <div className={PANE_SHELL}>
-        <div className="flex h-full items-center justify-center p-8">
-          <Alert color="error" className="max-w-md">
-            <AlertContent>
-              <AlertTitle>Could not load this tier</AlertTitle>
-              <AlertDescription>
-                This is a problem reaching the server. The tier itself is unaffected — nothing has
-                been lost.
-              </AlertDescription>
-            </AlertContent>
-            <Button
-              size="sm"
-              color="error"
-              variant="soft"
-              onClick={() => {
-                void tierQuery.refetch();
-              }}
-            >
-              Try again
-            </Button>
-          </Alert>
-        </div>
+        <PaneLoadError
+          error={tierQuery.error}
+          noun="tier"
+          title="Could not load this tier"
+          description="This is a problem reaching the server. The tier itself is unaffected — nothing has been lost."
+          onRetry={() => {
+            void tierQuery.refetch();
+          }}
+        />
       </div>
     );
   }
@@ -266,23 +252,30 @@ function TierEditor({ ctx, id, tier }: { ctx: SurfaceContext; id: string; tier?:
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Price tier actions">
-        {tier?.accountCount !== undefined ? (
-          <Badge color="neutral" variant="soft" size="sm">
-            {tier.accountCount === 1 ? '1 account' : `${String(tier.accountCount)} accounts`}
-          </Badge>
-        ) : null}
-        <Button
-          color="module"
-          size="sm"
-          className="ml-auto"
-          loading={create.isPending || update.isPending}
-          disabled={Boolean(nameError) || (!isNew && !dirty)}
-          onClick={submit}
-        >
-          {isNew ? 'Create tier' : 'Save'}
-        </Button>
-      </PaneToolbar>
+      <PaneToolbar
+        label="Price tier actions"
+        primary={
+          <Button
+            color="module"
+            size="sm"
+            className="ml-auto"
+            loading={create.isPending || update.isPending}
+            disabled={Boolean(nameError) || (!isNew && !dirty)}
+            onClick={submit}
+          >
+            {isNew ? 'Create tier' : 'Save'}
+          </Button>
+        }
+        controls={
+          <>
+            {tier?.accountCount !== undefined ? (
+              <Badge color="neutral" variant="soft" size="sm">
+                {tier.accountCount === 1 ? '1 account' : `${String(tier.accountCount)} accounts`}
+              </Badge>
+            ) : null}
+          </>
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className={COLUMN}>
@@ -298,14 +291,7 @@ function TierEditor({ ctx, id, tier }: { ctx: SurfaceContext; id: string; tier?:
             </div>
           ) : null}
 
-          {failure ? (
-            <Alert color="error">
-              <AlertContent>
-                <AlertTitle>Could not save this tier</AlertTitle>
-                <AlertDescription>{failure}</AlertDescription>
-              </AlertContent>
-            </Alert>
-          ) : null}
+          <SaveFailure title="Could not save this tier" message={failure} />
 
           <FormSection title="The tier">
             <Field>

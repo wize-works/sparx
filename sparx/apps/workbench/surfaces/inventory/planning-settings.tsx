@@ -416,38 +416,48 @@ export function PlanningSettingsSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Planning settings actions">
-        <span className="inline-flex items-center gap-1.5">
-          <SlidersHorizontal className="size-4" aria-hidden />
-          <Text as="span" className="text-sm font-medium">
-            Planning settings
-          </Text>
-        </span>
-        {policy.data ? (
-          <Badge color={policy.data.configured ? 'module' : 'neutral'} variant="soft" size="sm">
-            {policy.data.configured ? 'Your settings' : 'Standard settings'}
-          </Badge>
-        ) : null}
-
-        <Button
-          size="sm"
-          color="module"
-          className="ml-auto shrink-0"
-          disabled={!dirty}
-          loading={save.isPending}
-          onClick={onSave}
-        >
-          <Save className="size-4" aria-hidden />
-          Save
-        </Button>
-        <RefreshButton
-          isFetching={policy.isFetching}
-          updatedAt={policy.dataUpdatedAt}
-          onRefresh={() => {
-            void policy.refetch();
-          }}
-        />
-      </PaneToolbar>
+      <PaneToolbar
+        label="Planning settings actions"
+        status={
+          <span className="inline-flex items-center gap-1.5">
+            <SlidersHorizontal className="size-4" aria-hidden />
+            <Text as="span" className="text-sm font-medium">
+              Planning settings
+            </Text>
+          </span>
+        }
+        primary={
+          <Button
+            size="sm"
+            color="module"
+            className="ml-auto shrink-0"
+            disabled={!dirty}
+            loading={save.isPending}
+            onClick={onSave}
+          >
+            <Save className="size-4" aria-hidden />
+            Save
+          </Button>
+        }
+        controls={
+          <>
+            {policy.data ? (
+              <Badge color={policy.data.configured ? 'module' : 'neutral'} variant="soft" size="sm">
+                {policy.data.configured ? 'Your settings' : 'Standard settings'}
+              </Badge>
+            ) : null}
+          </>
+        }
+        refresh={
+          <RefreshButton
+            isFetching={policy.isFetching}
+            updatedAt={policy.dataUpdatedAt}
+            onRefresh={() => {
+              void policy.refetch();
+            }}
+          />
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">{body()}</div>
     </div>

@@ -23,11 +23,26 @@
 
 import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
+import type { Prisma } from '@wizeworks/db';
+import { contentSiteVisibilityWhere } from '@wizeworks/db';
 import { withRequestTenant } from '@wizeworks/api-core/db';
 import { ok } from '@wizeworks/api-core/envelope';
 import { requireRole } from '@wizeworks/api-core/auth';
+import { resolveListScope } from '../../../lib/property.js';
 
 const CONTENT_STATUSES = ['draft', 'scheduled', 'published', 'archived'] as const;
+
+/** Entries a person standing on ONE site should be counted as having.
+ *
+ *  The platform's own rule, from `contentSiteVisibilityWhere`: an entry linked to
+ *  no site belongs to every site, one linked to sites belongs only to those. The
+ *  summary counted the whole business, so a clothing maker standing in her shop
+ *  read "Blog post · 21 entries" while the Content list two clicks away showed
+ *  the 3 that are actually there — 18 of them written for her other six websites
+ *  (issue 389). */
+function entriesOnSite(propertyId: string | undefined): Prisma.ContentEntryWhereInput {
+  return propertyId ? contentSiteVisibilityWhere(propertyId) : {};
+}
 
 const CadenceQuery = z.object({
   from: z.string().datetime().optional(),
@@ -81,37 +96,69 @@ interface RawCadenceRow {
 const reportRoutes: FastifyPluginAsync = (app) => {
   // ── Summary: counts by status + by type, published-30d, scheduled-upcoming ──
   app.get('/v1/content/reports/summary', async (request) => {
-    requireRole(request, 'viewer');
+    const auth = requireRole(request, 'viewer');
     const now = new Date();
     const thirtyDaysAgo = new Date(now.getTime() - 30 * 86_400_000);
+    const propertyId = await resolveListScope(
+      auth,
+      undefined,
+      request.headers['x-sparx-property-id']
+    );
+    const here = entriesOnSite(propertyId);
 
     return withRequestTenant(request, async (tx) => {
-      const [total, byStatusRows, totalByType, publishedByType, types, published30d, upcoming] =
-        await Promise.all([
-          tx.contentEntry.count({ where: { deletedAt: null } }),
-          tx.contentEntry.groupBy({
-            by: ['status'],
-            where: { deletedAt: null },
-            _count: { _all: true },
-          }),
-          tx.contentEntry.groupBy({
-            by: ['typeKey'],
-            where: { deletedAt: null },
-            _count: { _all: true },
-          }),
-          tx.contentEntry.groupBy({
-            by: ['typeKey'],
-            where: { deletedAt: null, status: 'published' },
-            _count: { _all: true },
-          }),
-          tx.contentType.findMany({ select: { key: true, name: true, pluralName: true } }),
-          tx.contentEntry.count({
-            where: { deletedAt: null, status: 'published', publishedAt: { gte: thirtyDaysAgo } },
-          }),
-          tx.contentEntry.count({
-            where: { deletedAt: null, status: 'scheduled', scheduledAt: { gte: now } },
-          }),
-        ]);
+      const [
+        total,
+        byStatusRows,
+        totalByType,
+        publishedByType,
+        allSitesByType,
+        types,
+        published30d,
+        upcoming,
+      ] = await Promise.all([
+        tx.contentEntry.count({ where: { deletedAt: null, ...here } }),
+        tx.contentEntry.groupBy({
+          by: ['status'],
+          where: { deletedAt: null, ...here },
+          _count: { _all: true },
+        }),
+        tx.contentEntry.groupBy({
+          by: ['typeKey'],
+          where: { deletedAt: null, ...here },
+          _count: { _all: true },
+        }),
+        tx.contentEntry.groupBy({
+          by: ['typeKey'],
+          where: { deletedAt: null, status: 'published', ...here },
+          _count: { _all: true },
+        }),
+        // UNSCOPED, and deliberately. Two screens ask two different questions of
+        // one relation: the list asks "how much of this is on the site I am in",
+        // and the delete asks "how much does this type hold anywhere" — because
+        // `deleteContentTypeTx` refuses tenant-wide, so a type with nothing on
+        // THIS site can still be undeletable. Serving only the scoped number
+        // would have put "0 entries use this type" above a Delete button the
+        // server then refuses, with nothing on screen explaining why. Same trap
+        // as issue 385, pointing the other way.
+        tx.contentEntry.groupBy({
+          by: ['typeKey'],
+          where: { deletedAt: null },
+          _count: { _all: true },
+        }),
+        tx.contentType.findMany({ select: { key: true, name: true, pluralName: true } }),
+        tx.contentEntry.count({
+          where: {
+            deletedAt: null,
+            status: 'published',
+            publishedAt: { gte: thirtyDaysAgo },
+            ...here,
+          },
+        }),
+        tx.contentEntry.count({
+          where: { deletedAt: null, status: 'scheduled', scheduledAt: { gte: now }, ...here },
+        }),
+      ]);
 
       const byStatus = Object.fromEntries(CONTENT_STATUSES.map((s) => [s, 0])) as Record<
         (typeof CONTENT_STATUSES)[number],
@@ -125,14 +172,21 @@ const reportRoutes: FastifyPluginAsync = (app) => {
 
       const nameByKey = new Map(types.map((t) => [t.key, t.pluralName || t.name]));
       const publishedByKey = new Map(publishedByType.map((r) => [r.typeKey, r._count._all]));
-      const byType = totalByType
-        .map((r) => ({
-          typeKey: r.typeKey,
-          name: nameByKey.get(r.typeKey) ?? r.typeKey,
-          count: r._count._all,
-          publishedCount: publishedByKey.get(r.typeKey) ?? 0,
+      const allSitesByKey = new Map(allSitesByType.map((r) => [r.typeKey, r._count._all]));
+      // Keyed off the UNSCOPED groups, so a type whose entries all live on the
+      // business's other sites still gets a row. Dropping it would hide the one
+      // fact that explains why its Delete is refused.
+      const byType = [...allSitesByKey.keys()]
+        .map((typeKey) => ({
+          typeKey,
+          name: nameByKey.get(typeKey) ?? typeKey,
+          /** On the site being worked in — what the "entries" column means. */
+          count: totalByType.find((r) => r.typeKey === typeKey)?._count._all ?? 0,
+          publishedCount: publishedByKey.get(typeKey) ?? 0,
+          /** Across every site — what a delete has to reckon with. */
+          allSitesCount: allSitesByKey.get(typeKey) ?? 0,
         }))
-        .sort((a, b) => b.count - a.count);
+        .sort((a, b) => b.count - a.count || b.allSitesCount - a.allSitesCount);
 
       return ok({
         total,

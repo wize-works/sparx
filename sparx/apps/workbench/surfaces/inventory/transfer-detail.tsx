@@ -97,6 +97,7 @@ import {
 } from './transfers-data';
 import { ScanInput, playScanFeedback } from './scan-input';
 import { useScanQueue, useScanToTransfer, type ScanActionResult } from './scan-data';
+import { PaneLoadError } from '../../components/pane-load-error';
 
 /**
  * Scan items onto a draft transfer.
@@ -802,32 +803,18 @@ export function TransferDetailSurface({ ctx }: { ctx: SurfaceContext }) {
     const gone = isNotFound(detailQuery.error);
     return (
       <div className={PANE_SHELL}>
-        <div className="flex h-full items-center justify-center p-8">
-          <Alert color={gone ? 'warning' : 'danger'} variant="soft" className="max-w-md">
-            <AlertContent>
-              <AlertTitle>
-                {gone ? 'This transfer no longer exists' : 'Could not load this transfer'}
-              </AlertTitle>
-              <AlertDescription>
-                {gone
-                  ? 'It has been removed. Any stock it moved is recorded in your movement history.'
-                  : 'This is a problem reaching the server. Your transfer is unaffected — it just could not be read just now.'}
-              </AlertDescription>
-            </AlertContent>
-            {gone ? null : (
-              <Button
-                size="sm"
-                color="danger"
-                variant="soft"
-                onClick={() => {
-                  void detailQuery.refetch();
-                }}
-              >
-                Try again
-              </Button>
-            )}
-          </Alert>
-        </div>
+        <PaneLoadError
+          reason={gone ? 'missing' : 'unreachable'}
+          title={gone ? 'This transfer no longer exists' : 'Could not load this transfer'}
+          description={
+            gone
+              ? 'It has been removed. Any stock it moved is recorded in your movement history.'
+              : 'This is a problem reaching the server. Your transfer is unaffected — it just could not be read just now.'
+          }
+          onRetry={() => {
+            void detailQuery.refetch();
+          }}
+        />
       </div>
     );
   }
@@ -890,115 +877,116 @@ export function TransferDetailSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Transfer actions" wrap>
-        <Badge color={state.tone} variant="soft" size="sm">
-          {state.label}
-        </Badge>
-
-        {/* Goes on the tote, so the receiving end scans it rather than reading a
+      <PaneToolbar
+        label="Transfer actions"
+        controls={
+          <>
+            <Badge color={state.tone} variant="soft" size="sm">
+              {state.label}
+            </Badge>
+            {/* Goes on the tote, so the receiving end scans it rather than reading a
             reference off a docket. */}
-        {detail ? (
-          <Tooltip content="Print a scannable label for the tote and the paperwork">
-            <Button
-              size="sm"
-              variant="ghost"
-              color="neutral"
-              shape="square"
-              className="shrink-0"
-              aria-label="Print a scannable label for this transfer"
-              onClick={() => {
-                ctx.open(
-                  'inventory.documents.label',
-                  {
-                    number: detail.number,
-                    title: 'Transfer',
-                    subtitle: `${detail.fromWarehouseName ?? ''} → ${detail.toWarehouseName ?? ''}`,
-                  },
-                  { target: 'beside' }
-                );
-              }}
-            >
-              <Printer className="size-4" aria-hidden />
-            </Button>
-          </Tooltip>
-        ) : null}
-
-        {showCancel ? (
-          <Button
-            size="sm"
-            variant="ghost"
-            color="danger"
-            className={`${ml('cancel')}shrink-0 whitespace-nowrap`}
-            loading={cancel.isPending}
-            onClick={() => {
-              void runCancel();
+            {detail ? (
+              <Tooltip content="Print a scannable label for the tote and the paperwork">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  color="neutral"
+                  shape="square"
+                  className="shrink-0"
+                  aria-label="Print a scannable label for this transfer"
+                  onClick={() => {
+                    ctx.open(
+                      'inventory.documents.label',
+                      {
+                        number: detail.number,
+                        title: 'Transfer',
+                        subtitle: `${detail.fromWarehouseName ?? ''} → ${detail.toWarehouseName ?? ''}`,
+                      },
+                      { target: 'beside' }
+                    );
+                  }}
+                >
+                  <Printer className="size-4" aria-hidden />
+                </Button>
+              </Tooltip>
+            ) : null}
+            {showCancel ? (
+              <Button
+                size="sm"
+                variant="ghost"
+                color="danger"
+                className={`${ml('cancel')}shrink-0 whitespace-nowrap`}
+                loading={cancel.isPending}
+                onClick={() => {
+                  void runCancel();
+                }}
+              >
+                <Ban className="size-4" aria-hidden />
+                Cancel
+              </Button>
+            ) : null}
+            {showDispatch ? (
+              <Button
+                size="sm"
+                variant="outline"
+                color="module"
+                className={`${ml('dispatch')}shrink-0 whitespace-nowrap`}
+                disabled={dirty || (detail?.lineCount ?? 0) === 0}
+                title={
+                  dirty
+                    ? 'Save your changes before sending'
+                    : (detail?.lineCount ?? 0) === 0
+                      ? 'Add at least one item before sending'
+                      : 'Send this transfer on its way'
+                }
+                loading={dispatch.isPending}
+                onClick={() => {
+                  void runDispatch();
+                }}
+              >
+                <Send className="size-4" aria-hidden />
+                Send it
+              </Button>
+            ) : null}
+            {showReceive ? (
+              <Button
+                size="sm"
+                color="module"
+                className={`${ml('receive')}shrink-0 whitespace-nowrap`}
+                onClick={() => {
+                  setReceiving(true);
+                }}
+              >
+                <Truck className="size-4" aria-hidden />
+                Mark received
+              </Button>
+            ) : null}
+            {showSave ? (
+              <Button
+                size="sm"
+                color="module"
+                className={`${ml('save')}shrink-0 whitespace-nowrap`}
+                disabled={!canSave || save.isPending}
+                loading={save.isPending}
+                onClick={submit}
+              >
+                {isNew ? 'Start transfer' : 'Save'}
+              </Button>
+            ) : null}
+          </>
+        }
+        refresh={
+          <RefreshButton
+            className={ml('refresh').trim()}
+            isFetching={detailQuery.isFetching}
+            updatedAt={detail ? detailQuery.dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void detailQuery.refetch();
             }}
-          >
-            <Ban className="size-4" aria-hidden />
-            Cancel
-          </Button>
-        ) : null}
-
-        {showDispatch ? (
-          <Button
-            size="sm"
-            variant="outline"
-            color="module"
-            className={`${ml('dispatch')}shrink-0 whitespace-nowrap`}
-            disabled={dirty || (detail?.lineCount ?? 0) === 0}
-            title={
-              dirty
-                ? 'Save your changes before sending'
-                : (detail?.lineCount ?? 0) === 0
-                  ? 'Add at least one item before sending'
-                  : 'Send this transfer on its way'
-            }
-            loading={dispatch.isPending}
-            onClick={() => {
-              void runDispatch();
-            }}
-          >
-            <Send className="size-4" aria-hidden />
-            Send it
-          </Button>
-        ) : null}
-
-        {showReceive ? (
-          <Button
-            size="sm"
-            color="module"
-            className={`${ml('receive')}shrink-0 whitespace-nowrap`}
-            onClick={() => {
-              setReceiving(true);
-            }}
-          >
-            <Truck className="size-4" aria-hidden />
-            Mark received
-          </Button>
-        ) : null}
-
-        {showSave ? (
-          <Button
-            size="sm"
-            color="module"
-            className={`${ml('save')}shrink-0 whitespace-nowrap`}
-            disabled={!canSave || save.isPending}
-            loading={save.isPending}
-            onClick={submit}
-          >
-            {isNew ? 'Start transfer' : 'Save'}
-          </Button>
-        ) : null}
-
-        <RefreshButton
-          className={ml('refresh').trim()}
-          isFetching={detailQuery.isFetching}
-          updatedAt={detail ? detailQuery.dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void detailQuery.refetch();
-          }}
-        />
-      </PaneToolbar>
+          />
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className={COLUMN}>

@@ -19,6 +19,7 @@
 // booking, so it lands the operator ON that booking's pane — the row expands to
 // pick a time inside their window, then hands off to the booking it creates.
 
+import { shownInPlace } from '@wizeworks/query';
 import { useEffect, useId, useMemo, useState } from 'react';
 import { PaneWaiting } from '../../components/pane-waiting';
 import { ListEmptyState } from '../../components/list-empty-state';
@@ -27,7 +28,6 @@ import {
   Alert,
   AlertContent,
   AlertDescription,
-  AlertTitle,
   Badge,
   Button,
   Card,
@@ -66,6 +66,7 @@ import { RefreshButton } from '../../components/refresh-button';
 import { PaneScope } from '../../lib/dock/window-boundary';
 import { afterPaneChange } from '../../lib/defer';
 import { CustomerPicker } from './bookings-customer-picker';
+import { SaveFailure } from '@/components/save-failure';
 import {
   formatDay,
   formatWhen,
@@ -434,6 +435,7 @@ function WaitlistRow({ ctx, entry }: { ctx: SurfaceContext; entry: WaitlistEntry
             toast.add({ title: `${entry.customerName} booked in`, type: 'success' });
           });
         },
+        onError: shownInPlace,
       }
     );
   };
@@ -647,6 +649,7 @@ function AddToWaitlistModal({
             });
           });
         },
+        onError: shownInPlace,
       }
     );
   };
@@ -673,14 +676,7 @@ function AddToWaitlistModal({
               submit();
             }}
           >
-            {saveError ? (
-              <Alert color="error">
-                <AlertContent>
-                  <AlertTitle>Could not add them</AlertTitle>
-                  <AlertDescription>{saveError}</AlertDescription>
-                </AlertContent>
-              </Alert>
-            ) : null}
+            <SaveFailure title="Could not add them" message={saveError} />
 
             <Field>
               <FieldLabel>For which service</FieldLabel>

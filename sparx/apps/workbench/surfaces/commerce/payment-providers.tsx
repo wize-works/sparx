@@ -17,14 +17,15 @@ import { RefreshButton } from '../../components/refresh-button';
 import { FormSection } from '../../components/form-section';
 import type { OpenTarget, SurfaceContext } from '../../lib/surfaces/registry';
 import {
+  checkoutSummary,
   gatewayState,
   paymentsErrorMessage,
-  useGatewayCatalog,
-  useGatewayCredentials,
-  usePaymentConfig,
   type GatewayDescriptor,
   type MaskedGatewayCredential,
   type PaymentConfig,
+  useGatewayCatalog,
+  useGatewayCredentials,
+  usePaymentConfig,
 } from './providers-data';
 import { RowOpenHint } from '../../components/row-open-hint';
 
@@ -102,26 +103,34 @@ export function PaymentProvidersSurface({ ctx }: { ctx: SurfaceContext }) {
   const gateways = catalog.data ?? [];
   const credByGateway = new Map((credentials.data ?? []).map((c) => [c.gatewayId, c]));
   const active = config.data && gateways.find((g) => g.id === config.data?.gatewayId);
+  const summary = checkoutSummary(active ?? undefined, Boolean(config.data?.isActive));
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Payment providers controls">
-        <CreditCard className="size-4 shrink-0" aria-hidden />
-        <Heading level={2} className="min-w-0 truncate text-base font-semibold">
-          Payment providers
-        </Heading>
-        {active && config.data?.isActive ? (
-          <Badge color="success" variant="soft" size="sm">
-            Taking payments
-          </Badge>
-        ) : null}
-        <RefreshButton
-          className="ml-auto"
-          isFetching={isFetching}
-          updatedAt={config.data ? config.dataUpdatedAt : undefined}
-          onRefresh={refetchAll}
-        />
-      </PaneToolbar>
+      <PaneToolbar
+        label="Payment providers controls"
+        controls={
+          <>
+            <CreditCard className="size-4 shrink-0" aria-hidden />
+            <Heading level={2} className="min-w-0 truncate text-base font-semibold">
+              Payment providers
+            </Heading>
+            {summary ? (
+              <Badge color={summary.tone} variant="soft" size="sm">
+                {summary.label}
+              </Badge>
+            ) : null}
+          </>
+        }
+        refresh={
+          <RefreshButton
+            className="ml-auto"
+            isFetching={isFetching}
+            updatedAt={config.data ? config.dataUpdatedAt : undefined}
+            onRefresh={refetchAll}
+          />
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className="mx-auto flex w-full max-w-3xl flex-col gap-4">

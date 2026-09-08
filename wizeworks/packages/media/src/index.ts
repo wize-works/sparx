@@ -3,6 +3,14 @@
 // so a caller that only needs the service/storage doesn't pull the tool layer.
 
 export {
+  countAssetUsage,
+  countOneAssetUsage,
+  describeUsage,
+  UNCOUNTED,
+  type AssetUsage,
+} from './asset-usage.js';
+
+export {
   ALLOWED_IMAGE_MIME,
   ALLOWED_DOCUMENT_MIME,
   MAX_UPLOAD_IMAGE_BYTES,

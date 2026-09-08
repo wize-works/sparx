@@ -35,7 +35,7 @@ export { adjust, transfer } from './movements';
 // single-level count update (absolute set or signed delta), and a bulk
 // adjustment (CSV/JSON) that isolates each row in its own transaction. All
 // writes route through the `applyMovement` ledger funnel.
-export { listInventory, updateLevelCount, bulkAdjust } from './public-api';
+export { listInventory, listUncounted, updateLevelCount, bulkAdjust } from './public-api';
 export type {
   PublicInventoryRow,
   ListInventoryFilter,

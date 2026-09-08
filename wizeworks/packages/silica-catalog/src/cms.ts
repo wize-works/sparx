@@ -23,7 +23,7 @@
 import { atom, bind, el, repeat, type Node } from '@wizeworks/silicaui-html';
 
 import { bindAttr } from './attr-binding';
-import { repeatOrEmpty } from './conditional';
+import { repeatOrEmpty, visibleWhen } from './conditional';
 import { HOST_KEYS, hostCore } from './host-nodes';
 import { PLACEHOLDER_IMAGE } from './placeholder';
 
@@ -35,10 +35,21 @@ import { PLACEHOLDER_IMAGE } from './placeholder';
  *  Also projected (from the author + taxonomy relations the public reads now
  *  `include`): the BYLINE — `authorName`, `authorAvatar:{url,alt}`, `authorBio`,
  *  `category`, `categorySlug`, and `tags:string[]` — the rubric/byline/tags a
- *  WordPress-style publisher template binds. Empty for a post with no author or
- *  terms, so a bound byline degrades to nothing rather than erroring. The default
- *  templates below don't bind them yet (an empty bind would blank an authored line);
- *  a template that wants a byline gates it with `visibleWhen('authorName')`. */
+ *  publisher template binds. Empty for a post with no author or terms, so a bound
+ *  byline degrades to nothing rather than erroring.
+ *
+ *  `authorName` IS bound now, in the masthead, gated with `visibleWhen`. This
+ *  paragraph used to end "the default templates below don't bind them yet (an empty
+ *  bind would blank an authored line); a template that wants a byline gates it with
+ *  `visibleWhen('authorName')`" — a deferral that named its own remedy in the same
+ *  sentence, and outlived it. What it cost: the CMS ships an author picker on every
+ *  post and a whole Authors module behind it, the public read `include`s the relation,
+ *  and this projection resolves it — and the page a reader opened still said nobody
+ *  wrote it (issue 388).
+ *
+ *  `authorAvatar` and `authorBio` stay unbound deliberately: a photo-and-bio card is a
+ *  different block with its own placement (the catalog's `author_bio`), not a line in
+ *  the masthead. `category` and `tags` likewise. A NAME is the byline. */
 
 /** The post's masthead — the back-link, date, headline, and the excerpt as a lede.
  *
@@ -67,9 +78,42 @@ function masthead(): Node {
               // scope, so this string is the only thing the author sees. An empty
               // placeholder renders the template as a floating headline over blank
               // regions — nothing to click and nothing to explain what belongs there.
-              bind(
-                el('span', 'text-base font-semibold text-base-content', { text: 'Published date' }),
-                'date'
+              //
+              // Date and byline share one line because they are the same KIND of thing —
+              // two facts about the post, not a label introducing it (see the note above
+              // on why neither is an eyebrow).
+              el(
+                'div',
+                'flex flex-wrap items-center gap-2 text-base font-semibold text-base-content',
+                {
+                  children: [
+                    bind(el('span', undefined, { text: 'Published date' }), 'date'),
+                    // The byline the header of this file promised and no template ever
+                    // bound. `projectByline` has been putting `authorName` in scope the
+                    // whole time, the CMS has had an author picker on every post, and the
+                    // public read has been `include`ing the relation — so a shop owner
+                    // picked her own name, saved it, and the page stayed anonymous
+                    // (issue 388).
+                    //
+                    // Gated rather than bound bare, which is the reason it was left out:
+                    // an empty bind REPLACES the authored text, so a post with no author
+                    // would print a stray separator next to nothing. `visibleWhen` drops
+                    // the whole span instead — and ghosts it on the editing walk, so the
+                    // author can still see and style a byline on a post that has none.
+                    //
+                    // The separator lives INSIDE the gate on purpose: outside it, a post
+                    // with no author renders "August 28, 2026 ·" trailing into nothing.
+                    visibleWhen(
+                      el('span', 'flex items-center gap-2', {
+                        children: [
+                          el('span', undefined, { text: '·' }),
+                          bind(el('span', undefined, { text: 'Author name' }), 'authorName'),
+                        ],
+                      }),
+                      'authorName'
+                    ),
+                  ],
+                }
               ),
               bind(
                 el(

@@ -69,7 +69,7 @@ export function StepPayments({
           <p className="text-sm">
             This is the account that{' '}
             <span className="font-medium">receives money from your customers</span> — separate from
-            your own sparx subscription. You can connect it now or come back to it later; checkout
+            what you pay us each month. You can connect it now or come back to it later; checkout
             simply stays off until you do.
           </p>
         </div>

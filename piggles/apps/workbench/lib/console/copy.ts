@@ -343,7 +343,7 @@ export const PIGGLES_COPY: Readonly<Record<string, string>> = {
   'link.unresolved.bodyNamed':
     'This link opens something in {name}, and you have not turned {name} on yet. Everything is included in your plan, so you can turn it on whenever you like.',
   'link.unknownAddress':
-    'There is nothing at “{detail}”. The link may have been cut short on its way to you — they sometimes break travelling through a chat or an email — so it is worth asking for it again.',
+    'There is nothing at “{detail}”. The link may have been cut short on its way to you — they sometimes break traveling through a chat or an email — so it is worth asking for it again.',
 
   // THE SECOND FACTUALLY WRONG ONE. sparx ends this with "and you stop being
   // billed for it", because sparx charges per module. Piggles is one flat price
@@ -373,7 +373,7 @@ export const PIGGLES_COPY: Readonly<Record<string, string>> = {
   'security.backupCodes.file': 'Piggles backup codes\n\n{codes}\n',
 
   'partner.gate.description':
-    '{section} is part of the partner programme, for agencies and consultants who bring clients to Piggles. An owner or admin can apply from your account settings, and once we approve it this fills in.',
+    '{section} is part of the partner program, for agencies and consultants who bring clients to Piggles. An owner or admin can apply from your account settings, and once we approve it this fills in.',
   'partner.tier.applyConfirm':
     '{commission}. We review applications, usually within a few working days — nothing about your account changes until it is approved.',
 

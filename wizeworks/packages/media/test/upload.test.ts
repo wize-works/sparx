@@ -7,12 +7,19 @@
 import { createHmac } from 'node:crypto';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { created, findFirstResult, updateCalls, publishEventMock } = vi.hoisted(() => ({
-  created: { rows: [] as { id: string; data: Record<string, unknown> }[] },
-  findFirstResult: { value: null as Record<string, unknown> | null },
-  updateCalls: { calls: [] as { where: unknown; data: Record<string, unknown> }[] },
-  publishEventMock: vi.fn(),
-}));
+const { created, findFirstResult, updateCalls, publishEventMock, productPhotos } = vi.hoisted(
+  () => ({
+    created: { rows: [] as { id: string; data: Record<string, unknown> }[] },
+    findFirstResult: { value: null as Record<string, unknown> | null },
+    updateCalls: { calls: [] as { where: unknown; data: Record<string, unknown> }[] },
+    publishEventMock: vi.fn(),
+    // How many product photographs reference the asset under test. The delete
+    // guard COUNTS references now rather than reading `usage_count`, a column
+    // nothing has ever written (issue 381) — so a test that only set that column
+    // was asserting against a number the real code could never see.
+    productPhotos: { count: 0 },
+  })
+);
 
 vi.mock('@wizeworks/db', () => {
   const tx = {
@@ -30,6 +37,20 @@ vi.mock('@wizeworks/db', () => {
       }),
       findFirst: vi.fn(() => findFirstResult.value),
     },
+    // The seven sources `countAssetUsage` groups over. Only product photos vary
+    // here; the rest answer empty, which is what an unreferenced asset looks like.
+    variantImage: {
+      groupBy: () =>
+        productPhotos.count > 0
+          ? [{ mediaAssetId: 'asset-1', _count: { _all: productPhotos.count } }]
+          : [],
+    },
+    contentReference: { groupBy: () => [] },
+    customer: { groupBy: () => [] },
+    customerDocument: { groupBy: () => [] },
+    author: { groupBy: () => [] },
+    staffDocument: { groupBy: () => [] },
+    financeExpenseAttachment: { groupBy: () => [] },
   };
   return { withTenant: (_c: unknown, fn: (t: typeof tx) => unknown) => fn(tx) };
 });
@@ -67,6 +88,7 @@ beforeEach(() => {
   created.rows = [];
   findFirstResult.value = null;
   updateCalls.calls = [];
+  productPhotos.count = 0;
   publishEventMock.mockClear();
   process.env.SPARX_INTERNAL_JWT_SECRET = SECRET;
   process.env.MEDIA_PUBLIC_URL = 'https://media.test';
@@ -190,15 +212,32 @@ describe('deleteMediaAsset', () => {
     expect(publishEventMock).not.toHaveBeenCalled();
   });
 
-  it('refuses an in-use asset (usageCount > 0) — no update, no event', async () => {
-    findFirstResult.value = { usageCount: 3 };
+  it('refuses an asset a product photograph still uses — no update, no event', async () => {
+    findFirstResult.value = { id: 'asset-1' };
+    productPhotos.count = 3;
     await expect(deleteMediaAsset(CTX, 'asset-1')).rejects.toBeInstanceOf(MediaValidationError);
     expect(updateCalls.calls).toHaveLength(0);
     expect(publishEventMock).not.toHaveBeenCalled();
   });
 
+  it('says WHICH kind is using it, so the owner knows where to go', async () => {
+    findFirstResult.value = { id: 'asset-1' };
+    productPhotos.count = 2;
+    await expect(deleteMediaAsset(CTX, 'asset-1')).rejects.toThrow(/2 product photos/);
+  });
+
+  it('refuses on a stale usage_count of zero when a reference really exists', async () => {
+    // The exact shape of the defect: the column says nothing is using it and
+    // something is. Counting is what makes the guard fire.
+    findFirstResult.value = { id: 'asset-1', usageCount: 0 };
+    productPhotos.count = 1;
+    await expect(deleteMediaAsset(CTX, 'asset-1')).rejects.toBeInstanceOf(MediaValidationError);
+    expect(updateCalls.calls).toHaveLength(0);
+  });
+
   it('soft-deletes (sets deletedAt) and fans out media.deleted', async () => {
-    findFirstResult.value = { usageCount: 0 };
+    findFirstResult.value = { id: 'asset-1' };
+    productPhotos.count = 0;
     const res = await deleteMediaAsset(CTX, 'asset-1');
     expect(res).toEqual({ assetId: 'asset-1', status: 'deleted' });
 

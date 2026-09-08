@@ -153,34 +153,41 @@ export function ReportsLibrarySurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Report library controls">
-        <div className="max-w-xs min-w-0 flex-1">
-          <Input
-            color="module"
-            size="sm"
-            aria-label="Search reports"
-            value={q}
-            placeholder="Search reports…"
-            onChange={(event) => setQ(event.target.value)}
-          />
-        </div>
-        <div className="ml-auto flex items-center gap-2">
-          <Button
-            color="module"
-            size="sm"
-            onClick={(event) =>
-              ctx.open(
-                'crm.report.builder',
-                { id: 'new' },
-                { target: event.shiftKey ? 'beside' : 'tab' }
-              )
-            }
-          >
-            New report
-          </Button>
-          <RefreshButton isFetching={isFetching} onRefresh={() => void refetch()} />
-        </div>
-      </PaneToolbar>
+      <PaneToolbar
+        label="Report library controls"
+        controls={
+          <>
+            <div className="max-w-xs min-w-0 flex-1">
+              <Input
+                color="module"
+                size="sm"
+                aria-label="Search reports"
+                value={q}
+                placeholder="Search reports…"
+                onChange={(event) => setQ(event.target.value)}
+              />
+            </div>
+          </>
+        }
+        refresh={
+          <div className="ml-auto flex items-center gap-2">
+            <Button
+              color="module"
+              size="sm"
+              onClick={(event) =>
+                ctx.open(
+                  'crm.report.builder',
+                  { id: 'new' },
+                  { target: event.shiftKey ? 'beside' : 'tab' }
+                )
+              }
+            >
+              New report
+            </Button>
+            <RefreshButton isFetching={isFetching} onRefresh={() => void refetch()} />
+          </div>
+        }
+      />
 
       <div className="flex flex-col gap-6 overflow-auto p-6">
         {isPending ? (

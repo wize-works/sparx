@@ -12,10 +12,6 @@ import { useEffect, useMemo, useState } from 'react';
 import { PaneWaiting } from '../../components/pane-waiting';
 import { PaneLoadError } from '../../components/pane-load-error';
 import {
-  Alert,
-  AlertContent,
-  AlertDescription,
-  AlertTitle,
   Badge,
   Button,
   Card,
@@ -33,7 +29,7 @@ import {
 import { useConfirm } from '../../lib/confirm';
 import { faCubes, faTrashCan } from '@fortawesome/pro-solid-svg-icons';
 import { Icon } from '@piggles/ui';
-import { useQuery } from '@wizeworks/query';
+import { useQuery, shownInPlace } from '@wizeworks/query';
 import { api } from '../../lib/api/client';
 import { useDirtySource } from '../../lib/workbench/dirty';
 import { afterPaneChange } from '../../lib/defer';
@@ -43,6 +39,7 @@ import { RefreshButton } from '../../components/refresh-button';
 import type { SurfaceContext } from '../../lib/surfaces/registry';
 import { type ProductRow } from './products-data';
 import { VariantPicker } from './variant-picker';
+import { SaveFailure } from '@/components/save-failure';
 import {
   bundleErrorMessage,
   useBundle,
@@ -295,6 +292,7 @@ function BundleEditor({
               toast.add({ title: `${draft.bundleProductTitle} bundle created`, type: 'success' });
             });
           },
+          onError: shownInPlace,
         }
       );
       return;
@@ -314,6 +312,7 @@ function BundleEditor({
           setTouched(false);
           toast.add({ title: 'Bundle saved', type: 'success' });
         },
+        onError: shownInPlace,
       }
     );
   };
@@ -415,14 +414,7 @@ function BundleEditor({
             <Text>Sold as one item, made up of the products below.</Text>
           )}
 
-          {failure ? (
-            <Alert color="error">
-              <AlertContent>
-                <AlertTitle>Could not save this bundle</AlertTitle>
-                <AlertDescription>{failure}</AlertDescription>
-              </AlertContent>
-            </Alert>
-          ) : null}
+          <SaveFailure title="Could not save this bundle" message={failure} />
 
           {isNew ? (
             <FormSection

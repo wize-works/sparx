@@ -58,6 +58,7 @@ import { useBooking, type Booking } from './bookings-data';
 import { useCalendarBooking } from './calendar-booking-state';
 import { EndingsRow, LifecycleRow, MoveSection } from './calendar-booking-actions';
 import { ModalHeader, Section } from './calendar-booking-parts';
+import { SaveFailure } from '@/components/save-failure';
 
 interface CalendarBookingModalProps {
   /** The booking to show, or null when nothing is selected (modal closed). */
@@ -168,14 +169,7 @@ function LoadedModal({
       <ModalHeader booking={booking} />
 
       <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-1 py-2">
-        {state.actionError ? (
-          <Alert color="error">
-            <AlertContent>
-              <AlertTitle>That did not go through</AlertTitle>
-              <AlertDescription>{state.actionError}</AlertDescription>
-            </AlertContent>
-          </Alert>
-        ) : null}
+        <SaveFailure title="That did not go through" message={state.actionError} />
 
         {booking.status === 'cancelled' && booking.cancellationReason ? (
           <Alert color="error">

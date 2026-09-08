@@ -55,8 +55,12 @@ export function aggregatePayments(rows: PaymentRow[]): {
   };
 }
 
-/** Parse a B2B account's free-text payment terms ("net30", "net 15", "due on
- *  receipt") into a day count. Unknown / empty → 0 (due immediately). */
+/** The agreed window, in days, from a company's payment terms. `CreateCompanyInput`
+ *  admits exactly two shapes -- "prepay" or "net" + 1-365 -- so this reads the
+ *  digits out of "net30" and answers 0 for everything else. Zero is not "no
+ *  answer": it means DUE IMMEDIATELY, which is what "prepay" and a walk-in with
+ *  no company both come to. Callers must date that from the day the customer
+ *  receives the bill, never from the day it was raised -- see `dueDateFromTerms`. */
 export function netTermsDays(paymentTerms: string | null | undefined): number {
   if (!paymentTerms) return 0;
   const match = /(\d+)/.exec(paymentTerms);

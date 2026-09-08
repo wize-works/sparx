@@ -240,7 +240,7 @@ export function ChatQuickRepliesSurface({ ctx }: { ctx: SurfaceContext }) {
                 }
               />
               <FieldDescription>
-                What you will recognise it by in the list — the visitor never sees this.
+                What you will recognize it by in the list — the visitor never sees this.
               </FieldDescription>
             </Field>
 

@@ -291,94 +291,103 @@ export function DealsListSurface({ ctx }: { ctx: SurfaceContext }) {
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Deal list controls">
-        <div className="max-w-xs min-w-0 flex-1">
-          <SearchInput
-            color="module"
-            size="sm"
-            aria-label="Search deals"
-            placeholder="Search deals…"
-            value={search}
-            onValueChange={setSearch}
-          />
-        </div>
-        <div className="hidden w-40 shrink-0 @xl:block">
-          <Select
-            color="module"
-            size="sm"
-            aria-label="Which pipeline"
-            value={isBoard ? (boardPipeline?.id ?? '') : pipelineId}
-            items={pipelineItems}
-            onValueChange={(next) => {
-              setPipelineId(next as string);
-            }}
-          />
-        </div>
-        {isBoard ? null : (
-          <div className="hidden w-32 shrink-0 @lg:block">
-            <Select
+      <PaneToolbar
+        label="Deal list controls"
+        search={
+          <div className="max-w-xs min-w-0 flex-1">
+            <SearchInput
               color="module"
               size="sm"
-              aria-label="Open or closed"
-              value={state}
-              items={{ open: 'Open', closed: 'Closed', all: 'All deals' }}
-              onValueChange={(next) => {
-                setState(next as 'open' | 'closed' | 'all');
-              }}
+              aria-label="Search deals"
+              placeholder="Search deals…"
+              value={search}
+              onValueChange={setSearch}
             />
           </div>
-        )}
-
-        <ToggleGroup
-          size="sm"
-          color="module"
-          className="shrink-0"
-          value={[view]}
-          onValueChange={(next: unknown[]) => {
-            // Single-select, but the control still speaks in arrays. Ignore a
-            // deselect (empty array) — there is no "no view".
-            const picked = next[0];
-            if (picked === 'board' || picked === 'table') chooseView(picked);
-          }}
-        >
-          <ToggleGroupItem value="board" aria-label="Show the board">
-            <Columns3 className="size-4" aria-hidden />
-            <span className="hidden @lg:inline">Board</span>
-          </ToggleGroupItem>
-          <ToggleGroupItem value="table" aria-label="Show the list">
-            <List className="size-4" aria-hidden />
-            <span className="hidden @lg:inline">List</span>
-          </ToggleGroupItem>
-        </ToggleGroup>
-
-        <Button
-          color="module"
-          size="sm"
-          className="ml-auto shrink-0"
-          title="New deal — hold Shift to open alongside, Alt for a new window"
-          onClick={(event) => {
-            ctx.open('crm.deal.detail', { id: 'new' }, { target: targetFor(event) });
-          }}
-        >
-          <Plus className="size-4" aria-hidden />
-          New deal
-        </Button>
-        <SavedViewsMenu
-          objectKey="deal"
-          current={currentFilters}
-          baseline={baselineFilters}
-          nameHint="Closing this month"
-          selectedId={viewId}
-          onApply={applyView}
-        />
-        <RefreshButton
-          isFetching={isFetching}
-          updatedAt={data ? dataUpdatedAt : undefined}
-          onRefresh={() => {
-            void refetch();
-          }}
-        />
-      </PaneToolbar>
+        }
+        primary={
+          <Button
+            color="module"
+            size="sm"
+            className="ml-auto shrink-0"
+            title="New deal — hold Shift to open alongside, Alt for a new window"
+            onClick={(event) => {
+              ctx.open('crm.deal.detail', { id: 'new' }, { target: targetFor(event) });
+            }}
+          >
+            <Plus className="size-4" aria-hidden />
+            New deal
+          </Button>
+        }
+        controls={
+          <>
+            <div className="hidden w-40 shrink-0 @xl:block">
+              <Select
+                color="module"
+                size="sm"
+                aria-label="Which pipeline"
+                value={isBoard ? (boardPipeline?.id ?? '') : pipelineId}
+                items={pipelineItems}
+                onValueChange={(next) => {
+                  setPipelineId(next as string);
+                }}
+              />
+            </div>
+            {isBoard ? null : (
+              <div className="hidden w-32 shrink-0 @lg:block">
+                <Select
+                  color="module"
+                  size="sm"
+                  aria-label="Open or closed"
+                  value={state}
+                  items={{ open: 'Open', closed: 'Closed', all: 'All deals' }}
+                  onValueChange={(next) => {
+                    setState(next as 'open' | 'closed' | 'all');
+                  }}
+                />
+              </div>
+            )}
+            <ToggleGroup
+              size="sm"
+              color="module"
+              className="shrink-0"
+              value={[view]}
+              onValueChange={(next: unknown[]) => {
+                // Single-select, but the control still speaks in arrays. Ignore a
+                // deselect (empty array) — there is no "no view".
+                const picked = next[0];
+                if (picked === 'board' || picked === 'table') chooseView(picked);
+              }}
+            >
+              <ToggleGroupItem value="board" aria-label="Show the board">
+                <Columns3 className="size-4" aria-hidden />
+                <span className="hidden @lg:inline">Board</span>
+              </ToggleGroupItem>
+              <ToggleGroupItem value="table" aria-label="Show the list">
+                <List className="size-4" aria-hidden />
+                <span className="hidden @lg:inline">List</span>
+              </ToggleGroupItem>
+            </ToggleGroup>
+            <SavedViewsMenu
+              objectKey="deal"
+              current={currentFilters}
+              baseline={baselineFilters}
+              nameHint="Closing this month"
+              selectedId={viewId}
+              onApply={applyView}
+            />
+          </>
+        }
+        refresh={
+          <RefreshButton
+            isFetching={isFetching}
+            updatedAt={data ? dataUpdatedAt : undefined}
+            onRefresh={() => {
+              void refetch();
+            }}
+          />
+        }
+      />
 
       <Card className="min-h-0 flex-1 overflow-hidden">
         {isError ? (

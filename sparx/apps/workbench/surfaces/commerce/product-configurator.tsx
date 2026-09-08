@@ -83,7 +83,6 @@ import { useDirtySource } from '../../lib/workbench/dirty';
 import { afterPaneChange } from '../../lib/defer';
 import { FormSection } from '../../components/form-section';
 import type { SurfaceContext } from '../../lib/surfaces/registry';
-import { ScrollStrip } from '../../components/scroll-strip';
 import {
   FollowingNotice,
   ProductScopeFallback,
@@ -1342,15 +1341,13 @@ function ConfiguratorBody({
             }}
           >
             <div className="bg-base-300 shrink-0 rounded-full px-4 py-2">
-              <ScrollStrip label="steps">
-                <TabsList>
-                  {rows.map((row) => (
-                    <TabsTab key={row.id} value={row.id}>
-                      {row.name}
-                    </TabsTab>
-                  ))}
-                </TabsList>
-              </ScrollStrip>
+              <TabsList scrollable scrollLabel="steps">
+                {rows.map((row) => (
+                  <TabsTab key={row.id} value={row.id}>
+                    {row.name}
+                  </TabsTab>
+                ))}
+              </TabsList>
             </div>
           </Tabs>
         ) : null}
@@ -1418,72 +1415,78 @@ function ConfiguratorBody({
 
   return (
     <div className={PANE_SHELL}>
-      <PaneToolbar label="Configurator actions">
-        <Settings2 className="size-4 shrink-0" aria-hidden />
-        <Heading level={2} className="min-w-0 truncate text-base font-semibold">
-          {scope.product.title}
-        </Heading>
-        {scope.isFollowing ? (
-          <Badge color="info" variant="soft" size="sm">
-            Following
-          </Badge>
-        ) : null}
-        {liveCount > 0 ? (
-          <Badge color="success" variant="soft" size="sm">
-            <Blocks className="size-3" aria-hidden />
-            <span className="hidden @md:inline">Built to order</span>
-          </Badge>
-        ) : null}
-
-        {/* This pane's Save, in this pane's own toolbar. It is here and not
+      <PaneToolbar
+        label="Configurator actions"
+        controls={
+          <>
+            <Settings2 className="size-4 shrink-0" aria-hidden />
+            <Heading level={2} className="min-w-0 truncate text-base font-semibold">
+              {scope.product.title}
+            </Heading>
+            {scope.isFollowing ? (
+              <Badge color="info" variant="soft" size="sm">
+                Following
+              </Badge>
+            ) : null}
+            {liveCount > 0 ? (
+              <Badge color="success" variant="soft" size="sm">
+                <Blocks className="size-3" aria-hidden />
+                <span className="hidden @md:inline">Built to order</span>
+              </Badge>
+            ) : null}
+            {/* This pane's Save, in this pane's own toolbar. It is here and not
             above the form for the same reason the detail pane's moved: a
             primary action anchored to nothing is ambiguous about what it acts
             on, and in a dock it competes with whatever is in the pane beside
             it. Discard sits beside it because they are one decision. */}
-        {draft !== null ? (
-          <>
-            <Button
-              size="sm"
-              variant="ghost"
-              color="neutral"
-              className="ml-auto"
-              onClick={() => {
-                setDraft(null);
-              }}
-            >
-              <Undo2 className="size-4" aria-hidden />
-              <span className="hidden @md:inline">Discard</span>
-            </Button>
-            <Button
-              size="sm"
-              color="module"
-              disabled={blocked !== null || !dirty}
-              loading={create.isPending || update.isPending}
-              onClick={save}
-            >
-              <Save className="size-4" aria-hidden />
-              {draft.id === NEW ? (
-                <>
-                  <span className="hidden @md:inline">Set this build up</span>
-                  <span className="@md:hidden">Create</span>
-                </>
-              ) : (
-                'Save'
-              )}
-            </Button>
+            {draft !== null ? (
+              <>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  color="neutral"
+                  className="ml-auto"
+                  onClick={() => {
+                    setDraft(null);
+                  }}
+                >
+                  <Undo2 className="size-4" aria-hidden />
+                  <span className="hidden @md:inline">Discard</span>
+                </Button>
+                <Button
+                  size="sm"
+                  color="module"
+                  disabled={blocked !== null || !dirty}
+                  loading={create.isPending || update.isPending}
+                  onClick={save}
+                >
+                  <Save className="size-4" aria-hidden />
+                  {draft.id === NEW ? (
+                    <>
+                      <span className="hidden @md:inline">Set this build up</span>
+                      <span className="@md:hidden">Create</span>
+                    </>
+                  ) : (
+                    'Save'
+                  )}
+                </Button>
+              </>
+            ) : null}
           </>
-        ) : null}
-        <RefreshButton
-          className={draft === null ? 'ml-auto' : undefined}
-          isFetching={templates.isFetching || detail.isFetching}
-          updatedAt={templates.dataUpdatedAt}
-          onRefresh={() => {
-            void templates.refetch();
-            void detail.refetch();
-            void bundles.refetch();
-          }}
-        />
-      </PaneToolbar>
+        }
+        refresh={
+          <RefreshButton
+            className={draft === null ? 'ml-auto' : undefined}
+            isFetching={templates.isFetching || detail.isFetching}
+            updatedAt={templates.dataUpdatedAt}
+            onRefresh={() => {
+              void templates.refetch();
+              void detail.refetch();
+              void bundles.refetch();
+            }}
+          />
+        }
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className={COLUMN}>

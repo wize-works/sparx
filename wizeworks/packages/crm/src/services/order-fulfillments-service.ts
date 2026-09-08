@@ -276,7 +276,16 @@ export async function updateFulfillment(
       action: 'crm.order.fulfillment.updated',
       entityType: 'OrderFulfillment',
       entityId: updated.id,
-      diff: { before: { status: before.status }, after: { status: updated.status } },
+      // Status is not the only thing this call changes, and it used to be the
+      // only thing recorded — so an edit that set or replaced a tracking number
+      // wrote an audit row whose diff said nothing had changed. Record the
+      // fields that actually moved: a tracking number is what a customer chases
+      // a parcel with, and "who changed it, and from what" is exactly the
+      // question asked when one goes missing.
+      diff: {
+        before: { status: before.status, trackingNumber: before.trackingNumber },
+        after: { status: updated.status, trackingNumber: updated.trackingNumber },
+      },
     });
 
     return updated;
