@@ -66,7 +66,7 @@ terraform {
     }
     kubernetes = {
       source  = "hashicorp/kubernetes"
-      version = "~> 2.35"
+      version = "~> 3.2"
     }
     // NO `azuread` PROVIDER HERE, and that is a constraint rather than an
     // omission. This environment is applied by the RELEASE, whose identity holds
